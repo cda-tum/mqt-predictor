@@ -1,3 +1,9 @@
+# manually added:
+.idea/*
+
+
+
+
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks,pycharm,macos
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,jupyternotebooks,pycharm,macos
