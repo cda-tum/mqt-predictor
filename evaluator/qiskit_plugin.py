@@ -1,6 +1,13 @@
 from qiskit import transpile, QuantumCircuit
 from utils import calc_score_from_str, calc_score, get_rigetti_c_map, get_cmap_imbq_washington, get_ibm_washington, get_rigetti_m1, get_ionq
 
+def get_aqt_gateset():
+    from qiskit_aqt_provider import AQTProvider
+    aqt = AQTProvider("")
+    AQT_backend = aqt.backends.aqt_qasm_simulator
+    gateset = AQT_backend.configuration().basis_gates
+    return gateset
+
 def get_qiskit_scores(qc_filepath:QuantumCircuit, opt_level=0):
 
     ibm_gates = ['id', 'rz', 'sx', 'x', 'cx', 'reset']
