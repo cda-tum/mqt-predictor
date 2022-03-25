@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 
 from qiskit_plugin import get_qiskit_scores
-from pytket_pluging import get_tket_scores
+from pytket_plugin import get_tket_scores
 
 
 def evaluation_qasm_files(directory_path: str = "../MQTbench/qasm_output"):
