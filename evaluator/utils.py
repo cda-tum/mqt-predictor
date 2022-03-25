@@ -38,15 +38,13 @@ def count_qubit_gates(qc, provider: str):
             two_qubit_gates += count_gates["cz"]
 
     elif provider == "ionq":
-        # gates: ionq_native_gates = ["ms", "rz", "ry", "rx"]
-        if "rx" in count_gates:
-            single_qubit_gates += count_gates["rx"]
+        # gates: ionq_native_gates = ["ms", "rz", "ry", "rx"] or ["rxx", "rz", "ry"]
         if "ry" in count_gates:
             single_qubit_gates += count_gates["ry"]
         if "rz" in count_gates:
             single_qubit_gates += count_gates["rz"]
-        if "ms" in count_gates:
-            two_qubit_gates += count_gates["ms"]
+        if "rzz" in count_gates:
+            two_qubit_gates += count_gates["rzz"]
     return single_qubit_gates, two_qubit_gates
 
 
@@ -237,7 +235,7 @@ def get_cmap_imbq_washington():
     return c_map_ibmq_washington
 
 
-def get_rigetti_c_map(circles: int = 4):
+def get_cmap_rigetti_m1(circles: int = 4):
     """Returns a coupling map of the circular layout scheme used by Rigetti.
 
     Keyword arguments:
@@ -319,11 +317,61 @@ def get_ibm_washington():
 def get_ionq():
     ionq = {
         "provider": "ionq",
-        "name": "washington",
-        "num_qubits": 127,
+        "name": "IonQ",
+        "num_qubits": 11,
         "t1_avg": 10000,
         "t2_avg": 0.2,
         "avg_gate_time_1q": 0.00001,
         "avg_gate_time_2q": 0.0002
     }
     return ionq
+
+
+def get_openqasm_gates():
+    """Returns a list of all quantum gates within the openQASM 2.0 standard header."""
+    # according to https://github.com/Qiskit/qiskit-terra/blob/main/qiskit/qasm/libs/qelib1.inc
+    gate_list = [
+        "u3",
+        "u2",
+        "u1",
+        "cx",
+        "id",
+        "u0",
+        "u",
+        "p",
+        "x",
+        "y",
+        "z",
+        "h",
+        "s",
+        "sdg",
+        "t",
+        "tdg",
+        "rx",
+        "ry",
+        "rz",
+        "sx",
+        "sxdg",
+        "cz",
+        "cy",
+        "swap",
+        "ch",
+        "ccx",
+        "cswap",
+        "crx",
+        "cry",
+        "crz",
+        "cu1",
+        "cp",
+        "cu3",
+        "csx",
+        "cu",
+        "rxx",
+        "rzz",
+        "rccx",
+        "rc3x",
+        "c3x",
+        "c3sqrtx",
+        "c4x",
+    ]
+    return gate_list
