@@ -10,6 +10,7 @@ from qiskit.test.mock import (
     FakeManhattan,
 )
 
+
 def count_qubit_gates(qc, provider: str):
     dag = circuit_to_dag(qc)
     count_gates = dag.count_ops_longest_path()
@@ -61,7 +62,7 @@ def calc_score_from_path(filepath, backend):
 def calc_score(qc: QuantumCircuit, backend):
     count_gates = count_qubit_gates(qc, backend["provider"])
     # print("Gates: ", count_gates)
-    penalty_factor_width = 5000
+    penalty_factor_width = 50000
     penalty_factor_1q = 500
     penalty_factor_2q = 1000
 
@@ -78,10 +79,24 @@ def calc_score(qc: QuantumCircuit, backend):
     if qc.num_qubits > b_qubits:
         penalty_width = penalty_factor_width
 
-    score = count_gates[0] / max_depth_1q * penalty_factor_1q + count_gates[
-        1] / max_depth_2q * penalty_factor_2q + penalty_width
+    score = (
+        count_gates[0] / max_depth_1q * penalty_factor_1q
+        + count_gates[1] / max_depth_2q * penalty_factor_2q
+        + penalty_width
+    )
     # print("Score: ", score)
     return score
+
+
+def get_c_map_oqc_lucy():
+    """Returns the coupling map of the OQC Lucy quantum computer."""
+    # source: https://github.com/aws/amazon-braket-examples/blob/main/examples/braket_features/Verbatim_Compilation.ipynb
+
+    # Connections are NOT bidirectional, this is not an accident
+    c_map_oqc_lucy = [[0, 1], [0, 7], [1, 2], [2, 3], [7, 6], [6, 5], [4, 3], [4, 5]]
+
+    return c_map_oqc_lucy
+
 
 def get_cmap_imbq_washington():
     """Returns the coupling map of the IBM-Q washington quantum computer."""
@@ -290,6 +305,7 @@ def get_cmap_rigetti_m1(circles: int = 4):
 
     return c_map_rigetti
 
+
 def get_rigetti_m1():
     rigetti_m1 = {
         "provider": "rigetti",
@@ -297,10 +313,11 @@ def get_rigetti_m1():
         "num_qubits": 80,
         "t1_avg": 33.845,
         "t2_avg": 28.230,
-        "avg_gate_time_1q": 60e-3, #source: https://qcs.rigetti.com/qpus -> ASPEN-M-1
-        "avg_gate_time_2q": 160e-3 #source: https://qcs.rigetti.com/qpus -> ASPEN-M-1
+        "avg_gate_time_1q": 60e-3,  # source: https://qcs.rigetti.com/qpus -> ASPEN-M-1
+        "avg_gate_time_2q": 160e-3,  # source: https://qcs.rigetti.com/qpus -> ASPEN-M-1
     }
     return rigetti_m1
+
 
 def get_ibm_washington():
     ibm_washington = {
@@ -309,10 +326,23 @@ def get_ibm_washington():
         "num_qubits": 127,
         "t1_avg": 103.39,
         "t2_avg": 97.75,
-        "avg_gate_time_1q": 206e-3, #estimated, based on the rigetti relation between 1q and 2q and given avg 2q time
-        "avg_gate_time_2q": 550.41e-3 #source: https://quantum-computing.ibm.com/services?services=systems&system=ibm_washington
+        "avg_gate_time_1q": 159.8e-3,  # estimated, based on the rigetti relation between 1q and 2q and given avg 2q time
+        "avg_gate_time_2q": 550.41e-3,  # source: https://quantum-computing.ibm.com/services?services=systems&system=ibm_washington
     }
     return ibm_washington
+
+def get_ibm_montreal():
+    ibm_montreal = {
+        "provider": "ibm",
+        "name": "Montreal",
+        "num_qubits": 27,
+        "t1_avg": 120.55,
+        "t2_avg": 74.16,
+        "avg_gate_time_1q": 206e-3,  # estimated, based on the rigetti relation between 1q and 2q and given avg 2q time
+        "avg_gate_time_2q": 426.159,  # source: https://quantum-computing.ibm.com/services?services=systems&system=ibm_montreal
+    }
+    return ibm_montreal
+
 
 def get_ionq():
     ionq = {
@@ -322,9 +352,22 @@ def get_ionq():
         "t1_avg": 10000,
         "t2_avg": 0.2,
         "avg_gate_time_1q": 0.00001,
-        "avg_gate_time_2q": 0.0002
+        "avg_gate_time_2q": 0.0002,
     }
     return ionq
+
+
+def get_oqc_lucy():
+    oqc_lucy = {
+        "provider": "oqc",
+        "name": "Lucy",
+        "num_qubits": 8,
+        "t1_avg": 34.2375,
+        "t2_avg": 49.2875,
+        "avg_gate_time_1q": 60e-3,  # copied from Rigetti Aspen, number is NOT official from OQC itself
+        "avg_gate_time_2q": 160e-3,  # copied from Rigetti Aspen, number is NOT official from OQC itself
+    }
+    return oqc_lucy
 
 
 def get_openqasm_gates():
