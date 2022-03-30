@@ -1,42 +1,74 @@
-import os
+from qiskit_plugin import *
+from pytket_plugin import *
 
-import matplotlib.pyplot as plt
+from utils import get_openqasm_gates
+from mqt.bench import benchmark_generator
 
-from qiskit_plugin import get_qiskit_scores
-from pytket_plugin import get_tket_scores
+import numpy as np
+import argparse
+from datetime import datetime
 
+def dict_to_featurevector(gate_dict):
+    openqasm_gates_list = get_openqasm_gates()
+    res_dct = {openqasm_gates_list[i] for i in range(0, len(openqasm_gates_list))}
+    res_dct = dict.fromkeys(res_dct, 0)
+    for key, val in dict(gate_dict).items():
+        if not key in res_dct:
+            print(key, "gate not found in openQASM 2.0 gateset")
+        else:
+            res_dct[key] = val
+    return res_dct
 
-def evaluation_qasm_files(directory_path: str = "../MQTbench/qasm_output"):
-    i = 0
-    path_to_all_files = directory_path
+def create_training_data(min_qubit:int, max_qubit:int, stepsize:int = 1):
+    benchmarks = ["dj", "grover-noancilla", "grover-v-chain", "ghz", "graphstate", "qft", "qftentangled",
+                  "qpeexact", "qpeinexact", "qwalk-noancilla", "qwalk-v-chain", "realamprandom", "su2random",
+                  "twolocalrandom", "vqe", "wstate"]
     res = []
-    for file in os.listdir(path_to_all_files):
-        if "indep" in file:
-            print(file)
-            filepath = os.path.join(path_to_all_files, file)
-
+    for benchmark in benchmarks:
+        for num_qubits in range(min_qubit, max_qubit, stepsize):
+            if "noancilla" in benchmark and num_qubits>12 or "v-chain" in benchmark and num_qubits>12:
+                break
+            print(benchmark, num_qubits)
+            qc = benchmark_generator.get_one_benchmark(benchmark, 1, num_qubits)
+            qasm_qc = qc.qasm()
+            ops_list = qc.count_ops()
             try:
-                res_qiskit = get_qiskit_scores(filepath, opt_level=0)
-                res_pytket = get_tket_scores(filepath, opt_level=0)
-                for i in range(len(res_pytket)):
-                    if res_pytket[i] != 0:
-                        score = (res_qiskit[i]) / (res_pytket[i])
-                        res.append(score)
+                best_arch = np.argmin(get_tket_scores(qasm_qc) + get_qiskit_scores(qasm_qc))
+                res.append((ops_list, best_arch, num_qubits))
             except Exception as e:
                 print("fail: ", e)
-            i += 1
-            if i > 5:
-                break
+
+    training_data = []
+    for elem in res:
+        tmp = dict_to_featurevector(elem[0])
+        tmp["num_qubits"] = elem[2]
+        training_data.append((list(tmp.values()), elem[1]))
+
+    x_train, y_train = zip(*training_data)
+    current_date = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+    with open(current_date + '_X_train.csv', 'w') as FOUT:
+        np.savetxt(FOUT, x_train)
+    with open(current_date + '_y_train.csv', 'w') as FOUT:
+        np.savetxt(FOUT, y_train)
 
     return res
 
 
-def save_plot_res(res):
-    plt.hist(res, bins=100)
-    plt.title("Comparison of Pytket vs. Qiskit Performance")
-    plt.savefig("hist.png")
-
 
 if __name__ == "__main__":
-    res = evaluation_qasm_files()
-    save_plot_res(res)
+
+    parser = argparse.ArgumentParser(description="Create Training Data")
+    parser.add_argument(
+        "--min", type=int, default=3,
+    )
+    parser.add_argument(
+        "--max", type=int, default=20,
+    )
+    parser.add_argument(
+        "--step", type=int, default=3
+    )
+
+    args = parser.parse_args()
+    characteristics = create_training_data(args.min, args.max, args.step)
+
+    print("Done")
