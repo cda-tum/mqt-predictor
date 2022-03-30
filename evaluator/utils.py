@@ -1,17 +1,40 @@
 from qiskit import QuantumCircuit
 from qiskit.converters import circuit_to_dag
-from qiskit.visualization import dag_drawer
-
-from qiskit.test.mock import (
-    FakeBogota,
-    FakeCasablanca,
-    FakeGuadalupe,
-    FakeMontreal,
-    FakeManhattan,
-)
+from pytket import OpType
 
 
-def count_qubit_gates(qc, provider: str):
+def count_qubit_gates_tket(qc, provider: str):
+    single_qubit_gates = 0
+    two_qubit_gates = 0
+    if provider == "ibm":
+        # gates: ['id', 'rz', 'sx', 'x', 'cx', 'reset']
+        single_qubit_gates += qc.n_gates_of_type(OpType.Rz)
+        single_qubit_gates += qc.n_gates_of_type(OpType.SX)
+        single_qubit_gates += qc.n_gates_of_type(OpType.X)
+        single_qubit_gates += qc.n_gates_of_type(OpType.Rz)
+        two_qubit_gates += qc.n_gates_of_type(OpType.CX)
+
+    elif provider == "rigetti":
+        # gates: rigetti_native_gates = ["rx", "rz", "cz"]
+        single_qubit_gates += qc.n_gates_of_type(OpType.Rx)
+        single_qubit_gates += qc.n_gates_of_type(OpType.Rz)
+        two_qubit_gates += qc.n_gates_of_type(OpType.CZ)
+
+    elif provider == "ionq":
+        # gates: ionq_native_gates = ["ms", "rz", "ry", "rx"] or ["rxx", "rz", "ry"]
+        single_qubit_gates += qc.n_gates_of_type(OpType.Rz)
+        single_qubit_gates += qc.n_gates_of_type(OpType.Ry)
+        two_qubit_gates += qc.n_gates_of_type(OpType.XXPhase)
+
+    elif provider == "oqc":
+        # gates: oqc_gates = ["rz", "sx", "x", "ecr"]
+        single_qubit_gates += qc.n_gates_of_type(OpType.Rz)
+        single_qubit_gates += qc.n_gates_of_type(OpType.SX)
+        single_qubit_gates += qc.n_gates_of_type(OpType.X)
+        two_qubit_gates += qc.n_gates_of_type(OpType.ECR)
+    return single_qubit_gates, two_qubit_gates
+
+def count_qubit_gates_ibm(qc, provider: str):
     dag = circuit_to_dag(qc)
     count_gates = dag.count_ops_longest_path()
     single_qubit_gates = 0
@@ -46,6 +69,17 @@ def count_qubit_gates(qc, provider: str):
             single_qubit_gates += count_gates["rz"]
         if "rzz" in count_gates:
             two_qubit_gates += count_gates["rzz"]
+
+    elif provider == "oqc":
+        # gates: oqc_gates = ["rz", "sx", "x", "ecr"]
+        if "rz" in count_gates:
+            single_qubit_gates += count_gates["rz"]
+        if "sx" in count_gates:
+            single_qubit_gates += count_gates["sx"]
+        if "x" in count_gates and not "sx" in count_gates:
+            single_qubit_gates += count_gates["x"]
+        if "ecr" in count_gates:
+            two_qubit_gates += count_gates["ecr"]
     return single_qubit_gates, two_qubit_gates
 
 
@@ -59,14 +93,15 @@ def calc_score_from_path(filepath, backend):
     return calc_score(qc, backend)
 
 
-def calc_score(qc: QuantumCircuit, backend):
-    count_gates = count_qubit_gates(qc, backend["provider"])
-    # print("Gates: ", count_gates)
-    penalty_factor_width = 50000
+def calc_score(qc, backend, compiler):
+    if compiler == "qiskit":
+        count_gates = count_qubit_gates_ibm(qc, backend["provider"])
+    elif compiler == "tket":
+        count_gates = count_qubit_gates_tket(qc, backend["provider"])
+
     penalty_factor_1q = 500
     penalty_factor_2q = 1000
 
-    b_qubits = backend["num_qubits"]
     t_1 = backend["t1_avg"]
     t_2 = backend["t2_avg"]
     avg_gate_time_1q = backend["avg_gate_time_1q"]
@@ -74,15 +109,9 @@ def calc_score(qc: QuantumCircuit, backend):
     max_depth_1q = min(t_1, t_2) / avg_gate_time_1q
     max_depth_2q = min(t_1, t_2) / avg_gate_time_2q
 
-    penalty_width = 0
-
-    if qc.num_qubits > b_qubits:
-        penalty_width = penalty_factor_width
-
     score = (
         count_gates[0] / max_depth_1q * penalty_factor_1q
         + count_gates[1] / max_depth_2q * penalty_factor_2q
-        + penalty_width
     )
     # print("Score: ", score)
     return score
