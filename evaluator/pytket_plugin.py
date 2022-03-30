@@ -1,20 +1,14 @@
-import numpy as np
 from pytket.extensions.aqt import AQTBackend
 from pytket.extensions.qiskit import IBMQBackend
 from pytket.extensions.pyquil import ForestStateBackend
-from pytket.extensions.ionq import IonQBackend
 from pytket.passes import PlacementPass, RoutingPass, FullPeepholeOptimise, SynthesiseTket
 from pytket.placement import LinePlacement
-
-from pytket import qasm
-from evaluator.utils import *
-import pytket
-from pytket import OpType, _tket, Circuit
+from pytket import _tket, Circuit, architecture, qasm
 from pytket.passes import RebaseCustom
 from pytket.passes._decompositions import _TK1_to_X_SX_Rz
-from pytket.extensions.qiskit import tk_to_qiskit
 
 from qiskit.test.mock import FakeMontreal
+from utils import *
 
 
 def get_tket_scores(qasm_qc, opt_level=0):
@@ -57,7 +51,7 @@ def get_tket_scores(qasm_qc, opt_level=0):
 
 def get_rigetti_score(qc, opt_level):
     backend = ForestStateBackend()
-    rigetti_arch = pytket.architecture.Architecture(get_cmap_rigetti_m1(10))
+    rigetti_arch = architecture.Architecture(get_cmap_rigetti_m1(10))
     backend.rebase_pass().apply(qc)
     PlacementPass(LinePlacement(rigetti_arch)).apply(qc)
     RoutingPass(rigetti_arch).apply(qc)
@@ -115,7 +109,7 @@ def get_aqt_score(qc, opt_level):
 
 
 def get_ibm_washington_score(qc, opt_level):
-    ibm_washington_arch = pytket.architecture.Architecture(get_cmap_imbq_washington())
+    ibm_washington_arch = architecture.Architecture(get_cmap_imbq_washington())
     backend = IBMQBackend("ibmq_santiago")
     backend.rebase_pass().apply(qc)
     PlacementPass(LinePlacement(ibm_washington_arch)).apply(qc)
@@ -130,7 +124,7 @@ def get_ibm_washington_score(qc, opt_level):
     return score_ibm_washington
 
 def get_ibm_montreal_score(qc, opt_level):
-    ibm_montreal_arch = pytket.architecture.Architecture(FakeMontreal().configuration().coupling_map)
+    ibm_montreal_arch = architecture.Architecture(FakeMontreal().configuration().coupling_map)
     backend = IBMQBackend("ibmq_santiago")
     backend.rebase_pass().apply(qc)
     PlacementPass(LinePlacement(ibm_montreal_arch)).apply(qc)
