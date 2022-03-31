@@ -1,6 +1,7 @@
 # manually added:
 .idea/*
-
+*.png
+*.csv
 
 
 
