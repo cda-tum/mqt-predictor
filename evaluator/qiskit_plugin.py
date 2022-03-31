@@ -11,16 +11,15 @@ def get_aqt_gateset():
     return gateset
 
 
-def get_qiskit_scores(qasm_qc, opt_level=0):
+def get_qiskit_scores(qc, opt_level=0):
 
-    penalty_width = 100000
+    penalty_width = 1000000
 
     ibm_gates = ["rz", "sx", "x", "cx"]
     rigetti_gates = ["rx", "rz", "cz"]
     ionq_gates = ["rxx", "rz", "ry", "rx"]
     oqc_gates = ["rz", "sx", "x", "ecr"]
 
-    qc = QuantumCircuit.from_qasm_str(qasm_qc)
 
     ibm_washington = get_ibm_washington()
     if qc.num_qubits > ibm_washington["num_qubits"]:

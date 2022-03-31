@@ -11,34 +11,29 @@ from qiskit.test.mock import FakeMontreal
 from utils import *
 
 
-def get_tket_scores(qasm_qc, opt_level=0):
-    penalty_width = 100000
+def get_tket_scores(qc, opt_level=0):
+    penalty_width = 1000000
 
-    qc = qasm.circuit_from_qasm_str(qasm_qc)
     if qc.n_qubits > get_ibm_washington()['num_qubits']:
         score_ibm_washington = penalty_width
     else:
         score_ibm_washington = get_ibm_washington_score(qc, opt_level)
 
-    qc = qasm.circuit_from_qasm_str(qasm_qc)
     if qc.n_qubits > get_ibm_montreal()['num_qubits']:
         score_ibm_montreal = penalty_width
     else:
         score_ibm_montreal = get_ibm_montreal_score(qc, opt_level)
 
-    qc = qasm.circuit_from_qasm_str(qasm_qc)
     if qc.n_qubits > get_ionq()['num_qubits']:
         score_ionq = penalty_width
     else:
         score_ionq = get_ionq_score(qc, opt_level)
 
-    qc = qasm.circuit_from_qasm_str(qasm_qc)
     if qc.n_qubits > get_rigetti_m1()['num_qubits']:
         score_rigetti = penalty_width
     else:
         score_rigetti = get_rigetti_score(qc, opt_level)
 
-    qc = qasm.circuit_from_qasm_str(qasm_qc)
     if qc.n_qubits > get_oqc_lucy()['num_qubits']:
         score_oqc = penalty_width
     else:
