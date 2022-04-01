@@ -8,8 +8,34 @@ from pytket.extensions.qiskit import qiskit_to_tk
 
 import numpy as np
 import argparse
+import signal
+
 from datetime import datetime
 
+def timeout_watcher(func, args, timeout):
+    class TimeoutException(Exception):  # Custom exception class
+        pass
+
+    def timeout_handler(signum, frame):  # Custom signal handler
+        raise TimeoutException
+
+    # Change the behavior of SIGALRM
+    signal.signal(signal.SIGALRM, timeout_handler)
+
+    signal.alarm(timeout)
+    try:
+        res = func(*args)
+    except TimeoutException:
+        print("Calculation/Generation exceeded timeout limit for ", func, args[1:])
+        return False
+    except Exception as e:
+        print("Something else went wrong: ", e)
+        return False
+    else:
+        # Reset the alarm
+        signal.alarm(0)
+
+    return res
 
 def dict_to_featurevector(gate_dict):
     openqasm_gates_list = get_openqasm_gates()
@@ -23,7 +49,7 @@ def dict_to_featurevector(gate_dict):
     return res_dct
 
 
-def create_training_data(min_qubit: int, max_qubit: int, stepsize: int = 1):
+def create_training_data(min_qubit: int, max_qubit: int, stepsize: int = 1, timeout: int = 10):
     benchmarks = [
         "dj",
         "grover-noancilla",
@@ -41,6 +67,11 @@ def create_training_data(min_qubit: int, max_qubit: int, stepsize: int = 1):
         "twolocalrandom",
         "vqe",
         "wstate",
+        "vqe",
+        "qaoa",
+        "portfoliovqe",
+        "portfolioqaoa",
+        "qgan"
     ]
     res = []
     for benchmark in benchmarks:
@@ -53,15 +84,21 @@ def create_training_data(min_qubit: int, max_qubit: int, stepsize: int = 1):
             ):
                 break
             print(benchmark, num_qubits)
-            qc = benchmark_generator.get_one_benchmark(benchmark, 1, num_qubits)
+            qc = timeout_watcher(benchmark_generator.get_one_benchmark, [benchmark, 1, num_qubits], timeout)
 
+            if not qc:
+                break
             qasm_qc = qc.qasm()
             qc = QuantumCircuit.from_qasm_str(qasm_qc)
-            qiskit_score = get_qiskit_scores(qc)
+            qiskit_score = timeout_watcher(get_qiskit_scores, [qc], timeout)
+            if not qiskit_score:
+                break
             try:
                 qc_tket = qiskit_to_tk(qc)
                 ops_list = qc.count_ops()
-                tket_scores = get_tket_scores(qc_tket)
+                tket_scores = timeout_watcher(get_tket_scores, [qc_tket], timeout)
+                if not tket_scores:
+                    break
                 best_arch = np.argmin(tket_scores + qiskit_score)
                 res.append((ops_list, best_arch, num_qubits))
             except Exception as e:
@@ -96,8 +133,9 @@ if __name__ == "__main__":
         "--max", type=int, default=20,
     )
     parser.add_argument("--step", type=int, default=3)
+    parser.add_argument("--timeout", type=int, default=10)
 
     args = parser.parse_args()
-    characteristics = create_training_data(args.min, args.max, args.step)
+    characteristics = create_training_data(args.min, args.max, args.step, args.timeout)
 
     print("Done")
