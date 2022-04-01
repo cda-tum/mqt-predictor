@@ -42,7 +42,7 @@ def get_tket_scores(qc, opt_level=0):
 
 
 def get_rigetti_score(qc, opt_level):
-    backend = get_rigetti_rebase() #ForestStateBackend()
+    backend = get_rigetti_rebase()
     rigetti_arch = architecture.Architecture(get_cmap_rigetti_m1(10))
     backend.apply(qc)
     PlacementPass(LinePlacement(rigetti_arch)).apply(qc)
