@@ -63,6 +63,8 @@ def count_qubit_gates_ibm(qc, provider: str):
 
     elif provider == "ionq":
         # gates: ionq_native_gates = ["ms", "rz", "ry", "rx"] or ["rxx", "rz", "ry"]
+        if "rx" in count_gates:
+            single_qubit_gates += count_gates["rx"]
         if "ry" in count_gates:
             single_qubit_gates += count_gates["ry"]
         if "rz" in count_gates:
