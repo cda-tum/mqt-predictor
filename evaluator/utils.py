@@ -21,9 +21,10 @@ def count_qubit_gates_tket(qc, provider: str):
         two_qubit_gates += qc.n_gates_of_type(OpType.CZ)
 
     elif provider == "ionq":
-        # gates: ionq_native_gates = ["ms", "rz", "ry", "rx"] or ["rxx", "rz", "ry"]
+        # gates: ionq_native_gates = ["ms", "rz", "ry", "rx"] or ["rxx", "rz", "ry", "rx"]
         single_qubit_gates += qc.n_gates_of_type(OpType.Rz)
         single_qubit_gates += qc.n_gates_of_type(OpType.Ry)
+        single_qubit_gates += qc.n_gates_of_type(OpType.Rx)
         two_qubit_gates += qc.n_gates_of_type(OpType.XXPhase)
 
     elif provider == "oqc":
@@ -62,15 +63,15 @@ def count_qubit_gates_ibm(qc, provider: str):
             two_qubit_gates += count_gates["cz"]
 
     elif provider == "ionq":
-        # gates: ionq_native_gates = ["ms", "rz", "ry", "rx"] or ["rxx", "rz", "ry"]
+        # gates: ionq_native_gates = ["ms", "rz", "ry", "rx"] or ["rxx", "rz", "ry", "rx"]
         if "rx" in count_gates:
             single_qubit_gates += count_gates["rx"]
         if "ry" in count_gates:
             single_qubit_gates += count_gates["ry"]
         if "rz" in count_gates:
             single_qubit_gates += count_gates["rz"]
-        if "rzz" in count_gates:
-            two_qubit_gates += count_gates["rzz"]
+        if "rxx" in count_gates:
+            two_qubit_gates += count_gates["rxx"]
 
     elif provider == "oqc":
         # gates: oqc_gates = ["rz", "sx", "x", "ecr"]
