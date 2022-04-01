@@ -135,7 +135,7 @@ def get_ibm_montreal_score(qc, opt_level):
 
 
 def get_ionq_rebase():
-    ionq_gateset = {OpType.Rz, OpType.Ry, OpType.XXPhase}
+    ionq_gateset = {OpType.Rz, OpType.Ry, OpType.Rx, OpType.XXPhase}
     cx_in_ionq = _tket.circuit._library._CX_using_XXPhase_0()
 
     def tk1_to_rzry(a, b, c):
