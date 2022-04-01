@@ -370,7 +370,7 @@ def get_ibm_montreal():
         "t1_avg": 120.55,
         "t2_avg": 74.16,
         "avg_gate_time_1q": 206e-3,  # estimated, based on the rigetti relation between 1q and 2q and given avg 2q time
-        "avg_gate_time_2q": 426.159,  # source: https://quantum-computing.ibm.com/services?services=systems&system=ibm_montreal
+        "avg_gate_time_2q": 426.159e-3,  # source: https://quantum-computing.ibm.com/services?services=systems&system=ibm_montreal
     }
     return ibm_montreal
 
