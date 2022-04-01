@@ -1,11 +1,8 @@
 from pytket.extensions.aqt import AQTBackend
-from pytket.extensions.qiskit import IBMQBackend
-from pytket.extensions.pyquil import ForestStateBackend
 from pytket.passes import PlacementPass, RoutingPass, FullPeepholeOptimise, SynthesiseTket
 from pytket.placement import LinePlacement
 from pytket import _tket, Circuit, architecture, qasm
-from pytket.passes import RebaseCustom
-from pytket.passes._decompositions import _TK1_to_X_SX_Rz
+from pytket.passes import auto_rebase_pass
 
 from qiskit.test.mock import FakeMontreal
 from utils import *
@@ -45,24 +42,22 @@ def get_tket_scores(qc, opt_level=0):
 
 
 def get_rigetti_score(qc, opt_level):
-    backend = ForestStateBackend()
+    backend = get_rigetti_rebase() #ForestStateBackend()
     rigetti_arch = architecture.Architecture(get_cmap_rigetti_m1(10))
-    backend.rebase_pass().apply(qc)
+    backend.apply(qc)
     PlacementPass(LinePlacement(rigetti_arch)).apply(qc)
     RoutingPass(rigetti_arch).apply(qc)
     if opt_level == 1:
         SynthesiseTket().apply(qc)
     elif opt_level == 2:
         FullPeepholeOptimise().apply(qc)
-    backend.rebase_pass().apply(qc)
+    backend.apply(qc)
     rigetti_m1 = get_rigetti_m1()
     score_rigetti = calc_score(qc, rigetti_m1, "tket")
     return score_rigetti
 
 
 def get_ionq_score(qc, opt_level):
-    #b3 = IonQBackend(api_key="")
-    #b3.rebase_pass().apply(qasm_qc)
     ionq_rebase = get_ionq_rebase()
     ionq_rebase.apply(qc)
     if opt_level == 1:
@@ -97,7 +92,7 @@ def get_aqt_score(qc, opt_level):
         backend.rebase_pass().apply(qc)
     elif opt_level == 2:
         FullPeepholeOptimise().apply(qc)
-        backend.rebase_pass().apply(qc)
+        backend.apply(qc)
     ionq = get_ionq()
     score_aqt = calc_score(qc, ionq)
     return score_aqt
@@ -105,30 +100,30 @@ def get_aqt_score(qc, opt_level):
 
 def get_ibm_washington_score(qc, opt_level):
     ibm_washington_arch = architecture.Architecture(get_cmap_imbq_washington())
-    backend = IBMQBackend("ibmq_santiago")
-    backend.rebase_pass().apply(qc)
+    backend = get_ibm_rebase()
+    backend.apply(qc)
     PlacementPass(LinePlacement(ibm_washington_arch)).apply(qc)
     RoutingPass(ibm_washington_arch).apply(qc)
     if opt_level == 1:
         SynthesiseTket().apply(qc)
     elif opt_level == 2:
         FullPeepholeOptimise().apply(qc)
-    backend.rebase_pass().apply(qc)
+    backend.apply(qc)
     ibm_washington = get_ibm_washington()
     score_ibm_washington = calc_score(qc, ibm_washington, "tket")
     return score_ibm_washington
 
 def get_ibm_montreal_score(qc, opt_level):
     ibm_montreal_arch = architecture.Architecture(FakeMontreal().configuration().coupling_map)
-    backend = IBMQBackend("ibmq_santiago")
-    backend.rebase_pass().apply(qc)
+    backend = get_ibm_rebase()
+    backend.apply(qc)
     PlacementPass(LinePlacement(ibm_montreal_arch)).apply(qc)
     RoutingPass(ibm_montreal_arch).apply(qc)
     if opt_level == 1:
         SynthesiseTket().apply(qc)
     elif opt_level == 2:
         FullPeepholeOptimise().apply(qc)
-    backend.rebase_pass().apply(qc)
+    backend.apply(qc)
     ibm_montreal = get_ibm_montreal()
     score_ibm_montreal = calc_score(qc, ibm_montreal, "tket")
     return score_ibm_montreal
@@ -136,21 +131,18 @@ def get_ibm_montreal_score(qc, opt_level):
 
 def get_ionq_rebase():
     ionq_gateset = {OpType.Rz, OpType.Ry, OpType.Rx, OpType.XXPhase}
-    cx_in_ionq = _tket.circuit._library._CX_using_XXPhase_0()
-
-    def tk1_to_rzry(a, b, c):
-        circ = Circuit(1)
-        circ.Rz(c + 0.5, 0).Ry(b, 0).Rz(a - 0.5, 0)
-        return circ
-
-    ionq_rebase = RebaseCustom(ionq_gateset, cx_in_ionq, tk1_to_rzry)
+    ionq_rebase = auto_rebase_pass(ionq_gateset)
     return ionq_rebase
 
 def get_oqc_rebase():
-    # ["rz", "sx", "x", "ecr"]
     oqc_gateset = {OpType.Rz, OpType.SX, OpType.X, OpType.ECR}
-    cx_in_oqc = _tket.circuit._library._CX_using_ECR()
-    tk1_to_rz_x_sx = _TK1_to_X_SX_Rz
-
-    oqc_rebase = RebaseCustom(oqc_gateset, cx_in_oqc, tk1_to_rz_x_sx)
+    oqc_rebase = auto_rebase_pass(oqc_gateset)
     return oqc_rebase
+
+def get_rigetti_rebase():
+    rigetti_gateset = auto_rebase_pass({OpType.Rz, OpType.Rx, OpType.CZ})
+    return rigetti_gateset
+
+def get_ibm_rebase():
+    ibm_rebase = auto_rebase_pass({OpType.Rz, OpType.SX, OpType.X, OpType.CX})
+    return ibm_rebase
