@@ -10,6 +10,8 @@ import numpy as np
 import argparse
 import signal
 
+import json
+
 from datetime import datetime
 
 def timeout_watcher(func, args, timeout):
@@ -122,6 +124,68 @@ def create_training_data(min_qubit: int, max_qubit: int, stepsize: int = 1, time
 
     return res
 
+def create_gate_lists(min_qubit: int, max_qubit: int, stepsize: int = 1, timeout: int = 10):
+    benchmarks = [
+        "dj",
+        "grover-noancilla",
+        "grover-v-chain",
+        "ghz",
+        "graphstate",
+        "qft",
+        "qftentangled",
+        "qpeexact",
+        "qpeinexact",
+        "qwalk-noancilla",
+        "qwalk-v-chain",
+        "realamprandom",
+        "su2random",
+        "twolocalrandom",
+        "vqe",
+        "wstate",
+        "vqe",
+        "qaoa",
+        "portfoliovqe",
+        "portfolioqaoa",
+        "qgan"
+    ]
+    res = []
+    for benchmark in benchmarks:
+        for num_qubits in range(min_qubit, max_qubit, stepsize):
+            if (
+                "noancilla" in benchmark
+                and num_qubits > 12
+                or "v-chain" in benchmark
+                and num_qubits > 12
+            ):
+                break
+            print(benchmark, num_qubits)
+            qc = timeout_watcher(benchmark_generator.get_one_benchmark, [benchmark, 1, num_qubits], timeout)
+
+            if not qc:
+                break
+            qasm_qc = qc.qasm()
+            qc = QuantumCircuit.from_qasm_str(qasm_qc)
+            qiskit_gates = timeout_watcher(get_qiskit_gates, [qc], timeout)
+            if not qiskit_gates:
+                break
+            try:
+                qc_tket = qiskit_to_tk(qc)
+                ops_list = qc.count_ops()
+                tket_gates = timeout_watcher(get_tket_gates, [qc_tket], timeout)
+                if not tket_gates:
+                    break
+                res.append((benchmark, num_qubits, ops_list, qiskit_gates+tket_gates))
+            except Exception as e:
+                print("fail: ", e)
+
+
+    jsonString = json.dumps(res, indent=4, sort_keys=True)
+    with open('json_data.json', 'w') as outfile:
+        outfile.write(jsonString)
+    return
+
+
+
 
 if __name__ == "__main__":
 
@@ -136,6 +200,7 @@ if __name__ == "__main__":
     parser.add_argument("--timeout", type=int, default=10)
 
     args = parser.parse_args()
-    characteristics = create_training_data(args.min, args.max, args.step, args.timeout)
+    #characteristics = create_training_data(args.min, args.max, args.step, args.timeout)
+    data = create_gate_lists(args.min, args.max, args.step, args.timeout)
 
     print("Done")
