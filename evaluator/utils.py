@@ -93,7 +93,19 @@ def calc_score_from_str(qc: str, backend):
 
 def calc_score_from_path(filepath, backend):
     qc = QuantumCircuit.from_qasm_file(filepath)
-    return calc_score(qc, backend)
+    return calc_score_from_qc(qc, backend)
+
+def get_backend_information(name:str):
+    if name == "ibm_washington":
+        return get_ibm_washington()
+    elif name == "ibm_montreal":
+        return get_ibm_washington()
+    elif name == "ionq":
+        return get_ionq()
+    elif name == "rigetti_m1":
+        return get_rigetti_m1()
+    elif name == "oqc_lucy":
+        return get_oqc_lucy()
 
 def calc_score_from_gates_list(count_gates, backend):
     penalty_factor_1q = 500
