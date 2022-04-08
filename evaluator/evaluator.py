@@ -156,13 +156,6 @@ def create_gate_lists(min_qubit: int, max_qubit: int, stepsize: int = 1, timeout
     res = []
     for benchmark in benchmarks:
         for num_qubits in range(min_qubit, max_qubit, stepsize):
-            if (
-                "noancilla" in benchmark
-                and num_qubits > 12
-                or "v-chain" in benchmark
-                and num_qubits > 12
-            ):
-                break
             print(benchmark, num_qubits)
             qc = timeout_watcher(benchmark_generator.get_one_benchmark, [benchmark, 1, num_qubits], timeout)
             if not qc:
