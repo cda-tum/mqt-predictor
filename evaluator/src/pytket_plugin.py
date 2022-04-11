@@ -47,7 +47,9 @@ def get_rigetti_gates(qc, opt_level):
             FullPeepholeOptimise().apply(qc)
         backend.apply(qc)
         gates_rigetti = count_qubit_gates_tket(qc, "rigetti")
-        assert sum(gates_rigetti) == qc.n_gates-qc.n_gates_of_type(OpType.Measure)-qc.n_gates_of_type(OpType.Barrier)
+        assert sum(gates_rigetti) == qc.n_gates - qc.n_gates_of_type(
+            OpType.Measure
+        ) - qc.n_gates_of_type(OpType.Barrier)
     return gates_rigetti
 
 
@@ -64,7 +66,9 @@ def get_ionq_gates(qc, opt_level):
             FullPeepholeOptimise().apply(qc)
             ionq_rebase.apply(qc)
         gates_ionq = count_qubit_gates_tket(qc, "ionq")
-        assert sum(gates_ionq) == qc.n_gates-qc.n_gates_of_type(OpType.Measure)-qc.n_gates_of_type(OpType.Barrier)
+        assert sum(gates_ionq) == qc.n_gates - qc.n_gates_of_type(
+            OpType.Measure
+        ) - qc.n_gates_of_type(OpType.Barrier)
     return gates_ionq
 
 
@@ -81,7 +85,9 @@ def get_oqc_gates(qc, opt_level):
             FullPeepholeOptimise().apply(qc)
             oqc_rebase.apply(qc)
         gates_oqc = count_qubit_gates_tket(qc, "oqc")
-        assert sum(gates_oqc) == qc.n_gates-qc.n_gates_of_type(OpType.Measure)-qc.n_gates_of_type(OpType.Barrier)
+        assert sum(gates_oqc) == qc.n_gates - qc.n_gates_of_type(
+            OpType.Measure
+        ) - qc.n_gates_of_type(OpType.Barrier)
     return gates_oqc
 
 
@@ -100,7 +106,9 @@ def get_ibm_washington_gates(qc, opt_level):
             FullPeepholeOptimise().apply(qc)
         backend.apply(qc)
         gates_ibm_washington = count_qubit_gates_tket(qc, "ibm")
-        assert sum(gates_ibm_washington) == qc.n_gates-qc.n_gates_of_type(OpType.Measure)-qc.n_gates_of_type(OpType.Barrier)
+        assert sum(gates_ibm_washington) == qc.n_gates - qc.n_gates_of_type(
+            OpType.Measure
+        ) - qc.n_gates_of_type(OpType.Barrier)
     return gates_ibm_washington
 
 
@@ -122,7 +130,9 @@ def get_ibm_montreal_gates(qc, opt_level):
         backend.apply(qc)
         ibm_montreal = get_ibm_montreal()
         gates_ibm_montreal = count_qubit_gates_tket(qc, "ibm")
-        assert sum(gates_ibm_montreal) == qc.n_gates-qc.n_gates_of_type(OpType.Measure)-qc.n_gates_of_type(OpType.Barrier)
+        assert sum(gates_ibm_montreal) == qc.n_gates - qc.n_gates_of_type(
+            OpType.Measure
+        ) - qc.n_gates_of_type(OpType.Barrier)
     return gates_ibm_montreal
 
 

@@ -108,6 +108,7 @@ def get_backend_information(name: str):
     elif name == "oqc_lucy":
         return get_oqc_lucy()
 
+
 def calc_score_from_gates_list(count_gates, backend):
     penalty_factor_1q = 500
     penalty_factor_2q = 1000
