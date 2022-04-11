@@ -3,6 +3,11 @@ from qiskit.converters import circuit_to_dag
 from pytket import OpType
 
 
+def get_width_penalty():
+    width_penalty = 1000000
+    return width_penalty
+
+
 def count_qubit_gates_tket(qc, provider: str):
     single_qubit_gates = 0
     two_qubit_gates = 0
