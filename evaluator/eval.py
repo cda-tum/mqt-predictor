@@ -280,12 +280,17 @@ def eval_y_pred(qasm_qc_list, y_pred, name_list):
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="Create Training Data")
     parser.add_argument(
-        "--min", type=int, default=3,
+        "--min",
+        type=int,
+        default=3,
     )
     parser.add_argument(
-        "--max", type=int, default=20,
+        "--max",
+        type=int,
+        default=20,
     )
     parser.add_argument("--step", type=int, default=3)
     parser.add_argument("--timeout", type=int, default=10)
@@ -293,11 +298,11 @@ if __name__ == "__main__":
 
     create_gate_lists(args.min, args.max, args.step, args.timeout)
 
-    training_data, qasm_list, name_list = extract_training_data_from_json("json_data.json")
+    training_data, qasm_list, name_list = extract_training_data_from_json(
+        "json_data.json"
+    )
     X, y = zip(*training_data)
     train_simple_ml_model(X, y, True, True, qasm_list, name_list)
-
-
 
     # training_data, qasm_list, name_list = extract_training_data_from_json(
     #     "json_data_big.json"
