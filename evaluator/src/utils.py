@@ -16,7 +16,6 @@ def count_qubit_gates_tket(qc, provider: str):
         single_qubit_gates += qc.n_gates_of_type(OpType.Rz)
         single_qubit_gates += qc.n_gates_of_type(OpType.SX)
         single_qubit_gates += qc.n_gates_of_type(OpType.X)
-        single_qubit_gates += qc.n_gates_of_type(OpType.Rz)
         two_qubit_gates += qc.n_gates_of_type(OpType.CX)
 
     elif provider == "rigetti":
