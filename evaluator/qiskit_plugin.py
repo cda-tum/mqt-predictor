@@ -2,6 +2,7 @@ from qiskit import transpile
 from evaluator.utils import *
 from qiskit.test.mock import FakeMontreal
 
+
 def get_qiskit_gates(qc, opt_level=0):
 
     gates_ibm_washington = get_ibm_washington_gates(qc, opt_level)
@@ -10,13 +11,17 @@ def get_qiskit_gates(qc, opt_level=0):
     gates_rigetti = get_rigetti_gates(qc, opt_level)
     gates_oqc = get_oqc_gates(qc, opt_level)
 
-    return ("qiskit", [
-        (gates_ibm_washington, "ibm_washington"),
-        (gates_ibm_montreal, "ibm_montreal"),
-        (gates_ionq, "ionq"),
-        (gates_rigetti, "rigetti_m1"),
-        (gates_oqc, "oqc_lucy"),
-    ])
+    return (
+        "qiskit",
+        [
+            (gates_ibm_washington, "ibm_washington"),
+            (gates_ibm_montreal, "ibm_montreal"),
+            (gates_ionq, "ionq"),
+            (gates_rigetti, "rigetti_m1"),
+            (gates_oqc, "oqc_lucy"),
+        ],
+    )
+
 
 def get_ibm_washington_gates(qc, opt_level):
     ibm_washington = get_ibm_washington()
@@ -33,6 +38,7 @@ def get_ibm_washington_gates(qc, opt_level):
 
     return gates_ibm_washington
 
+
 def get_ibm_montreal_gates(qc, opt_level):
     ibm_montreal = get_ibm_montreal()
     if qc.num_qubits > ibm_montreal["num_qubits"]:
@@ -48,15 +54,19 @@ def get_ibm_montreal_gates(qc, opt_level):
 
     return gates_ibm_montreal
 
+
 def get_ionq_gates(qc, opt_level):
     ionq = get_ionq()
     if qc.num_qubits > ionq["num_qubits"]:
         gates_ionq = None
     else:
-        qc_ion = transpile(qc, basis_gates=get_ionq_native_gates(), optimization_level=opt_level)
+        qc_ion = transpile(
+            qc, basis_gates=get_ionq_native_gates(), optimization_level=opt_level
+        )
         gates_ionq = count_qubit_gates_ibm(qc_ion, "ionq")
 
     return gates_ionq
+
 
 def get_rigetti_gates(qc, opt_level):
     rigetti_m1 = get_rigetti_m1()
@@ -71,6 +81,7 @@ def get_rigetti_gates(qc, opt_level):
         )
         gates_rigetti = count_qubit_gates_ibm(qc_rigetti, "rigetti")
     return gates_rigetti
+
 
 def get_oqc_gates(qc, opt_level):
     oqc_lucy = get_oqc_lucy()
@@ -87,17 +98,21 @@ def get_oqc_gates(qc, opt_level):
 
     return gates_oqc
 
+
 def get_ibm_native_gates():
     ibm_gates = ["rz", "sx", "x", "cx"]
     return ibm_gates
+
 
 def get_rigetti_native_gates():
     rigetti_gates = ["rx", "rz", "cz"]
     return rigetti_gates
 
+
 def get_ionq_native_gates():
     ionq_gates = ["rxx", "rz", "ry", "rx"]
     return ionq_gates
+
 
 def get_oqc_native_gates():
     oqc_gates = ["rz", "sx", "x", "ecr"]
