@@ -459,3 +459,18 @@ def get_openqasm_gates():
     ]
     return gate_list
 
+
+def get_machines():
+    machines = [
+        "qiskit_ibm_washington",
+        "qiskit_ibm_montreal",
+        "qiskit_ionq",
+        "qiskit_rigetti",
+        "qiskit_oqc",
+        "tket_ibm_washington",
+        "tket_ibm_montreal",
+        "tket_ionq",
+        "tket_rigetti",
+        "tket_oqc",
+    ]
+    return machines
