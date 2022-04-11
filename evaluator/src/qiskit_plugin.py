@@ -1,5 +1,5 @@
 from qiskit import transpile
-from evaluator.utils import *
+from evaluator.src.utils import *
 from qiskit.test.mock import FakeMontreal
 
 

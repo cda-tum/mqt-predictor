@@ -5,11 +5,11 @@ from pytket.passes import (
     SynthesiseTket,
 )
 from pytket.placement import LinePlacement
-from pytket import _tket, Circuit, architecture, qasm
+from pytket import architecture
 from pytket.passes import auto_rebase_pass
 
 from qiskit.test.mock import FakeMontreal
-from evaluator.utils import *
+from evaluator.src.utils import *
 
 
 def get_tket_gates(qc, opt_level=0):
@@ -23,11 +23,11 @@ def get_tket_gates(qc, opt_level=0):
     return (
         "tket",
         [
-            gates_ibm_washington,
-            gates_ibm_montreal,
-            gates_ionq,
-            gates_rigetti,
-            gates_oqc,
+            (gates_ibm_washington, "ibm_washington"),
+            (gates_ibm_montreal, "ibm_montreal"),
+            (gates_ionq, "ionq"),
+            (gates_rigetti, "rigetti_m1"),
+            (gates_oqc, "oqc_lucy"),
         ],
     )
 
@@ -47,7 +47,8 @@ def get_rigetti_gates(qc, opt_level):
             FullPeepholeOptimise().apply(qc)
         backend.apply(qc)
         gates_rigetti = count_qubit_gates_tket(qc, "rigetti")
-    return (gates_rigetti, "rigetti_m1")
+        assert sum(gates_rigetti) == qc.n_gates-qc.n_gates_of_type(OpType.Measure)-qc.n_gates_of_type(OpType.Barrier)
+    return gates_rigetti
 
 
 def get_ionq_gates(qc, opt_level):
@@ -63,7 +64,8 @@ def get_ionq_gates(qc, opt_level):
             FullPeepholeOptimise().apply(qc)
             ionq_rebase.apply(qc)
         gates_ionq = count_qubit_gates_tket(qc, "ionq")
-    return (gates_ionq, "ionq")
+        assert sum(gates_ionq) == qc.n_gates-qc.n_gates_of_type(OpType.Measure)-qc.n_gates_of_type(OpType.Barrier)
+    return gates_ionq
 
 
 def get_oqc_gates(qc, opt_level):
@@ -79,7 +81,8 @@ def get_oqc_gates(qc, opt_level):
             FullPeepholeOptimise().apply(qc)
             oqc_rebase.apply(qc)
         gates_oqc = count_qubit_gates_tket(qc, "oqc")
-    return (gates_oqc, "oqc_lucy")
+        assert sum(gates_oqc) == qc.n_gates-qc.n_gates_of_type(OpType.Measure)-qc.n_gates_of_type(OpType.Barrier)
+    return gates_oqc
 
 
 def get_ibm_washington_gates(qc, opt_level):
@@ -97,7 +100,8 @@ def get_ibm_washington_gates(qc, opt_level):
             FullPeepholeOptimise().apply(qc)
         backend.apply(qc)
         gates_ibm_washington = count_qubit_gates_tket(qc, "ibm")
-    return (gates_ibm_washington, "ibm_washington")
+        assert sum(gates_ibm_washington) == qc.n_gates-qc.n_gates_of_type(OpType.Measure)-qc.n_gates_of_type(OpType.Barrier)
+    return gates_ibm_washington
 
 
 def get_ibm_montreal_gates(qc, opt_level):
@@ -118,7 +122,8 @@ def get_ibm_montreal_gates(qc, opt_level):
         backend.apply(qc)
         ibm_montreal = get_ibm_montreal()
         gates_ibm_montreal = count_qubit_gates_tket(qc, "ibm")
-    return (gates_ibm_montreal, "ibm_montreal")
+        assert sum(gates_ibm_montreal) == qc.n_gates-qc.n_gates_of_type(OpType.Measure)-qc.n_gates_of_type(OpType.Barrier)
+    return gates_ibm_montreal
 
 
 def get_ionq_rebase():
