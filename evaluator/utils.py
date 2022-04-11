@@ -40,6 +40,7 @@ def count_qubit_gates_tket(qc, provider: str):
         two_qubit_gates += qc.n_gates_of_type(OpType.ECR)
     return single_qubit_gates, two_qubit_gates
 
+
 def count_qubit_gates_ibm(qc, provider: str):
     dag = circuit_to_dag(qc)
     count_gates = dag.count_ops_longest_path()
@@ -95,7 +96,8 @@ def calc_score_from_str(qc: str, backend):
     qc = QuantumCircuit.from_qasm_str(qc)
     return calc_score_from_qc(qc, backend)
 
-def get_backend_information(name:str):
+
+def get_backend_information(name: str):
     if name == "ibm_washington":
         return get_ibm_washington()
     elif name == "ibm_montreal":
@@ -115,14 +117,16 @@ def calc_score_from_gates_list(count_gates, backend):
     t_2 = backend["t2_avg"]
     avg_gate_time_1q = backend["avg_gate_time_1q"]
     avg_gate_time_2q = backend["avg_gate_time_2q"]
-    max_depth_1q = min(t_1, t_2) / avg_gate_time_1q
-    max_depth_2q = min(t_1, t_2) / avg_gate_time_2q
+    max_depth_1q = t_1 / avg_gate_time_1q
+    max_depth_2q = t_1 / avg_gate_time_2q
 
     score = (
-            count_gates[0] / max_depth_1q * penalty_factor_1q
-            + count_gates[1] / max_depth_2q * penalty_factor_2q
+        count_gates[0] / max_depth_1q * penalty_factor_1q
+        + count_gates[1] / max_depth_2q * penalty_factor_2q
     )
     return score
+
+
 def calc_score_from_qc(qc, backend, compiler):
     if compiler == "qiskit":
         count_gates = count_qubit_gates_ibm(qc, backend["provider"])
@@ -375,6 +379,7 @@ def get_ibm_washington():
         "avg_gate_time_2q": 550.41e-3,  # source: https://quantum-computing.ibm.com/services?services=systems&system=ibm_washington
     }
     return ibm_washington
+
 
 def get_ibm_montreal():
     ibm_montreal = {
