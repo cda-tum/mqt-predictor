@@ -11,8 +11,6 @@ import signal
 
 import json
 
-from datetime import datetime
-
 from keras.models import Sequential
 from keras.layers import Dense
 from sklearn.model_selection import train_test_split
@@ -54,80 +52,6 @@ def dict_to_featurevector(gate_dict, num_qubits):
 
     res_dct["num_qubits"] = num_qubits
     return res_dct
-
-
-def create_training_data(min_qubit: int, max_qubit: int, stepsize: int = 1, timeout: int = 10):
-    benchmarks = [
-        "dj",
-        "grover-noancilla",
-        "grover-v-chain",
-        "ghz",
-        "graphstate",
-        "qft",
-        "qftentangled",
-        "qpeexact",
-        "qpeinexact",
-        "qwalk-noancilla",
-        "qwalk-v-chain",
-        "realamprandom",
-        "su2random",
-        "twolocalrandom",
-        "vqe",
-        "wstate",
-        "vqe",
-        "qaoa",
-        "portfoliovqe",
-        "portfolioqaoa",
-        "qgan"
-    ]
-    res = []
-    for benchmark in benchmarks:
-        for num_qubits in range(min_qubit, max_qubit, stepsize):
-            if (
-                "noancilla" in benchmark
-                and num_qubits > 12
-                or "v-chain" in benchmark
-                and num_qubits > 12
-            ):
-                break
-            print(benchmark, num_qubits)
-            qc = timeout_watcher(benchmark_generator.get_one_benchmark, [benchmark, 1, num_qubits], timeout)
-
-            if not qc:
-                break
-            qasm_qc = qc.qasm()
-            qc = QuantumCircuit.from_qasm_str(qasm_qc)
-            qiskit_score = timeout_watcher(get_qiskit_scores, [qc], timeout)
-            if not qiskit_score:
-                break
-            try:
-                qc_tket = qiskit_to_tk(qc)
-                ops_list = qc.count_ops()
-                tket_scores = timeout_watcher(get_tket_scores, [qc_tket], timeout)
-                if not tket_scores:
-                    break
-                best_arch = np.argmin(tket_scores + qiskit_score)
-                res.append((ops_list, best_arch, num_qubits))
-            except Exception as e:
-                print("fail: ", e)
-                # qc_tket = qasm.circuit_from_qasm_str(qc.qasm())
-                # tket_scores = get_tket_scores(qc_tket)
-        # else:
-
-    training_data = []
-    for elem in res:
-        tmp = dict_to_featurevector(elem[0], elem[2])
-        training_data.append((list(tmp.values()), elem[1]))
-
-    print(training_data)
-    x_train, y_train = zip(*training_data)
-    current_date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    with open(current_date + "_X_train.csv", "w") as FOUT:
-        np.savetxt(FOUT, x_train)
-    with open(current_date + "_y_train.csv", "w") as FOUT:
-        np.savetxt(FOUT, y_train)
-
-    return res
 
 def create_gate_lists(min_qubit: int, max_qubit: int, stepsize: int = 1, timeout: int = 10):
     benchmarks = [

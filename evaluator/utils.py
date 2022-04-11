@@ -90,11 +90,6 @@ def calc_score_from_str(qc: str, backend):
     qc = QuantumCircuit.from_qasm_str(qc)
     return calc_score_from_qc(qc, backend)
 
-
-def calc_score_from_path(filepath, backend):
-    qc = QuantumCircuit.from_qasm_file(filepath)
-    return calc_score_from_qc(qc, backend)
-
 def get_backend_information(name:str):
     if name == "ibm_washington":
         return get_ibm_washington()
