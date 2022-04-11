@@ -1,10 +1,16 @@
-from pytket.passes import PlacementPass, RoutingPass, FullPeepholeOptimise, SynthesiseTket
+from pytket.passes import (
+    PlacementPass,
+    RoutingPass,
+    FullPeepholeOptimise,
+    SynthesiseTket,
+)
 from pytket.placement import LinePlacement
 from pytket import _tket, Circuit, architecture, qasm
 from pytket.passes import auto_rebase_pass
 
 from qiskit.test.mock import FakeMontreal
 from evaluator.utils import *
+
 
 def get_tket_gates(qc, opt_level=0):
 
@@ -14,12 +20,20 @@ def get_tket_gates(qc, opt_level=0):
     gates_rigetti = get_rigetti_gates(qc, opt_level)
     gates_oqc = get_oqc_gates(qc, opt_level)
 
-
-    return ("tket", [gates_ibm_washington, gates_ibm_montreal, gates_ionq, gates_rigetti,  gates_oqc])
+    return (
+        "tket",
+        [
+            gates_ibm_washington,
+            gates_ibm_montreal,
+            gates_ionq,
+            gates_rigetti,
+            gates_oqc,
+        ],
+    )
 
 
 def get_rigetti_gates(qc, opt_level):
-    if qc.n_qubits > get_rigetti_m1()['num_qubits']:
+    if qc.n_qubits > get_rigetti_m1()["num_qubits"]:
         gates_rigetti = None
     else:
         backend = get_rigetti_rebase()
@@ -35,8 +49,9 @@ def get_rigetti_gates(qc, opt_level):
         gates_rigetti = count_qubit_gates_tket(qc, "rigetti")
     return (gates_rigetti, "rigetti_m1")
 
+
 def get_ionq_gates(qc, opt_level):
-    if qc.n_qubits > get_ionq()['num_qubits']:
+    if qc.n_qubits > get_ionq()["num_qubits"]:
         gates_ionq = None
     else:
         ionq_rebase = get_ionq_rebase()
@@ -50,8 +65,9 @@ def get_ionq_gates(qc, opt_level):
         gates_ionq = count_qubit_gates_tket(qc, "ionq")
     return (gates_ionq, "ionq")
 
+
 def get_oqc_gates(qc, opt_level):
-    if qc.n_qubits > get_oqc_lucy()['num_qubits']:
+    if qc.n_qubits > get_oqc_lucy()["num_qubits"]:
         gates_oqc = None
     else:
         oqc_rebase = get_oqc_rebase()
@@ -67,7 +83,7 @@ def get_oqc_gates(qc, opt_level):
 
 
 def get_ibm_washington_gates(qc, opt_level):
-    if qc.n_qubits > get_ibm_washington()['num_qubits']:
+    if qc.n_qubits > get_ibm_washington()["num_qubits"]:
         gates_ibm_washington = None
     else:
         ibm_washington_arch = architecture.Architecture(get_cmap_imbq_washington())
@@ -85,10 +101,12 @@ def get_ibm_washington_gates(qc, opt_level):
 
 
 def get_ibm_montreal_gates(qc, opt_level):
-    if qc.n_qubits > get_ibm_montreal()['num_qubits']:
+    if qc.n_qubits > get_ibm_montreal()["num_qubits"]:
         gates_ibm_montreal = None
     else:
-        ibm_montreal_arch = architecture.Architecture(FakeMontreal().configuration().coupling_map)
+        ibm_montreal_arch = architecture.Architecture(
+            FakeMontreal().configuration().coupling_map
+        )
         backend = get_ibm_rebase()
         backend.apply(qc)
         PlacementPass(LinePlacement(ibm_montreal_arch)).apply(qc)
@@ -108,14 +126,17 @@ def get_ionq_rebase():
     ionq_rebase = auto_rebase_pass(ionq_gateset)
     return ionq_rebase
 
+
 def get_oqc_rebase():
     oqc_gateset = {OpType.Rz, OpType.SX, OpType.X, OpType.ECR}
     oqc_rebase = auto_rebase_pass(oqc_gateset)
     return oqc_rebase
 
+
 def get_rigetti_rebase():
     rigetti_gateset = auto_rebase_pass({OpType.Rz, OpType.Rx, OpType.CZ})
     return rigetti_gateset
+
 
 def get_ibm_rebase():
     ibm_rebase = auto_rebase_pass({OpType.Rz, OpType.SX, OpType.X, OpType.CX})
