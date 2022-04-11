@@ -91,11 +91,6 @@ def count_qubit_gates_ibm(qc, provider: str):
     return single_qubit_gates, two_qubit_gates
 
 
-def calc_score_from_str(qc: str, backend):
-    qc = QuantumCircuit.from_qasm_str(qc)
-    return calc_score_from_qc(qc, backend)
-
-
 def get_backend_information(name: str):
     if name == "ibm_washington":
         return get_ibm_washington()
@@ -133,6 +128,7 @@ def calc_score_from_qc(qc, backend, compiler):
     elif compiler == "tket":
         count_gates = count_qubit_gates_tket(qc, backend["provider"])
     score = calc_score_from_gates_list(count_gates, backend)
+    assert score >= 0
 
     return score
 
