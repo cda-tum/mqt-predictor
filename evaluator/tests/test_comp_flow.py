@@ -1,4 +1,4 @@
-from evaluator import evaluator
+from evaluator import eval
 from evaluator.src import utils, pytket_plugin, qiskit_plugin
 import pytest
 from pytket.extensions.qiskit import qiskit_to_tk
