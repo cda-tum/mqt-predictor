@@ -155,7 +155,7 @@ def extract_training_data_from_json(json_path: str = "json_data.json"):
             scores.append(score)
 
         training_data.append((list(benchmark[1].values()), np.argmin(scores)))
-        name_list.append(benchmark[4])
+        name_list.append(benchmark[3])
         scores_list.append(scores)
 
     return (training_data, name_list, scores_list)
