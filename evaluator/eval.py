@@ -49,9 +49,7 @@ def dict_to_featurevector(gate_dict, num_qubits):
     res_dct = {openqasm_gates_list[i] for i in range(0, len(openqasm_gates_list))}
     res_dct = dict.fromkeys(res_dct, 0)
     for key, val in dict(gate_dict).items():
-        if not key in res_dct:
-            print(key, "gate not found in openQASM 2.0 gateset")
-        else:
+        if key in res_dct:
             res_dct[key] = val
 
     res_dct["num_qubits"] = num_qubits
@@ -95,8 +93,6 @@ def create_gate_lists(
             if not qc:
                 break
             actual_num_qubits = qc.num_qubits
-            qasm_qc = qc.qasm()
-            qc = QuantumCircuit.from_qasm_str(qasm_qc)
             qiskit_gates = timeout_watcher(get_qiskit_gates, [qc], timeout)
             if not qiskit_gates:
                 break
@@ -235,7 +231,7 @@ def eval_y_pred(y_predicted, y_actual, names_list, scores_filtered):
 
     plt.figure(figsize=(17, 6))
 
-    for i, qasm_qc in enumerate(y_predicted):
+    for i in range(len(y_predicted)):
         row = []
         tmp_res = scores_filtered[i]
         circuit_names.append(names_list[i])
