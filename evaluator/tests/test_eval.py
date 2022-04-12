@@ -1,5 +1,3 @@
-from evaluator.src import utils
-import pytest
 from evaluator import eval
 import os
 
