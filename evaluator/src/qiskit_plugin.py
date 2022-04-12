@@ -33,6 +33,7 @@ def get_ibm_washington_gates(qc, opt_level):
             basis_gates=get_ibm_native_gates(),
             optimization_level=opt_level,
             coupling_map=get_cmap_imbq_washington(),
+            seed_transpiler=10,
         )
         gates_ibm_washington = count_qubit_gates_ibm(qc_ibm, "ibm")
 
@@ -49,6 +50,7 @@ def get_ibm_montreal_gates(qc, opt_level):
             basis_gates=get_ibm_native_gates(),
             optimization_level=opt_level,
             coupling_map=FakeMontreal().configuration().coupling_map,
+            seed_transpiler=10,
         )
         gates_ibm_montreal = count_qubit_gates_ibm(qc_ibm, "ibm")
 
@@ -61,7 +63,10 @@ def get_ionq_gates(qc, opt_level):
         gates_ionq = None
     else:
         qc_ion = transpile(
-            qc, basis_gates=get_ionq_native_gates(), optimization_level=opt_level
+            qc,
+            basis_gates=get_ionq_native_gates(),
+            optimization_level=opt_level,
+            seed_transpiler=10,
         )
         gates_ionq = count_qubit_gates_ibm(qc_ion, "ionq")
 
@@ -78,6 +83,7 @@ def get_rigetti_gates(qc, opt_level):
             basis_gates=get_rigetti_native_gates(),
             optimization_level=opt_level,
             coupling_map=get_cmap_rigetti_m1(10),
+            seed_transpiler=10,
         )
         gates_rigetti = count_qubit_gates_ibm(qc_rigetti, "rigetti")
     return gates_rigetti
@@ -93,6 +99,7 @@ def get_oqc_gates(qc, opt_level):
             basis_gates=get_oqc_native_gates(),
             optimization_level=opt_level,
             coupling_map=get_c_map_oqc_lucy(),
+            seed_transpiler=10,
         )
         gates_oqc = count_qubit_gates_ibm(qc_oqc, "oqc")
 
