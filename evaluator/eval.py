@@ -296,6 +296,7 @@ if __name__ == "__main__":
     parser.add_argument("--timeout", type=int, default=10)
     parser.parse_args()
 
+    args = parser.parse_args()
     create_gate_lists(args.min, args.max, args.step, args.timeout)
 
     training_data, qasm_list, name_list = extract_training_data_from_json(
