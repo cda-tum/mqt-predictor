@@ -203,7 +203,8 @@ def train_simple_ml_model(
     )
 
     if show_test_pred:
-        check_test_predictions(X_test, pred_test, y_test)
+        names_filtered = [name_list[i] for i in indices_test]
+        check_test_predictions(pred_test, y_test, names_filtered)
 
     if eval_pred:
         # print("Indices: ", indices_test, [name_list[i] for i in indices_test], [qasm_list[i] for i in indices_test])
@@ -216,10 +217,11 @@ def train_simple_ml_model(
     return model
 
 
-def check_test_predictions(X_test, pred_test, y_test):
+def check_test_predictions(pred_test, y_test, benchmark_names):
     machines = get_machines()
     for i, pred in enumerate(pred_test):
-        print(machines[np.argmax(pred)], machines[y_test[i]], X_test[i, 19])
+        if np.argmax(pred) != y_test[i]:
+            print(machines[np.argmax(pred)], machines[y_test[i]], benchmark_names[i])
 
     return
 
@@ -265,6 +267,16 @@ def eval_y_pred(qasm_qc_list, y_pred, name_list):
             plt.plot(i, tmp_res[j], ".", alpha=0.5, label=machines[j])
         plt.plot(i, tmp_res[y_pred[i]], "ko")
         plt.xlabel(get_machines())
+
+        if machines[np.argmin(tmp_res)] != machines[y_pred[i]]:
+            diff = tmp_res[y_pred[i]] - tmp_res[np.argmin(tmp_res)]
+            print(
+                machines[np.argmin(tmp_res)],
+                machines[y_pred[i]],
+                name_list[i],
+                diff,
+                tmp_res,
+            )
 
     plt.title("Evaluation: Compilation Flow Prediction")
     plt.xticks(range(len(y_pred)), circuit_names, rotation=90)
