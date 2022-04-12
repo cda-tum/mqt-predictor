@@ -113,7 +113,6 @@ def create_gate_lists(
                         benchmark,
                         feature_vector,
                         qiskit_gates + tket_gates,
-                        qasm_qc,
                         benchmark_name,
                     )
                 )
@@ -130,8 +129,8 @@ def extract_training_data_from_json(json_path: str = "json_data.json"):
     with open(json_path, "r") as f:
         data = json.load(f)
     training_data = []
-    qasm_list = []
     name_list = []
+    scores_list = []
 
     for benchmark in data:
         scores = []
@@ -156,17 +155,15 @@ def extract_training_data_from_json(json_path: str = "json_data.json"):
             scores.append(score)
 
         training_data.append((list(benchmark[1].values()), np.argmin(scores)))
-        qasm_list.append(benchmark[3])
-        name_list.append(benchmark[4])
-        machines = get_machines()
-        # print(num_qubits, machines[np.argmin(scores)])
-    return (training_data, qasm_list, name_list)
+        name_list.append(benchmark[3])
+        scores_list.append(scores)
+
+    return (training_data, name_list, scores_list)
 
 
 def train_simple_ml_model(
-    X, y, show_test_pred=False, eval_pred=True, qasm_list=None, name_list=None
+    X, y, eval_pred=True, name_list=None, actual_scores_list=None
 ):
-    # X_train, X_test, y_train, y_test = train_test_split(np.array(X), np.array(y), test_size=0.30, random_state=40)
 
     X, y, indices = np.array(X), np.array(y), np.array(range(len(y)))
     X_train, X_test, y_train, y_test, indices_train, indices_test = train_test_split(
@@ -186,7 +183,6 @@ def train_simple_ml_model(
     )
     model.fit(X_train, y_train, epochs=100)
 
-    pred_train = model.predict(X_train)
     scores = model.evaluate(X_train, y_train, verbose=0)
     print(
         "Accuracy on training data: {}% \n Error on training data: {}".format(
@@ -194,24 +190,20 @@ def train_simple_ml_model(
         )
     )
 
-    pred_test = model.predict(X_test)
-    scores2 = model.evaluate(X_test, y_test, verbose=True)
+    scores2 = model.evaluate(X_test, y_test, verbose=1)
     print(
         "Accuracy on test data: {}% \n Error on test data: {}".format(
             scores2[1], 1 - scores2[1]
         )
     )
 
-    if show_test_pred:
-        names_filtered = [name_list[i] for i in indices_test]
-        check_test_predictions(pred_test, y_test, names_filtered)
-
+    pred_test = model.predict(X_test)
     if eval_pred:
-        # print("Indices: ", indices_test, [name_list[i] for i in indices_test], [qasm_list[i] for i in indices_test])
         eval_y_pred(
-            qasm_qc_list=[qasm_list[i] for i in indices_test],
-            y_pred=y_test,
-            name_list=[name_list[i] for i in indices_test],
+            y_predicted=pred_test,
+            y_actual=y_test,
+            names_list=[name_list[i] for i in indices_test],
+            scores_filtered=[actual_scores_list[i] for i in indices_test],
         )
 
     return model
@@ -226,60 +218,42 @@ def check_test_predictions(pred_test, y_test, benchmark_names):
     return
 
 
-def eval_y_pred(qasm_qc_list, y_pred, name_list):
-    res = []
+def eval_y_pred(y_predicted, y_actual, names_list, scores_filtered):
     circuit_names = []
 
     plt.figure(figsize=(17, 6))
 
-    for i, qasm_qc in enumerate(qasm_qc_list):
-
-        qc_qiskit = QuantumCircuit.from_qasm_str(qasm_qc)
-        qiskit_gates = get_qiskit_gates(qc_qiskit)[1]
-        tmp_res = []
-        for gate_list, machine in qiskit_gates:
-            if gate_list is None:
-                tmp_res.append(get_width_penalty())
-            else:
-                tmp_res.append(
-                    calc_score_from_gates_list(
-                        gate_list, get_backend_information(machine)
-                    )
-                )
-
-        qc_tket = qiskit_to_tk(qc_qiskit)
-        tket_gates = get_tket_gates(qc_tket)[1]
-        for gate_list, machine in tket_gates:
-            if gate_list is None:
-                tmp_res.append(get_width_penalty())
-            else:
-                tmp_res.append(
-                    calc_score_from_gates_list(
-                        gate_list, get_backend_information(machine)
-                    )
-                )
-
-        res.append(tmp_res)
-        circuit_names.append(name_list[i])
+    for i, qasm_qc in enumerate(y_predicted):
+        tmp_res = scores_filtered[i]
+        circuit_names.append(names_list[i])
         machines = get_machines()
+        y_predicted_instance = np.argmax(y_predicted[i])
 
         for j in range(10):
             plt.plot(i, tmp_res[j], ".", alpha=0.5, label=machines[j])
-        plt.plot(i, tmp_res[y_pred[i]], "ko")
+        plt.plot(i, y_predicted_instance, "ko", label="MQTPredictor")
         plt.xlabel(get_machines())
 
-        if machines[np.argmin(tmp_res)] != machines[y_pred[i]]:
-            diff = tmp_res[y_pred[i]] - tmp_res[np.argmin(tmp_res)]
+        if machines[np.argmin(tmp_res)] != machines[y_predicted_instance]:
+            assert np.argmin(tmp_res) == y_actual[i]
+            print(
+                names_list[i],
+                " predicted: ",
+                y_predicted_instance,
+                " should be: ",
+                y_actual[i],
+            )
+            diff = tmp_res[y_predicted_instance] - tmp_res[np.argmin(tmp_res)]
             print(
                 machines[np.argmin(tmp_res)],
-                machines[y_pred[i]],
-                name_list[i],
+                machines[y_predicted_instance],
+                names_list[i],
                 diff,
                 tmp_res,
             )
 
     plt.title("Evaluation: Compilation Flow Prediction")
-    plt.xticks(range(len(y_pred)), circuit_names, rotation=90)
+    plt.xticks(range(len(y_predicted)), circuit_names, rotation=90)
     plt.xlabel("Unseen Benchmarks")
     plt.ylabel("Actual Score")
     handles, labels = plt.gca().get_legend_handles_labels()
@@ -311,11 +285,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     create_gate_lists(args.min, args.max, args.step, args.timeout)
 
-    training_data, qasm_list, name_list = extract_training_data_from_json(
-        "json_data.json"
-    )
+    training_data, name_list, scores = extract_training_data_from_json("json_data.json")
     X, y = zip(*training_data)
-    train_simple_ml_model(X, y, True, True, qasm_list, name_list)
+    train_simple_ml_model(X, y, True, name_list, scores)
 
     # training_data, qasm_list, name_list = extract_training_data_from_json(
     #     "json_data_big.json"

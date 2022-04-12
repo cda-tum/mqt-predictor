@@ -13,7 +13,7 @@ def test_extract_training_data_from_json():
 def test_train_simple_ml_model():
     eval.create_gate_lists(4, 5, 1)
     assert os.path.isfile("json_data.json")
-    training_data, qasm_list, name_list = eval.extract_training_data_from_json()
+    training_data, name_list, scores_list = eval.extract_training_data_from_json()
     X, y = zip(*training_data)
-    res = eval.train_simple_ml_model(X, y, True, True, qasm_list, name_list)
+    res = eval.train_simple_ml_model(X, y, True, name_list, scores_list)
     assert not res is None
