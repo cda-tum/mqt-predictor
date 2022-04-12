@@ -155,7 +155,7 @@ def extract_training_data_from_json(json_path: str = "json_data.json"):
             scores.append(score)
 
         training_data.append((list(benchmark[1].values()), np.argmin(scores)))
-        name_list.append(benchmark[3])
+        name_list.append(benchmark[4])
         scores_list.append(scores)
 
     return (training_data, name_list, scores_list)
@@ -221,13 +221,35 @@ def check_test_predictions(pred_test, y_test, benchmark_names):
 def eval_y_pred(y_predicted, y_actual, names_list, scores_filtered):
     circuit_names = []
 
+    all_rows = []
+    all_rows.append(
+        [
+            "Benchmark",
+            "Best Score",
+            "MQT Predictor",
+            "Best Machine",
+            "MQT Predictor",
+            "Overhead",
+        ]
+    )
+
     plt.figure(figsize=(17, 6))
 
     for i, qasm_qc in enumerate(y_predicted):
+        row = []
         tmp_res = scores_filtered[i]
         circuit_names.append(names_list[i])
         machines = get_machines()
         y_predicted_instance = np.argmax(y_predicted[i])
+
+        comp_val = tmp_res[y_predicted_instance] / tmp_res[y_actual[i]]
+        row.append(names_list[i])
+        row.append(np.round(np.min(tmp_res), 2))
+        row.append(tmp_res[y_predicted_instance])
+        row.append(machines[y_actual[i]])
+        row.append(machines[y_predicted_instance])
+        row.append(np.round(comp_val - 1.00, 2))
+        all_rows.append(row)
 
         for j in range(10):
             plt.plot(i, tmp_res[j], ".", alpha=0.5, label=machines[j])
@@ -236,20 +258,15 @@ def eval_y_pred(y_predicted, y_actual, names_list, scores_filtered):
 
         if machines[np.argmin(tmp_res)] != machines[y_predicted_instance]:
             assert np.argmin(tmp_res) == y_actual[i]
+            diff = tmp_res[y_predicted_instance] - tmp_res[np.argmin(tmp_res)]
             print(
                 names_list[i],
                 " predicted: ",
                 y_predicted_instance,
                 " should be: ",
                 y_actual[i],
-            )
-            diff = tmp_res[y_predicted_instance] - tmp_res[np.argmin(tmp_res)]
-            print(
-                machines[np.argmin(tmp_res)],
-                machines[y_predicted_instance],
-                names_list[i],
+                " diff: ",
                 diff,
-                tmp_res,
             )
 
     plt.title("Evaluation: Compilation Flow Prediction")
@@ -262,6 +279,14 @@ def eval_y_pred(y_predicted, y_actual, names_list, scores_filtered):
     plt.yscale("log")
     plt.tight_layout()
     plt.savefig("y_pred_eval")
+
+    import csv
+
+    with open("results.csv", "w", encoding="UTF8", newline="") as f:
+        writer = csv.writer(f)
+
+        for row in all_rows:
+            writer.writerow(row)
 
 
 if __name__ == "__main__":
