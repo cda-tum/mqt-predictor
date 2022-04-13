@@ -241,9 +241,9 @@ def eval_y_pred(y_predicted, y_actual, names_list, scores_filtered):
         comp_val = tmp_res[y_predicted_instance] / tmp_res[y_actual[i]]
         row.append(names_list[i])
         row.append(np.round(np.min(tmp_res), 2))
-        row.append(tmp_res[y_predicted_instance])
-        row.append(machines[y_actual[i]])
-        row.append(machines[y_predicted_instance])
+        row.append(np.round(tmp_res[y_predicted_instance], 2))
+        row.append(y_actual[i])
+        row.append(y_predicted_instance)
         row.append(np.round(comp_val - 1.00, 2))
         all_rows.append(row)
 
