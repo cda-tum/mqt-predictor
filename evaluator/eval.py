@@ -57,7 +57,7 @@ def dict_to_featurevector(gate_dict, num_qubits):
     return res_dct
 
 
-def create_gate_lists_from_folder(folder_path:str="./qasm_files", timeout: int = 10):
+def create_gate_lists_from_folder(folder_path: str = "./qasm_files", timeout: int = 10):
 
     res = []
 
@@ -274,7 +274,7 @@ def eval_y_pred(y_predicted, y_actual, names_list, scores_filtered):
     )
 
     plt.figure(figsize=(17, 6))
-    print('len(y_predicted)', len(y_predicted))
+    print("len(y_predicted)", len(y_predicted))
     for i in range(len(y_predicted)):
         row = []
         tmp_res = scores_filtered[i]
