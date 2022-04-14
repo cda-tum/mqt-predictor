@@ -10,6 +10,7 @@ import numpy as np
 import signal
 
 import json
+import os
 
 from keras.models import Sequential
 from keras.layers import Dense
@@ -54,6 +55,49 @@ def dict_to_featurevector(gate_dict, num_qubits):
 
     res_dct["num_qubits"] = num_qubits
     return res_dct
+
+
+def create_gate_lists_from_folder(folder_path:str="./qasm_files", timeout: int = 10):
+
+    res = []
+
+    with os.scandir(folder_path) as it:
+        for filename in it:
+            if filename.name.endswith(".qasm") and filename.is_file():
+
+                qc = QuantumCircuit.from_qasm_file(filename)
+                benchmark = str(filename.name).split("_")[0]
+                num_qubits = qc.num_qubits
+                print(benchmark, num_qubits)
+                if not qc:
+                    continue
+                actual_num_qubits = qc.num_qubits
+                qiskit_gates = timeout_watcher(get_qiskit_gates, [qc], timeout)
+                if not qiskit_gates:
+                    continue
+                try:
+                    qc_tket = qiskit_to_tk(qc)
+                    ops_list = qc.count_ops()
+                    feature_vector = dict_to_featurevector(ops_list, actual_num_qubits)
+                    tket_gates = timeout_watcher(get_tket_gates, [qc_tket], timeout)
+                    if not tket_gates:
+                        continue
+                    benchmark_name = benchmark + "_" + str(num_qubits)
+                    res.append(
+                        (
+                            benchmark,
+                            feature_vector,
+                            qiskit_gates + tket_gates,
+                            benchmark_name,
+                        )
+                    )
+                except Exception as e:
+                    print("fail: ", e)
+
+    jsonString = json.dumps(res, indent=4, sort_keys=True)
+    with open("json_data.json", "w") as outfile:
+        outfile.write(jsonString)
+    return
 
 
 def create_gate_lists(
@@ -230,7 +274,7 @@ def eval_y_pred(y_predicted, y_actual, names_list, scores_filtered):
     )
 
     plt.figure(figsize=(17, 6))
-
+    print('len(y_predicted)', len(y_predicted))
     for i in range(len(y_predicted)):
         row = []
         tmp_res = scores_filtered[i]
@@ -249,7 +293,7 @@ def eval_y_pred(y_predicted, y_actual, names_list, scores_filtered):
 
         for j in range(10):
             plt.plot(i, tmp_res[j], ".", alpha=0.5, label=machines[j])
-        plt.plot(i, y_predicted_instance, "ko", label="MQTPredictor")
+        plt.plot(i, tmp_res[y_predicted_instance], "ko", label="MQTPredictor")
         plt.xlabel(get_machines())
 
         if machines[np.argmin(tmp_res)] != machines[y_predicted_instance]:
@@ -288,28 +332,29 @@ def eval_y_pred(y_predicted, y_actual, names_list, scores_filtered):
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Create Training Data")
-    parser.add_argument(
-        "--min",
-        type=int,
-        default=3,
-    )
-    parser.add_argument(
-        "--max",
-        type=int,
-        default=20,
-    )
-    parser.add_argument("--step", type=int, default=3)
-    parser.add_argument("--timeout", type=int, default=10)
-    parser.parse_args()
+    # parser = argparse.ArgumentParser(description="Create Training Data")
+    # parser.add_argument(
+    #     "--min",
+    #     type=int,
+    #     default=3,
+    # )
+    # parser.add_argument(
+    #     "--max",
+    #     type=int,
+    #     default=20,
+    # )
+    # parser.add_argument("--step", type=int, default=3)
+    # parser.add_argument("--timeout", type=int, default=10)
+    # parser.parse_args()
+    #
+    # args = parser.parse_args()
+    # create_gate_lists(args.min, args.max, args.step, args.timeout)
+    #
+    # training_data, name_list, scores = extract_training_data_from_json("json_data.json")
+    # X, y = zip(*training_data)
+    # train_simple_ml_model(X, y, True, name_list, scores)
 
-    args = parser.parse_args()
-    create_gate_lists(args.min, args.max, args.step, args.timeout)
-
-    training_data, name_list, scores = extract_training_data_from_json("json_data.json")
-    X, y = zip(*training_data)
-    train_simple_ml_model(X, y, True, name_list, scores)
-
+    create_gate_lists_from_folder(timeout=300)
     # training_data, qasm_list, name_list = extract_training_data_from_json(
     #     "json_data_big.json"
     # )
