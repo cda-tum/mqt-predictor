@@ -212,7 +212,7 @@ def train_simple_ml_model(
     indices_train, indices_test
 
     model = Sequential()
-    model.add(Dense(500, activation="relu", input_dim=43))
+    model.add(Dense(500, activation="relu", input_dim=len(X[0])))
     model.add(Dense(100, activation="relu"))
     model.add(Dense(50, activation="relu"))
     model.add(Dense(10, activation="softmax"))
@@ -354,7 +354,7 @@ if __name__ == "__main__":
     # X, y = zip(*training_data)
     # train_simple_ml_model(X, y, True, name_list, scores)
 
-    create_gate_lists_from_folder(timeout=300)
+    create_gate_lists_from_folder(timeout=30)
     # training_data, qasm_list, name_list = extract_training_data_from_json(
     #     "json_data_big.json"
     # )
