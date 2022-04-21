@@ -107,7 +107,7 @@ def get_backend_information(name: str):
         return get_oqc_lucy()
 
 
-def calc_score_from_gates_list(count_gates, backend, num_qubits = None):
+def calc_score_from_gates_list(count_gates, backend, num_qubits=None):
     penalty_factor_1q = 500
     penalty_factor_2q = 1000
 
@@ -122,9 +122,10 @@ def calc_score_from_gates_list(count_gates, backend, num_qubits = None):
         penalty_factor_fid_1q = 10000
         penalty_factor_fid_2q = 20000
         score = (
-            (1-(np.power(backend["fid_1q"], count_gates[0] / num_qubits ))) * penalty_factor_fid_1q
-            + (1-(np.power(backend["fid_2q"], count_gates[1] / num_qubits ))) * penalty_factor_fid_2q
-        )
+            1 - (np.power(backend["fid_1q"], count_gates[0] / num_qubits))
+        ) * penalty_factor_fid_1q + (
+            1 - (np.power(backend["fid_2q"], count_gates[1] / num_qubits))
+        ) * penalty_factor_fid_2q
     else:
         score = (
             count_gates[0] / max_depth_1q * penalty_factor_1q
@@ -371,8 +372,8 @@ def get_rigetti_m1():
         "t2_avg": 28.230,
         "avg_gate_time_1q": 60e-3,  # source: https://qcs.rigetti.com/qpus -> ASPEN-M-1
         "avg_gate_time_2q": 160e-3,  # source: https://qcs.rigetti.com/qpus -> ASPEN-M-1
-        "fid_1q": get_rigetti_m1_fid1(), # calculated by myself based on data sheet from aws
-        "fid_2q": get_rigetti_m1_fid2(), # calculated by myself based on data sheet from aws
+        "fid_1q": get_rigetti_m1_fid1(),  # calculated by myself based on data sheet from aws
+        "fid_2q": get_rigetti_m1_fid2(),  # calculated by myself based on data sheet from aws
     }
     return rigetti_m1
 
@@ -386,8 +387,8 @@ def get_ibm_washington():
         "t2_avg": 97.75,
         "avg_gate_time_1q": 159.8e-3,  # estimated, based on the rigetti relation between 1q and 2q and given avg 2q time
         "avg_gate_time_2q": 550.41e-3,  # source: https://quantum-computing.ibm.com/services?services=systems&system=ibm_washington
-        "fid_1q": 0.998401, # from IBMQ website
-        "fid_2q": 0.95439, # from IBMQ website
+        "fid_1q": 0.998401,  # from IBMQ website
+        "fid_2q": 0.95439,  # from IBMQ website
     }
     return ibm_washington
 
@@ -401,8 +402,8 @@ def get_ibm_montreal():
         "t2_avg": 74.16,
         "avg_gate_time_1q": 206e-3,  # estimated, based on the rigetti relation between 1q and 2q and given avg 2q time
         "avg_gate_time_2q": 426.159e-3,  # source: https://quantum-computing.ibm.com/services?services=systems&system=ibm_montreal
-        "fid_1q": 0.9994951, # from IBMQ website
-        "fid_2q": 0.98129, # from IBMQ website
+        "fid_1q": 0.9994951,  # from IBMQ website
+        "fid_2q": 0.98129,  # from IBMQ website
     }
     return ibm_montreal
 
@@ -416,8 +417,8 @@ def get_ionq():
         "t2_avg": 0.2,
         "avg_gate_time_1q": 0.00001,
         "avg_gate_time_2q": 0.0002,
-        "fid_1q": 0.9963, # from AWS
-        "fid_2q": 0.9581, # from AWS
+        "fid_1q": 0.9963,  # from AWS
+        "fid_2q": 0.9581,  # from AWS
     }
     return ionq
 
@@ -431,8 +432,8 @@ def get_oqc_lucy():
         "t2_avg": 49.2875,
         "avg_gate_time_1q": 60e-3,  # copied from Rigetti Aspen, number is NOT official from OQC itself
         "avg_gate_time_2q": 160e-3,  # copied from Rigetti Aspen, number is NOT official from OQC itself
-        "fid_1q": 0.99905, # from AWS averaged by myself
-        "fid_2q": 0.9375, # from AWS averaged by myself
+        "fid_1q": 0.99905,  # from AWS averaged by myself
+        "fid_2q": 0.9375,  # from AWS averaged by myself
     }
     return oqc_lucy
 
@@ -503,21 +504,21 @@ def get_machines():
     return machines
 
 
-
 def get_rigetti_m1_fid1():
-    f = open('rigetti_m1_calibration.json')
+    f = open("rigetti_m1_calibration.json")
     rigetti_json = json.load(f)
 
     fid1 = []
     for elem in rigetti_json["specs"]["1Q"]:
         # for elem2 in (rigetti_json["specs"]["1Q"][elem]):
-        fid1.append(rigetti_json["specs"]["1Q"][elem]['f1QRB'])
+        fid1.append(rigetti_json["specs"]["1Q"][elem]["f1QRB"])
     avg_fid1 = sum(fid1) / len(fid1)
 
     return avg_fid1
 
+
 def get_rigetti_m1_fid2():
-    f = open('rigetti_m1_calibration.json')
+    f = open("rigetti_m1_calibration.json")
     rigetti_json = json.load(f)
     fid2 = []
     for elem in rigetti_json["specs"]["2Q"]:
