@@ -165,7 +165,7 @@ def create_gate_lists(
     return
 
 
-def extract_training_data_from_json(json_path: str = "json_data.json"):
+def extract_training_data_from_json(json_path: str = "json_data.json", eval_fid:bool=True):
     with open(json_path, "r") as f:
         data = json.load(f)
     training_data = []
@@ -180,18 +180,28 @@ def extract_training_data_from_json(json_path: str = "json_data.json"):
             if elem[0] is None:
                 score = get_width_penalty()
             else:
-                score = calc_score_from_gates_list(
-                    elem[0], get_backend_information(elem[1]), num_qubits
-                )
+                if eval_fid:
+                    score = calc_score_from_gates_list(
+                        elem[0], get_backend_information(elem[1]), num_qubits
+                    )
+                else:
+                    score = calc_score_from_gates_list(
+                        elem[0], get_backend_information(elem[1])
+                    )
             scores.append(score)
         # Tket Scores
         for elem in benchmark[2][3]:
             if elem[0] is None:
                 score = get_width_penalty()
             else:
-                score = calc_score_from_gates_list(
-                    elem[0], get_backend_information(elem[1]), num_qubits
-                )
+                if eval_fid:
+                    score = calc_score_from_gates_list(
+                        elem[0], get_backend_information(elem[1]), num_qubits
+                    )
+                else:
+                    score = calc_score_from_gates_list(
+                        elem[0], get_backend_information(elem[1])
+                    )
             scores.append(score)
 
         training_data.append((list(benchmark[1].values()), np.argmin(scores)))
