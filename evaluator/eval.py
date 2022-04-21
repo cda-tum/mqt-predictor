@@ -181,7 +181,7 @@ def extract_training_data_from_json(json_path: str = "json_data.json"):
                 score = get_width_penalty()
             else:
                 score = calc_score_from_gates_list(
-                    elem[0], get_backend_information(elem[1])
+                    elem[0], get_backend_information(elem[1]), num_qubits
                 )
             scores.append(score)
         # Tket Scores
@@ -190,7 +190,7 @@ def extract_training_data_from_json(json_path: str = "json_data.json"):
                 score = get_width_penalty()
             else:
                 score = calc_score_from_gates_list(
-                    elem[0], get_backend_information(elem[1])
+                    elem[0], get_backend_information(elem[1]), num_qubits
                 )
             scores.append(score)
 
