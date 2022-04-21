@@ -165,7 +165,9 @@ def create_gate_lists(
     return
 
 
-def extract_training_data_from_json(json_path: str = "json_data.json", eval_fid:bool=True):
+def extract_training_data_from_json(
+    json_path: str = "json_data.json", eval_fid: bool = True
+):
     with open(json_path, "r") as f:
         data = json.load(f)
     training_data = []
