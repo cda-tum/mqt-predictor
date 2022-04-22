@@ -72,16 +72,19 @@ def create_gate_lists_from_folder(folder_path: str = "./qasm_files", timeout: in
                 if not qc:
                     continue
                 actual_num_qubits = qc.num_qubits
-                qiskit_gates = timeout_watcher(get_qiskit_gates, [qc], timeout)
-                if not qiskit_gates:
-                    continue
+
                 try:
+                    qiskit_gates = timeout_watcher(get_qiskit_gates, [qc], timeout)
+                    if not qiskit_gates:
+                        continue
+
                     qc_tket = qiskit_to_tk(qc)
-                    ops_list = qc.count_ops()
-                    feature_vector = dict_to_featurevector(ops_list, actual_num_qubits)
                     tket_gates = timeout_watcher(get_tket_gates, [qc_tket], timeout)
                     if not tket_gates:
                         continue
+
+                    ops_list = qc.count_ops()
+                    feature_vector = dict_to_featurevector(ops_list, actual_num_qubits)
                     benchmark_name = benchmark + "_" + str(num_qubits)
                     res.append(
                         (
