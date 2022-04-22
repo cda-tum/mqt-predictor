@@ -3,8 +3,8 @@ from evaluator.src.utils import *
 from qiskit.test.mock import FakeMontreal, FakeWashington
 
 
-def get_qiskit_gates(qc, opt_level=0):
-
+def get_qiskit_gates(qc):
+    opt_level = 2
     gates_ibm_washington = get_ibm_washington_gates(qc, opt_level)
     gates_ibm_montreal = get_ibm_montreal_gates(qc, opt_level)
     gates_ionq = get_ionq_gates(qc, opt_level)
@@ -34,6 +34,8 @@ def get_ibm_washington_gates(qc, opt_level):
             optimization_level=opt_level,
             coupling_map=FakeWashington().configuration().coupling_map,
             seed_transpiler=10,
+            layout_method="sabre",
+            routing_method="sabre",
         )
         gates_ibm_washington = count_qubit_gates_ibm(qc_ibm, "ibm")
 
@@ -51,6 +53,8 @@ def get_ibm_montreal_gates(qc, opt_level):
             optimization_level=opt_level,
             coupling_map=FakeMontreal().configuration().coupling_map,
             seed_transpiler=10,
+            layout_method="sabre",
+            routing_method="sabre",
         )
         gates_ibm_montreal = count_qubit_gates_ibm(qc_ibm, "ibm")
 
@@ -67,6 +71,8 @@ def get_ionq_gates(qc, opt_level):
             basis_gates=get_ionq_native_gates(),
             optimization_level=opt_level,
             seed_transpiler=10,
+            layout_method="sabre",
+            routing_method="sabre",
         )
         gates_ionq = count_qubit_gates_ibm(qc_ion, "ionq")
 
@@ -84,6 +90,8 @@ def get_rigetti_gates(qc, opt_level):
             optimization_level=opt_level,
             coupling_map=get_cmap_rigetti_m1(10),
             seed_transpiler=10,
+            layout_method="sabre",
+            routing_method="sabre",
         )
         gates_rigetti = count_qubit_gates_ibm(qc_rigetti, "rigetti")
     return gates_rigetti
@@ -100,6 +108,8 @@ def get_oqc_gates(qc, opt_level):
             optimization_level=opt_level,
             coupling_map=get_c_map_oqc_lucy(),
             seed_transpiler=10,
+            layout_method="sabre",
+            routing_method="sabre",
         )
         gates_oqc = count_qubit_gates_ibm(qc_oqc, "oqc")
 
