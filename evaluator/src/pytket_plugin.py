@@ -8,7 +8,7 @@ from pytket.placement import LinePlacement
 from pytket import architecture
 from pytket.passes import auto_rebase_pass
 
-from qiskit.test.mock import FakeMontreal
+from qiskit.test.mock import FakeMontreal, FakeWashington
 from evaluator.src.utils import *
 
 
@@ -95,7 +95,9 @@ def get_ibm_washington_gates(qc, opt_level):
     if qc.n_qubits > get_ibm_washington()["num_qubits"]:
         gates_ibm_washington = None
     else:
-        ibm_washington_arch = architecture.Architecture(get_cmap_imbq_washington())
+        ibm_washington_arch = architecture.Architecture(
+            FakeWashington().configuration().coupling_map
+        )
         backend = get_ibm_rebase()
         backend.apply(qc)
         PlacementPass(LinePlacement(ibm_washington_arch)).apply(qc)
@@ -128,7 +130,6 @@ def get_ibm_montreal_gates(qc, opt_level):
         elif opt_level == 2:
             FullPeepholeOptimise().apply(qc)
         backend.apply(qc)
-        ibm_montreal = get_ibm_montreal()
         gates_ibm_montreal = count_qubit_gates_tket(qc, "ibm")
         assert sum(gates_ibm_montreal) == qc.n_gates - qc.n_gates_of_type(
             OpType.Measure

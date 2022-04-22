@@ -1,6 +1,6 @@
 from qiskit import transpile
 from evaluator.src.utils import *
-from qiskit.test.mock import FakeMontreal
+from qiskit.test.mock import FakeMontreal, FakeWashington
 
 
 def get_qiskit_gates(qc, opt_level=0):
@@ -32,7 +32,7 @@ def get_ibm_washington_gates(qc, opt_level):
             qc,
             basis_gates=get_ibm_native_gates(),
             optimization_level=opt_level,
-            coupling_map=get_cmap_imbq_washington(),
+            coupling_map=FakeWashington().configuration().coupling_map,
             seed_transpiler=10,
         )
         gates_ibm_washington = count_qubit_gates_ibm(qc_ibm, "ibm")
