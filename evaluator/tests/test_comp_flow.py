@@ -1,4 +1,4 @@
-from evaluator import eval
+from evaluator import driver
 from evaluator.src import utils, pytket_plugin, qiskit_plugin
 import pytest
 from pytket.extensions.qiskit import qiskit_to_tk
@@ -41,28 +41,28 @@ def test_qiskit_gate_counts():
 def test_tket_gate_counts():
     qc = get_one_benchmark("dj", 1, 3)
     qc_tket = qiskit_to_tk(qc)
-    get_ibm_montreal_gates = pytket_plugin.get_ibm_montreal_gates(qc_tket, 0)
+    get_ibm_montreal_gates = pytket_plugin.get_ibm_montreal_gates(qc_tket)
     assert not get_ibm_montreal_gates is None
-    ibm_washington_gates = pytket_plugin.get_ibm_washington_gates(qc_tket, 0)
+    ibm_washington_gates = pytket_plugin.get_ibm_washington_gates(qc_tket)
     assert not ibm_washington_gates is None
-    get_ionq_gates = pytket_plugin.get_ionq_gates(qc_tket, 0)
+    get_ionq_gates = pytket_plugin.get_ionq_gates(qc_tket)
     assert not get_ionq_gates is None
-    get_rigetti_gates = pytket_plugin.get_rigetti_gates(qc_tket, 0)
+    get_rigetti_gates = pytket_plugin.get_rigetti_gates(qc_tket)
     assert not get_rigetti_gates is None
-    get_oqc_gates = pytket_plugin.get_oqc_gates(qc_tket, 0)
+    get_oqc_gates = pytket_plugin.get_oqc_gates(qc_tket)
     assert not get_oqc_gates is None
 
     qc = get_one_benchmark("dj", 1, 13)
     qc_tket = qiskit_to_tk(qc)
-    get_ibm_montreal_gates = pytket_plugin.get_ibm_montreal_gates(qc_tket, 0)
+    get_ibm_montreal_gates = pytket_plugin.get_ibm_montreal_gates(qc_tket)
     assert not get_ibm_montreal_gates is None
-    ibm_washington_gates = pytket_plugin.get_ibm_washington_gates(qc_tket, 0)
+    ibm_washington_gates = pytket_plugin.get_ibm_washington_gates(qc_tket)
     assert not ibm_washington_gates is None
-    get_ionq_gates = pytket_plugin.get_ionq_gates(qc_tket, 0)
+    get_ionq_gates = pytket_plugin.get_ionq_gates(qc_tket)
     assert get_ionq_gates is None
-    get_rigetti_gates = pytket_plugin.get_rigetti_gates(qc_tket, 0)
+    get_rigetti_gates = pytket_plugin.get_rigetti_gates(qc_tket)
     assert not get_rigetti_gates is None
-    get_oqc_gates = pytket_plugin.get_oqc_gates(qc_tket, 0)
+    get_oqc_gates = pytket_plugin.get_oqc_gates(qc_tket)
     assert get_oqc_gates is None
 
 
