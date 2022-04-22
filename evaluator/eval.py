@@ -137,16 +137,19 @@ def create_gate_lists(
             if not qc:
                 break
             actual_num_qubits = qc.num_qubits
-            qiskit_gates = timeout_watcher(get_qiskit_gates, [qc], timeout)
-            if not qiskit_gates:
-                break
             try:
+
+                qiskit_gates = timeout_watcher(get_qiskit_gates, [qc], timeout)
+                if not qiskit_gates:
+                    break
+
                 qc_tket = qiskit_to_tk(qc)
-                ops_list = qc.count_ops()
-                feature_vector = dict_to_featurevector(ops_list, actual_num_qubits)
                 tket_gates = timeout_watcher(get_tket_gates, [qc_tket], timeout)
                 if not tket_gates:
                     break
+
+                ops_list = qc.count_ops()
+                feature_vector = dict_to_featurevector(ops_list, actual_num_qubits)
                 benchmark_name = benchmark + "_" + str(num_qubits)
                 res.append(
                     (
