@@ -11,10 +11,14 @@ import signal
 
 import json
 import os
+import argparse
 
 from keras.models import Sequential
 from keras.layers import Dense
 from sklearn.model_selection import train_test_split
+
+from natsort import natsorted
+import glob
 
 import matplotlib.pyplot as plt
 
@@ -61,41 +65,54 @@ def create_gate_lists_from_folder(folder_path: str = "./qasm_files", timeout: in
 
     res = []
 
-    with os.scandir(folder_path) as it:
-        for filename in it:
-            if filename.name.endswith(".qasm") and filename.is_file():
+    filelist = glob.glob(folder_path)
 
-                qc = QuantumCircuit.from_qasm_file(filename)
-                benchmark = str(filename.name).split("_")[0]
-                num_qubits = qc.num_qubits
-                print(benchmark, num_qubits)
-                if not qc:
-                    continue
-                actual_num_qubits = qc.num_qubits
+    dictionary = {}
+    for subdir, dirs, files in os.walk(folder_path):
+        for file in natsorted(files):
+            if "qasm" in file:
+                key = file.split("_")[
+                    0
+                ]  # The key is the first 16 characters of the file name
+                group = dictionary.get(key, [])
+                group.append(file)
+                dictionary[key] = group
 
-                try:
-                    qiskit_gates = timeout_watcher(get_qiskit_gates, [qc], timeout)
-                    if not qiskit_gates:
-                        continue
+    print(dictionary.keys())
+    for alg_class in dictionary:
+        for benchmark in dictionary[alg_class]:
+            filename = os.path.join(folder_path, benchmark)
+            qc = QuantumCircuit.from_qasm_file(filename)
 
-                    qc_tket = qiskit_to_tk(qc)
-                    tket_gates = timeout_watcher(get_tket_gates, [qc_tket], timeout)
-                    if not tket_gates:
-                        continue
+            num_qubits = qc.num_qubits
+            print(benchmark)
+            if not qc:
+                continue
+            actual_num_qubits = qc.num_qubits
 
-                    ops_list = qc.count_ops()
-                    feature_vector = dict_to_featurevector(ops_list, actual_num_qubits)
-                    benchmark_name = benchmark + "_" + str(num_qubits)
-                    res.append(
-                        (
-                            benchmark,
-                            feature_vector,
-                            qiskit_gates + tket_gates,
-                            benchmark_name,
-                        )
+            try:
+                qiskit_gates = timeout_watcher(get_qiskit_gates, [qc], timeout)
+                if not qiskit_gates:
+                    break
+
+                qc_tket = qiskit_to_tk(qc)
+                tket_gates = timeout_watcher(get_tket_gates, [qc_tket], timeout)
+                if not tket_gates:
+                    break
+
+                ops_list = qc.count_ops()
+                feature_vector = dict_to_featurevector(ops_list, actual_num_qubits)
+                benchmark_name = benchmark + "_" + str(num_qubits)
+                res.append(
+                    (
+                        benchmark,
+                        feature_vector,
+                        qiskit_gates + tket_gates,
+                        benchmark_name,
                     )
-                except Exception as e:
-                    print("fail: ", e)
+                )
+            except Exception as e:
+                print("fail: ", e)
 
     jsonString = json.dumps(res, indent=4, sort_keys=True)
     with open("json_data.json", "w") as outfile:
@@ -341,26 +358,27 @@ def eval_y_pred(y_predicted, y_actual, names_list, scores_filtered):
 
 
 if __name__ == "__main__":
-    import argparse
 
     parser = argparse.ArgumentParser(description="Create Training Data")
-    parser.add_argument(
-        "--min",
-        type=int,
-        default=3,
-    )
-    parser.add_argument(
-        "--max",
-        type=int,
-        default=20,
-    )
-    parser.add_argument("--step", type=int, default=3)
+    # parser.add_argument(
+    #     "--min",
+    #     type=int,
+    #     default=3,
+    # )
+    # parser.add_argument(
+    #     "--max",
+    #     type=int,
+    #     default=20,
+    # )
+    # parser.add_argument("--step", type=int, default=3)
     parser.add_argument("--timeout", type=int, default=10)
-    parser.parse_args()
-
-    args = parser.parse_args()
-    create_gate_lists(args.min, args.max, args.step, args.timeout)
+    # parser.parse_args()
     #
+    args = parser.parse_args()
+    # create_gate_lists(args.min, args.max, args.step, args.timeout)
+
+    create_gate_lists_from_folder(timeout=args.timeout)
+
     # training_data, name_list, scores = extract_training_data_from_json("json_data.json")
     # X, y = zip(*training_data)
     # train_simple_ml_model(X, y, True, name_list, scores)
