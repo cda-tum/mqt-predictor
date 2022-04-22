@@ -107,7 +107,7 @@ def get_backend_information(name: str):
         return get_oqc_lucy()
 
 
-def calc_score_from_gates_list(count_gates, backend, num_qubits=None):
+def calc_score_from_gates_list(count_gates, backend, num_qubits):
     penalty_factor_1q = 500
     penalty_factor_2q = 1000
 
@@ -118,19 +118,18 @@ def calc_score_from_gates_list(count_gates, backend, num_qubits=None):
     max_depth_1q = t_1 / avg_gate_time_1q
     max_depth_2q = t_1 / avg_gate_time_2q
 
-    if num_qubits:
-        penalty_factor_fid_1q = 10000
-        penalty_factor_fid_2q = 20000
-        score = (
-            1 - (np.power(backend["fid_1q"], count_gates[0] / num_qubits))
-        ) * penalty_factor_fid_1q + (
-            1 - (np.power(backend["fid_2q"], count_gates[1] / num_qubits))
-        ) * penalty_factor_fid_2q
-    else:
-        score = (
-            count_gates[0] / max_depth_1q * penalty_factor_1q
-            + count_gates[1] / max_depth_2q * penalty_factor_2q
-        )
+    penalty_factor_fid_1q = 10
+    penalty_factor_fid_2q = 1
+    score = (
+        1 - (np.power(backend["fid_1q"], count_gates[0] / num_qubits))
+    ) * penalty_factor_fid_1q + (
+        1 - (np.power(backend["fid_2q"], count_gates[1] / num_qubits))
+    ) * penalty_factor_fid_2q
+
+    # score = (
+    #     count_gates[0] / max_depth_1q / num_qubits * penalty_factor_1q
+    #     + count_gates[1] / max_depth_2q / num_qubits * penalty_factor_2q
+    # )
     return score
 
 
