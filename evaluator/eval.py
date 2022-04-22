@@ -182,28 +182,21 @@ def extract_training_data_from_json(
             if elem[0] is None:
                 score = get_width_penalty()
             else:
-                if eval_fid:
-                    score = calc_score_from_gates_list(
-                        elem[0], get_backend_information(elem[1]), num_qubits
-                    )
-                else:
-                    score = calc_score_from_gates_list(
-                        elem[0], get_backend_information(elem[1])
-                    )
+
+                score = calc_score_from_gates_list(
+                    elem[0], get_backend_information(elem[1]), num_qubits
+                )
+
             scores.append(score)
         # Tket Scores
         for elem in benchmark[2][3]:
             if elem[0] is None:
                 score = get_width_penalty()
             else:
-                if eval_fid:
-                    score = calc_score_from_gates_list(
-                        elem[0], get_backend_information(elem[1]), num_qubits
-                    )
-                else:
-                    score = calc_score_from_gates_list(
-                        elem[0], get_backend_information(elem[1])
-                    )
+                score = calc_score_from_gates_list(
+                    elem[0], get_backend_information(elem[1]), num_qubits
+                )
+
             scores.append(score)
 
         training_data.append((list(benchmark[1].values()), np.argmin(scores)))
@@ -344,29 +337,29 @@ def eval_y_pred(y_predicted, y_actual, names_list, scores_filtered):
 if __name__ == "__main__":
     import argparse
 
-    # parser = argparse.ArgumentParser(description="Create Training Data")
-    # parser.add_argument(
-    #     "--min",
-    #     type=int,
-    #     default=3,
-    # )
-    # parser.add_argument(
-    #     "--max",
-    #     type=int,
-    #     default=20,
-    # )
-    # parser.add_argument("--step", type=int, default=3)
-    # parser.add_argument("--timeout", type=int, default=10)
-    # parser.parse_args()
-    #
-    # args = parser.parse_args()
-    # create_gate_lists(args.min, args.max, args.step, args.timeout)
+    parser = argparse.ArgumentParser(description="Create Training Data")
+    parser.add_argument(
+        "--min",
+        type=int,
+        default=3,
+    )
+    parser.add_argument(
+        "--max",
+        type=int,
+        default=20,
+    )
+    parser.add_argument("--step", type=int, default=3)
+    parser.add_argument("--timeout", type=int, default=10)
+    parser.parse_args()
+
+    args = parser.parse_args()
+    create_gate_lists(args.min, args.max, args.step, args.timeout)
     #
     # training_data, name_list, scores = extract_training_data_from_json("json_data.json")
     # X, y = zip(*training_data)
     # train_simple_ml_model(X, y, True, name_list, scores)
 
-    create_gate_lists_from_folder(timeout=30)
+    # create_gate_lists_from_folder(timeout=30)
     # training_data, qasm_list, name_list = extract_training_data_from_json(
     #     "json_data_big.json"
     # )
