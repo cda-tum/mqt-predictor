@@ -44,7 +44,9 @@ def get_rigetti_gates(qc):
         backend.apply(qc)
 
         FullPeepholeOptimise().apply(qc)
-        DefaultMappingPass(rigetti_arch).apply(qc)
+        PlacementPass(GraphPlacement(rigetti_arch)).apply(qc)
+        # DefaultMappingPass(rigetti_arch).apply(qc)
+
         backend.apply(qc)
 
         gates_rigetti = count_qubit_gates_tket(qc, "rigetti")
@@ -80,7 +82,9 @@ def get_oqc_gates(qc):
         oqc_arch = architecture.Architecture(get_cmap_oqc_lucy())
 
         FullPeepholeOptimise().apply(qc)
-        DefaultMappingPass(oqc_arch).apply(qc)
+        PlacementPass(GraphPlacement(oqc_arch)).apply(qc)
+        RoutingPass(oqc_arch).apply(qc)
+        # DefaultMappingPass(oqc_arch).apply(qc)
 
         oqc_rebase.apply(qc)
         gates_oqc = count_qubit_gates_tket(qc, "oqc")
@@ -101,7 +105,9 @@ def get_ibm_washington_gates(qc):
         backend.apply(qc)
 
         FullPeepholeOptimise().apply(qc)
-        DefaultMappingPass(ibm_washington_arch).apply(qc)
+        PlacementPass(GraphPlacement(ibm_washington_arch)).apply(qc)
+        RoutingPass(ibm_washington_arch).apply(qc)
+        # DefaultMappingPass(ibm_washington_arch).apply(qc)
 
         backend.apply(qc)
         gates_ibm_washington = count_qubit_gates_tket(qc, "ibm")
@@ -122,7 +128,9 @@ def get_ibm_montreal_gates(qc):
         backend.apply(qc)
 
         FullPeepholeOptimise().apply(qc)
-        DefaultMappingPass(ibm_montreal_arch).apply(qc)
+        PlacementPass(GraphPlacement(ibm_montreal_arch)).apply(qc)
+        RoutingPass(ibm_montreal_arch).apply(qc)
+        # DefaultMappingPass(ibm_montreal_arch).apply(qc)
         backend.apply(qc)
         gates_ibm_montreal = count_qubit_gates_tket(qc, "ibm")
         assert sum(gates_ibm_montreal) == qc.n_gates - qc.n_gates_of_type(
