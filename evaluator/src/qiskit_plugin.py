@@ -106,7 +106,7 @@ def get_oqc_gates(qc, opt_level):
             qc,
             basis_gates=get_oqc_native_gates(),
             optimization_level=opt_level,
-            coupling_map=get_c_map_oqc_lucy(),
+            coupling_map=get_cmap_oqc_lucy(),
             seed_transpiler=10,
             layout_method="sabre",
             routing_method="sabre",

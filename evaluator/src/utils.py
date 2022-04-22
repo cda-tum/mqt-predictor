@@ -144,7 +144,7 @@ def calc_score_from_qc(qc, backend, compiler):
     return score
 
 
-def get_c_map_oqc_lucy():
+def get_cmap_oqc_lucy():
     """Returns the coupling map of the OQC Lucy quantum computer."""
     # source: https://github.com/aws/amazon-braket-examples/blob/main/examples/braket_features/Verbatim_Compilation.ipynb
 

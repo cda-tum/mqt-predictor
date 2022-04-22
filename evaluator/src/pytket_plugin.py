@@ -77,7 +77,7 @@ def get_oqc_gates(qc):
         oqc_rebase = get_oqc_rebase()
         oqc_rebase.apply(qc)
 
-        oqc_arch = architecture.Architecture(get_c_map_oqc_lucy())
+        oqc_arch = architecture.Architecture(get_cmap_oqc_lucy())
 
         FullPeepholeOptimise().apply(qc)
         DefaultMappingPass(oqc_arch).apply(qc)
