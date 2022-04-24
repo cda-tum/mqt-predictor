@@ -118,8 +118,8 @@ def calc_score_from_gates_list(count_gates, backend, num_qubits):
     max_depth_1q = t_1 / avg_gate_time_1q
     max_depth_2q = t_1 / avg_gate_time_2q
 
-    penalty_factor_fid_1q = 10
-    penalty_factor_fid_2q = 1
+    penalty_factor_fid_1q = 1
+    penalty_factor_fid_2q = 10
     score = (
         1 - (np.power(backend["fid_1q"], count_gates[0] / num_qubits))
     ) * penalty_factor_fid_1q + (
