@@ -8,6 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: papeloto/action-zip@v1
+      working-directory: ${{ github.workspace }}
         with:
           files: qasm_files results.csv
           recursive: true
