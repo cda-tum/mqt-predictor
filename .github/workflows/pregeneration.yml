@@ -1,0 +1,14 @@
+name: Pre-generated zip with all benchmarks
+
+on: [push, pull_request]
+
+jobs:
+  zip-files:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: papeloto/action-zip@v1
+        with:
+          files: qasm_files/ae_indep_2.qasm results.csv
+          recursive: false
+          dest: ./MQTBench_all.zip
