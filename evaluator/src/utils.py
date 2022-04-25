@@ -121,9 +121,9 @@ def calc_score_from_gates_list(count_gates, backend, num_qubits):
     penalty_factor_fid_1q = 1
     penalty_factor_fid_2q = 10
     score = (
-        1 - (np.power(backend["fid_1q"], count_gates[0] / num_qubits))
+        1 - (np.power(backend["fid_1q"], count_gates[0] ))
     ) * penalty_factor_fid_1q + (
-        1 - (np.power(backend["fid_2q"], count_gates[1] / num_qubits))
+        1 - (np.power(backend["fid_2q"], count_gates[1] ))
     ) * penalty_factor_fid_2q
 
     # score = (
