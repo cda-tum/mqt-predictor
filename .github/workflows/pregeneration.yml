@@ -9,10 +9,10 @@ jobs:
       - uses: actions/checkout@v2
       - uses: papeloto/action-zip@v1
         with:
-          files: /qasm_files/ae_indep_2.qasm /results.csv
+          files: /qasm_files results.csv
           recursive: false
           dest: MQTBench_all.zip
       - uses: actions/upload-artifact@v1
         with:
-          name: my-artifact
+          name: MQTBench_all
           path: ${{ github.workspace }}/MQTBench_all.zip
