@@ -12,7 +12,3 @@ jobs:
           files: qasm_files/ae_indep_2.qasm results.csv
           recursive: false
           dest: ./MQTBench_all.zip
-      - uses: actions/upload-artifact@v1
-        with:
-          name: my-artifact
-          path: ${{ github.workspace }}/result.zip
