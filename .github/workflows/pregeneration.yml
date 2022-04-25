@@ -11,4 +11,4 @@ jobs:
         with:
           files: qasm_files/ae_indep_2.qasm results.csv
           recursive: false
-          dest: ./MQTBench_all.zip
+          dest: MQTBench_all.zip
