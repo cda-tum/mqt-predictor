@@ -322,8 +322,15 @@ def eval_y_pred(y_predicted, y_actual, names_list, scores_filtered):
             all_rows.append(row)
 
             for j in range(10):
-                plt.plot(len(circuit_names), tmp_res[j], ".", alpha=0.5, label=machines[j])
-            plt.plot(len(circuit_names), tmp_res[y_predicted_instance], "ko", label="MQTPredictor")
+                plt.plot(
+                    len(circuit_names), tmp_res[j], ".", alpha=0.5, label=machines[j]
+                )
+            plt.plot(
+                len(circuit_names),
+                tmp_res[y_predicted_instance],
+                "ko",
+                label="MQTPredictor",
+            )
             plt.xlabel(get_machines())
 
             if machines[np.argmin(tmp_res)] != machines[y_predicted_instance]:
@@ -349,7 +356,6 @@ def eval_y_pred(y_predicted, y_actual, names_list, scores_filtered):
     plt.yscale("log")
     plt.tight_layout()
     plt.savefig("y_pred_eval")
-
 
     with open("results.csv", "w", encoding="UTF8", newline="") as f:
         writer = csv.writer(f)
