@@ -25,6 +25,7 @@ setup(
         "pytket~=1.0.1",
         "numpy~=1.21.5",
         "mqt.bench~=0.1.0rc1",
+        "pytket-qiskit~=0.23.0",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",
