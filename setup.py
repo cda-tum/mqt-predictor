@@ -22,6 +22,8 @@ setup(
     url="https://github.com/cda-tum/mqtpredictor",
     install_requires=[
         "qiskit~=0.35",
+        "pytket~=1.0.1",
+        "numpy~=1.21.5",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",
