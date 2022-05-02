@@ -20,7 +20,6 @@ from sklearn.model_selection import train_test_split
 
 from natsort import natsorted
 import glob
-
 import matplotlib.pyplot as plt
 
 

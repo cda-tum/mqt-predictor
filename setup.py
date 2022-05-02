@@ -26,6 +26,10 @@ setup(
         "numpy~=1.21.5",
         "mqt.bench~=0.1.0rc1",
         "pytket-qiskit~=0.24.0",
+        "matplotlib~=3.5.1",
+        "keras~=2.8.0",
+        "scikit-learn~=1.0.2",
+        "natsort~=8.1.0",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",
