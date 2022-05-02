@@ -1,4 +1,4 @@
-from evaluator.src import utils
+from predictor.src import utils
 import pytest
 from mqt.bench import get_one_benchmark
 

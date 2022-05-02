@@ -1,4 +1,4 @@
-from evaluator import driver
+from predictor import driver
 import os
 
 

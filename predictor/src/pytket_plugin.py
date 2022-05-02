@@ -12,7 +12,7 @@ from pytket import architecture
 
 
 from qiskit.test.mock import FakeMontreal, FakeWashington
-from evaluator.src.utils import *
+from predictor.src.utils import *
 
 
 def get_tket_gates(qc):

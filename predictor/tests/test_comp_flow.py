@@ -1,5 +1,5 @@
-from evaluator import driver
-from evaluator.src import utils, pytket_plugin, qiskit_plugin
+from predictor import driver
+from predictor.src import utils, pytket_plugin, qiskit_plugin
 import pytest
 from pytket.extensions.qiskit import qiskit_to_tk
 from mqt.bench import get_one_benchmark

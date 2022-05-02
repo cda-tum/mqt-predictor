@@ -1,7 +1,7 @@
-from evaluator.src.qiskit_plugin import *
-from evaluator.src.pytket_plugin import *
+from predictor.src.qiskit_plugin import *
+from predictor.src.pytket_plugin import *
 
-from evaluator.src.utils import get_openqasm_gates
+from predictor.src.utils import get_openqasm_gates
 from mqt.bench import benchmark_generator
 
 from pytket.extensions.qiskit import qiskit_to_tk

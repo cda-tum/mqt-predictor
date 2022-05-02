@@ -1,5 +1,5 @@
 from qiskit import transpile
-from evaluator.src.utils import *
+from predictor.src.utils import *
 from qiskit.test.mock import FakeMontreal, FakeWashington
 
 
