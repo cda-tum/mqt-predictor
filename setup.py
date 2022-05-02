@@ -21,7 +21,7 @@ setup(
     author_email="nils.quetschlich@tum.de",
     url="https://github.com/cda-tum/mqtpredictor",
     install_requires=[
-        "qiskit~=0.34.2",
+        "qiskit>=0.34.2",
         "pytket~=1.0.1",
         "numpy~=1.21.5",
         "mqt.bench~=0.1.0rc1",
