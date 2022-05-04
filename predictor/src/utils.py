@@ -1,3 +1,5 @@
+import signal
+
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.converters import circuit_to_dag
@@ -374,3 +376,41 @@ def get_rigetti_m1_fid2():
             fid2.append(val)
     avg_fid2 = sum(fid2) / len(fid2)
     return avg_fid2
+
+
+def dict_to_featurevector(gate_dict, num_qubits):
+    openqasm_gates_list = get_openqasm_gates()
+    res_dct = {openqasm_gates_list[i] for i in range(0, len(openqasm_gates_list))}
+    res_dct = dict.fromkeys(res_dct, 0)
+    for key, val in dict(gate_dict).items():
+        if key in res_dct:
+            res_dct[key] = val
+
+    res_dct["num_qubits"] = num_qubits
+    return res_dct
+
+
+def timeout_watcher(func, args, timeout):
+    class TimeoutException(Exception):  # Custom exception class
+        pass
+
+    def timeout_handler(signum, frame):  # Custom signal handler
+        raise TimeoutException
+
+    # Change the behavior of SIGALRM
+    signal.signal(signal.SIGALRM, timeout_handler)
+
+    signal.alarm(timeout)
+    try:
+        res = func(*args)
+    except TimeoutException:
+        print("Calculation/Generation exceeded timeout limit for ", func, args[1:])
+        return False
+    except Exception as e:
+        print("Something else went wrong: ", e)
+        return False
+    else:
+        # Reset the alarm
+        signal.alarm(0)
+
+    return res
