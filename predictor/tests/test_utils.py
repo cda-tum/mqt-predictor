@@ -1,7 +1,10 @@
 from predictor.src import utils
 from predictor.src import pytket_plugin, qiskit_plugin
+
 import pytest
-from mqt.bench import get_one_benchmark
+
+from mqt.bench import benchmark_generator
+from pytket.extensions.qiskit import qiskit_to_tk
 
 
 def test_get_machines():
@@ -119,8 +122,6 @@ def test_rigetti_fids():
 
 
 def test_qubit_counts():
-    from mqt.bench import benchmark_generator
-    from pytket.extensions.qiskit import qiskit_to_tk
 
     qc = benchmark_generator.get_one_benchmark("dj", 1, 5)
     num_qubits = qc.num_qubits

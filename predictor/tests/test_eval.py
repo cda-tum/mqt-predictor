@@ -13,5 +13,5 @@ def test_train_simple_ml_model():
     assert os.path.isfile("json_data.json")
     training_data, name_list, scores_list = driver.extract_training_data_from_json()
     X, y = zip(*training_data)
-    res = driver.train_simple_ml_model(X, y, True, name_list, scores_list)
+    res = driver.train_neural_network(X, y, True, name_list, scores_list)
     assert not res is None
