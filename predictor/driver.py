@@ -1,7 +1,9 @@
-from predictor.src.qiskit_plugin import *
-from predictor.src.pytket_plugin import *
+from predictor.src import qiskit_plugin
+from predictor.src import pytket_plugin
 
-from predictor.src.utils import dict_to_featurevector, timeout_watcher
+from qiskit import QuantumCircuit
+
+from predictor.src import utils
 from mqt.bench import benchmark_generator
 
 from pytket.extensions.qiskit import qiskit_to_tk
@@ -57,17 +59,23 @@ class Predictor:
                 actual_num_qubits = qc.num_qubits
 
                 try:
-                    qiskit_gates = timeout_watcher(get_qiskit_gates, [qc], timeout)
+                    qiskit_gates = utils.timeout_watcher(
+                        qiskit_plugin.get_qiskit_gates, [qc], timeout
+                    )
                     if not qiskit_gates:
                         break
 
                     qc_tket = qiskit_to_tk(qc)
-                    tket_gates = timeout_watcher(get_tket_gates, [qc_tket], timeout)
+                    tket_gates = utils.timeout_watcher(
+                        pytket_plugin.get_tket_gates, [qc_tket], timeout
+                    )
                     if not tket_gates:
                         break
 
                     ops_list = qc.count_ops()
-                    feature_vector = dict_to_featurevector(ops_list, actual_num_qubits)
+                    feature_vector = utils.dict_to_featurevector(
+                        ops_list, actual_num_qubits
+                    )
                     res.append(
                         (
                             benchmark,
@@ -113,7 +121,7 @@ class Predictor:
         for benchmark in benchmarks:
             for num_qubits in range(min_qubit, max_qubit, stepsize):
                 print(benchmark, num_qubits)
-                qc = timeout_watcher(
+                qc = utils.timeout_watcher(
                     benchmark_generator.get_one_benchmark,
                     [benchmark, 1, num_qubits],
                     timeout,
@@ -123,17 +131,23 @@ class Predictor:
                 actual_num_qubits = qc.num_qubits
                 try:
 
-                    qiskit_gates = timeout_watcher(get_qiskit_gates, [qc], timeout)
+                    qiskit_gates = utils.timeout_watcher(
+                        qiskit_plugin.get_qiskit_gates, [qc], timeout
+                    )
                     if not qiskit_gates:
                         break
 
                     qc_tket = qiskit_to_tk(qc)
-                    tket_gates = timeout_watcher(get_tket_gates, [qc_tket], timeout)
+                    tket_gates = utils.timeout_watcher(
+                        pytket_plugin.get_tket_gates, [qc_tket], timeout
+                    )
                     if not tket_gates:
                         break
 
                     ops_list = qc.count_ops()
-                    feature_vector = dict_to_featurevector(ops_list, actual_num_qubits)
+                    feature_vector = utils.dict_to_featurevector(
+                        ops_list, actual_num_qubits
+                    )
                     benchmark_name = benchmark + "_" + str(num_qubits)
                     res.append(
                         (
@@ -166,21 +180,21 @@ class Predictor:
             # Qiskit Scores
             for elem in benchmark[2][1]:
                 if elem[0] is None:
-                    score = get_width_penalty()
+                    score = utils.get_width_penalty()
                 else:
 
-                    score = calc_score_from_gates_list(
-                        elem[0], get_backend_information(elem[1]), num_qubits
+                    score = utils.calc_score_from_gates_list(
+                        elem[0], utils.get_backend_information(elem[1]), num_qubits
                     )
 
                 scores.append(score)
             # Tket Scores
             for elem in benchmark[2][3]:
                 if elem[0] is None:
-                    score = get_width_penalty()
+                    score = utils.get_width_penalty()
                 else:
-                    score = calc_score_from_gates_list(
-                        elem[0], get_backend_information(elem[1]), num_qubits
+                    score = utils.calc_score_from_gates_list(
+                        elem[0], utils.get_backend_information(elem[1]), num_qubits
                     )
 
                 scores.append(score)
@@ -403,7 +417,7 @@ class Predictor:
             tmp_res = scores_filtered[i]
             assert len(tmp_res) == 5 or len(tmp_res) == 10
             circuit_names.append(names_list[i])
-            machines = get_machines()
+            machines = utils.get_machines()
 
             comp_val = tmp_res[y_pred[i]] / tmp_res[y_test[i]]
             row.append(names_list[i])
@@ -424,7 +438,7 @@ class Predictor:
                 "ko",
                 label="MQTPredictor",
             )
-            plt.xlabel(get_machines())
+            plt.xlabel(utils.get_machines())
 
             if machines[np.argmin(tmp_res)] != machines[y_pred[i]]:
                 assert np.argmin(tmp_res) == y_test[i]
@@ -461,51 +475,92 @@ class Predictor:
             return
 
         ops_list = qc.count_ops()
-        feature_vector = list(dict_to_featurevector(ops_list, qc.num_qubits).values())
+        feature_vector = list(
+            utils.dict_to_featurevector(ops_list, qc.num_qubits).values()
+        )
 
         if not (Predictor._clf):
             print("Decision Tree Classifier must be trained first!")
             print(Predictor._clf)
             return
 
-        return Predictor._clf.predict([feature_vector])
+        return Predictor._clf.predict([feature_vector])[0]
 
-    def compile_predicted_compilation_path(input):
-        # input: original quantum circuit as qasm str or qasm file path
-        # return: compiled qasm str and quantum computer to be used
-        pass
+    def compile_predicted_compilation_path(qasm_str_or_path: str, prediction: int):
+        compilation_path = utils.get_machines()[prediction]
 
-    if __name__ == "__main__":
+        if ".qasm" in qasm_str_or_path and ".qasm" in qasm_str_or_path:
+            print("Reading from .qasm path: ", qasm_str_or_path)
+            qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
+        elif QuantumCircuit.from_qasm_str(qasm_str_or_path):
+            print("Reading from .qasm str")
+            qc = QuantumCircuit.from_qasm_str(qasm_str_or_path)
+        qc_tket = qiskit_to_tk(qc)
 
-        parser = argparse.ArgumentParser(description="Create Training Data")
-        # parser.add_argument(
-        #     "--min",
-        #     type=int,
-        #     default=3,
-        # )
-        # parser.add_argument(
-        #     "--max",
-        #     type=int,
-        #     default=20,
-        # )
-        # parser.add_argument("--step", type=int, default=3)
-        parser.add_argument("--timeout", type=int, default=10)
-        # parser.parse_args()
-        #
-        args = parser.parse_args()
-        # create_gate_lists(args.min, args.max, args.step, args.timeout)
+        if compilation_path == "qiskit_ibm_washington":
+            compiled_qc = qiskit_plugin.get_ibm_washington_gates(
+                qc, return_circuit=True
+            )
+        elif compilation_path == "qiskit_ibm_montreal":
+            compiled_qc = qiskit_plugin.get_ibm_montreal_gates(qc, return_circuit=True)
+        elif compilation_path == "qiskit_ionq":
+            compiled_qc = qiskit_plugin.get_ionq_gates(qc, return_circuit=True)
+        elif compilation_path == "qiskit_rigetti":
+            compiled_qc = qiskit_plugin.get_rigetti_gates(qc, return_circuit=True)
+        elif compilation_path == "qiskit_oqc":
+            compiled_qc = qiskit_plugin.get_oqc_gates(qc, return_circuit=True)
+        elif compilation_path == "tket_ibm_washington":
+            compiled_qc = pytket_plugin.get_ibm_washington_gates(
+                qc_tket, return_circuit=True
+            )
+        elif compilation_path == "tket_ibm_montreal":
+            compiled_qc = pytket_plugin.get_ibm_montreal_gates(
+                qc_tket, return_circuit=True
+            )
+        elif compilation_path == "tket_ionq":
+            compiled_qc = pytket_plugin.get_ionq_gates(qc_tket, return_circuit=True)
+        elif compilation_path == "tket_rigetti":
+            compiled_qc = pytket_plugin.get_rigetti_gates(qc_tket, return_circuit=True)
+        elif compilation_path == "tket_oqc":
+            compiled_qc = pytket_plugin.get_oqc_gates(qc_tket, return_circuit=True)
+        else:
+            print("Compilation Path not found")
+            return
 
-        create_gate_lists_from_folder(timeout=args.timeout)
+        return compiled_qc
 
-        # training_data, name_list, scores = extract_training_data_from_json("json_data.json")
-        # X, y = zip(*training_data)
-        # train_simple_ml_model(X, y, True, name_list, scores)
 
-        # create_gate_lists_from_folder(timeout=30)
-        # training_data, qasm_list, name_list = extract_training_data_from_json(
-        #     "json_data_big.json"
-        # )
-        # print(qasm_list, name_list)
-        # X, y = zip(*training_data)
-        # train_simple_ml_model(X, y, True)
-        # print("Done")
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Create Training Data")
+    # parser.add_argument(
+    #     "--min",
+    #     type=int,
+    #     default=3,
+    # )
+    # parser.add_argument(
+    #     "--max",
+    #     type=int,
+    #     default=20,
+    # )
+    # parser.add_argument("--step", type=int, default=3)
+    parser.add_argument("--timeout", type=int, default=10)
+    # parser.parse_args()
+    #
+    args = parser.parse_args()
+    # create_gate_lists(args.min, args.max, args.step, args.timeout)
+
+    Predictor.create_gate_lists_from_folder(timeout=args.timeout)
+
+    # training_data, name_list, scores = extract_training_data_from_json("json_data.json")
+    # X, y = zip(*training_data)
+    # train_simple_ml_model(X, y, True, name_list, scores)
+
+    # create_gate_lists_from_folder(timeout=30)
+    # training_data, qasm_list, name_list = extract_training_data_from_json(
+    #     "json_data_big.json"
+    # )
+    # print(qasm_list, name_list)
+    # X, y = zip(*training_data)
+    # train_simple_ml_model(X, y, True)
+    # print("Done")

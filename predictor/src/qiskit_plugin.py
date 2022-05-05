@@ -23,7 +23,7 @@ def get_qiskit_gates(qc):
     )
 
 
-def get_ibm_washington_gates(qc, opt_level):
+def get_ibm_washington_gates(qc, opt_level=2, return_circuit: bool = False):
     ibm_washington = get_ibm_washington()
     if qc.num_qubits > ibm_washington["num_qubits"]:
         gates_ibm_washington = None
@@ -39,10 +39,12 @@ def get_ibm_washington_gates(qc, opt_level):
         )
         gates_ibm_washington = count_qubit_gates_ibm(qc_ibm, "ibm")
 
+    if return_circuit:
+        return qc_ibm.qasm()
     return gates_ibm_washington
 
 
-def get_ibm_montreal_gates(qc, opt_level):
+def get_ibm_montreal_gates(qc, opt_level=2, return_circuit: bool = False):
     ibm_montreal = get_ibm_montreal()
     if qc.num_qubits > ibm_montreal["num_qubits"]:
         gates_ibm_montreal = None
@@ -58,10 +60,12 @@ def get_ibm_montreal_gates(qc, opt_level):
         )
         gates_ibm_montreal = count_qubit_gates_ibm(qc_ibm, "ibm")
 
+    if return_circuit:
+        return qc_ibm.qasm()
     return gates_ibm_montreal
 
 
-def get_ionq_gates(qc, opt_level):
+def get_ionq_gates(qc, opt_level=2, return_circuit: bool = False):
     ionq = get_ionq()
     if qc.num_qubits > ionq["num_qubits"]:
         gates_ionq = None
@@ -76,10 +80,12 @@ def get_ionq_gates(qc, opt_level):
         )
         gates_ionq = count_qubit_gates_ibm(qc_ion, "ionq")
 
+    if return_circuit:
+        return qc_ion.qasm()
     return gates_ionq
 
 
-def get_rigetti_gates(qc, opt_level):
+def get_rigetti_gates(qc, opt_level=2, return_circuit: bool = False):
     rigetti_m1 = get_rigetti_m1()
     if qc.num_qubits > rigetti_m1["num_qubits"]:
         gates_rigetti = None
@@ -94,10 +100,13 @@ def get_rigetti_gates(qc, opt_level):
             routing_method="sabre",
         )
         gates_rigetti = count_qubit_gates_ibm(qc_rigetti, "rigetti")
+
+    if return_circuit:
+        return qc_rigetti.qasm()
     return gates_rigetti
 
 
-def get_oqc_gates(qc, opt_level):
+def get_oqc_gates(qc, opt_level=2, return_circuit: bool = False):
     oqc_lucy = get_oqc_lucy()
     if qc.num_qubits > oqc_lucy["num_qubits"]:
         gates_oqc = None
@@ -113,6 +122,8 @@ def get_oqc_gates(qc, opt_level):
         )
         gates_oqc = count_qubit_gates_ibm(qc_oqc, "oqc")
 
+    if return_circuit:
+        return qc_oqc.qasm()
     return gates_oqc
 
 

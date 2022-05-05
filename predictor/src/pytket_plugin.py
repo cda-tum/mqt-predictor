@@ -13,6 +13,7 @@ from pytket import architecture
 
 from qiskit.test.mock import FakeMontreal, FakeWashington
 from predictor.src.utils import *
+from pytket.qasm import circuit_to_qasm_str
 
 
 def get_tket_gates(qc):
@@ -35,7 +36,7 @@ def get_tket_gates(qc):
     )
 
 
-def get_rigetti_gates(qc):
+def get_rigetti_gates(qc, return_circuit: bool = False):
     if qc.n_qubits > get_rigetti_m1()["num_qubits"]:
         gates_rigetti = None
     else:
@@ -53,10 +54,13 @@ def get_rigetti_gates(qc):
         assert sum(gates_rigetti) == qc.n_gates - qc.n_gates_of_type(
             OpType.Measure
         ) - qc.n_gates_of_type(OpType.Barrier)
+
+        if return_circuit:
+            return circuit_to_qasm_str(qc)
     return gates_rigetti
 
 
-def get_ionq_gates(qc):
+def get_ionq_gates(qc, return_circuit: bool = False):
     if qc.n_qubits > get_ionq()["num_qubits"]:
         gates_ionq = None
     else:
@@ -69,10 +73,14 @@ def get_ionq_gates(qc):
         assert sum(gates_ionq) == qc.n_gates - qc.n_gates_of_type(
             OpType.Measure
         ) - qc.n_gates_of_type(OpType.Barrier)
+
+        if return_circuit:
+            return circuit_to_qasm_str(qc)
+
     return gates_ionq
 
 
-def get_oqc_gates(qc):
+def get_oqc_gates(qc, return_circuit: bool = False):
     if qc.n_qubits > get_oqc_lucy()["num_qubits"]:
         gates_oqc = None
     else:
@@ -91,10 +99,14 @@ def get_oqc_gates(qc):
         assert sum(gates_oqc) == qc.n_gates - qc.n_gates_of_type(
             OpType.Measure
         ) - qc.n_gates_of_type(OpType.Barrier)
+
+        if return_circuit:
+            return circuit_to_qasm_str(qc)
+
     return gates_oqc
 
 
-def get_ibm_washington_gates(qc):
+def get_ibm_washington_gates(qc, return_circuit: bool = False):
     if qc.n_qubits > get_ibm_washington()["num_qubits"]:
         gates_ibm_washington = None
     else:
@@ -114,10 +126,14 @@ def get_ibm_washington_gates(qc):
         assert sum(gates_ibm_washington) == qc.n_gates - qc.n_gates_of_type(
             OpType.Measure
         ) - qc.n_gates_of_type(OpType.Barrier)
+
+        if return_circuit:
+            return circuit_to_qasm_str(qc)
+
     return gates_ibm_washington
 
 
-def get_ibm_montreal_gates(qc):
+def get_ibm_montreal_gates(qc, return_circuit: bool = False):
     if qc.n_qubits > get_ibm_montreal()["num_qubits"]:
         gates_ibm_montreal = None
     else:
@@ -136,6 +152,10 @@ def get_ibm_montreal_gates(qc):
         assert sum(gates_ibm_montreal) == qc.n_gates - qc.n_gates_of_type(
             OpType.Measure
         ) - qc.n_gates_of_type(OpType.Barrier)
+
+        if return_circuit:
+            return circuit_to_qasm_str(qc)
+
     return gates_ibm_montreal
 
 
