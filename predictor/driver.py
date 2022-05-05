@@ -324,7 +324,9 @@ class Predictor:
     #
     #     return model
 
-    def train_decision_tree_classifier(X, y, name_list=None, actual_scores_list=None):
+    def train_decision_tree_classifier(
+        X, y, name_list=None, actual_scores_list=None, max_depth: int = 5
+    ):
         import matplotlib.pyplot as plt
         from predictor.src import utils
         from sklearn.tree import plot_tree
@@ -340,11 +342,13 @@ class Predictor:
             indices_test,
         ) = train_test_split(X, y, indices, test_size=0.3, random_state=42)
 
-        Predictor._clf = tree.DecisionTreeClassifier(max_depth=5)
+        Predictor._clf = tree.DecisionTreeClassifier(max_depth=max_depth)
         Predictor._clf = Predictor._clf.fit(X_train, y_train)
 
         y_pred = Predictor._clf.predict(X_test)
         print(np.mean(y_pred == y_test))
+        print("Compilation paths from Test Data: ", set(y_test))
+        print("Compilation paths from Predictions: ", set(y_pred))
         available_machines = [
             utils.get_machines()[i] for i in set(Predictor._clf.classes_)
         ]
@@ -380,6 +384,7 @@ class Predictor:
     def plot_eval_histogram(scores_filtered, y_pred, y_test):
         res = []
         for i in range(len(y_pred)):
+            # if y_pred[i] != y_test[i]:
             predicted_score = scores_filtered[i][y_pred[i]]
             score = list(np.sort(scores_filtered[i])).index(predicted_score)
             res.append(score + 1)
@@ -387,14 +392,30 @@ class Predictor:
         assert len(res) == len(y_pred)
         # print(res)
 
-        x = np.arange(10)
         plt.figure(figsize=(10, 5))
-        plt.bar(x, height=[res.count(i) / len(res) for i in range(1, 11, 1)], width=1)
-        plt.xticks(x, [i for i in range(1, 11, 1)])
+        bars = plt.bar(
+            [i for i in range(1, max(res) + 1, 1)],
+            height=[res.count(i) / len(res) for i in range(1, max(res) + 1, 1)],
+            width=1,
+        )
+        plt.xticks(
+            [i for i in range(1, max(res) + 1, 1)],
+            [i for i in range(1, max(res) + 1, 1)],
+        )
         plt.xlabel("MQT Predictor Ranking")
-        plt.ylabel("Frequency")
         plt.title("Histogram of Predicted Results")
+        sum = 0
+        for bar in bars:
+            yval = bar.get_height()
+            rounded_val = str(np.round(yval * 100, 2)) + "%"
+            sum += np.round(yval * 100, 2)
+            plt.text(bar.get_x() + 0.26, yval + 0.005, rounded_val)
+
+        plt.tick_params(left=False, labelleft=False)
+        plt.box(False)
         plt.savefig("MQTPredictor_hist")
+        plt.show()
+        print("sum: ", sum)
 
     def plot_eval_all_detailed(names_list, scores_filtered, y_pred, y_test):
 
