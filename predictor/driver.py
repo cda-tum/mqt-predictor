@@ -359,7 +359,7 @@ class Predictor:
 
         features = np.sort(np.array(res))
 
-        fig = plt.figure(figsize=(15, 10))
+        fig = plt.figure(figsize=(10, 5))
         plot_tree(
             Predictor._clf,
             feature_names=features,
