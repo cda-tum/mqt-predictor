@@ -48,6 +48,6 @@ def test_predict():
 
 @pytest.mark.parametrize("comp_path", [i for i in range(10)])
 def test_compilation_paths(comp_path):
-    qc_qasm = benchmark_generator.get_one_benchmark("dj", 1, 3).qasm()
+    qc_qasm = benchmark_generator.get_one_benchmark("dj", 1, 2).qasm()
     res = Predictor.compile_predicted_compilation_path(qc_qasm, comp_path)
-    assert res
+    assert not res is None
