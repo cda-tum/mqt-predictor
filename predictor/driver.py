@@ -348,6 +348,36 @@ def train_decision_tree_classifier(X, y, name_list=None, actual_scores_list=None
     names_list = [name_list[i] for i in indices_test]
     scores_filtered = [actual_scores_list[i] for i in indices_test]
 
+    plt.figure(figsize=(17, 6))
+    print("len(y_predicted)", len(y_pred))
+
+    # plot_eval_all_detailed(names_list, scores_filtered, y_pred, y_test)
+    plot_eval_histogram(scores_filtered, y_pred, y_test)
+    return clf
+
+
+def plot_eval_histogram(scores_filtered, y_pred, y_test):
+    res = []
+    for i in range(len(y_pred)):
+        predicted_score = scores_filtered[i][y_pred[i]]
+        score = list(np.sort(scores_filtered[i])).index(predicted_score)
+        res.append(score + 1)
+
+    assert len(res) == len(y_pred)
+    # print(res)
+
+    x = np.arange(10)
+    plt.figure(figsize=(10, 5))
+    plt.bar(x, height=[res.count(i) / len(res) for i in range(1, 11, 1)], width=1)
+    plt.xticks(x, [i for i in range(1, 11, 1)])
+    plt.xlabel("MQT Predictor Ranking")
+    plt.ylabel("Frequency")
+    plt.title("Histogram of Predicted Results")
+    plt.savefig("MQTPredictor_hist")
+
+
+def plot_eval_all_detailed(names_list, scores_filtered, y_pred, y_test):
+
     circuit_names = []
     all_rows = []
     all_rows.append(
@@ -361,50 +391,45 @@ def train_decision_tree_classifier(X, y, name_list=None, actual_scores_list=None
         ]
     )
 
-    plt.figure(figsize=(17, 6))
-    print("len(y_predicted)", len(y_pred))
-
     for i in range(len(y_pred)):
-        if y_pred[i] != y_test[i]:
-            row = []
-            tmp_res = scores_filtered[i]
-            assert len(tmp_res) == 5 or len(tmp_res) == 10
-            circuit_names.append(names_list[i])
-            machines = get_machines()
+        # if y_pred[i] != y_test[i]:
+        row = []
+        tmp_res = scores_filtered[i]
+        assert len(tmp_res) == 5 or len(tmp_res) == 10
+        circuit_names.append(names_list[i])
+        machines = get_machines()
 
-            comp_val = tmp_res[y_pred[i]] / tmp_res[y_test[i]]
-            row.append(names_list[i])
-            row.append(np.round(np.min(tmp_res), 2))
-            row.append(np.round(tmp_res[y_pred[i]], 2))
-            row.append(y_test[i])
-            row.append(y_pred[i])
-            row.append(np.round(comp_val - 1.00, 2))
-            all_rows.append(row)
+        comp_val = tmp_res[y_pred[i]] / tmp_res[y_test[i]]
+        row.append(names_list[i])
+        row.append(np.round(np.min(tmp_res), 2))
+        row.append(np.round(tmp_res[y_pred[i]], 2))
+        row.append(y_test[i])
+        row.append(y_pred[i])
+        row.append(np.round(comp_val - 1.00, 2))
+        all_rows.append(row)
 
-            for j in range(10):
-                plt.plot(
-                    len(circuit_names), tmp_res[j], ".", alpha=0.5, label=machines[j]
-                )
-            plt.plot(
-                len(circuit_names),
-                tmp_res[y_pred[i]],
-                "ko",
-                label="MQTPredictor",
+        for j in range(10):
+            plt.plot(len(circuit_names), tmp_res[j], ".", alpha=0.5, label=machines[j])
+        plt.plot(
+            len(circuit_names),
+            tmp_res[y_pred[i]],
+            "ko",
+            label="MQTPredictor",
+        )
+        plt.xlabel(get_machines())
+
+        if machines[np.argmin(tmp_res)] != machines[y_pred[i]]:
+            assert np.argmin(tmp_res) == y_test[i]
+            diff = tmp_res[y_pred[i]] - tmp_res[np.argmin(tmp_res)]
+            print(
+                names_list[i],
+                " predicted: ",
+                y_pred[i],
+                " should be: ",
+                y_test[i],
+                " diff: ",
+                diff,
             )
-            plt.xlabel(get_machines())
-
-            if machines[np.argmin(tmp_res)] != machines[y_pred[i]]:
-                assert np.argmin(tmp_res) == y_test[i]
-                diff = tmp_res[y_pred[i]] - tmp_res[np.argmin(tmp_res)]
-                print(
-                    names_list[i],
-                    " predicted: ",
-                    y_pred[i],
-                    " should be: ",
-                    y_test[i],
-                    " diff: ",
-                    diff,
-                )
     plt.title("Evaluation: Compilation Flow Prediction")
     plt.xticks(range(len(circuit_names)), circuit_names, rotation=90)
     plt.xlabel("Unseen Benchmarks")
@@ -415,7 +440,6 @@ def train_decision_tree_classifier(X, y, name_list=None, actual_scores_list=None
     plt.yscale("log")
     plt.tight_layout()
     plt.savefig("y_pred_eval")
-    return clf
 
 
 def predict(input):
