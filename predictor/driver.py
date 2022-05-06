@@ -19,6 +19,8 @@ from keras.models import Sequential
 from keras.layers import Dense
 from sklearn.model_selection import train_test_split
 
+from sklearn.metrics import precision_recall_fscore_support
+
 from natsort import natsorted
 import glob
 import matplotlib.pyplot as plt
@@ -376,6 +378,14 @@ class Predictor:
 
         # Predictor.plot_eval_all_detailed(names_list, scores_filtered, y_pred, y_test)
         Predictor.plot_eval_histogram(scores_filtered, y_pred, y_test)
+
+        classes = [utils.get_machines()[i] for i in set(y_test)]
+        res = precision_recall_fscore_support(y_test, y_pred)
+
+        with open("metric_table.csv", "w") as csvfile:
+            np.savetxt(csvfile, np.array([list(set(y_test))]), delimiter=",", fmt="%s")
+            np.savetxt(csvfile, np.round(np.array(res), 3), delimiter=",", fmt="%s")
+
         return Predictor._clf
 
     def plot_eval_histogram(scores_filtered, y_pred, y_test):
