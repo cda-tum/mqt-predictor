@@ -81,7 +81,6 @@ class Predictor:
                             benchmark,
                             feature_vector,
                             qiskit_gates + tket_gates,
-                            benchmark,
                         )
                     )
                 except Exception as e:
@@ -148,13 +147,11 @@ class Predictor:
                     feature_vector = utils.dict_to_featurevector(
                         ops_list, actual_num_qubits
                     )
-                    benchmark_name = benchmark + "_" + str(num_qubits)
                     res.append(
                         (
                             benchmark,
                             feature_vector,
                             qiskit_gates + tket_gates,
-                            benchmark_name,
                         )
                     )
                 except Exception as e:
@@ -200,7 +197,7 @@ class Predictor:
                 scores.append(score)
 
             training_data.append((list(benchmark[1].values()), np.argmin(scores)))
-            name_list.append(benchmark[3])
+            name_list.append(benchmark[0])
             scores_list.append(scores)
 
         return (training_data, name_list, scores_list)
@@ -377,7 +374,7 @@ class Predictor:
         plt.figure(figsize=(17, 6))
         print("len(y_predicted)", len(y_pred))
 
-        # plot_eval_all_detailed(names_list, scores_filtered, y_pred, y_test)
+        # Predictor.plot_eval_all_detailed(names_list, scores_filtered, y_pred, y_test)
         Predictor.plot_eval_histogram(scores_filtered, y_pred, y_test)
         return Predictor._clf
 
