@@ -37,7 +37,7 @@ def get_ibm_washington_gates(qc, opt_level=2, return_circuit: bool = False):
             layout_method="sabre",
             routing_method="sabre",
         )
-        gates_ibm_washington = count_qubit_gates_ibm(qc_ibm, "ibm")
+        gates_ibm_washington = count_qubit_gates_qiskit(qc_ibm, "ibm")
 
     if return_circuit:
         return qc_ibm.qasm()
@@ -58,7 +58,7 @@ def get_ibm_montreal_gates(qc, opt_level=2, return_circuit: bool = False):
             layout_method="sabre",
             routing_method="sabre",
         )
-        gates_ibm_montreal = count_qubit_gates_ibm(qc_ibm, "ibm")
+        gates_ibm_montreal = count_qubit_gates_qiskit(qc_ibm, "ibm")
 
     if return_circuit:
         return qc_ibm.qasm()
@@ -78,7 +78,7 @@ def get_ionq_gates(qc, opt_level=2, return_circuit: bool = False):
             layout_method="sabre",
             routing_method="sabre",
         )
-        gates_ionq = count_qubit_gates_ibm(qc_ion, "ionq")
+        gates_ionq = count_qubit_gates_qiskit(qc_ion, "ionq")
 
     if return_circuit:
         return qc_ion.qasm()
@@ -99,7 +99,7 @@ def get_rigetti_gates(qc, opt_level=2, return_circuit: bool = False):
             layout_method="sabre",
             routing_method="sabre",
         )
-        gates_rigetti = count_qubit_gates_ibm(qc_rigetti, "rigetti")
+        gates_rigetti = count_qubit_gates_qiskit(qc_rigetti, "rigetti")
 
     if return_circuit:
         return qc_rigetti.qasm()
@@ -120,7 +120,7 @@ def get_oqc_gates(qc, opt_level=2, return_circuit: bool = False):
             layout_method="sabre",
             routing_method="sabre",
         )
-        gates_oqc = count_qubit_gates_ibm(qc_oqc, "oqc")
+        gates_oqc = count_qubit_gates_qiskit(qc_oqc, "oqc")
 
     if return_circuit:
         return qc_oqc.qasm()
