@@ -17,7 +17,7 @@ def count_qubit_gates_tket(qc, provider: str):
     single_qubit_gates = 0
     two_qubit_gates = 0
     if provider == "ibm":
-        # gates: ['id', 'rz', 'sx', 'x', 'cx', 'reset']
+        # gates: ['rz', 'sx', 'x', 'cx']
         single_qubit_gates += qc.n_gates_of_type(OpType.Rz)
         single_qubit_gates += qc.n_gates_of_type(OpType.SX)
         single_qubit_gates += qc.n_gates_of_type(OpType.X)
@@ -45,9 +45,8 @@ def count_qubit_gates_tket(qc, provider: str):
     return single_qubit_gates, two_qubit_gates
 
 
-def count_qubit_gates_ibm(qc, provider: str):
-    dag = circuit_to_dag(qc)
-    count_gates = dag.count_ops_longest_path()
+def count_qubit_gates_qiskit(qc, provider: str):
+    count_gates = qc.count_ops()
     single_qubit_gates = 0
     two_qubit_gates = 0
     if provider == "ibm":
@@ -132,17 +131,6 @@ def calc_score_from_gates_list(count_gates, backend, num_qubits):
     #     count_gates[0] / max_depth_1q / num_qubits * penalty_factor_1q
     #     + count_gates[1] / max_depth_2q / num_qubits * penalty_factor_2q
     # )
-    return score
-
-
-def calc_score_from_qc(qc, backend, compiler):
-    if compiler == "qiskit":
-        count_gates = count_qubit_gates_ibm(qc, backend["provider"])
-    elif compiler == "tket":
-        count_gates = count_qubit_gates_tket(qc, backend["provider"])
-    score = calc_score_from_gates_list(count_gates, backend, num_qubits)
-    assert score >= 0
-
     return score
 
 
