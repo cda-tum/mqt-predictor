@@ -1,15 +1,9 @@
-from predictor.src import qiskit_plugin
-from predictor.src import pytket_plugin
+from predictor.src import qiskit_plugin, pytket_plugin, utils
 
 from qiskit import QuantumCircuit
-
-from predictor.src import utils
-from mqt.bench import benchmark_generator
-
 from pytket.extensions.qiskit import qiskit_to_tk
 
 import numpy as np
-
 import json
 import os
 import argparse
@@ -18,7 +12,6 @@ import csv
 from keras.models import Sequential
 from keras.layers import Dense
 from sklearn.model_selection import train_test_split
-
 from sklearn.metrics import precision_recall_fscore_support
 
 from natsort import natsorted
@@ -32,11 +25,13 @@ class Predictor:
     def create_gate_lists_from_folder(
         folder_path: str = "./qasm_files", timeout: int = 10
     ):
+        """Method to create pre-process data to accelerate the training data generation afterwards. All .qasm files from
+        the folder path are considered."""
 
         res = []
 
+        # Create dictionary to process .qasm files more efficiently, each key refers to one benchmark algorithm
         filelist = glob.glob(folder_path)
-
         dictionary = {}
         for subdir, dirs, files in os.walk(folder_path):
             for file in natsorted(files):
@@ -93,80 +88,9 @@ class Predictor:
             outfile.write(jsonString)
         return
 
-    def create_gate_lists(
-        min_qubit: int, max_qubit: int, stepsize: int = 1, timeout: int = 10
-    ):
-        benchmarks = [
-            "dj",
-            "grover-noancilla",
-            "grover-v-chain",
-            "ghz",
-            "graphstate",
-            "qft",
-            "qftentangled",
-            "qpeexact",
-            "qpeinexact",
-            "qwalk-noancilla",
-            "qwalk-v-chain",
-            "realamprandom",
-            "su2random",
-            "twolocalrandom",
-            "vqe",
-            "wstate",
-            "qaoa",
-            "portfoliovqe",
-            "portfolioqaoa",
-            "qgan",
-        ]
-        res = []
-        for benchmark in benchmarks:
-            for num_qubits in range(min_qubit, max_qubit, stepsize):
-                print(benchmark, num_qubits)
-                qc = utils.timeout_watcher(
-                    benchmark_generator.get_one_benchmark,
-                    [benchmark, 1, num_qubits],
-                    timeout,
-                )
-                if not qc:
-                    break
-                actual_num_qubits = qc.num_qubits
-                try:
+    def generate_trainingdata_from_json(json_path: str = "json_data.json"):
+        """Generates the training data based on the provided json file and defined evaluation score."""
 
-                    qiskit_gates = utils.timeout_watcher(
-                        qiskit_plugin.get_qiskit_gates, [qc], timeout
-                    )
-                    if not qiskit_gates:
-                        break
-
-                    qc_tket = qiskit_to_tk(qc)
-                    tket_gates = utils.timeout_watcher(
-                        pytket_plugin.get_tket_gates, [qc_tket], timeout
-                    )
-                    if not tket_gates:
-                        break
-
-                    ops_list = qc.count_ops()
-                    feature_vector = utils.dict_to_featurevector(
-                        ops_list, actual_num_qubits
-                    )
-                    res.append(
-                        (
-                            benchmark,
-                            feature_vector,
-                            qiskit_gates + tket_gates,
-                        )
-                    )
-                except Exception as e:
-                    print("fail: ", e)
-
-        jsonString = json.dumps(res, indent=4, sort_keys=True)
-        with open("json_data.json", "w") as outfile:
-            outfile.write(jsonString)
-        return
-
-    def extract_training_data_from_json(
-        json_path: str = "json_data.json", eval_fid: bool = True
-    ):
         with open(json_path, "r") as f:
             data = json.load(f)
         training_data = []
@@ -181,7 +105,6 @@ class Predictor:
                 if elem[0] is None:
                     score = utils.get_width_penalty()
                 else:
-
                     score = utils.calc_score_from_gates_list(
                         elem[0], utils.get_backend_information(elem[1]), num_qubits
                     )
@@ -492,6 +415,7 @@ class Predictor:
         plt.savefig("y_pred_eval")
 
     def predict(qasm_str_or_path: str):
+        """Compilation path prediction for a given qasm string or file path to a qasm file."""
         if ".qasm" in qasm_str_or_path and ".qasm" in qasm_str_or_path:
             print("Reading from .qasm path: ", qasm_str_or_path)
             qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
@@ -515,6 +439,8 @@ class Predictor:
         return Predictor._clf.predict([feature_vector])[0]
 
     def compile_predicted_compilation_path(qasm_str_or_path: str, prediction: int):
+        """Returns the compiled quantum circuit as a qasm string when the original qasm circuit is provided as either
+        a string or a file path and the prediction index is given."""
         compilation_path = utils.get_machines()[prediction]
 
         if ".qasm" in qasm_str_or_path and ".qasm" in qasm_str_or_path:
@@ -579,16 +505,3 @@ if __name__ == "__main__":
     # create_gate_lists(args.min, args.max, args.step, args.timeout)
 
     Predictor.create_gate_lists_from_folder(timeout=args.timeout)
-
-    # training_data, name_list, scores = extract_training_data_from_json("json_data.json")
-    # X, y = zip(*training_data)
-    # train_simple_ml_model(X, y, True, name_list, scores)
-
-    # create_gate_lists_from_folder(timeout=30)
-    # training_data, qasm_list, name_list = extract_training_data_from_json(
-    #     "json_data_big.json"
-    # )
-    # print(qasm_list, name_list)
-    # X, y = zip(*training_data)
-    # train_simple_ml_model(X, y, True)
-    # print("Done")

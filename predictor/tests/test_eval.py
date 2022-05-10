@@ -6,7 +6,7 @@ import pytest
 
 def test_extract_training_data_from_json():
     if os.path.isfile("json_data.json"):
-        res = Predictor.extract_training_data_from_json()
+        res = Predictor.generate_trainingdata_from_json()
         assert not res is None
 
 
@@ -20,16 +20,15 @@ def test_extract_training_data_from_json():
 
 
 def test_train_decision_tree_classifier():
-    Predictor.create_gate_lists(4, 5, 1)
     assert os.path.isfile("json_data.json")
-    training_data, name_list, scores_list = Predictor.extract_training_data_from_json()
+    training_data, name_list, scores_list = Predictor.generate_trainingdata_from_json()
     X, y = zip(*training_data)
     res = Predictor.train_decision_tree_classifier(X, y, name_list, scores_list)
     assert not res is None
 
 
 def test_predict():
-    training_data, name_list, scores_list = Predictor.extract_training_data_from_json(
+    training_data, name_list, scores_list = Predictor.generate_trainingdata_from_json(
         "json_data_bigger_server.json"
     )
     X, y = zip(*training_data)

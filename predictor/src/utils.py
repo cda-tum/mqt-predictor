@@ -9,11 +9,13 @@ import json
 
 
 def get_width_penalty():
+    """Returns the penalty value if a quantum computer has not enough qubits."""
     width_penalty = 1000000
     return width_penalty
 
 
 def count_qubit_gates_tket(qc, provider: str):
+    """Returns the total gate count of single and two-qubit gates."""
     single_qubit_gates = 0
     two_qubit_gates = 0
     if provider == "ibm":
@@ -46,6 +48,7 @@ def count_qubit_gates_tket(qc, provider: str):
 
 
 def count_qubit_gates_qiskit(qc, provider: str):
+    """Returns the total gate count of single and two-qubit gates."""
     count_gates = qc.count_ops()
     single_qubit_gates = 0
     two_qubit_gates = 0
@@ -96,6 +99,7 @@ def count_qubit_gates_qiskit(qc, provider: str):
 
 
 def get_backend_information(name: str):
+    """Returns the backend information for all used quantum computers."""
     if name == "ibm_washington":
         return get_ibm_washington()
     elif name == "ibm_montreal":
@@ -109,6 +113,7 @@ def get_backend_information(name: str):
 
 
 def calc_score_from_gates_list(count_gates, backend, num_qubits):
+    """This is the evaluation function of a compilation path return its corresponding evaluation score."""
     penalty_factor_1q = 500
     penalty_factor_2q = 1000
 
@@ -201,6 +206,7 @@ def get_cmap_rigetti_m1(circles: int = 4):
 
 
 def get_rigetti_m1():
+    """Returns the backend information of the Rigetti M1 Aspen Quantum Computer."""
     rigetti_m1 = {
         "provider": "rigetti",
         "name": "m1",
@@ -216,6 +222,7 @@ def get_rigetti_m1():
 
 
 def get_ibm_washington():
+    """Returns the backend information of the IBM Washington Quantum Computer."""
     ibm_washington = {
         "provider": "ibm",
         "name": "washington",
@@ -231,6 +238,7 @@ def get_ibm_washington():
 
 
 def get_ibm_montreal():
+    """Returns the backend information of the IBM Montreal Quantum Computer."""
     ibm_montreal = {
         "provider": "ibm",
         "name": "Montreal",
@@ -246,6 +254,7 @@ def get_ibm_montreal():
 
 
 def get_ionq():
+    """Returns the backend information of the 11-qubit IonQ Quantum Computer."""
     ionq = {
         "provider": "ionq",
         "name": "IonQ",
@@ -261,6 +270,7 @@ def get_ionq():
 
 
 def get_oqc_lucy():
+    """Returns the backend information of the OQC Lucy Quantum Computer."""
     oqc_lucy = {
         "provider": "oqc",
         "name": "Lucy",
@@ -342,6 +352,7 @@ def get_machines():
 
 
 def get_rigetti_m1_fid1():
+    """Calculates and returns the single gate fidelity for the Rigetti M1."""
     f = open("rigetti_m1_calibration.json")
     rigetti_json = json.load(f)
 
@@ -355,6 +366,7 @@ def get_rigetti_m1_fid1():
 
 
 def get_rigetti_m1_fid2():
+    """Calculates and returns the two gate fidelity for the Rigetti M1."""
     f = open("rigetti_m1_calibration.json")
     rigetti_json = json.load(f)
     fid2 = []
@@ -367,6 +379,7 @@ def get_rigetti_m1_fid2():
 
 
 def dict_to_featurevector(gate_dict, num_qubits):
+    """Calculates and returns the feature vector of a given quantum circuit gate dictionary."""
     openqasm_gates_list = get_openqasm_gates()
     res_dct = {openqasm_gates_list[i] for i in range(0, len(openqasm_gates_list))}
     res_dct = dict.fromkeys(res_dct, 0)
@@ -379,6 +392,8 @@ def dict_to_featurevector(gate_dict, num_qubits):
 
 
 def timeout_watcher(func, args, timeout):
+    """Method that stops a function call after a given timeout limit."""
+
     class TimeoutException(Exception):  # Custom exception class
         pass
 
