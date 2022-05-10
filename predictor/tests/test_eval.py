@@ -2,6 +2,8 @@ from predictor.driver import Predictor
 import os
 from mqt.bench import benchmark_generator
 import pytest
+import matplotlib.pyplot as plt
+from unittest.mock import patch
 
 
 def test_extract_training_data_from_json():
@@ -19,15 +21,16 @@ def test_extract_training_data_from_json():
 #     assert not res is None
 
 
-def test_train_decision_tree_classifier():
+@patch("matplotlib.pyplot.show")
+def test_train_decision_tree_classifier(mock_show):
     assert os.path.isfile("json_data.json")
     training_data, name_list, scores_list = Predictor.generate_trainingdata_from_json()
     X, y = zip(*training_data)
     res = Predictor.train_decision_tree_classifier(X, y, name_list, scores_list)
     assert not res is None
 
-
-def test_predict():
+@patch("matplotlib.pyplot.show")
+def test_predict(mock_show):
     training_data, name_list, scores_list = Predictor.generate_trainingdata_from_json(
         "json_data_bigger_server.json"
     )
