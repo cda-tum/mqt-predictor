@@ -29,6 +29,7 @@ def test_train_decision_tree_classifier(mock_show):
     res = Predictor.train_decision_tree_classifier(X, y, name_list, scores_list)
     assert not res is None
 
+
 @patch("matplotlib.pyplot.show")
 def test_predict(mock_show):
     training_data, name_list, scores_list = Predictor.generate_trainingdata_from_json(
