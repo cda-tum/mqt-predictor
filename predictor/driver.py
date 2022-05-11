@@ -101,6 +101,8 @@ class Predictor:
             scores = []
             num_qubits = benchmark[1]["num_qubits"]
             # Qiskit Scores
+            if num_qubits > 127:
+                continue
             for elem in benchmark[2][1]:
                 if elem[0] is None:
                     score = utils.get_width_penalty()
