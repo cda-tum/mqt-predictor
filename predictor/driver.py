@@ -413,7 +413,6 @@ class Predictor:
         plt.xticks(
             [i for i in range(0, len(scores_filtered), 10)],
             [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 10)],
-            rotation=90,
         )
         # plt.xticks(range(len(names_list_sorted_accordingly)), names_list_sorted_accordingly, rotation=90)
         plt.xlabel("Benchmark Width (Number of Qubits)")
