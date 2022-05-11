@@ -31,6 +31,7 @@ setup(
         "scikit-learn~=1.0.2",
         "natsort~=8.1.0",
         "tensorflow~=2.8.0",
+        "graphviz~=0.20",
         "dtreeviz~=1.3.6",
     ],
     classifiers=[
