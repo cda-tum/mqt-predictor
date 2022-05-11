@@ -283,17 +283,27 @@ class Predictor:
 
         features = np.sort(np.array(res))
 
-        fig = plt.figure(figsize=(10, 5))
-        plot_tree(
+        # fig = plt.figure(figsize=(10, 5))
+        # plot_tree(
+        #     Predictor._clf,
+        #     feature_names=features,
+        #     class_names=available_machines,
+        #     filled=True,
+        #     impurity=True,
+        #     rounded=True,
+        # )
+        #
+        # plt.savefig("DecisionTreeClassifier.png", dpi=600)
+        viz = dtreeviz(
             Predictor._clf,
+            X_train,
+            y_train,
+            target_name="Compilation Path",
             feature_names=features,
-            class_names=available_machines,
-            filled=True,
-            impurity=True,
-            rounded=True,
+            class_names=[i for i in range(9)],
+            fancy=True,
         )
-
-        plt.savefig("DecisionTreeClassifier.png", dpi=600)
+        viz.save("fancy_tree.svg")
 
         names_list = [name_list[i] for i in indices_test]
         scores_filtered = [actual_scores_list[i] for i in indices_test]
