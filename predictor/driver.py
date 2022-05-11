@@ -272,6 +272,7 @@ class Predictor:
 
         y_pred = Predictor._clf.predict(X_test)
         print(np.mean(y_pred == y_test))
+        print("Compilation paths from Train Data: ", set(y_train))
         print("Compilation paths from Test Data: ", set(y_test))
         print("Compilation paths from Predictions: ", set(y_pred))
         available_machines = [
@@ -301,7 +302,7 @@ class Predictor:
             y_train,
             target_name="Compilation Path",
             feature_names=features,
-            class_names=[i for i in range(9)],
+            class_names=list(Predictor._clf.classes_),
             fancy=True,
         )
         viz.save("fancy_tree.svg")
