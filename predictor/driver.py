@@ -313,13 +313,20 @@ class Predictor:
         print("len(y_predicted)", len(y_pred))
 
         # Predictor.plot_eval_all_detailed(names_list, scores_filtered, y_pred, y_test)
+        Predictor.plot_eval_all_detailed_compact(
+            names_list, scores_filtered, y_pred, y_test
+        )
         Predictor.plot_eval_histogram(scores_filtered, y_pred, y_test)
 
-        classes = [utils.get_machines()[i] for i in set(y_test)]
         res = precision_recall_fscore_support(y_test, y_pred)
 
         with open("metric_table.csv", "w") as csvfile:
-            np.savetxt(csvfile, np.array([list(set(y_test))]), delimiter=",", fmt="%s")
+            np.savetxt(
+                csvfile,
+                np.array([list(set(list(y_test) + list(y_pred)))]),
+                delimiter=",",
+                fmt="%s",
+            )
             np.savetxt(csvfile, np.round(np.array(res), 3), delimiter=",", fmt="%s")
 
         return Predictor._clf
@@ -360,72 +367,167 @@ class Predictor:
         plt.show()
         print("sum: ", sum)
 
-    def plot_eval_all_detailed(names_list, scores_filtered, y_pred, y_test):
+    def plot_eval_all_detailed_compact(names_list, scores_filtered, y_pred, y_test):
 
-        circuit_names = []
-        all_rows = []
-        all_rows.append(
-            [
-                "Benchmark",
-                "Best Score",
-                "MQT Predictor",
-                "Best Machine",
-                "MQT Predictor",
-                "Overhead",
-            ]
+        # Create list of all qubit numbers and sort them
+        names_list_num_qubits = []
+        for i in range(len(names_list)):
+            names_list_num_qubits.append(
+                int(names_list[i].split("_")[-1].split(".")[0])
+            )
+
+        # Sort all other list (names, scores and y_pred) accordingly
+        qubit_list_sorted, names_list_sorted_accordingly = zip(
+            *sorted(zip(names_list_num_qubits, names_list), key=lambda x: x[0])
+        )
+        qubit_list_sorted, scores_filtered_sorted_accordingly = zip(
+            *sorted(zip(names_list_num_qubits, scores_filtered), key=lambda x: x[0])
+        )
+        qubit_list_sorted, y_pred_sorted_accordingly = zip(
+            *sorted(zip(names_list_num_qubits, y_pred), key=lambda x: x[0])
         )
 
-        for i in range(len(y_pred)):
-            # if y_pred[i] != y_test[i]:
-            row = []
-            tmp_res = scores_filtered[i]
-            assert len(tmp_res) == 5 or len(tmp_res) == 10
-            circuit_names.append(names_list[i])
-            machines = utils.get_machines()
+        for i in range(len(names_list_num_qubits)):
+            tmp_res = scores_filtered_sorted_accordingly[i]
+            for j in range(len(tmp_res)):
+                plt.plot(i, tmp_res[j], "b.", alpha=0.2)
 
-            comp_val = tmp_res[y_pred[i]] / tmp_res[y_test[i]]
-            row.append(names_list[i])
-            row.append(np.round(np.min(tmp_res), 2))
-            row.append(np.round(tmp_res[y_pred[i]], 2))
-            row.append(y_test[i])
-            row.append(y_pred[i])
-            row.append(np.round(comp_val - 1.00, 2))
-            all_rows.append(row)
-
-            for j in range(10):
+            if y_pred_sorted_accordingly[i] != np.argmin(tmp_res):
                 plt.plot(
-                    len(circuit_names), tmp_res[j], ".", alpha=0.5, label=machines[j]
+                    i,
+                    tmp_res[y_pred_sorted_accordingly[i]],
+                    ".k",
+                    label="MQTPredictor non-optimal",
                 )
-            plt.plot(
-                len(circuit_names),
-                tmp_res[y_pred[i]],
-                "ko",
-                label="MQTPredictor",
-            )
-            plt.xlabel(utils.get_machines())
+            else:
+                plt.plot(
+                    i,
+                    tmp_res[y_pred_sorted_accordingly[i]],
+                    "#ff8600",
+                    marker=".",
+                    linestyle="None",
+                    label="MQTPredictor optimal",
+                )
 
-            if machines[np.argmin(tmp_res)] != machines[y_pred[i]]:
-                assert np.argmin(tmp_res) == y_test[i]
-                diff = tmp_res[y_pred[i]] - tmp_res[np.argmin(tmp_res)]
-                print(
-                    names_list[i],
-                    " predicted: ",
-                    y_pred[i],
-                    " should be: ",
-                    y_test[i],
-                    " diff: ",
-                    diff,
-                )
         plt.title("Evaluation: Compilation Flow Prediction")
-        plt.xticks(range(len(circuit_names)), circuit_names, rotation=90)
-        plt.xlabel("Unseen Benchmarks")
+        plt.xticks(
+            [i for i in range(0, len(scores_filtered), 10)],
+            [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 10)],
+            rotation=90,
+        )
+        # plt.xticks(range(len(names_list_sorted_accordingly)), names_list_sorted_accordingly, rotation=90)
+        plt.xlabel("Benchmark Width (Number of Qubits)")
         plt.ylabel("Actual Score")
+        plt.tight_layout()
+        y_max = np.sort(np.array(list(set(np.array(scores_filtered).flatten()))))[-2]
+        plt.ylim(0, y_max * 1.1)
+        plt.xlim(-1, len(scores_filtered) + 1)
+
+        # add vertical lines to annotate the number of possible compilation paths
+        x_index = np.where(np.array(qubit_list_sorted) > 8)[0][0]
+        plt.axvline(
+            x_index, ls="--", color="k", label="# of possible Comp. Paths", linewidth=3
+        )
+        plt.annotate("10", (x_index - 5, 1))
+        x_index = np.where(np.array(qubit_list_sorted) > 11)[0][0]
+        plt.axvline(
+            x_index, ls="--", color="k", label="# of possible Comp. Paths", linewidth=3
+        )
+        plt.annotate("8", (x_index - 5, 1))
+        x_index = np.where(np.array(qubit_list_sorted) > 27)[0][0]
+        plt.axvline(
+            x_index, ls="--", color="k", label="# of possible Comp. Paths", linewidth=3
+        )
+        plt.annotate("6", (x_index - 5, 1))
+        x_index = np.where(np.array(qubit_list_sorted) > 80)[0][0]
+        plt.axvline(
+            x_index, ls="--", color="k", label="# of possible Comp. Paths", linewidth=3
+        )
+        plt.annotate("4", (x_index - 5, 1))
+        x_index = len(scores_filtered)
+        plt.axvline(
+            x_index, ls="--", color="k", label="# of possible Comp. Paths", linewidth=3
+        )
+        plt.annotate("2", (x_index - 5, 1))
+
         handles, labels = plt.gca().get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
-        plt.legend(by_label.values(), by_label.keys(), loc="upper right")
-        plt.yscale("log")
-        plt.tight_layout()
+        plt.legend(by_label.values(), by_label.keys(), loc="right")
+
         plt.savefig("y_pred_eval")
+
+        return
+
+        def plot_eval_all_detailed(names_list, scores_filtered, y_pred, y_test):
+
+            circuit_names = []
+            all_rows = []
+            all_rows.append(
+                [
+                    "Benchmark",
+                    "Best Score",
+                    "MQT Predictor",
+                    "Best Machine",
+                    "MQT Predictor",
+                    "Overhead",
+                ]
+            )
+
+            for i in range(len(y_pred)):
+                # if y_pred[i] != y_test[i]:
+                row = []
+                tmp_res = scores_filtered[i]
+                assert len(tmp_res) == 5 or len(tmp_res) == 10
+                circuit_names.append(names_list[i])
+                machines = utils.get_machines()
+
+                comp_val = tmp_res[y_pred[i]] / tmp_res[y_test[i]]
+                row.append(names_list[i])
+                row.append(np.round(np.min(tmp_res), 2))
+                row.append(np.round(tmp_res[y_pred[i]], 2))
+                row.append(y_test[i])
+                row.append(y_pred[i])
+                row.append(np.round(comp_val - 1.00, 2))
+                all_rows.append(row)
+
+                for j in range(10):
+                    plt.plot(
+                        len(circuit_names),
+                        tmp_res[j],
+                        ".",
+                        alpha=0.5,
+                        label=machines[j],
+                    )
+                plt.plot(
+                    len(circuit_names),
+                    tmp_res[y_pred[i]],
+                    "ko",
+                    label="MQTPredictor",
+                )
+                plt.xlabel(utils.get_machines())
+
+                if machines[np.argmin(tmp_res)] != machines[y_pred[i]]:
+                    assert np.argmin(tmp_res) == y_test[i]
+                    diff = tmp_res[y_pred[i]] - tmp_res[np.argmin(tmp_res)]
+                    print(
+                        names_list[i],
+                        " predicted: ",
+                        y_pred[i],
+                        " should be: ",
+                        y_test[i],
+                        " diff: ",
+                        diff,
+                    )
+            plt.title("Evaluation: Compilation Flow Prediction")
+            plt.xticks(range(len(circuit_names)), circuit_names, rotation=90)
+            plt.xlabel("Unseen Benchmarks")
+            plt.ylabel("Actual Score")
+            handles, labels = plt.gca().get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            plt.legend(by_label.values(), by_label.keys(), loc="upper right")
+            plt.yscale("log")
+            plt.tight_layout()
+            plt.savefig("y_pred_eval")
 
     def predict(qasm_str_or_path: str):
         """Compilation path prediction for a given qasm string or file path to a qasm file."""
