@@ -50,12 +50,12 @@ class Predictor:
                 filename = os.path.join(folder_path, benchmark)
                 qc = QuantumCircuit.from_qasm_file(filename)
 
-                num_qubits = qc.num_qubits
                 print(benchmark)
                 if not qc:
                     continue
                 actual_num_qubits = qc.num_qubits
-
+                if actual_num_qubits > 127:
+                    continue
                 try:
                     qiskit_gates = utils.timeout_watcher(
                         qiskit_plugin.get_qiskit_gates, [qc], timeout
