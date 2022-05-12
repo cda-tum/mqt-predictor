@@ -310,8 +310,7 @@ class Predictor:
         names_list = [name_list[i] for i in indices_test]
         scores_filtered = [actual_scores_list[i] for i in indices_test]
 
-        plt.figure(figsize=(17, 6))
-        print("len(y_predicted)", len(y_pred))
+        # print("len(y_predicted)", len(y_pred))
 
         # Predictor.plot_eval_all_detailed(names_list, scores_filtered, y_pred, y_test)
         Predictor.plot_eval_all_detailed_compact(
@@ -330,7 +329,7 @@ class Predictor:
             )
             np.savetxt(csvfile, np.round(np.array(res), 3), delimiter=",", fmt="%s")
 
-        return Predictor._clf
+        return np.mean(y_pred == y_test)
 
     def plot_eval_histogram(scores_filtered, y_pred, y_test):
         res = []
