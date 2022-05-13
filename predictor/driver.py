@@ -386,7 +386,7 @@ class Predictor:
         qubit_list_sorted, y_pred_sorted_accordingly = zip(
             *sorted(zip(names_list_num_qubits, y_pred), key=lambda x: x[0])
         )
-
+        plt.figure(figsize=(17, 6))
         for i in range(len(names_list_num_qubits)):
             tmp_res = scores_filtered_sorted_accordingly[i]
             for j in range(len(tmp_res)):
