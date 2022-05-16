@@ -33,7 +33,7 @@ def test_train_decision_tree_classifier(mock_show):
 @patch("matplotlib.pyplot.show")
 def test_predict(mock_show):
     training_data, name_list, scores_list = Predictor.generate_trainingdata_from_json(
-        "json_data_bigger_server.json"
+        "json_data.json"
     )
     X, y = zip(*training_data)
     sample = benchmark_generator.get_one_benchmark("dj", 1, 8).qasm()
