@@ -23,7 +23,9 @@ class Predictor:
     _clf = None
 
     def create_gate_lists_from_folder(
-        folder_path: str = "./qasm_files", timeout: int = 10
+        folder_path: str = "./qasm_files",
+        target_filename: str = "json_data",
+        timeout: int = 10,
     ):
         """Method to create pre-process data to accelerate the training data generation afterwards. All .qasm files from
         the folder path are considered."""
@@ -103,7 +105,7 @@ class Predictor:
                     print("fail: ", e)
 
         jsonString = json.dumps(res, indent=4, sort_keys=True)
-        with open("json_data.json", "w") as outfile:
+        with open(target_filename + ".json", "w") as outfile:
             outfile.write(jsonString)
         return
 
@@ -558,9 +560,13 @@ if __name__ == "__main__":
     # )
     # parser.add_argument("--step", type=int, default=3)
     parser.add_argument("--timeout", type=int, default=10)
+    parser.add_argument("--path", type=str, default="test/")
+    parser.add_argument("--target", type=str, default="json_data")
     # parser.parse_args()
     #
     args = parser.parse_args()
     # create_gate_lists(args.min, args.max, args.step, args.timeout)
 
-    Predictor.create_gate_lists_from_folder(folder_path="test/", timeout=args.timeout)
+    Predictor.create_gate_lists_from_folder(
+        folder_path=args.path, target_filename=args.target, timeout=args.timeout
+    )
