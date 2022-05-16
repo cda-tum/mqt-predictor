@@ -56,10 +56,15 @@ class Predictor:
                 if actual_num_qubits > 127:
                     continue
                 try:
-                    qiskit_gates = utils.timeout_watcher(
-                        qiskit_plugin.get_qiskit_gates, [qc], timeout
+                    qiskit_gates_opt2 = utils.timeout_watcher(
+                        qiskit_plugin.get_qiskit_gates, [qc, 2], timeout
                     )
-                    if not qiskit_gates:
+                    if not qiskit_gates_opt2:
+                        break
+                    qiskit_gates_opt3 = utils.timeout_watcher(
+                        qiskit_plugin.get_qiskit_gates, [qc, 3], timeout
+                    )
+                    if not qiskit_gates_opt3:
                         break
 
                     qc_tket = qiskit_to_tk(qc)
@@ -77,7 +82,7 @@ class Predictor:
                         (
                             benchmark,
                             feature_vector,
-                            qiskit_gates + tket_gates,
+                            qiskit_gates_opt2 + qiskit_gates_opt3 + tket_gates,
                         )
                     )
                 except Exception as e:
@@ -100,7 +105,7 @@ class Predictor:
         for benchmark in data:
             scores = []
             num_qubits = benchmark[1]["num_qubits"]
-            # Qiskit Scores
+            # Qiskit Scores opt2
             if num_qubits > 127:
                 continue
             for elem in benchmark[2][1]:
@@ -112,8 +117,21 @@ class Predictor:
                     )
 
                 scores.append(score)
-            # Tket Scores
+            # Qiskit Scores opt3
+            if num_qubits > 127:
+                continue
             for elem in benchmark[2][3]:
+                if elem[0] is None:
+                    score = utils.get_width_penalty()
+                else:
+                    score = utils.calc_score_from_gates_list(
+                        elem[0], utils.get_backend_information(elem[1]), num_qubits
+                    )
+
+                scores.append(score)
+
+            # Tket Scores
+            for elem in benchmark[2][5]:
                 if elem[0] is None:
                     score = utils.get_width_penalty()
                 else:
@@ -428,50 +446,50 @@ class Predictor:
 
         return Predictor._clf.predict([feature_vector])[0]
 
-    def compile_predicted_compilation_path(qasm_str_or_path: str, prediction: int):
-        """Returns the compiled quantum circuit as a qasm string when the original qasm circuit is provided as either
-        a string or a file path and the prediction index is given."""
-        compilation_path = utils.get_machines()[prediction]
-
-        if ".qasm" in qasm_str_or_path and ".qasm" in qasm_str_or_path:
-            print("Reading from .qasm path: ", qasm_str_or_path)
-            qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
-        elif QuantumCircuit.from_qasm_str(qasm_str_or_path):
-            print("Reading from .qasm str")
-            qc = QuantumCircuit.from_qasm_str(qasm_str_or_path)
-        qc_tket = qiskit_to_tk(qc)
-
-        if compilation_path == "qiskit_ibm_washington":
-            compiled_qc = qiskit_plugin.get_ibm_washington_gates(
-                qc, return_circuit=True
-            )
-        elif compilation_path == "qiskit_ibm_montreal":
-            compiled_qc = qiskit_plugin.get_ibm_montreal_gates(qc, return_circuit=True)
-        elif compilation_path == "qiskit_ionq":
-            compiled_qc = qiskit_plugin.get_ionq_gates(qc, return_circuit=True)
-        elif compilation_path == "qiskit_rigetti":
-            compiled_qc = qiskit_plugin.get_rigetti_gates(qc, return_circuit=True)
-        elif compilation_path == "qiskit_oqc":
-            compiled_qc = qiskit_plugin.get_oqc_gates(qc, return_circuit=True)
-        elif compilation_path == "tket_ibm_washington":
-            compiled_qc = pytket_plugin.get_ibm_washington_gates(
-                qc_tket, return_circuit=True
-            )
-        elif compilation_path == "tket_ibm_montreal":
-            compiled_qc = pytket_plugin.get_ibm_montreal_gates(
-                qc_tket, return_circuit=True
-            )
-        elif compilation_path == "tket_ionq":
-            compiled_qc = pytket_plugin.get_ionq_gates(qc_tket, return_circuit=True)
-        elif compilation_path == "tket_rigetti":
-            compiled_qc = pytket_plugin.get_rigetti_gates(qc_tket, return_circuit=True)
-        elif compilation_path == "tket_oqc":
-            compiled_qc = pytket_plugin.get_oqc_gates(qc_tket, return_circuit=True)
-        else:
-            print("Compilation Path not found")
-            return
-
-        return compiled_qc
+    # def compile_predicted_compilation_path(qasm_str_or_path: str, prediction: int):
+    #     """Returns the compiled quantum circuit as a qasm string when the original qasm circuit is provided as either
+    #     a string or a file path and the prediction index is given."""
+    #     compilation_path = utils.get_machines()[prediction]
+    #
+    #     if ".qasm" in qasm_str_or_path and ".qasm" in qasm_str_or_path:
+    #         print("Reading from .qasm path: ", qasm_str_or_path)
+    #         qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
+    #     elif QuantumCircuit.from_qasm_str(qasm_str_or_path):
+    #         print("Reading from .qasm str")
+    #         qc = QuantumCircuit.from_qasm_str(qasm_str_or_path)
+    #     qc_tket = qiskit_to_tk(qc)
+    #
+    #     if compilation_path == "qiskit_ibm_washington":
+    #         compiled_qc = qiskit_plugin.get_ibm_washington_gates(
+    #             qc, return_circuit=True
+    #         )
+    #     elif compilation_path == "qiskit_ibm_montreal":
+    #         compiled_qc = qiskit_plugin.get_ibm_montreal_gates(qc, return_circuit=True)
+    #     elif compilation_path == "qiskit_ionq":
+    #         compiled_qc = qiskit_plugin.get_ionq_gates(qc, return_circuit=True)
+    #     elif compilation_path == "qiskit_rigetti":
+    #         compiled_qc = qiskit_plugin.get_rigetti_gates(qc, return_circuit=True)
+    #     elif compilation_path == "qiskit_oqc":
+    #         compiled_qc = qiskit_plugin.get_oqc_gates(qc, return_circuit=True)
+    #     elif compilation_path == "tket_ibm_washington":
+    #         compiled_qc = pytket_plugin.get_ibm_washington_gates(
+    #             qc_tket, return_circuit=True
+    #         )
+    #     elif compilation_path == "tket_ibm_montreal":
+    #         compiled_qc = pytket_plugin.get_ibm_montreal_gates(
+    #             qc_tket, return_circuit=True
+    #         )
+    #     elif compilation_path == "tket_ionq":
+    #         compiled_qc = pytket_plugin.get_ionq_gates(qc_tket, return_circuit=True)
+    #     elif compilation_path == "tket_rigetti":
+    #         compiled_qc = pytket_plugin.get_rigetti_gates(qc_tket, return_circuit=True)
+    #     elif compilation_path == "tket_oqc":
+    #         compiled_qc = pytket_plugin.get_oqc_gates(qc_tket, return_circuit=True)
+    #     else:
+    #         print("Compilation Path not found")
+    #         return
+    #
+    #     return compiled_qc
 
 
 if __name__ == "__main__":
@@ -494,4 +512,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # create_gate_lists(args.min, args.max, args.step, args.timeout)
 
-    Predictor.create_gate_lists_from_folder(timeout=args.timeout)
+    Predictor.create_gate_lists_from_folder(folder_path="test/", timeout=args.timeout)

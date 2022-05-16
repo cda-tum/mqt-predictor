@@ -3,8 +3,8 @@ from predictor.src.utils import *
 from qiskit.test.mock import FakeMontreal, FakeWashington
 
 
-def get_qiskit_gates(qc):
-    opt_level = 2
+def get_qiskit_gates(qc, opt_level: int):
+    opt_level = opt_level
     gates_ibm_washington = get_ibm_washington_gates(qc, opt_level)
     gates_ibm_montreal = get_ibm_montreal_gates(qc, opt_level)
     gates_ionq = get_ionq_gates(qc, opt_level)
@@ -12,7 +12,7 @@ def get_qiskit_gates(qc):
     gates_oqc = get_oqc_gates(qc, opt_level)
 
     return (
-        "qiskit",
+        "qiskit_opt" + str(opt_level),
         [
             (gates_ibm_washington, "ibm_washington"),
             (gates_ibm_montreal, "ibm_montreal"),
@@ -23,7 +23,7 @@ def get_qiskit_gates(qc):
     )
 
 
-def get_ibm_washington_gates(qc, opt_level=2, return_circuit: bool = False):
+def get_ibm_washington_gates(qc, opt_level, return_circuit: bool = False):
     ibm_washington = get_ibm_washington()
     if qc.num_qubits > ibm_washington["num_qubits"]:
         gates_ibm_washington = None
@@ -44,7 +44,7 @@ def get_ibm_washington_gates(qc, opt_level=2, return_circuit: bool = False):
     return gates_ibm_washington
 
 
-def get_ibm_montreal_gates(qc, opt_level=2, return_circuit: bool = False):
+def get_ibm_montreal_gates(qc, opt_level, return_circuit: bool = False):
     ibm_montreal = get_ibm_montreal()
     if qc.num_qubits > ibm_montreal["num_qubits"]:
         gates_ibm_montreal = None
@@ -65,7 +65,7 @@ def get_ibm_montreal_gates(qc, opt_level=2, return_circuit: bool = False):
     return gates_ibm_montreal
 
 
-def get_ionq_gates(qc, opt_level=2, return_circuit: bool = False):
+def get_ionq_gates(qc, opt_level, return_circuit: bool = False):
     ionq = get_ionq()
     if qc.num_qubits > ionq["num_qubits"]:
         gates_ionq = None
@@ -85,7 +85,7 @@ def get_ionq_gates(qc, opt_level=2, return_circuit: bool = False):
     return gates_ionq
 
 
-def get_rigetti_gates(qc, opt_level=2, return_circuit: bool = False):
+def get_rigetti_gates(qc, opt_level, return_circuit: bool = False):
     rigetti_m1 = get_rigetti_m1()
     if qc.num_qubits > rigetti_m1["num_qubits"]:
         gates_rigetti = None
@@ -106,7 +106,7 @@ def get_rigetti_gates(qc, opt_level=2, return_circuit: bool = False):
     return gates_rigetti
 
 
-def get_oqc_gates(qc, opt_level=2, return_circuit: bool = False):
+def get_oqc_gates(qc, opt_level, return_circuit: bool = False):
     oqc_lucy = get_oqc_lucy()
     if qc.num_qubits > oqc_lucy["num_qubits"]:
         gates_oqc = None

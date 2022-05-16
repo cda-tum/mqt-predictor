@@ -333,11 +333,16 @@ def get_openqasm_gates():
 
 def get_machines():
     machines = [
-        "qiskit_ibm_washington",
-        "qiskit_ibm_montreal",
-        "qiskit_ionq",
-        "qiskit_rigetti",
-        "qiskit_oqc",
+        "qiskit_ibm_washington_opt2",
+        "qiskit_ibm_montreal_opt2",
+        "qiskit_ionq_opt2",
+        "qiskit_rigetti_opt2",
+        "qiskit_oqc_opt2",
+        "qiskit_ibm_washington_opt3",
+        "qiskit_ibm_montreal_opt3",
+        "qiskit_ionq_opt3",
+        "qiskit_rigetti_opt3",
+        "qiskit_oqc_opt3",
         "tket_ibm_washington",
         "tket_ibm_montreal",
         "tket_ionq",
