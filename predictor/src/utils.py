@@ -1,11 +1,7 @@
 import signal
-
-import numpy as np
-from qiskit import QuantumCircuit
-from qiskit.converters import circuit_to_dag
-from pytket import OpType
-
 import json
+import numpy as np
+from pytket import OpType
 
 
 def get_width_penalty():

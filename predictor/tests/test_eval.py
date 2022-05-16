@@ -2,7 +2,6 @@ from predictor.driver import Predictor
 import os
 from mqt.bench import benchmark_generator
 import pytest
-import matplotlib.pyplot as plt
 from unittest.mock import patch
 
 
@@ -10,15 +9,6 @@ def test_extract_training_data_from_json():
     if os.path.isfile("json_data.json"):
         res = Predictor.generate_trainingdata_from_json()
         assert not res is None
-
-
-# def test_train_neural_network():
-#     Predictor.create_gate_lists(4, 5, 1)
-#     assert os.path.isfile("json_data.json")
-#     training_data, name_list, scores_list = Predictor.extract_training_data_from_json()
-#     X, y = zip(*training_data)
-#     res = Predictor.train_neural_network(X, y, name_list, scores_list)
-#     assert not res is None
 
 
 @patch("matplotlib.pyplot.show")

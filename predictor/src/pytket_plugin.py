@@ -2,18 +2,14 @@ from pytket.passes import (
     PlacementPass,
     RoutingPass,
     FullPeepholeOptimise,
-    SynthesiseTket,
-    DefaultMappingPass,
     auto_rebase_pass,
 )
-from pytket.placement import LinePlacement, GraphPlacement
-
+from pytket.placement import GraphPlacement
+from pytket.qasm import circuit_to_qasm_str
 from pytket import architecture
-
 
 from qiskit.test.mock import FakeMontreal, FakeWashington
 from predictor.src.utils import *
-from pytket.qasm import circuit_to_qasm_str
 
 
 def get_tket_gates(qc):

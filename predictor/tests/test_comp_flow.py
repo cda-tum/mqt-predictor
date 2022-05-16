@@ -1,6 +1,4 @@
-from predictor import driver
-from predictor.src import utils, pytket_plugin, qiskit_plugin
-import pytest
+from predictor.src import pytket_plugin, qiskit_plugin
 from pytket.extensions.qiskit import qiskit_to_tk
 from mqt.bench import get_one_benchmark
 

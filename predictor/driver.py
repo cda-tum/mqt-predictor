@@ -4,19 +4,18 @@ from qiskit import QuantumCircuit
 from pytket.extensions.qiskit import qiskit_to_tk
 
 import numpy as np
+import matplotlib.pyplot as plt
 import json
 import os
 import argparse
-import csv
+import glob
 
-from keras.models import Sequential
-from keras.layers import Dense
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import precision_recall_fscore_support
+from sklearn.tree import plot_tree
+from sklearn import tree
 
 from natsort import natsorted
-import glob
-import matplotlib.pyplot as plt
 from dtreeviz.trees import dtreeviz
 
 
@@ -130,132 +129,9 @@ class Predictor:
 
         return (training_data, name_list, scores_list)
 
-    # def train_neural_network(X, y, name_list=None, actual_scores_list=None):
-    #
-    #     X, y, indices = np.array(X), np.array(y), np.array(range(len(y)))
-    #     X_train, X_test, y_train, y_test, indices_train, indices_test = train_test_split(
-    #         X, y, indices, test_size=0.3, random_state=42
-    #     )
-    #     indices_train, indices_test
-    #
-    #     model = Sequential()
-    #     model.add(Dense(500, activation="relu", input_dim=len(X[0])))
-    #     model.add(Dense(100, activation="relu"))
-    #     model.add(Dense(50, activation="relu"))
-    #     model.add(Dense(10, activation="softmax"))
-    #
-    #     # Compile the model
-    #     model.compile(
-    #         optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
-    #     )
-    #     model.fit(X_train, y_train, epochs=100)
-    #
-    #     scores = model.evaluate(X_train, y_train, verbose=0)
-    #     print(
-    #         "Accuracy on training data: {}% \n Error on training data: {}".format(
-    #             scores[1], 1 - scores[1]
-    #         )
-    #     )
-    #
-    #     scores2 = model.evaluate(X_test, y_test, verbose=0)
-    #     print(
-    #         "Accuracy on test data: {}% \n Error on test data: {}".format(
-    #             scores2[1], 1 - scores2[1]
-    #         )
-    #     )
-    #
-    #     pred_test = model.predict(X_test)
-    #     print(np.mean(np.argmax(model.predict(X_test), axis=1) == y_test))
-    #
-    #     y_predicted = pred_test
-    #     y_actual = y_test
-    #     names_list = [name_list[i] for i in indices_test]
-    #     scores_filtered = [actual_scores_list[i] for i in indices_test]
-    #
-    #     circuit_names = []
-    #
-    #     all_rows = []
-    #     all_rows.append(
-    #         [
-    #             "Benchmark",
-    #             "Best Score",
-    #             "MQT Predictor",
-    #             "Best Machine",
-    #             "MQT Predictor",
-    #             "Overhead",
-    #         ]
-    #     )
-    #
-    #     plt.figure(figsize=(17, 6))
-    #     print("len(y_predicted)", len(y_predicted))
-    #     for i in range(len(y_predicted)):
-    #         y_predicted_instance = np.argmax(y_predicted[i])
-    #         if y_predicted_instance != y_actual[i]:
-    #             row = []
-    #             tmp_res = scores_filtered[i]
-    #             circuit_names.append(names_list[i])
-    #             machines = get_machines()
-    #
-    #             comp_val = tmp_res[y_predicted_instance] / tmp_res[y_actual[i]]
-    #             row.append(names_list[i])
-    #             row.append(np.round(np.min(tmp_res), 2))
-    #             row.append(np.round(tmp_res[y_predicted_instance], 2))
-    #             row.append(y_actual[i])
-    #             row.append(y_predicted_instance)
-    #             row.append(np.round(comp_val - 1.00, 2))
-    #             all_rows.append(row)
-    #
-    #             for j in range(10):
-    #                 plt.plot(
-    #                     len(circuit_names), tmp_res[j], ".", alpha=0.5, label=machines[j]
-    #                 )
-    #             plt.plot(
-    #                 len(circuit_names),
-    #                 tmp_res[y_predicted_instance],
-    #                 "ko",
-    #                 label="MQTPredictor",
-    #             )
-    #             plt.xlabel(get_machines())
-    #
-    #             if machines[np.argmin(tmp_res)] != machines[y_predicted_instance]:
-    #                 assert np.argmin(tmp_res) == y_actual[i]
-    #                 diff = tmp_res[y_predicted_instance] - tmp_res[np.argmin(tmp_res)]
-    #                 print(
-    #                     names_list[i],
-    #                     " predicted: ",
-    #                     y_predicted_instance,
-    #                     " should be: ",
-    #                     y_actual[i],
-    #                     " diff: ",
-    #                     diff,
-    #                 )
-    #
-    #     plt.title("Evaluation: Compilation Flow Prediction")
-    #     plt.xticks(range(len(circuit_names)), circuit_names, rotation=90)
-    #     plt.xlabel("Unseen Benchmarks")
-    #     plt.ylabel("Actual Score")
-    #     handles, labels = plt.gca().get_legend_handles_labels()
-    #     by_label = dict(zip(labels, handles))
-    #     plt.legend(by_label.values(), by_label.keys(), loc="upper right")
-    #     plt.yscale("log")
-    #     plt.tight_layout()
-    #     plt.savefig("y_pred_eval")
-    #
-    #     with open("results.csv", "w", encoding="UTF8", newline="") as f:
-    #         writer = csv.writer(f)
-    #
-    #         for row in all_rows:
-    #             writer.writerow(row)
-    #
-    #     return model
-
     def train_decision_tree_classifier(
         X, y, name_list=None, actual_scores_list=None, max_depth: int = 5
     ):
-        import matplotlib.pyplot as plt
-        from predictor.src import utils
-        from sklearn.tree import plot_tree
-        from sklearn import tree
 
         X, y, indices = np.array(X), np.array(y), np.array(range(len(y)))
         (
