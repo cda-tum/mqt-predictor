@@ -54,24 +54,38 @@ class Predictor:
                     continue
                 actual_num_qubits = qc.num_qubits
                 if actual_num_qubits > 127:
-                    continue
+                    break
                 try:
-                    qiskit_gates_opt2 = utils.timeout_watcher(
-                        qiskit_plugin.get_qiskit_gates, [qc, 2], timeout
+                    qiskit_gates_opt2 = qiskit_plugin.get_qiskit_gates(
+                        qc, 2, timeout=timeout
                     )
-                    if not qiskit_gates_opt2:
-                        break
-                    qiskit_gates_opt3 = utils.timeout_watcher(
-                        qiskit_plugin.get_qiskit_gates, [qc, 3], timeout
+
+                    qiskit_gates_opt3 = qiskit_plugin.get_qiskit_gates(
+                        qc, 3, timeout=timeout
                     )
-                    if not qiskit_gates_opt3:
-                        break
 
                     qc_tket = qiskit_to_tk(qc)
-                    tket_gates = utils.timeout_watcher(
-                        pytket_plugin.get_tket_gates, [qc_tket], timeout
+                    tket_gates_line = pytket_plugin.get_tket_gates(
+                        qc_tket, True, timeout=timeout
                     )
-                    if not tket_gates:
+                    tket_gates_graph = pytket_plugin.get_tket_gates(
+                        qc_tket, False, timeout=timeout
+                    )
+
+                    all_results = (
+                        qiskit_gates_opt2
+                        + qiskit_gates_opt3
+                        + tket_gates_line
+                        + tket_gates_graph
+                    )
+
+                    sum = 0
+                    for scores in all_results:
+                        if not type(scores) == str:
+                            for score in scores:
+                                if not score[0] is None:
+                                    sum += score[0][0]
+                    if sum == 0:
                         break
 
                     ops_list = qc.count_ops()
@@ -82,7 +96,7 @@ class Predictor:
                         (
                             benchmark,
                             feature_vector,
-                            qiskit_gates_opt2 + qiskit_gates_opt3 + tket_gates,
+                            all_results,
                         )
                     )
                 except Exception as e:
@@ -130,8 +144,19 @@ class Predictor:
 
                 scores.append(score)
 
-            # Tket Scores
+            # Tket Scores Lineplacement
             for elem in benchmark[2][5]:
+                if elem[0] is None:
+                    score = utils.get_width_penalty()
+                else:
+                    score = utils.calc_score_from_gates_list(
+                        elem[0], utils.get_backend_information(elem[1]), num_qubits
+                    )
+
+                scores.append(score)
+
+            # Tket Scores Graphplacement
+            for elem in benchmark[2][7]:
                 if elem[0] is None:
                     score = utils.get_width_penalty()
                 else:

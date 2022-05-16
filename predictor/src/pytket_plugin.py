@@ -4,7 +4,7 @@ from pytket.passes import (
     FullPeepholeOptimise,
     auto_rebase_pass,
 )
-from pytket.placement import GraphPlacement
+from pytket.placement import GraphPlacement, LinePlacement
 from pytket.qasm import circuit_to_qasm_str
 from pytket import architecture
 
@@ -12,38 +12,59 @@ from qiskit.test.mock import FakeMontreal, FakeWashington
 from predictor.src.utils import *
 
 
-def get_tket_gates(qc):
+def get_tket_gates(qc, lineplacement: bool, timeout):
 
-    gates_ibm_washington = get_ibm_washington_gates(qc)
-    gates_ibm_montreal = get_ibm_montreal_gates(qc)
-    gates_ionq = get_ionq_gates(qc)
-    gates_rigetti = get_rigetti_gates(qc)
-    gates_oqc = get_oqc_gates(qc)
-
-    return (
-        "tket",
-        [
-            (gates_ibm_washington, "ibm_washington"),
-            (gates_ibm_montreal, "ibm_montreal"),
-            (gates_ionq, "ionq"),
-            (gates_rigetti, "rigetti_m1"),
-            (gates_oqc, "oqc_lucy"),
-        ],
+    gates_ibm_washington = timeout_watcher(
+        get_ibm_washington_gates, [qc, lineplacement], timeout
     )
 
+    gates_ibm_montreal = timeout_watcher(
+        get_ibm_montreal_gates, [qc, lineplacement], timeout
+    )
 
-def get_rigetti_gates(qc, return_circuit: bool = False):
+    gates_rigetti = timeout_watcher(get_rigetti_gates, [qc, lineplacement], timeout)
+
+    gates_oqc = timeout_watcher(get_oqc_gates, [qc, lineplacement], timeout)
+
+    if lineplacement:
+        gates_ionq = timeout_watcher(get_ionq_gates, [qc], timeout)
+
+        return (
+            "tket_lineplacement",
+            [
+                (gates_ionq, "ionq"),
+                (gates_ibm_washington, "ibm_washington"),
+                (gates_ibm_montreal, "ibm_montreal"),
+                (gates_rigetti, "rigetti_m1"),
+                (gates_oqc, "oqc_lucy"),
+            ],
+        )
+    else:
+        return (
+            "tket_graphplacement",
+            [
+                (gates_ibm_washington, "ibm_washington"),
+                (gates_ibm_montreal, "ibm_montreal"),
+                (gates_rigetti, "rigetti_m1"),
+                (gates_oqc, "oqc_lucy"),
+            ],
+        )
+
+
+def get_rigetti_gates(qc, lineplacement: bool, return_circuit: bool = False):
     if qc.n_qubits > get_rigetti_m1()["num_qubits"]:
         gates_rigetti = None
     else:
         backend = get_rigetti_rebase()
         rigetti_arch = architecture.Architecture(get_cmap_rigetti_m1(10))
+
         backend.apply(qc)
-
         FullPeepholeOptimise().apply(qc)
-        PlacementPass(GraphPlacement(rigetti_arch)).apply(qc)
-        # DefaultMappingPass(rigetti_arch).apply(qc)
-
+        if lineplacement:
+            PlacementPass(LinePlacement(rigetti_arch)).apply(qc)
+        else:
+            PlacementPass(GraphPlacement(rigetti_arch)).apply(qc)
+        RoutingPass(rigetti_arch).apply(qc)
         backend.apply(qc)
 
         gates_rigetti = count_qubit_gates_tket(qc, "rigetti")
@@ -61,10 +82,11 @@ def get_ionq_gates(qc, return_circuit: bool = False):
         gates_ionq = None
     else:
         ionq_rebase = get_ionq_rebase()
-        ionq_rebase.apply(qc)
 
+        ionq_rebase.apply(qc)
         FullPeepholeOptimise().apply(qc)
         ionq_rebase.apply(qc)
+
         gates_ionq = count_qubit_gates_tket(qc, "ionq")
         assert sum(gates_ionq) == qc.n_gates - qc.n_gates_of_type(
             OpType.Measure
@@ -76,21 +98,22 @@ def get_ionq_gates(qc, return_circuit: bool = False):
     return gates_ionq
 
 
-def get_oqc_gates(qc, return_circuit: bool = False):
+def get_oqc_gates(qc, lineplacement: bool, return_circuit: bool = False):
     if qc.n_qubits > get_oqc_lucy()["num_qubits"]:
         gates_oqc = None
     else:
         oqc_rebase = get_oqc_rebase()
-        oqc_rebase.apply(qc)
-
         oqc_arch = architecture.Architecture(get_cmap_oqc_lucy())
 
-        FullPeepholeOptimise().apply(qc)
-        PlacementPass(GraphPlacement(oqc_arch)).apply(qc)
-        RoutingPass(oqc_arch).apply(qc)
-        # DefaultMappingPass(oqc_arch).apply(qc)
-
         oqc_rebase.apply(qc)
+        FullPeepholeOptimise().apply(qc)
+        if lineplacement:
+            PlacementPass(LinePlacement(oqc_arch)).apply(qc)
+        else:
+            PlacementPass(GraphPlacement(oqc_arch)).apply(qc)
+        RoutingPass(oqc_arch).apply(qc)
+        oqc_rebase.apply(qc)
+
         gates_oqc = count_qubit_gates_tket(qc, "oqc")
         assert sum(gates_oqc) == qc.n_gates - qc.n_gates_of_type(
             OpType.Measure
@@ -102,7 +125,7 @@ def get_oqc_gates(qc, return_circuit: bool = False):
     return gates_oqc
 
 
-def get_ibm_washington_gates(qc, return_circuit: bool = False):
+def get_ibm_washington_gates(qc, lineplacement: bool, return_circuit: bool = False):
     if qc.n_qubits > get_ibm_washington()["num_qubits"]:
         gates_ibm_washington = None
     else:
@@ -110,14 +133,16 @@ def get_ibm_washington_gates(qc, return_circuit: bool = False):
             FakeWashington().configuration().coupling_map
         )
         backend = get_ibm_rebase()
-        backend.apply(qc)
 
+        backend.apply(qc)
         FullPeepholeOptimise().apply(qc)
-        PlacementPass(GraphPlacement(ibm_washington_arch)).apply(qc)
+        if lineplacement:
+            PlacementPass(LinePlacement(ibm_washington_arch)).apply(qc)
+        else:
+            PlacementPass(GraphPlacement(ibm_washington_arch)).apply(qc)
         RoutingPass(ibm_washington_arch).apply(qc)
-        # DefaultMappingPass(ibm_washington_arch).apply(qc)
-
         backend.apply(qc)
+
         gates_ibm_washington = count_qubit_gates_tket(qc, "ibm")
         assert sum(gates_ibm_washington) == qc.n_gates - qc.n_gates_of_type(
             OpType.Measure
@@ -129,7 +154,7 @@ def get_ibm_washington_gates(qc, return_circuit: bool = False):
     return gates_ibm_washington
 
 
-def get_ibm_montreal_gates(qc, return_circuit: bool = False):
+def get_ibm_montreal_gates(qc, lineplacement: bool, return_circuit: bool = False):
     if qc.n_qubits > get_ibm_montreal()["num_qubits"]:
         gates_ibm_montreal = None
     else:
@@ -137,13 +162,16 @@ def get_ibm_montreal_gates(qc, return_circuit: bool = False):
             FakeMontreal().configuration().coupling_map
         )
         backend = get_ibm_rebase()
+
+        backend.apply(qc)
+        FullPeepholeOptimise().apply(qc)
+        if lineplacement:
+            PlacementPass(LinePlacement(ibm_montreal_arch)).apply(qc)
+        else:
+            PlacementPass(GraphPlacement(ibm_montreal_arch)).apply(qc)
+        RoutingPass(ibm_montreal_arch).apply(qc)
         backend.apply(qc)
 
-        FullPeepholeOptimise().apply(qc)
-        PlacementPass(GraphPlacement(ibm_montreal_arch)).apply(qc)
-        RoutingPass(ibm_montreal_arch).apply(qc)
-        # DefaultMappingPass(ibm_montreal_arch).apply(qc)
-        backend.apply(qc)
         gates_ibm_montreal = count_qubit_gates_tket(qc, "ibm")
         assert sum(gates_ibm_montreal) == qc.n_gates - qc.n_gates_of_type(
             OpType.Measure

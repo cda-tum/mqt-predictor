@@ -3,20 +3,29 @@ from predictor.src.utils import *
 from qiskit.test.mock import FakeMontreal, FakeWashington
 
 
-def get_qiskit_gates(qc, opt_level: int):
+def get_qiskit_gates(qc, opt_level: int, timeout: int):
     opt_level = opt_level
-    gates_ibm_washington = get_ibm_washington_gates(qc, opt_level)
-    gates_ibm_montreal = get_ibm_montreal_gates(qc, opt_level)
-    gates_ionq = get_ionq_gates(qc, opt_level)
-    gates_rigetti = get_rigetti_gates(qc, opt_level)
-    gates_oqc = get_oqc_gates(qc, opt_level)
+
+    gates_ibm_washington = timeout_watcher(
+        get_ibm_washington_gates, [qc, opt_level], timeout
+    )
+
+    gates_ibm_montreal = timeout_watcher(
+        get_ibm_montreal_gates, [qc, opt_level], timeout
+    )
+
+    gates_ionq = timeout_watcher(get_ionq_gates, [qc, opt_level], timeout)
+
+    gates_rigetti = timeout_watcher(get_rigetti_gates, [qc, opt_level], timeout)
+
+    gates_oqc = timeout_watcher(get_oqc_gates, [qc, opt_level], timeout)
 
     return (
         "qiskit_opt" + str(opt_level),
         [
+            (gates_ionq, "ionq"),
             (gates_ibm_washington, "ibm_washington"),
             (gates_ibm_montreal, "ibm_montreal"),
-            (gates_ionq, "ionq"),
             (gates_rigetti, "rigetti_m1"),
             (gates_oqc, "oqc_lucy"),
         ],
