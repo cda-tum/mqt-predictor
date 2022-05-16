@@ -333,21 +333,25 @@ def get_openqasm_gates():
 
 def get_machines():
     machines = [
+        "qiskit_ionq_opt2",
         "qiskit_ibm_washington_opt2",
         "qiskit_ibm_montreal_opt2",
-        "qiskit_ionq_opt2",
         "qiskit_rigetti_opt2",
         "qiskit_oqc_opt2",
+        "qiskit_ionq_opt3",
         "qiskit_ibm_washington_opt3",
         "qiskit_ibm_montreal_opt3",
-        "qiskit_ionq_opt3",
         "qiskit_rigetti_opt3",
         "qiskit_oqc_opt3",
-        "tket_ibm_washington",
-        "tket_ibm_montreal",
         "tket_ionq",
-        "tket_rigetti",
-        "tket_oqc",
+        "tket_ibm_washington_line",
+        "tket_ibm_montreal_line",
+        "tket_rigetti_line",
+        "tket_oqc_line",
+        "tket_ibm_washington_graph",
+        "tket_ibm_montreal_graph",
+        "tket_rigetti_graph",
+        "tket_oqc_graph",
     ]
     return machines
 
@@ -409,10 +413,10 @@ def timeout_watcher(func, args, timeout):
         res = func(*args)
     except TimeoutException:
         print("Calculation/Generation exceeded timeout limit for ", func, args[1:])
-        return False
+        return None
     except Exception as e:
         print("Something else went wrong: ", e)
-        return False
+        return None
     else:
         # Reset the alarm
         signal.alarm(0)
