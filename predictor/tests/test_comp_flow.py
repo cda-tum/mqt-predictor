@@ -12,68 +12,100 @@ def test_qiskit_native_gatesets():
 
 def test_qiskit_gate_counts():
     qc = get_one_benchmark("dj", 1, 3)
-    get_ibm_montreal_gates = qiskit_plugin.get_ibm_montreal_gates(qc, 0)
+    get_ibm_montreal_gates = qiskit_plugin.get_ibm_montreal_gates(qc, 2)
     assert not get_ibm_montreal_gates is None
-    ibm_washington_gates = qiskit_plugin.get_ibm_washington_gates(qc, 0)
+    ibm_washington_gates = qiskit_plugin.get_ibm_washington_gates(qc, 2)
     assert not ibm_washington_gates is None
-    get_ionq_gates = qiskit_plugin.get_ionq_gates(qc, 0)
+    get_ionq_gates = qiskit_plugin.get_ionq_gates(qc, 2)
     assert not get_ionq_gates is None
-    get_rigetti_gates = qiskit_plugin.get_rigetti_gates(qc, 0)
+    get_rigetti_gates = qiskit_plugin.get_rigetti_gates(qc, 2)
     assert not get_rigetti_gates is None
-    get_oqc_gates = qiskit_plugin.get_oqc_gates(qc, 0)
+    get_oqc_gates = qiskit_plugin.get_oqc_gates(qc, 2)
     assert not get_oqc_gates is None
 
     qc = get_one_benchmark("dj", 1, 13)
-    get_ibm_montreal_gates = qiskit_plugin.get_ibm_montreal_gates(qc, 0)
+    get_ibm_montreal_gates = qiskit_plugin.get_ibm_montreal_gates(qc, 2)
     assert not get_ibm_montreal_gates is None
-    ibm_washington_gates = qiskit_plugin.get_ibm_washington_gates(qc, 0)
+    ibm_washington_gates = qiskit_plugin.get_ibm_washington_gates(qc, 2)
     assert not ibm_washington_gates is None
-    get_ionq_gates = qiskit_plugin.get_ionq_gates(qc, 0)
+    get_ionq_gates = qiskit_plugin.get_ionq_gates(qc, 2)
     assert get_ionq_gates is None
-    get_rigetti_gates = qiskit_plugin.get_rigetti_gates(qc, 0)
+    get_rigetti_gates = qiskit_plugin.get_rigetti_gates(qc, 2)
     assert not get_rigetti_gates is None
-    get_oqc_gates = qiskit_plugin.get_oqc_gates(qc, 0)
+    get_oqc_gates = qiskit_plugin.get_oqc_gates(qc, 2)
     assert get_oqc_gates is None
 
 
 def test_tket_gate_counts():
     qc = get_one_benchmark("dj", 1, 3)
     qc_tket = qiskit_to_tk(qc)
-    get_ibm_montreal_gates = pytket_plugin.get_ibm_montreal_gates(qc_tket)
+    get_ibm_montreal_gates = pytket_plugin.get_ibm_montreal_gates(
+        qc_tket, lineplacement=True
+    )
     assert not get_ibm_montreal_gates is None
-    ibm_washington_gates = pytket_plugin.get_ibm_washington_gates(qc_tket)
+    get_ibm_montreal_gates = pytket_plugin.get_ibm_montreal_gates(
+        qc_tket, lineplacement=False
+    )
+    assert not get_ibm_montreal_gates is None
+    ibm_washington_gates = pytket_plugin.get_ibm_washington_gates(
+        qc_tket, lineplacement=True
+    )
+    assert not ibm_washington_gates is None
+    ibm_washington_gates = pytket_plugin.get_ibm_washington_gates(
+        qc_tket, lineplacement=False
+    )
     assert not ibm_washington_gates is None
     get_ionq_gates = pytket_plugin.get_ionq_gates(qc_tket)
     assert not get_ionq_gates is None
-    get_rigetti_gates = pytket_plugin.get_rigetti_gates(qc_tket)
+    get_rigetti_gates = pytket_plugin.get_rigetti_gates(qc_tket, lineplacement=True)
     assert not get_rigetti_gates is None
-    get_oqc_gates = pytket_plugin.get_oqc_gates(qc_tket)
+    get_rigetti_gates = pytket_plugin.get_rigetti_gates(qc_tket, lineplacement=False)
+    assert not get_rigetti_gates is None
+    get_oqc_gates = pytket_plugin.get_oqc_gates(qc_tket, lineplacement=True)
+    assert not get_oqc_gates is None
+    get_oqc_gates = pytket_plugin.get_oqc_gates(qc_tket, lineplacement=False)
     assert not get_oqc_gates is None
 
     qc = get_one_benchmark("dj", 1, 13)
     qc_tket = qiskit_to_tk(qc)
-    get_ibm_montreal_gates = pytket_plugin.get_ibm_montreal_gates(qc_tket)
+    get_ibm_montreal_gates = pytket_plugin.get_ibm_montreal_gates(
+        qc_tket, lineplacement=True
+    )
     assert not get_ibm_montreal_gates is None
-    ibm_washington_gates = pytket_plugin.get_ibm_washington_gates(qc_tket)
+    get_ibm_montreal_gates = pytket_plugin.get_ibm_montreal_gates(
+        qc_tket, lineplacement=False
+    )
+    assert not get_ibm_montreal_gates is None
+    ibm_washington_gates = pytket_plugin.get_ibm_washington_gates(
+        qc_tket, lineplacement=True
+    )
+    assert not ibm_washington_gates is None
+    ibm_washington_gates = pytket_plugin.get_ibm_washington_gates(
+        qc_tket, lineplacement=False
+    )
     assert not ibm_washington_gates is None
     get_ionq_gates = pytket_plugin.get_ionq_gates(qc_tket)
     assert get_ionq_gates is None
-    get_rigetti_gates = pytket_plugin.get_rigetti_gates(qc_tket)
+    get_rigetti_gates = pytket_plugin.get_rigetti_gates(qc_tket, lineplacement=True)
     assert not get_rigetti_gates is None
-    get_oqc_gates = pytket_plugin.get_oqc_gates(qc_tket)
+    get_rigetti_gates = pytket_plugin.get_rigetti_gates(qc_tket, lineplacement=False)
+    assert not get_rigetti_gates is None
+    get_oqc_gates = pytket_plugin.get_oqc_gates(qc_tket, lineplacement=True)
+    assert get_oqc_gates is None
+    get_oqc_gates = pytket_plugin.get_oqc_gates(qc_tket, lineplacement=False)
     assert get_oqc_gates is None
 
 
 def test_get_qiskit_gates():
     qc = get_one_benchmark("ghz", 1, 5)
-    res = qiskit_plugin.get_qiskit_gates(qc)
-    assert res[0] == "qiskit"
+    res = qiskit_plugin.get_qiskit_gates(qc, 2, 10)
+    assert res[0] == "qiskit_opt2"
     assert len(res[1]) == 5
 
 
 def test_get_tket_gates():
     qc = get_one_benchmark("ghz", 1, 5)
     qc_tket = qiskit_to_tk(qc)
-    res = pytket_plugin.get_tket_gates(qc_tket)
-    assert res[0] == "tket"
+    res = pytket_plugin.get_tket_gates(qc_tket, True, 10)
+    assert res[0] == "tket_lineplacement"
     assert len(res[1]) == 5

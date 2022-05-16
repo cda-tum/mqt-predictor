@@ -8,7 +8,7 @@ from pytket.extensions.qiskit import qiskit_to_tk
 
 
 def test_get_machines():
-    assert len(utils.get_machines()) == 10
+    assert len(utils.get_machines()) == 19
 
 
 def test_get_openqasm_gates():
@@ -101,16 +101,25 @@ def test_get_openqasm_gates():
 
 def test_get_machines():
     assert utils.get_machines() == [
-        "qiskit_ibm_washington",
-        "qiskit_ibm_montreal",
-        "qiskit_ionq",
-        "qiskit_rigetti",
-        "qiskit_oqc",
-        "tket_ibm_washington",
-        "tket_ibm_montreal",
+        "qiskit_ionq_opt2",
+        "qiskit_ibm_washington_opt2",
+        "qiskit_ibm_montreal_opt2",
+        "qiskit_rigetti_opt2",
+        "qiskit_oqc_opt2",
+        "qiskit_ionq_opt3",
+        "qiskit_ibm_washington_opt3",
+        "qiskit_ibm_montreal_opt3",
+        "qiskit_rigetti_opt3",
+        "qiskit_oqc_opt3",
         "tket_ionq",
-        "tket_rigetti",
-        "tket_oqc",
+        "tket_ibm_washington_line",
+        "tket_ibm_montreal_line",
+        "tket_rigetti_line",
+        "tket_oqc_line",
+        "tket_ibm_washington_graph",
+        "tket_ibm_montreal_graph",
+        "tket_rigetti_graph",
+        "tket_oqc_graph",
     ]
 
 
@@ -126,8 +135,8 @@ def test_qubit_counts():
     qc = benchmark_generator.get_one_benchmark("dj", 1, 5)
     num_qubits = qc.num_qubits
 
-    qiskit_gates = qiskit_plugin.get_qiskit_gates(qc)
+    qiskit_gates = qiskit_plugin.get_qiskit_gates(qc, 2, 10)
     assert not qiskit_gates is None
     qc_tket = qiskit_to_tk(qc)
-    tket_gates = pytket_plugin.get_tket_gates(qc_tket)
+    tket_gates = pytket_plugin.get_tket_gates(qc_tket, True, 10)
     assert not tket_gates is None
