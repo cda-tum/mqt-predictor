@@ -499,50 +499,86 @@ class Predictor:
 
         return Predictor._clf.predict([feature_vector])[0]
 
-    # def compile_predicted_compilation_path(qasm_str_or_path: str, prediction: int):
-    #     """Returns the compiled quantum circuit as a qasm string when the original qasm circuit is provided as either
-    #     a string or a file path and the prediction index is given."""
-    #     compilation_path = utils.get_machines()[prediction]
-    #
-    #     if ".qasm" in qasm_str_or_path and ".qasm" in qasm_str_or_path:
-    #         print("Reading from .qasm path: ", qasm_str_or_path)
-    #         qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
-    #     elif QuantumCircuit.from_qasm_str(qasm_str_or_path):
-    #         print("Reading from .qasm str")
-    #         qc = QuantumCircuit.from_qasm_str(qasm_str_or_path)
-    #     qc_tket = qiskit_to_tk(qc)
-    #
-    #     if compilation_path == "qiskit_ibm_washington":
-    #         compiled_qc = qiskit_plugin.get_ibm_washington_gates(
-    #             qc, return_circuit=True
-    #         )
-    #     elif compilation_path == "qiskit_ibm_montreal":
-    #         compiled_qc = qiskit_plugin.get_ibm_montreal_gates(qc, return_circuit=True)
-    #     elif compilation_path == "qiskit_ionq":
-    #         compiled_qc = qiskit_plugin.get_ionq_gates(qc, return_circuit=True)
-    #     elif compilation_path == "qiskit_rigetti":
-    #         compiled_qc = qiskit_plugin.get_rigetti_gates(qc, return_circuit=True)
-    #     elif compilation_path == "qiskit_oqc":
-    #         compiled_qc = qiskit_plugin.get_oqc_gates(qc, return_circuit=True)
-    #     elif compilation_path == "tket_ibm_washington":
-    #         compiled_qc = pytket_plugin.get_ibm_washington_gates(
-    #             qc_tket, return_circuit=True
-    #         )
-    #     elif compilation_path == "tket_ibm_montreal":
-    #         compiled_qc = pytket_plugin.get_ibm_montreal_gates(
-    #             qc_tket, return_circuit=True
-    #         )
-    #     elif compilation_path == "tket_ionq":
-    #         compiled_qc = pytket_plugin.get_ionq_gates(qc_tket, return_circuit=True)
-    #     elif compilation_path == "tket_rigetti":
-    #         compiled_qc = pytket_plugin.get_rigetti_gates(qc_tket, return_circuit=True)
-    #     elif compilation_path == "tket_oqc":
-    #         compiled_qc = pytket_plugin.get_oqc_gates(qc_tket, return_circuit=True)
-    #     else:
-    #         print("Compilation Path not found")
-    #         return
-    #
-    #     return compiled_qc
+    def compile_predicted_compilation_path(qasm_str_or_path: str, prediction: int):
+        """Returns the compiled quantum circuit as a qasm string when the original qasm circuit is provided as either
+        a string or a file path and the prediction index is given."""
+        compilation_path = utils.get_machines()[prediction]
+
+        if ".qasm" in qasm_str_or_path and ".qasm" in qasm_str_or_path:
+            print("Reading from .qasm path: ", qasm_str_or_path)
+            qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
+        elif QuantumCircuit.from_qasm_str(qasm_str_or_path):
+            print("Reading from .qasm str")
+            qc = QuantumCircuit.from_qasm_str(qasm_str_or_path)
+        qc_tket = qiskit_to_tk(qc)
+
+        if compilation_path == "qiskit_ionq_opt2":
+            compiled_qc = qiskit_plugin.get_ionq_gates(qc, 2, return_circuit=True)
+        elif compilation_path == "qiskit_ibm_washington_opt2":
+            compiled_qc = qiskit_plugin.get_ibm_washington_gates(
+                qc, 2, return_circuit=True
+            )
+        elif compilation_path == "qiskit_ibm_montreal_opt2":
+            compiled_qc = qiskit_plugin.get_ibm_montreal_gates(
+                qc, 2, return_circuit=True
+            )
+        elif compilation_path == "qiskit_rigetti_opt2":
+            compiled_qc = qiskit_plugin.get_rigetti_gates(qc, 2, return_circuit=True)
+        elif compilation_path == "qiskit_oqc_opt2":
+            compiled_qc = qiskit_plugin.get_oqc_gates(qc, 2, return_circuit=True)
+        elif compilation_path == "qiskit_ionq_opt3":
+            compiled_qc = qiskit_plugin.get_ionq_gates(qc, 3, return_circuit=True)
+        elif compilation_path == "qiskit_ibm_washington_opt3":
+            compiled_qc = qiskit_plugin.get_ibm_washington_gates(
+                qc, 3, return_circuit=True
+            )
+        elif compilation_path == "qiskit_ibm_montreal_opt3":
+            compiled_qc = qiskit_plugin.get_ibm_montreal_gates(
+                qc, 3, return_circuit=True
+            )
+        elif compilation_path == "qiskit_rigetti_opt3":
+            compiled_qc = qiskit_plugin.get_rigetti_gates(qc, 3, return_circuit=True)
+        elif compilation_path == "qiskit_oqc_opt3":
+            compiled_qc = qiskit_plugin.get_oqc_gates(qc, 3, return_circuit=True)
+        elif compilation_path == "tket_ionq":
+            compiled_qc = pytket_plugin.get_ionq_gates(qc_tket, return_circuit=True)
+        elif compilation_path == "tket_ibm_washington_line":
+            compiled_qc = pytket_plugin.get_ibm_washington_gates(
+                qc_tket, True, return_circuit=True
+            )
+        elif compilation_path == "tket_ibm_montreal_line":
+            compiled_qc = pytket_plugin.get_ibm_montreal_gates(
+                qc_tket, True, return_circuit=True
+            )
+        elif compilation_path == "tket_rigetti_line":
+            compiled_qc = pytket_plugin.get_rigetti_gates(
+                qc_tket, True, return_circuit=True
+            )
+        elif compilation_path == "tket_oqc_line":
+            compiled_qc = pytket_plugin.get_oqc_gates(
+                qc_tket, True, return_circuit=True
+            )
+        elif compilation_path == "tket_ibm_washington_graph":
+            compiled_qc = pytket_plugin.get_ibm_washington_gates(
+                qc_tket, False, return_circuit=True
+            )
+        elif compilation_path == "tket_ibm_montreal_graph":
+            compiled_qc = pytket_plugin.get_ibm_montreal_gates(
+                qc_tket, False, return_circuit=True
+            )
+        elif compilation_path == "tket_rigetti_graph":
+            compiled_qc = pytket_plugin.get_rigetti_gates(
+                qc_tket, False, return_circuit=True
+            )
+        elif compilation_path == "tket_oqc_graph":
+            compiled_qc = pytket_plugin.get_oqc_gates(
+                qc_tket, False, return_circuit=True
+            )
+        else:
+            print("Compilation Path not found")
+            return
+
+        return compiled_qc
 
 
 if __name__ == "__main__":

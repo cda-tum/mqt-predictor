@@ -39,8 +39,8 @@ def test_predict(mock_show):
     assert prediction >= 0 and prediction < 10
 
 
-# @pytest.mark.parametrize("comp_path", [i for i in range(10)])
-# def test_compilation_paths(comp_path):
-#     qc_qasm = benchmark_generator.get_one_benchmark("dj", 1, 2).qasm()
-#     res = Predictor.compile_predicted_compilation_path(qc_qasm, comp_path)
-#     assert not res is None
+@pytest.mark.parametrize("comp_path", [i for i in range(19)])
+def test_compilation_paths(comp_path):
+    qc_qasm = benchmark_generator.get_one_benchmark("dj", 1, 2).qasm()
+    res = Predictor.compile_predicted_compilation_path(qc_qasm, comp_path)
+    assert not res is None

@@ -121,6 +121,7 @@ def test_get_machines():
         "tket_rigetti_graph",
         "tket_oqc_graph",
     ]
+    assert len(utils.get_machines()) == 19
 
 
 def test_rigetti_fids():
