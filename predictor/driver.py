@@ -116,6 +116,7 @@ class Predictor:
         name_list = []
         scores_list = []
 
+        # print(data)
         for benchmark in data:
             scores = []
             num_qubits = benchmark[1]["num_qubits"]
@@ -342,31 +343,56 @@ class Predictor:
         plt.xlim(-1, len(scores_filtered) + 1)
 
         # add vertical lines to annotate the number of possible compilation paths
-        x_index = np.where(np.array(qubit_list_sorted) > 8)[0][0]
-        plt.axvline(
-            x_index, ls="--", color="k", label="# of possible Comp. Paths", linewidth=3
-        )
-        plt.annotate("10", (x_index - 5, 1))
-        x_index = np.where(np.array(qubit_list_sorted) > 11)[0][0]
-        plt.axvline(
-            x_index, ls="--", color="k", label="# of possible Comp. Paths", linewidth=3
-        )
-        plt.annotate("8", (x_index - 5, 1))
-        x_index = np.where(np.array(qubit_list_sorted) > 27)[0][0]
-        plt.axvline(
-            x_index, ls="--", color="k", label="# of possible Comp. Paths", linewidth=3
-        )
-        plt.annotate("6", (x_index - 5, 1))
-        x_index = np.where(np.array(qubit_list_sorted) > 80)[0][0]
-        plt.axvline(
-            x_index, ls="--", color="k", label="# of possible Comp. Paths", linewidth=3
-        )
-        plt.annotate("4", (x_index - 5, 1))
-        x_index = len(scores_filtered)
-        plt.axvline(
-            x_index, ls="--", color="k", label="# of possible Comp. Paths", linewidth=3
-        )
-        plt.annotate("2", (x_index - 5, 1))
+        if len(np.where(np.array(qubit_list_sorted) > 11)) > 1:
+            x_index = np.where(np.array(qubit_list_sorted) > 8)[0][0]
+            plt.axvline(
+                x_index,
+                ls="--",
+                color="k",
+                label="# of possible Comp. Paths",
+                linewidth=3,
+            )
+            plt.annotate("19", (x_index - 5, 1))
+
+            if len(np.where(np.array(qubit_list_sorted) > 11)) > 1:
+                x_index = np.where(np.array(qubit_list_sorted) > 11)[0][0]
+                plt.axvline(
+                    x_index,
+                    ls="--",
+                    color="k",
+                    label="# of possible Comp. Paths",
+                    linewidth=3,
+                )
+                plt.annotate("16", (x_index - 5, 1))
+                if len(np.where(np.array(qubit_list_sorted) > 27)) > 1:
+                    x_index = np.where(np.array(qubit_list_sorted) > 27)[0][0]
+                    plt.axvline(
+                        x_index,
+                        ls="--",
+                        color="k",
+                        label="# of possible Comp. Paths",
+                        linewidth=3,
+                    )
+                    plt.annotate("12", (x_index - 5, 1))
+                    if len(np.where(np.array(qubit_list_sorted) > 80)) > 1:
+                        x_index = np.where(np.array(qubit_list_sorted) > 80)[0][0]
+                        plt.axvline(
+                            x_index,
+                            ls="--",
+                            color="k",
+                            label="# of possible Comp. Paths",
+                            linewidth=3,
+                        )
+                        plt.annotate("8", (x_index - 5, 1))
+                        x_index = len(scores_filtered)
+                        plt.axvline(
+                            x_index,
+                            ls="--",
+                            color="k",
+                            label="# of possible Comp. Paths",
+                            linewidth=3,
+                        )
+                        plt.annotate("4", (x_index - 5, 1))
 
         handles, labels = plt.gca().get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
