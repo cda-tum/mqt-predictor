@@ -27,7 +27,7 @@ setup(
         "mqt.bench~=0.1.0rc1",
         "pytket-qiskit~=0.24.0",
         "matplotlib~=3.5.1",
-        "keras~=2.8.0",
+        "keras>=2.8,<2.10",
         "scikit-learn~=1.0.2",
         "natsort~=8.1.0",
         "tensorflow~=2.8.0",
