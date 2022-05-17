@@ -15,6 +15,9 @@ import copy
 
 
 def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name: str):
+    offset = 0
+    if lineplacement == False:
+        offset = 5
     try:
         qc_input = copy.deepcopy(qc)
         ibm_washington = timeout_watcher(
@@ -28,6 +31,8 @@ def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name
                 + "_ibm_washington"
                 + "_tket_lineplacement_"
                 + str(lineplacement)
+                + "_"
+                + str(11 + offset)
                 + ".qasm"
             )
             circuit_to_qasm(ibm_washington, output_file=filename)
@@ -43,6 +48,8 @@ def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name
                 + "_ibm_montreal"
                 + "_tket_lineplacement_"
                 + str(lineplacement)
+                + "_"
+                + str(12 + offset)
                 + ".qasm"
             )
             circuit_to_qasm(ibm_montreal, output_file=filename)
@@ -56,6 +63,8 @@ def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name
                 + "_rigetti"
                 + "_tket_lineplacement_"
                 + str(lineplacement)
+                + "_"
+                + str(13 + offset)
                 + ".qasm"
             )
             circuit_to_qasm(rigetti, output_file=filename)
@@ -69,6 +78,8 @@ def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name
                 + "_oqc"
                 + "_tket_lineplacement_"
                 + str(lineplacement)
+                + "_"
+                + str(14 + offset)
                 + ".qasm"
             )
             circuit_to_qasm(oqc, output_file=filename)
@@ -78,13 +89,22 @@ def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name
             ionq = timeout_watcher(get_ionq_qc, [qc_input], timeout)
             if ionq:
                 filename = (
-                    path + benchmark_name.split(".")[0] + "_ionq" + "_tket" + ".qasm"
+                    path
+                    + benchmark_name.split(".")[0]
+                    + "_ionq"
+                    + "_tket"
+                    + "_"
+                    + str(10)
+                    + ".qasm"
                 )
                 circuit_to_qasm(ionq, output_file=filename)
     except:
         return False
     else:
-        return True
+        if lineplacement:
+            return [ibm_washington, ibm_montreal, rigetti, oqc, ionq]
+        else:
+            return [ibm_washington, ibm_montreal, rigetti, oqc]
 
 
 def get_rigetti_qc(qc, lineplacement: bool):
