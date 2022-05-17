@@ -2,6 +2,8 @@ import signal
 import json
 import numpy as np
 from pytket import OpType
+from qiskit import QuantumCircuit
+import pandas as pd
 
 
 def get_width_penalty():
@@ -426,3 +428,139 @@ def timeout_watcher(func, args, timeout):
 
 def get_compiled_output_folder():
     return "qasm_compiled/"
+
+
+def calc_eval_score_for_qc(qc_path):
+    # read qasm to Qiskit Quantumcircuit
+    qc = QuantumCircuit.from_qasm_file(qc_path)
+    res = 1
+    if "ibm_washington" in qc_path:
+        df = pd.read_csv("ibmq_washington_calibrations.csv")
+        for instruction, qargs, cargs in qc.data:
+            gate_type = instruction.name
+            qubit_indices = [elem.index for elem in qargs]
+            first_qubit = int(qubit_indices[0])
+            if gate_type == "sx":
+                index = 10
+            elif gate_type == "rz":
+                index = 11
+            elif gate_type == "x":
+                index = 11
+            elif gate_type == "cx":
+                index = 12
+            elif gate_type == "measure":
+                index = 5
+            if index == 12:
+                tmp = str(qubit_indices[0]) + "_" + str(qubit_indices[1])
+                for elem in df.loc[1][12].split(";"):
+                    if tmp in elem.split(":")[0]:
+                        specific_fidelity = elem.split(":")[1]
+            else:
+                specific_fidelity = df.loc[first_qubit][index]
+
+            res *= specific_fidelity
+
+    elif "ibm_montreal" in qc_path:
+        df = pd.read_csv("ibmq_montreal_calibrations.csv")
+        for instruction, qargs, cargs in qc.data:
+            gate_type = instruction.name
+            qubit_indices = [elem.index for elem in qargs]
+            first_qubit = int(qubit_indices[0])
+            if gate_type == "sx":
+                index = 10
+            elif gate_type == "rz":
+                index = 11
+            elif gate_type == "x":
+                index = 11
+            elif gate_type == "cx":
+                index = 12
+            elif gate_type == "measure":
+                index = 5
+            if index == 12:
+                tmp = str(qubit_indices[0]) + "_" + str(qubit_indices[1])
+                for elem in df.loc[1][12].split(";"):
+                    if tmp in elem.split(":")[0]:
+                        specific_fidelity = elem.split(":")[1]
+            else:
+                specific_fidelity = df.loc[first_qubit][index]
+
+            res *= specific_fidelity
+    elif "oqc" in qc_path:
+        with open("oqc_lucy_calibration.json", "r") as f:
+            backend = json.load(f)
+
+        for instruction, qargs, cargs in qc.data:
+            gate_type = instruction.name
+            qubit_indices = [elem.index for elem in qargs]
+            if len(qubit_indices) == 1 and gate_type != "measure":
+                specific_fidelity = backend["oneQubitProperties"][
+                    str(qubit_indices[0])
+                ]["oneQubitFidelity"][0]["fidelity"]
+            elif len(qubit_indices) == 1 and gate_type == "measure":
+                specific_fidelity = backend["oneQubitProperties"][
+                    str(qubit_indices[0])
+                ]["oneQubitFidelity"][1]["fidelity"]
+            elif len(qubit_indices) == 2:
+                tmp = str(qubit_indices[0]) + "-" + str(qubit_indices[1])
+                specific_fidelity = backend["twoQubitProperties"][tmp][
+                    "twoQubitGateFidelity"
+                ][0]["fidelity"]
+
+            res *= specific_fidelity
+    elif "rigetti" in qc_path:
+        with open("rigetti_m1_calibration.json", "r") as f:
+            backend = json.load(f)
+
+        for instruction, qargs, cargs in qc.data:
+            gate_type = instruction.name
+            qubit_indices = [elem.index for elem in qargs]
+            if len(qubit_indices) == 1 and gate_type != "measure":
+                specific_fidelity = backend["specs"]["1Q"][str(qubit_indices[0])][
+                    "f1QRB"
+                ]
+            elif len(qubit_indices) == 1 and gate_type == "measure":
+                specific_fidelity = backend["specs"]["1Q"][str(qubit_indices[0])]["fRO"]
+            elif len(qubit_indices) == 2:
+                tmp = str(qubit_indices[0]) + "-" + str(qubit_indices[1])
+                specific_fidelity = backend["specs"]["2Q"][tmp]["fCZ"]
+
+            res *= specific_fidelity
+
+    elif "ionq" in qc_path:
+        with open("ionq_calibration.json", "r") as f:
+            backend = json.load(f)
+
+        for instruction, qargs, cargs in qc.data:
+            gate_type = instruction.name
+            qubit_indices = [elem.index for elem in qargs]
+            if len(qubit_indices) == 1:
+                specific_fidelity = backend["fidelity"]["1Q"]["mean"]
+            elif len(qubit_indices) == 2:
+                specific_fidelity = backend["fidelity"]["2Q"]["mean"]
+            res *= specific_fidelity
+    else:
+        print("Error: No suitable backend found!")
+
+    res = 1
+    for instruction, qargs, cargs in qc.data:
+        gate_type = instruction.name
+        qubit_indices = [elem.index for elem in qargs]
+        specific_fidelity = backend[qubit_indices][gate_type]
+        res *= specific_fidelity
+
+    # add readout error
+    # return res
+
+    return res
+
+
+def create_feature_vector(qc_path: str):
+    qc = QuantumCircuit.from_qasm_file(qc_path)
+
+    ops_list = qc.count_ops()
+    feature_vector = dict_to_featurevector(ops_list, qc.num_qubits, qc.depth())
+    return feature_vector
+
+
+def read_rigetti_json():
+    pass
