@@ -86,6 +86,61 @@ class Predictor:
 
         return
 
+    def generate_trainingdata_from_qasm_files(
+        folder_path: str = "./qasm_files", compiled_path: str = "qasm_compiled/"
+    ):
+        # init resulting list (feature vector, name, scores)
+        training_data = []
+        name_list = []
+        scores_list = []
+
+        dictionary = {}
+        # for each circuit in qasm_files
+        for subdir, dirs, files in os.walk(folder_path):
+            for file in natsorted(files):
+                if "qasm" in file:
+                    key = file.split("_")[
+                        0
+                    ]  # The key is the first 16 characters of the file name
+                    group = dictionary.get(key, [])
+                    group.append(file)
+                    dictionary[key] = group
+
+        print(dictionary.keys())
+        for alg_class in dictionary:
+            for benchmark in dictionary[alg_class]:
+                print("Find: ", benchmark)
+                scores = []
+                for _ in range(20):
+                    scores.append([])
+                # iterate over all respective circuits in compiled_path folder
+                for filename in os.listdir(compiled_path):
+                    # print("Check: ",filename)
+                    if benchmark.split(".")[0] in filename and filename.endswith(
+                        ".qasm"
+                    ):
+                        # print("Found: ", filename)
+                        # execute function call calc_eval_score_for_qc_and_backend
+                        score = utils.calc_eval_score_for_qc(
+                            os.join(compiled_path, filename)
+                        )
+                        comp_path_index = int(filename.split("_")[-1].split(".")[0])
+                        # print("Comp path index: ", comp_path_index, "\n")
+                        scores[comp_path_index] = score
+
+                for i in range(20):
+                    if not scores[i]:
+                        scores[i] = utils.get_width_penalty()
+
+                feature_vec = utils.create_feature_vector(
+                    os.path.join(folder_path, benchmark)
+                )
+                training_data.append((feature_vec, np.argmin(scores)))
+                name_list.append(benchmark.split(".")[0])
+                scores_list.append(scores)
+
+        return (training_data, name_list, scores_list)
+
     def generate_trainingdata_from_json(json_path: str = "json_data.json"):
         """Generates the training data based on the provided json file and defined evaluation score."""
 
@@ -543,23 +598,12 @@ class Predictor:
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Create Training Data")
-    # parser.add_argument(
-    #     "--min",
-    #     type=int,
-    #     default=3,
-    # )
-    # parser.add_argument(
-    #     "--max",
-    #     type=int,
-    #     default=20,
-    # )
-    # parser.add_argument("--step", type=int, default=3)
-    parser.add_argument("--timeout", type=int, default=10)
-    parser.add_argument("--path", type=str, default="test/")
-    # parser.parse_args()
+    # parser = argparse.ArgumentParser(description="Create Training Data")
     #
-    args = parser.parse_args()
-    # create_gate_lists(args.min, args.max, args.step, args.timeout)
+    # parser.add_argument("--timeout", type=int, default=10)
+    # parser.add_argument("--path", type=str, default="test/")
+    #
+    # args = parser.parse_args()
 
-    Predictor.save_all_compilation_path_results(folder_path=args.path, timeout=args.timeout)
+    # Predictor.save_all_compilation_path_results(folder_path=args.path, timeout=args.timeout)
+    Predictor.generate_trainingdata_from_qasm_files(folder_path="parsetest/")
