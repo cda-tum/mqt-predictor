@@ -23,7 +23,7 @@ from dtreeviz.trees import dtreeviz
 class Predictor:
     _clf = None
 
-    def create_gate_lists_from_folder(
+    def save_all_compilation_path_results(
         folder_path: str = "./qasm_files",
         timeout: int = 10,
     ):
@@ -562,4 +562,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # create_gate_lists(args.min, args.max, args.step, args.timeout)
 
-    Predictor.create_gate_lists_from_folder(folder_path=args.path, timeout=args.timeout)
+    Predictor.save_all_compilation_path_results(folder_path=args.path, timeout=args.timeout)
