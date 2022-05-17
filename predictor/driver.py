@@ -55,11 +55,11 @@ class Predictor:
                 if actual_num_qubits > 127:
                     break
                 try:
-                    qiskit_plugin.save_qiskit_compiled_circuits(
+                    qiskit_opt2 = qiskit_plugin.save_qiskit_compiled_circuits(
                         qc, 2, timeout=timeout, benchmark_name=benchmark
                     )
 
-                    qiskit_plugin.save_qiskit_compiled_circuits(
+                    qiskit_opt3 = qiskit_plugin.save_qiskit_compiled_circuits(
                         qc, 3, timeout=timeout, benchmark_name=benchmark
                     )
                     assert qc == qc_check
@@ -67,49 +67,23 @@ class Predictor:
                     qc_tket = qiskit_to_tk(qc)
                     qc_tket_check = copy.deepcopy(qc_tket)
 
-                    pytket_plugin.save_tket_compiled_circuits(
+                    tket_line_True = pytket_plugin.save_tket_compiled_circuits(
                         qc_tket, True, timeout=timeout, benchmark_name=benchmark
                     )
 
-                    pytket_plugin.save_tket_compiled_circuits(
+                    tket_line_False = pytket_plugin.save_tket_compiled_circuits(
                         qc_tket, False, timeout=timeout, benchmark_name=benchmark
                     )
+                    all_results = (
+                        qiskit_opt2 + qiskit_opt3 + tket_line_False + tket_line_True
+                    )
+                    if all(x is None for x in all_results):
+                        break
                     assert qc_tket == qc_tket_check
-                    #
-                    # all_results = (
-                    #     qiskit_qc_opt2
-                    #     + qiskit_qc_opt3
-                    #     + tket_qc_line
-                    #     + tket_qc_graph
-                    # )
-                    #
-                    # sum = 0
-                    # for scores in all_results:
-                    #     if not type(scores) == str:
-                    #         for score in scores:
-                    #             if not score[0] is None:
-                    #                 sum += score[0][0]
-                    # if sum == 0:
-                    #     print("All Entries are null")
-                    #     break
-                    #
-                    # ops_list = qc.count_ops()
-                    # feature_vector = utils.dict_to_featurevector(
-                    #     ops_list, actual_num_qubits
-                    # )
-                    # res.append(
-                    #     (
-                    #         benchmark,
-                    #         feature_vector,
-                    #         all_results,
-                    #     )
-                    # )
+
                 except Exception as e:
                     print("fail: ", e)
 
-        # jsonString = json.dumps(res, indent=4, sort_keys=True)
-        # with open(target_filename + ".json", "w") as outfile:
-        #     outfile.write(jsonString)
         return
 
     def generate_trainingdata_from_json(json_path: str = "json_data.json"):
