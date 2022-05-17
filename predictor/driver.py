@@ -1,3 +1,5 @@
+import copy
+
 from predictor.src import qiskit_plugin, pytket_plugin, utils
 
 from qiskit import QuantumCircuit
@@ -50,6 +52,7 @@ class Predictor:
             for benchmark in dictionary[alg_class]:
                 filename = os.path.join(folder_path, benchmark)
                 qc = QuantumCircuit.from_qasm_file(filename)
+                qc_check = copy.deepcopy(qc)
 
                 print(benchmark)
                 if not qc:
@@ -57,52 +60,56 @@ class Predictor:
                 actual_num_qubits = qc.num_qubits
                 if actual_num_qubits > 127:
                     break
-                try:
-                    qiskit_gates_opt2 = qiskit_plugin.get_qiskit_gates(
-                        qc, 2, timeout=timeout
-                    )
 
-                    qiskit_gates_opt3 = qiskit_plugin.get_qiskit_gates(
-                        qc, 3, timeout=timeout
-                    )
+                qiskit_gates_opt2 = qiskit_plugin.get_qiskit_gates(
+                    qc, 2, timeout=timeout
+                )
 
-                    qc_tket = qiskit_to_tk(qc)
-                    tket_gates_line = pytket_plugin.get_tket_gates(
-                        qc_tket, True, timeout=timeout
-                    )
-                    tket_gates_graph = pytket_plugin.get_tket_gates(
-                        qc_tket, False, timeout=timeout
-                    )
+                qiskit_gates_opt3 = qiskit_plugin.get_qiskit_gates(
+                    qc, 3, timeout=timeout
+                )
+                assert qc == qc_check
 
-                    all_results = (
-                        qiskit_gates_opt2
-                        + qiskit_gates_opt3
-                        + tket_gates_line
-                        + tket_gates_graph
-                    )
+                qc_tket = qiskit_to_tk(qc)
+                qc_tket_check = copy.deepcopy(qc_tket)
 
-                    sum = 0
-                    for scores in all_results:
-                        if not type(scores) == str:
-                            for score in scores:
-                                if not score[0] is None:
-                                    sum += score[0][0]
-                    if sum == 0:
-                        break
+                tket_gates_line = pytket_plugin.get_tket_gates(
+                    qc_tket, True, timeout=timeout
+                )
 
-                    ops_list = qc.count_ops()
-                    feature_vector = utils.dict_to_featurevector(
-                        ops_list, actual_num_qubits
+                tket_gates_graph = pytket_plugin.get_tket_gates(
+                    qc_tket, False, timeout=timeout
+                )
+                assert qc_tket == qc_tket_check
+
+                all_results = (
+                    qiskit_gates_opt2
+                    + qiskit_gates_opt3
+                    + tket_gates_line
+                    + tket_gates_graph
+                )
+
+                sum = 0
+                for scores in all_results:
+                    if not type(scores) == str:
+                        for score in scores:
+                            if not score[0] is None:
+                                sum += score[0][0]
+                if sum == 0:
+                    print("All Entries are null")
+                    break
+
+                ops_list = qc.count_ops()
+                feature_vector = utils.dict_to_featurevector(
+                    ops_list, actual_num_qubits
+                )
+                res.append(
+                    (
+                        benchmark,
+                        feature_vector,
+                        all_results,
                     )
-                    res.append(
-                        (
-                            benchmark,
-                            feature_vector,
-                            all_results,
-                        )
-                    )
-                except Exception as e:
-                    print("fail: ", e)
+                )
 
         jsonString = json.dumps(res, indent=4, sort_keys=True)
         with open(target_filename + ".json", "w") as outfile:
@@ -120,12 +127,15 @@ class Predictor:
 
         # print(data)
         for benchmark in data:
+            print(benchmark[0])
             scores = []
             num_qubits = benchmark[1]["num_qubits"]
             # Qiskit Scores opt2
             if num_qubits > 127:
                 continue
+            print(benchmark[2][0])
             for elem in benchmark[2][1]:
+                print(elem)
                 if elem[0] is None:
                     score = utils.get_width_penalty()
                 else:
@@ -134,10 +144,13 @@ class Predictor:
                     )
 
                 scores.append(score)
+            assert len(scores) == 5
             # Qiskit Scores opt3
             if num_qubits > 127:
                 continue
+            print(benchmark[2][2])
             for elem in benchmark[2][3]:
+                print(elem)
                 if elem[0] is None:
                     score = utils.get_width_penalty()
                 else:
@@ -146,9 +159,13 @@ class Predictor:
                     )
 
                 scores.append(score)
+            assert len(scores) == 10
 
             # Tket Scores Lineplacement
+
+            print(benchmark[2][4])
             for elem in benchmark[2][5]:
+                print(elem)
                 if elem[0] is None:
                     score = utils.get_width_penalty()
                 else:
@@ -157,9 +174,13 @@ class Predictor:
                     )
 
                 scores.append(score)
+            assert len(scores) == 15
 
             # Tket Scores Graphplacement
+
+            print(benchmark[2][6])
             for elem in benchmark[2][7]:
+                print(elem)
                 if elem[0] is None:
                     score = utils.get_width_penalty()
                 else:
@@ -168,6 +189,7 @@ class Predictor:
                     )
 
                 scores.append(score)
+            assert len(scores) == 19
 
             training_data.append((list(benchmark[1].values()), np.argmin(scores)))
             name_list.append(benchmark[0])
@@ -404,76 +426,76 @@ class Predictor:
 
         return
 
-        def plot_eval_all_detailed(names_list, scores_filtered, y_pred, y_test):
-
-            circuit_names = []
-            all_rows = []
-            all_rows.append(
-                [
-                    "Benchmark",
-                    "Best Score",
-                    "MQT Predictor",
-                    "Best Machine",
-                    "MQT Predictor",
-                    "Overhead",
-                ]
-            )
-
-            for i in range(len(y_pred)):
-                # if y_pred[i] != y_test[i]:
-                row = []
-                tmp_res = scores_filtered[i]
-                assert len(tmp_res) == 5 or len(tmp_res) == 10
-                circuit_names.append(names_list[i])
-                machines = utils.get_machines()
-
-                comp_val = tmp_res[y_pred[i]] / tmp_res[y_test[i]]
-                row.append(names_list[i])
-                row.append(np.round(np.min(tmp_res), 2))
-                row.append(np.round(tmp_res[y_pred[i]], 2))
-                row.append(y_test[i])
-                row.append(y_pred[i])
-                row.append(np.round(comp_val - 1.00, 2))
-                all_rows.append(row)
-
-                for j in range(10):
-                    plt.plot(
-                        len(circuit_names),
-                        tmp_res[j],
-                        ".",
-                        alpha=0.5,
-                        label=machines[j],
-                    )
-                plt.plot(
-                    len(circuit_names),
-                    tmp_res[y_pred[i]],
-                    "ko",
-                    label="MQTPredictor",
-                )
-                plt.xlabel(utils.get_machines())
-
-                if machines[np.argmin(tmp_res)] != machines[y_pred[i]]:
-                    assert np.argmin(tmp_res) == y_test[i]
-                    diff = tmp_res[y_pred[i]] - tmp_res[np.argmin(tmp_res)]
-                    print(
-                        names_list[i],
-                        " predicted: ",
-                        y_pred[i],
-                        " should be: ",
-                        y_test[i],
-                        " diff: ",
-                        diff,
-                    )
-            plt.title("Evaluation: Compilation Flow Prediction")
-            plt.xticks(range(len(circuit_names)), circuit_names, rotation=90)
-            plt.xlabel("Unseen Benchmarks")
-            plt.ylabel("Actual Score")
-            handles, labels = plt.gca().get_legend_handles_labels()
-            by_label = dict(zip(labels, handles))
-            plt.legend(by_label.values(), by_label.keys(), loc="upper right")
-            plt.yscale("log")
-            plt.tight_layout()
-            plt.savefig("y_pred_eval")
+        # def plot_eval_all_detailed(names_list, scores_filtered, y_pred, y_test):
+        #
+        #     circuit_names = []
+        #     all_rows = []
+        #     all_rows.append(
+        #         [
+        #             "Benchmark",
+        #             "Best Score",
+        #             "MQT Predictor",
+        #             "Best Machine",
+        #             "MQT Predictor",
+        #             "Overhead",
+        #         ]
+        #     )
+        #
+        #     for i in range(len(y_pred)):
+        #         # if y_pred[i] != y_test[i]:
+        #         row = []
+        #         tmp_res = scores_filtered[i]
+        #         assert len(tmp_res) == 5 or len(tmp_res) == 10
+        #         circuit_names.append(names_list[i])
+        #         machines = utils.get_machines()
+        #
+        #         comp_val = tmp_res[y_pred[i]] / tmp_res[y_test[i]]
+        #         row.append(names_list[i])
+        #         row.append(np.round(np.min(tmp_res), 2))
+        #         row.append(np.round(tmp_res[y_pred[i]], 2))
+        #         row.append(y_test[i])
+        #         row.append(y_pred[i])
+        #         row.append(np.round(comp_val - 1.00, 2))
+        #         all_rows.append(row)
+        #
+        #         for j in range(10):
+        #             plt.plot(
+        #                 len(circuit_names),
+        #                 tmp_res[j],
+        #                 ".",
+        #                 alpha=0.5,
+        #                 label=machines[j],
+        #             )
+        #         plt.plot(
+        #             len(circuit_names),
+        #             tmp_res[y_pred[i]],
+        #             "ko",
+        #             label="MQTPredictor",
+        #         )
+        #         plt.xlabel(utils.get_machines())
+        #
+        #         if machines[np.argmin(tmp_res)] != machines[y_pred[i]]:
+        #             assert np.argmin(tmp_res) == y_test[i]
+        #             diff = tmp_res[y_pred[i]] - tmp_res[np.argmin(tmp_res)]
+        #             print(
+        #                 names_list[i],
+        #                 " predicted: ",
+        #                 y_pred[i],
+        #                 " should be: ",
+        #                 y_test[i],
+        #                 " diff: ",
+        #                 diff,
+        #             )
+        #     plt.title("Evaluation: Compilation Flow Prediction")
+        #     plt.xticks(range(len(circuit_names)), circuit_names, rotation=90)
+        #     plt.xlabel("Unseen Benchmarks")
+        #     plt.ylabel("Actual Score")
+        #     handles, labels = plt.gca().get_legend_handles_labels()
+        #     by_label = dict(zip(labels, handles))
+        #     plt.legend(by_label.values(), by_label.keys(), loc="upper right")
+        #     plt.yscale("log")
+        #     plt.tight_layout()
+        #     plt.savefig("y_pred_eval")
 
     def predict(qasm_str_or_path: str):
         """Compilation path prediction for a given qasm string or file path to a qasm file."""

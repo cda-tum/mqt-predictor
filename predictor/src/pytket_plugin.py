@@ -11,23 +11,31 @@ from pytket import architecture
 from qiskit.test.mock import FakeMontreal, FakeWashington
 from predictor.src.utils import *
 
+import copy
+
 
 def get_tket_gates(qc, lineplacement: bool, timeout):
-
+    qc_input = copy.deepcopy(qc)
     gates_ibm_washington = timeout_watcher(
-        get_ibm_washington_gates, [qc, lineplacement], timeout
+        get_ibm_washington_gates, [qc_input, lineplacement], timeout
     )
 
+    qc_input = copy.deepcopy(qc)
     gates_ibm_montreal = timeout_watcher(
-        get_ibm_montreal_gates, [qc, lineplacement], timeout
+        get_ibm_montreal_gates, [qc_input, lineplacement], timeout
     )
 
-    gates_rigetti = timeout_watcher(get_rigetti_gates, [qc, lineplacement], timeout)
+    qc_input = copy.deepcopy(qc)
+    gates_rigetti = timeout_watcher(
+        get_rigetti_gates, [qc_input, lineplacement], timeout
+    )
 
-    gates_oqc = timeout_watcher(get_oqc_gates, [qc, lineplacement], timeout)
+    qc_input = copy.deepcopy(qc)
+    gates_oqc = timeout_watcher(get_oqc_gates, [qc_input, lineplacement], timeout)
 
     if lineplacement:
-        gates_ionq = timeout_watcher(get_ionq_gates, [qc], timeout)
+        qc_input = copy.deepcopy(qc)
+        gates_ionq = timeout_watcher(get_ionq_gates, [qc_input], timeout)
 
         return (
             "tket_lineplacement",
