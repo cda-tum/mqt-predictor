@@ -440,10 +440,10 @@ def calc_eval_score_for_qc(qc_path):
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
             first_qubit = int(qubit_indices[0])
+            index = 0
+            specific_error = 0
             if gate_type == "sx":
                 index = 10
-            elif gate_type == "rz":
-                index = 11
             elif gate_type == "x":
                 index = 11
             elif gate_type == "cx":
@@ -455,7 +455,7 @@ def calc_eval_score_for_qc(qc_path):
                 for elem in df.loc[1][12].split(";"):
                     if tmp in elem.split(":")[0]:
                         specific_error = elem.split(":")[1]
-            else:
+            elif index in [5, 10, 11]:
                 specific_error = df.loc[first_qubit][index]
 
             res *= 1 - specific_error
@@ -466,10 +466,10 @@ def calc_eval_score_for_qc(qc_path):
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
             first_qubit = int(qubit_indices[0])
+            index = 0
+            specific_error = 0
             if gate_type == "sx":
                 index = 10
-            elif gate_type == "rz":
-                index = 11
             elif gate_type == "x":
                 index = 11
             elif gate_type == "cx":
@@ -481,7 +481,7 @@ def calc_eval_score_for_qc(qc_path):
                 for elem in df.loc[1][12].split(";"):
                     if tmp in elem.split(":")[0]:
                         specific_error = elem.split(":")[1]
-            else:
+            elif index in [5, 10, 11]:
                 specific_error = df.loc[first_qubit][index]
 
             res *= 1 - specific_error
@@ -540,13 +540,6 @@ def calc_eval_score_for_qc(qc_path):
             res *= specific_fidelity
     else:
         print("Error: No suitable backend found!")
-
-    res = 1
-    for instruction, qargs, cargs in qc.data:
-        gate_type = instruction.name
-        qubit_indices = [elem.index for elem in qargs]
-        specific_fidelity = backend[qubit_indices][gate_type]
-        res *= specific_fidelity
 
     # add readout error
     # return res
