@@ -127,15 +127,13 @@ class Predictor:
 
         # print(data)
         for benchmark in data:
-            print(benchmark[0])
             scores = []
             num_qubits = benchmark[1]["num_qubits"]
             # Qiskit Scores opt2
             if num_qubits > 127:
                 continue
-            print(benchmark[2][0])
+
             for elem in benchmark[2][1]:
-                print(elem)
                 if elem[0] is None:
                     score = utils.get_width_penalty()
                 else:
@@ -148,9 +146,7 @@ class Predictor:
             # Qiskit Scores opt3
             if num_qubits > 127:
                 continue
-            print(benchmark[2][2])
             for elem in benchmark[2][3]:
-                print(elem)
                 if elem[0] is None:
                     score = utils.get_width_penalty()
                 else:
@@ -163,9 +159,7 @@ class Predictor:
 
             # Tket Scores Lineplacement
 
-            print(benchmark[2][4])
             for elem in benchmark[2][5]:
-                print(elem)
                 if elem[0] is None:
                     score = utils.get_width_penalty()
                 else:
@@ -178,9 +172,7 @@ class Predictor:
 
             # Tket Scores Graphplacement
 
-            print(benchmark[2][6])
             for elem in benchmark[2][7]:
-                print(elem)
                 if elem[0] is None:
                     score = utils.get_width_penalty()
                 else:
