@@ -60,56 +60,58 @@ class Predictor:
                 actual_num_qubits = qc.num_qubits
                 if actual_num_qubits > 127:
                     break
-
-                qiskit_gates_opt2 = qiskit_plugin.get_qiskit_gates(
-                    qc, 2, timeout=timeout
-                )
-
-                qiskit_gates_opt3 = qiskit_plugin.get_qiskit_gates(
-                    qc, 3, timeout=timeout
-                )
-                assert qc == qc_check
-
-                qc_tket = qiskit_to_tk(qc)
-                qc_tket_check = copy.deepcopy(qc_tket)
-
-                tket_gates_line = pytket_plugin.get_tket_gates(
-                    qc_tket, True, timeout=timeout
-                )
-
-                tket_gates_graph = pytket_plugin.get_tket_gates(
-                    qc_tket, False, timeout=timeout
-                )
-                assert qc_tket == qc_tket_check
-
-                all_results = (
-                    qiskit_gates_opt2
-                    + qiskit_gates_opt3
-                    + tket_gates_line
-                    + tket_gates_graph
-                )
-
-                sum = 0
-                for scores in all_results:
-                    if not type(scores) == str:
-                        for score in scores:
-                            if not score[0] is None:
-                                sum += score[0][0]
-                if sum == 0:
-                    print("All Entries are null")
-                    break
-
-                ops_list = qc.count_ops()
-                feature_vector = utils.dict_to_featurevector(
-                    ops_list, actual_num_qubits
-                )
-                res.append(
-                    (
-                        benchmark,
-                        feature_vector,
-                        all_results,
+                try:
+                    qiskit_gates_opt2 = qiskit_plugin.get_qiskit_gates(
+                        qc, 2, timeout=timeout
                     )
-                )
+
+                    qiskit_gates_opt3 = qiskit_plugin.get_qiskit_gates(
+                        qc, 3, timeout=timeout
+                    )
+                    assert qc == qc_check
+
+                    qc_tket = qiskit_to_tk(qc)
+                    qc_tket_check = copy.deepcopy(qc_tket)
+
+                    tket_gates_line = pytket_plugin.get_tket_gates(
+                        qc_tket, True, timeout=timeout
+                    )
+
+                    tket_gates_graph = pytket_plugin.get_tket_gates(
+                        qc_tket, False, timeout=timeout
+                    )
+                    assert qc_tket == qc_tket_check
+
+                    all_results = (
+                        qiskit_gates_opt2
+                        + qiskit_gates_opt3
+                        + tket_gates_line
+                        + tket_gates_graph
+                    )
+
+                    sum = 0
+                    for scores in all_results:
+                        if not type(scores) == str:
+                            for score in scores:
+                                if not score[0] is None:
+                                    sum += score[0][0]
+                    if sum == 0:
+                        print("All Entries are null")
+                        break
+
+                    ops_list = qc.count_ops()
+                    feature_vector = utils.dict_to_featurevector(
+                        ops_list, actual_num_qubits
+                    )
+                    res.append(
+                        (
+                            benchmark,
+                            feature_vector,
+                            all_results,
+                        )
+                    )
+                except Exception as e:
+                    print("fail: ", e)
 
         jsonString = json.dumps(res, indent=4, sort_keys=True)
         with open(target_filename + ".json", "w") as outfile:
