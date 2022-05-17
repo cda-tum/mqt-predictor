@@ -122,7 +122,7 @@ class Predictor:
                         # print("Found: ", filename)
                         # execute function call calc_eval_score_for_qc_and_backend
                         score = utils.calc_eval_score_for_qc(
-                            os.join(compiled_path, filename)
+                            os.path.join(compiled_path, filename)
                         )
                         comp_path_index = int(filename.split("_")[-1].split(".")[0])
                         # print("Comp path index: ", comp_path_index, "\n")
