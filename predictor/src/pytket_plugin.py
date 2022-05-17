@@ -5,7 +5,7 @@ from pytket.passes import (
     auto_rebase_pass,
 )
 from pytket.placement import GraphPlacement, LinePlacement
-from pytket.qasm import circuit_to_qasm_str
+from pytket.qasm import circuit_to_qasm_str, circuit_to_qasm
 from pytket import architecture
 
 from qiskit.test.mock import FakeMontreal, FakeWashington
@@ -14,54 +14,82 @@ from predictor.src.utils import *
 import copy
 
 
-def get_tket_gates(qc, lineplacement: bool, timeout):
-    qc_input = copy.deepcopy(qc)
-    gates_ibm_washington = timeout_watcher(
-        get_ibm_washington_gates, [qc_input, lineplacement], timeout
-    )
-
-    qc_input = copy.deepcopy(qc)
-    gates_ibm_montreal = timeout_watcher(
-        get_ibm_montreal_gates, [qc_input, lineplacement], timeout
-    )
-
-    qc_input = copy.deepcopy(qc)
-    gates_rigetti = timeout_watcher(
-        get_rigetti_gates, [qc_input, lineplacement], timeout
-    )
-
-    qc_input = copy.deepcopy(qc)
-    gates_oqc = timeout_watcher(get_oqc_gates, [qc_input, lineplacement], timeout)
-
-    if lineplacement:
+def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name: str):
+    try:
         qc_input = copy.deepcopy(qc)
-        gates_ionq = timeout_watcher(get_ionq_gates, [qc_input], timeout)
-
-        return (
-            "tket_lineplacement",
-            [
-                (gates_ionq, "ionq"),
-                (gates_ibm_washington, "ibm_washington"),
-                (gates_ibm_montreal, "ibm_montreal"),
-                (gates_rigetti, "rigetti_m1"),
-                (gates_oqc, "oqc_lucy"),
-            ],
+        ibm_washington = timeout_watcher(
+            get_ibm_washington_qc, [qc_input, lineplacement], timeout
         )
+        path = get_compiled_output_folder()
+        if ibm_washington:
+            filename = (
+                path
+                + benchmark_name.split(".")[0]
+                + "_ibm_washington"
+                + "_tket_lineplacement_"
+                + str(lineplacement)
+                + ".qasm"
+            )
+            circuit_to_qasm(ibm_washington, output_file=filename)
+
+        qc_input = copy.deepcopy(qc)
+        ibm_montreal = timeout_watcher(
+            get_ibm_montreal_qc, [qc_input, lineplacement], timeout
+        )
+        if ibm_montreal:
+            filename = (
+                path
+                + benchmark_name.split(".")[0]
+                + "_ibm_montreal"
+                + "_tket_lineplacement_"
+                + str(lineplacement)
+                + ".qasm"
+            )
+            circuit_to_qasm(ibm_montreal, output_file=filename)
+
+        qc_input = copy.deepcopy(qc)
+        rigetti = timeout_watcher(get_rigetti_qc, [qc_input, lineplacement], timeout)
+        if rigetti:
+            filename = (
+                path
+                + benchmark_name.split(".")[0]
+                + "_rigetti"
+                + "_tket_lineplacement_"
+                + str(lineplacement)
+                + ".qasm"
+            )
+            circuit_to_qasm(rigetti, output_file=filename)
+
+        qc_input = copy.deepcopy(qc)
+        oqc = timeout_watcher(get_oqc_qc, [qc_input, lineplacement], timeout)
+        if oqc:
+            filename = (
+                path
+                + benchmark_name.split(".")[0]
+                + "_oqc"
+                + "_tket_lineplacement_"
+                + str(lineplacement)
+                + ".qasm"
+            )
+            circuit_to_qasm(oqc, output_file=filename)
+
+        if lineplacement:
+            qc_input = copy.deepcopy(qc)
+            ionq = timeout_watcher(get_ionq_qc, [qc_input], timeout)
+            if ionq:
+                filename = (
+                    path + benchmark_name.split(".")[0] + "_ionq" + "_tket" + ".qasm"
+                )
+                circuit_to_qasm(ionq, output_file=filename)
+    except:
+        return False
     else:
-        return (
-            "tket_graphplacement",
-            [
-                (gates_ibm_washington, "ibm_washington"),
-                (gates_ibm_montreal, "ibm_montreal"),
-                (gates_rigetti, "rigetti_m1"),
-                (gates_oqc, "oqc_lucy"),
-            ],
-        )
+        return True
 
 
-def get_rigetti_gates(qc, lineplacement: bool, return_circuit: bool = False):
+def get_rigetti_qc(qc, lineplacement: bool):
     if qc.n_qubits > get_rigetti_m1()["num_qubits"]:
-        gates_rigetti = None
+        return None
     else:
         backend = get_rigetti_rebase()
         rigetti_arch = architecture.Architecture(get_cmap_rigetti_m1(10))
@@ -75,19 +103,12 @@ def get_rigetti_gates(qc, lineplacement: bool, return_circuit: bool = False):
         RoutingPass(rigetti_arch).apply(qc)
         backend.apply(qc)
 
-        gates_rigetti = count_qubit_gates_tket(qc, "rigetti")
-        assert sum(gates_rigetti) == qc.n_gates - qc.n_gates_of_type(
-            OpType.Measure
-        ) - qc.n_gates_of_type(OpType.Barrier)
-
-        if return_circuit:
-            return circuit_to_qasm_str(qc)
-    return gates_rigetti
+    return qc
 
 
-def get_ionq_gates(qc, return_circuit: bool = False):
+def get_ionq_qc(qc):
     if qc.n_qubits > get_ionq()["num_qubits"]:
-        gates_ionq = None
+        return None
     else:
         ionq_rebase = get_ionq_rebase()
 
@@ -95,20 +116,18 @@ def get_ionq_gates(qc, return_circuit: bool = False):
         FullPeepholeOptimise().apply(qc)
         ionq_rebase.apply(qc)
 
-        gates_ionq = count_qubit_gates_tket(qc, "ionq")
-        assert sum(gates_ionq) == qc.n_gates - qc.n_gates_of_type(
-            OpType.Measure
-        ) - qc.n_gates_of_type(OpType.Barrier)
-
-        if return_circuit:
-            return circuit_to_qasm_str(qc)
-
-    return gates_ionq
+        # gates_ionq = count_qubit_gates_tket(qc, "ionq")
+        # assert sum(gates_ionq) == qc.n_gates - qc.n_gates_of_type(
+        #     OpType.Measure
+        # ) - qc.n_gates_of_type(OpType.Barrier)
+        #
+        # if return_circuit:
+        return qc
 
 
-def get_oqc_gates(qc, lineplacement: bool, return_circuit: bool = False):
+def get_oqc_qc(qc, lineplacement: bool):
     if qc.n_qubits > get_oqc_lucy()["num_qubits"]:
-        gates_oqc = None
+        return None
     else:
         oqc_rebase = get_oqc_rebase()
         oqc_arch = architecture.Architecture(get_cmap_oqc_lucy())
@@ -122,20 +141,20 @@ def get_oqc_gates(qc, lineplacement: bool, return_circuit: bool = False):
         RoutingPass(oqc_arch).apply(qc)
         oqc_rebase.apply(qc)
 
-        gates_oqc = count_qubit_gates_tket(qc, "oqc")
-        assert sum(gates_oqc) == qc.n_gates - qc.n_gates_of_type(
-            OpType.Measure
-        ) - qc.n_gates_of_type(OpType.Barrier)
+        # gates_oqc = count_qubit_gates_tket(qc, "oqc")
+        # assert sum(gates_oqc) == qc.n_gates - qc.n_gates_of_type(
+        #     OpType.Measure
+        # ) - qc.n_gates_of_type(OpType.Barrier)
+        #
+        # if return_circuit:
+        #     return circuit_to_qasm_str(qc)
 
-        if return_circuit:
-            return circuit_to_qasm_str(qc)
-
-    return gates_oqc
+    return qc
 
 
-def get_ibm_washington_gates(qc, lineplacement: bool, return_circuit: bool = False):
+def get_ibm_washington_qc(qc, lineplacement: bool):
     if qc.n_qubits > get_ibm_washington()["num_qubits"]:
-        gates_ibm_washington = None
+        return None
     else:
         ibm_washington_arch = architecture.Architecture(
             FakeWashington().configuration().coupling_map
@@ -151,20 +170,20 @@ def get_ibm_washington_gates(qc, lineplacement: bool, return_circuit: bool = Fal
         RoutingPass(ibm_washington_arch).apply(qc)
         backend.apply(qc)
 
-        gates_ibm_washington = count_qubit_gates_tket(qc, "ibm")
-        assert sum(gates_ibm_washington) == qc.n_gates - qc.n_gates_of_type(
-            OpType.Measure
-        ) - qc.n_gates_of_type(OpType.Barrier)
+        # gates_ibm_washington = count_qubit_gates_tket(qc, "ibm")
+        # assert sum(gates_ibm_washington) == qc.n_gates - qc.n_gates_of_type(
+        #     OpType.Measure
+        # ) - qc.n_gates_of_type(OpType.Barrier)
+        #
+        # if return_circuit:
+        #     return circuit_to_qasm_str(qc)
 
-        if return_circuit:
-            return circuit_to_qasm_str(qc)
-
-    return gates_ibm_washington
+    return qc
 
 
-def get_ibm_montreal_gates(qc, lineplacement: bool, return_circuit: bool = False):
+def get_ibm_montreal_qc(qc, lineplacement: bool):
     if qc.n_qubits > get_ibm_montreal()["num_qubits"]:
-        gates_ibm_montreal = None
+        return None
     else:
         ibm_montreal_arch = architecture.Architecture(
             FakeMontreal().configuration().coupling_map
@@ -180,15 +199,15 @@ def get_ibm_montreal_gates(qc, lineplacement: bool, return_circuit: bool = False
         RoutingPass(ibm_montreal_arch).apply(qc)
         backend.apply(qc)
 
-        gates_ibm_montreal = count_qubit_gates_tket(qc, "ibm")
-        assert sum(gates_ibm_montreal) == qc.n_gates - qc.n_gates_of_type(
-            OpType.Measure
-        ) - qc.n_gates_of_type(OpType.Barrier)
+        # gates_ibm_montreal = count_qubit_gates_tket(qc, "ibm")
+        # assert sum(gates_ibm_montreal) == qc.n_gates - qc.n_gates_of_type(
+        #     OpType.Measure
+        # ) - qc.n_gates_of_type(OpType.Barrier)
+        #
+        # if return_circuit:
+        #     return circuit_to_qasm_str(qc)
 
-        if return_circuit:
-            return circuit_to_qasm_str(qc)
-
-    return gates_ibm_montreal
+    return qc
 
 
 def get_ionq_rebase():

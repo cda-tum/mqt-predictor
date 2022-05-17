@@ -136,8 +136,12 @@ def test_qubit_counts():
     qc = benchmark_generator.get_one_benchmark("dj", 1, 5)
     num_qubits = qc.num_qubits
 
-    qiskit_gates = qiskit_plugin.get_qiskit_gates(qc, 2, 10)
-    assert not qiskit_gates is None
+    qiskit_gates = qiskit_plugin.save_qiskit_compiled_circuits(
+        qc, 2, 10, "dj_indep_5.qasm"
+    )
+    assert qiskit_gates
     qc_tket = qiskit_to_tk(qc)
-    tket_gates = pytket_plugin.get_tket_gates(qc_tket, True, 10)
-    assert not tket_gates is None
+    tket_gates = pytket_plugin.save_tket_compiled_circuits(
+        qc_tket, True, 10, "dj_indep_5.qasm"
+    )
+    assert tket_gates

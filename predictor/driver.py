@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import json
 import os
 import argparse
-import glob
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import precision_recall_fscore_support
@@ -26,16 +25,11 @@ class Predictor:
 
     def create_gate_lists_from_folder(
         folder_path: str = "./qasm_files",
-        target_filename: str = "json_data",
         timeout: int = 10,
     ):
         """Method to create pre-process data to accelerate the training data generation afterwards. All .qasm files from
         the folder path are considered."""
 
-        res = []
-
-        # Create dictionary to process .qasm files more efficiently, each key refers to one benchmark algorithm
-        filelist = glob.glob(folder_path)
         dictionary = {}
         for subdir, dirs, files in os.walk(folder_path):
             for file in natsorted(files):
@@ -61,61 +55,61 @@ class Predictor:
                 if actual_num_qubits > 127:
                     break
                 try:
-                    qiskit_gates_opt2 = qiskit_plugin.get_qiskit_gates(
-                        qc, 2, timeout=timeout
+                    qiskit_plugin.save_qiskit_compiled_circuits(
+                        qc, 2, timeout=timeout, benchmark_name=benchmark
                     )
 
-                    qiskit_gates_opt3 = qiskit_plugin.get_qiskit_gates(
-                        qc, 3, timeout=timeout
+                    qiskit_plugin.save_qiskit_compiled_circuits(
+                        qc, 3, timeout=timeout, benchmark_name=benchmark
                     )
                     assert qc == qc_check
 
                     qc_tket = qiskit_to_tk(qc)
                     qc_tket_check = copy.deepcopy(qc_tket)
 
-                    tket_gates_line = pytket_plugin.get_tket_gates(
-                        qc_tket, True, timeout=timeout
+                    pytket_plugin.save_tket_compiled_circuits(
+                        qc_tket, True, timeout=timeout, benchmark_name=benchmark
                     )
 
-                    tket_gates_graph = pytket_plugin.get_tket_gates(
-                        qc_tket, False, timeout=timeout
+                    pytket_plugin.save_tket_compiled_circuits(
+                        qc_tket, False, timeout=timeout, benchmark_name=benchmark
                     )
                     assert qc_tket == qc_tket_check
-
-                    all_results = (
-                        qiskit_gates_opt2
-                        + qiskit_gates_opt3
-                        + tket_gates_line
-                        + tket_gates_graph
-                    )
-
-                    sum = 0
-                    for scores in all_results:
-                        if not type(scores) == str:
-                            for score in scores:
-                                if not score[0] is None:
-                                    sum += score[0][0]
-                    if sum == 0:
-                        print("All Entries are null")
-                        break
-
-                    ops_list = qc.count_ops()
-                    feature_vector = utils.dict_to_featurevector(
-                        ops_list, actual_num_qubits
-                    )
-                    res.append(
-                        (
-                            benchmark,
-                            feature_vector,
-                            all_results,
-                        )
-                    )
+                    #
+                    # all_results = (
+                    #     qiskit_qc_opt2
+                    #     + qiskit_qc_opt3
+                    #     + tket_qc_line
+                    #     + tket_qc_graph
+                    # )
+                    #
+                    # sum = 0
+                    # for scores in all_results:
+                    #     if not type(scores) == str:
+                    #         for score in scores:
+                    #             if not score[0] is None:
+                    #                 sum += score[0][0]
+                    # if sum == 0:
+                    #     print("All Entries are null")
+                    #     break
+                    #
+                    # ops_list = qc.count_ops()
+                    # feature_vector = utils.dict_to_featurevector(
+                    #     ops_list, actual_num_qubits
+                    # )
+                    # res.append(
+                    #     (
+                    #         benchmark,
+                    #         feature_vector,
+                    #         all_results,
+                    #     )
+                    # )
                 except Exception as e:
                     print("fail: ", e)
 
-        jsonString = json.dumps(res, indent=4, sort_keys=True)
-        with open(target_filename + ".json", "w") as outfile:
-            outfile.write(jsonString)
+        # jsonString = json.dumps(res, indent=4, sort_keys=True)
+        # with open(target_filename + ".json", "w") as outfile:
+        #     outfile.write(jsonString)
         return
 
     def generate_trainingdata_from_json(json_path: str = "json_data.json"):
@@ -139,7 +133,7 @@ class Predictor:
                 if elem[0] is None:
                     score = utils.get_width_penalty()
                 else:
-                    score = utils.calc_score_from_gates_list(
+                    score = utils.calc_score_from_qc_list(
                         elem[0], utils.get_backend_information(elem[1]), num_qubits
                     )
 
@@ -152,7 +146,7 @@ class Predictor:
                 if elem[0] is None:
                     score = utils.get_width_penalty()
                 else:
-                    score = utils.calc_score_from_gates_list(
+                    score = utils.calc_score_from_qc_list(
                         elem[0], utils.get_backend_information(elem[1]), num_qubits
                     )
 
@@ -165,7 +159,7 @@ class Predictor:
                 if elem[0] is None:
                     score = utils.get_width_penalty()
                 else:
-                    score = utils.calc_score_from_gates_list(
+                    score = utils.calc_score_from_qc_list(
                         elem[0], utils.get_backend_information(elem[1]), num_qubits
                     )
 
@@ -178,7 +172,7 @@ class Predictor:
                 if elem[0] is None:
                     score = utils.get_width_penalty()
                 else:
-                    score = utils.calc_score_from_gates_list(
+                    score = utils.calc_score_from_qc_list(
                         elem[0], utils.get_backend_information(elem[1]), num_qubits
                     )
 
@@ -217,8 +211,8 @@ class Predictor:
             utils.get_machines()[i] for i in set(Predictor._clf.classes_)
         ]
 
-        openqasm_gates_list = utils.get_openqasm_gates()
-        res = [openqasm_gates_list[i] for i in range(0, len(openqasm_gates_list))]
+        openqasm_qc_list = utils.get_openqasm_qc()
+        res = [openqasm_qc_list[i] for i in range(0, len(openqasm_qc_list))]
         res.append("num_qubits")
 
         features = np.sort(np.array(res))
@@ -529,67 +523,43 @@ class Predictor:
         qc_tket = qiskit_to_tk(qc)
 
         if compilation_path == "qiskit_ionq_opt2":
-            compiled_qc = qiskit_plugin.get_ionq_gates(qc, 2, return_circuit=True)
+            compiled_qc = qiskit_plugin.get_ionq_qc(qc, 2)
         elif compilation_path == "qiskit_ibm_washington_opt2":
-            compiled_qc = qiskit_plugin.get_ibm_washington_gates(
-                qc, 2, return_circuit=True
-            )
+            compiled_qc = qiskit_plugin.get_ibm_washington_qc(qc, 2)
         elif compilation_path == "qiskit_ibm_montreal_opt2":
-            compiled_qc = qiskit_plugin.get_ibm_montreal_gates(
-                qc, 2, return_circuit=True
-            )
+            compiled_qc = qiskit_plugin.get_ibm_montreal_qc(qc, 2)
         elif compilation_path == "qiskit_rigetti_opt2":
-            compiled_qc = qiskit_plugin.get_rigetti_gates(qc, 2, return_circuit=True)
+            compiled_qc = qiskit_plugin.get_rigetti_qc(qc, 2)
         elif compilation_path == "qiskit_oqc_opt2":
-            compiled_qc = qiskit_plugin.get_oqc_gates(qc, 2, return_circuit=True)
+            compiled_qc = qiskit_plugin.get_oqc_qc(qc, 2)
         elif compilation_path == "qiskit_ionq_opt3":
-            compiled_qc = qiskit_plugin.get_ionq_gates(qc, 3, return_circuit=True)
+            compiled_qc = qiskit_plugin.get_ionq_qc(qc, 3)
         elif compilation_path == "qiskit_ibm_washington_opt3":
-            compiled_qc = qiskit_plugin.get_ibm_washington_gates(
-                qc, 3, return_circuit=True
-            )
+            compiled_qc = qiskit_plugin.get_ibm_washington_qc(qc, 3)
         elif compilation_path == "qiskit_ibm_montreal_opt3":
-            compiled_qc = qiskit_plugin.get_ibm_montreal_gates(
-                qc, 3, return_circuit=True
-            )
+            compiled_qc = qiskit_plugin.get_ibm_montreal_qc(qc, 3)
         elif compilation_path == "qiskit_rigetti_opt3":
-            compiled_qc = qiskit_plugin.get_rigetti_gates(qc, 3, return_circuit=True)
+            compiled_qc = qiskit_plugin.get_rigetti_qc(qc, 3)
         elif compilation_path == "qiskit_oqc_opt3":
-            compiled_qc = qiskit_plugin.get_oqc_gates(qc, 3, return_circuit=True)
+            compiled_qc = qiskit_plugin.get_oqc_qc(qc, 3)
         elif compilation_path == "tket_ionq":
-            compiled_qc = pytket_plugin.get_ionq_gates(qc_tket, return_circuit=True)
+            compiled_qc = pytket_plugin.get_ionq_qc(qc_tket)
         elif compilation_path == "tket_ibm_washington_line":
-            compiled_qc = pytket_plugin.get_ibm_washington_gates(
-                qc_tket, True, return_circuit=True
-            )
+            compiled_qc = pytket_plugin.get_ibm_washington_qc(qc_tket, True)
         elif compilation_path == "tket_ibm_montreal_line":
-            compiled_qc = pytket_plugin.get_ibm_montreal_gates(
-                qc_tket, True, return_circuit=True
-            )
+            compiled_qc = pytket_plugin.get_ibm_montreal_qc(qc_tket, True)
         elif compilation_path == "tket_rigetti_line":
-            compiled_qc = pytket_plugin.get_rigetti_gates(
-                qc_tket, True, return_circuit=True
-            )
+            compiled_qc = pytket_plugin.get_rigetti_qc(qc_tket, True)
         elif compilation_path == "tket_oqc_line":
-            compiled_qc = pytket_plugin.get_oqc_gates(
-                qc_tket, True, return_circuit=True
-            )
+            compiled_qc = pytket_plugin.get_oqc_qc(qc_tket, True)
         elif compilation_path == "tket_ibm_washington_graph":
-            compiled_qc = pytket_plugin.get_ibm_washington_gates(
-                qc_tket, False, return_circuit=True
-            )
+            compiled_qc = pytket_plugin.get_ibm_washington_qc(qc_tket, False)
         elif compilation_path == "tket_ibm_montreal_graph":
-            compiled_qc = pytket_plugin.get_ibm_montreal_gates(
-                qc_tket, False, return_circuit=True
-            )
+            compiled_qc = pytket_plugin.get_ibm_montreal_qc(qc_tket, False)
         elif compilation_path == "tket_rigetti_graph":
-            compiled_qc = pytket_plugin.get_rigetti_gates(
-                qc_tket, False, return_circuit=True
-            )
+            compiled_qc = pytket_plugin.get_rigetti_qc(qc_tket, False)
         elif compilation_path == "tket_oqc_graph":
-            compiled_qc = pytket_plugin.get_oqc_gates(
-                qc_tket, False, return_circuit=True
-            )
+            compiled_qc = pytket_plugin.get_oqc_qc(qc_tket, False)
         else:
             print("Compilation Path not found")
             return
@@ -613,12 +583,9 @@ if __name__ == "__main__":
     # parser.add_argument("--step", type=int, default=3)
     parser.add_argument("--timeout", type=int, default=10)
     parser.add_argument("--path", type=str, default="test/")
-    parser.add_argument("--target", type=str, default="json_data")
     # parser.parse_args()
     #
     args = parser.parse_args()
     # create_gate_lists(args.min, args.max, args.step, args.timeout)
 
-    Predictor.create_gate_lists_from_folder(
-        folder_path=args.path, target_filename=args.target, timeout=args.timeout
-    )
+    Predictor.create_gate_lists_from_folder(folder_path=args.path, timeout=args.timeout)

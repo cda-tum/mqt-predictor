@@ -422,3 +422,7 @@ def timeout_watcher(func, args, timeout):
         signal.alarm(0)
 
     return res
+
+
+def get_compiled_output_folder():
+    return "qasm_compiled/"

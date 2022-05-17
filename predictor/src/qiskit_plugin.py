@@ -3,39 +3,84 @@ from predictor.src.utils import *
 from qiskit.test.mock import FakeMontreal, FakeWashington
 
 
-def get_qiskit_gates(qc, opt_level: int, timeout: int):
-    opt_level = opt_level
+def save_qiskit_compiled_circuits(
+    qc, opt_level: int, timeout: int, benchmark_name: str
+):
+    try:
+        opt_level = opt_level
 
-    gates_ibm_washington = timeout_watcher(
-        get_ibm_washington_gates, [qc, opt_level], timeout
-    )
+        ibm_washington = timeout_watcher(
+            get_ibm_washington_qc, [qc, opt_level], timeout
+        )
+        path = get_compiled_output_folder()
+        if ibm_washington:
+            filename = (
+                path
+                + benchmark_name.split(".")[0]
+                + "_ibm_washington"
+                + "_qiskit_opt_"
+                + str(opt_level)
+                + ".qasm"
+            )
+            ibm_washington.qasm(filename=filename)
 
-    gates_ibm_montreal = timeout_watcher(
-        get_ibm_montreal_gates, [qc, opt_level], timeout
-    )
+        ibm_montreal = timeout_watcher(get_ibm_montreal_qc, [qc, opt_level], timeout)
+        if ibm_montreal:
+            filename = (
+                path
+                + benchmark_name.split(".")[0]
+                + "_ibm_montreal"
+                + "_qiskit_opt_"
+                + str(opt_level)
+                + ".qasm"
+            )
+            ibm_montreal.qasm(filename=filename)
 
-    gates_ionq = timeout_watcher(get_ionq_gates, [qc, opt_level], timeout)
+        ionq = timeout_watcher(get_ionq_qc, [qc, opt_level], timeout)
+        if ionq:
+            filename = (
+                path
+                + benchmark_name.split(".")[0]
+                + "_ionq"
+                + "_qiskit_opt_"
+                + str(opt_level)
+                + ".qasm"
+            )
+            ionq.qasm(filename=filename)
 
-    gates_rigetti = timeout_watcher(get_rigetti_gates, [qc, opt_level], timeout)
+        rigetti = timeout_watcher(get_rigetti_qc, [qc, opt_level], timeout)
+        if rigetti:
+            filename = (
+                path
+                + benchmark_name.split(".")[0]
+                + "_rigetti"
+                + "_qiskit_opt_"
+                + str(opt_level)
+                + ".qasm"
+            )
+            rigetti.qasm(filename=filename)
 
-    gates_oqc = timeout_watcher(get_oqc_gates, [qc, opt_level], timeout)
+        oqc = timeout_watcher(get_oqc_qc, [qc, opt_level], timeout)
+        if oqc:
+            filename = (
+                path
+                + benchmark_name.split(".")[0]
+                + "_oqc"
+                + "_qiskit_opt_"
+                + str(opt_level)
+                + ".qasm"
+            )
+            oqc.qasm(filename=filename)
+    except:
+        return False
+    else:
+        return True
 
-    return (
-        "qiskit_opt" + str(opt_level),
-        [
-            (gates_ionq, "ionq"),
-            (gates_ibm_washington, "ibm_washington"),
-            (gates_ibm_montreal, "ibm_montreal"),
-            (gates_rigetti, "rigetti_m1"),
-            (gates_oqc, "oqc_lucy"),
-        ],
-    )
 
-
-def get_ibm_washington_gates(qc, opt_level, return_circuit: bool = False):
+def get_ibm_washington_qc(qc, opt_level):
     ibm_washington = get_ibm_washington()
     if qc.num_qubits > ibm_washington["num_qubits"]:
-        gates_ibm_washington = None
+        return None
     else:
         qc_ibm = transpile(
             qc,
@@ -46,17 +91,14 @@ def get_ibm_washington_gates(qc, opt_level, return_circuit: bool = False):
             layout_method="sabre",
             routing_method="sabre",
         )
-        gates_ibm_washington = count_qubit_gates_qiskit(qc_ibm, "ibm")
 
-    if return_circuit:
-        return qc_ibm.qasm()
-    return gates_ibm_washington
+    return qc_ibm
 
 
-def get_ibm_montreal_gates(qc, opt_level, return_circuit: bool = False):
+def get_ibm_montreal_qc(qc, opt_level):
     ibm_montreal = get_ibm_montreal()
     if qc.num_qubits > ibm_montreal["num_qubits"]:
-        gates_ibm_montreal = None
+        return None
     else:
         qc_ibm = transpile(
             qc,
@@ -67,17 +109,14 @@ def get_ibm_montreal_gates(qc, opt_level, return_circuit: bool = False):
             layout_method="sabre",
             routing_method="sabre",
         )
-        gates_ibm_montreal = count_qubit_gates_qiskit(qc_ibm, "ibm")
 
-    if return_circuit:
-        return qc_ibm.qasm()
-    return gates_ibm_montreal
+    return qc_ibm
 
 
-def get_ionq_gates(qc, opt_level, return_circuit: bool = False):
+def get_ionq_qc(qc, opt_level):
     ionq = get_ionq()
     if qc.num_qubits > ionq["num_qubits"]:
-        gates_ionq = None
+        return None
     else:
         qc_ion = transpile(
             qc,
@@ -87,17 +126,14 @@ def get_ionq_gates(qc, opt_level, return_circuit: bool = False):
             layout_method="sabre",
             routing_method="sabre",
         )
-        gates_ionq = count_qubit_gates_qiskit(qc_ion, "ionq")
 
-    if return_circuit:
-        return qc_ion.qasm()
-    return gates_ionq
+    return qc_ion
 
 
-def get_rigetti_gates(qc, opt_level, return_circuit: bool = False):
+def get_rigetti_qc(qc, opt_level):
     rigetti_m1 = get_rigetti_m1()
     if qc.num_qubits > rigetti_m1["num_qubits"]:
-        gates_rigetti = None
+        return None
     else:
         qc_rigetti = transpile(
             qc,
@@ -108,17 +144,14 @@ def get_rigetti_gates(qc, opt_level, return_circuit: bool = False):
             layout_method="sabre",
             routing_method="sabre",
         )
-        gates_rigetti = count_qubit_gates_qiskit(qc_rigetti, "rigetti")
 
-    if return_circuit:
-        return qc_rigetti.qasm()
-    return gates_rigetti
+    return qc_rigetti
 
 
-def get_oqc_gates(qc, opt_level, return_circuit: bool = False):
+def get_oqc_qc(qc, opt_level):
     oqc_lucy = get_oqc_lucy()
     if qc.num_qubits > oqc_lucy["num_qubits"]:
-        gates_oqc = None
+        return None
     else:
         qc_oqc = transpile(
             qc,
@@ -129,11 +162,8 @@ def get_oqc_gates(qc, opt_level, return_circuit: bool = False):
             layout_method="sabre",
             routing_method="sabre",
         )
-        gates_oqc = count_qubit_gates_qiskit(qc_oqc, "oqc")
 
-    if return_circuit:
-        return qc_oqc.qasm()
-    return gates_oqc
+    return qc_oqc
 
 
 def get_ibm_native_gates():
