@@ -454,11 +454,11 @@ def calc_eval_score_for_qc(qc_path):
                 tmp = str(qubit_indices[0]) + "_" + str(qubit_indices[1])
                 for elem in df.loc[1][12].split(";"):
                     if tmp in elem.split(":")[0]:
-                        specific_fidelity = elem.split(":")[1]
+                        specific_error = elem.split(":")[1]
             else:
-                specific_fidelity = df.loc[first_qubit][index]
+                specific_error = df.loc[first_qubit][index]
 
-            res *= specific_fidelity
+            res *= 1 - specific_error
 
     elif "ibm_montreal" in qc_path:
         df = pd.read_csv("ibmq_montreal_calibrations.csv")
@@ -480,11 +480,11 @@ def calc_eval_score_for_qc(qc_path):
                 tmp = str(qubit_indices[0]) + "_" + str(qubit_indices[1])
                 for elem in df.loc[1][12].split(";"):
                     if tmp in elem.split(":")[0]:
-                        specific_fidelity = elem.split(":")[1]
+                        specific_error = elem.split(":")[1]
             else:
-                specific_fidelity = df.loc[first_qubit][index]
+                specific_error = df.loc[first_qubit][index]
 
-            res *= specific_fidelity
+            res *= 1 - specific_error
     elif "oqc" in qc_path:
         with open("oqc_lucy_calibration.json", "r") as f:
             backend = json.load(f)
