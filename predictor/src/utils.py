@@ -610,3 +610,43 @@ def postprocess_ocr_qasm_files(directory: str = "qasm_compiled"):
                         )
             qc = QuantumCircuit.from_qasm_file(new_name)
             print("New qasm file for: ", new_name)
+
+
+def parse_ionq_calibration_config():
+    with open("ionq_calibration.json", "r") as f:
+        ionq_calibration = json.load(f)
+    ionq_dict = {
+        "backend": "ionq",
+        "avg_1Q": ionq_calibration["fidelity"]["1Q"].get("mean"),
+        "avg_2Q": ionq_calibration["fidelity"]["2Q"].get("mean"),
+    }
+
+    return ionq_dict
+
+
+def parse_oqc_calibration_config():
+    avg_1Q = {}
+    avg_1Q_readout = {}
+    for elem in oqc_lucy_calibration["oneQubitProperties"]:
+        avg_1Q[str(elem)] = oqc_lucy_calibration["oneQubitProperties"][elem][
+            "oneQubitFidelity"
+        ][0].get("fidelity")
+        avg_1Q_readout[str(elem)] = oqc_lucy_calibration["oneQubitProperties"][elem][
+            "oneQubitFidelity"
+        ][1].get("fidelity")
+        # print(avg_1Q[str(elem)], avg_1Q_readout[str(elem)])
+    avg_2Q = {}
+    for elem in oqc_lucy_calibration["twoQubitProperties"]:
+        avg_2Q[str(elem)] = oqc_lucy_calibration["twoQubitProperties"][elem][
+            "twoQubitGateFidelity"
+        ][0].get("fidelity")
+        # avg_1Q_readout[str(elem)] = oqc_lucy_calibration["oneQubitProperties"][elem]["oneQubitFidelity"][1].get("fidelity")
+    # print(avg_2Q)
+    oqc_dict = {
+        "backend": "oqc_lucy",
+        "avg_1Q": avg_1Q,
+        "avg_1Q_readout": avg_1Q_readout,
+        "avg_2Q": avg_2Q,
+    }
+    oqc_dict
+    return oqc_dict
