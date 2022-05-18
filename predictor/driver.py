@@ -130,11 +130,16 @@ class Predictor:
                         comp_path_index = int(filename.split("_")[-1].split(".")[0])
                         # print("Comp path index: ", comp_path_index, "\n")
                         scores[comp_path_index] = score
-                if not scores:
-                    break
+
+                num_not_empty_entries = 0
                 for i in range(20):
                     if not scores[i]:
                         scores[i] = utils.get_width_penalty()
+                    else:
+                        num_not_empty_entries += 1
+
+                if num_not_empty_entries < 2:
+                    break
 
                 feature_vec = utils.create_feature_vector(
                     os.path.join(folder_path, benchmark)
