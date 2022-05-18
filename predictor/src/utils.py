@@ -12,91 +12,6 @@ def get_width_penalty():
     width_penalty = 1000000
     return width_penalty
 
-
-def count_qubit_gates_tket(qc, provider: str):
-    """Returns the total gate count of single and two-qubit gates."""
-    single_qubit_gates = 0
-    two_qubit_gates = 0
-    if provider == "ibm":
-        # gates: ['rz', 'sx', 'x', 'cx']
-        single_qubit_gates += qc.n_gates_of_type(OpType.Rz)
-        single_qubit_gates += qc.n_gates_of_type(OpType.SX)
-        single_qubit_gates += qc.n_gates_of_type(OpType.X)
-        two_qubit_gates += qc.n_gates_of_type(OpType.CX)
-
-    elif provider == "rigetti":
-        # gates: rigetti_native_gates = ["rx", "rz", "cz"]
-        single_qubit_gates += qc.n_gates_of_type(OpType.Rx)
-        single_qubit_gates += qc.n_gates_of_type(OpType.Rz)
-        two_qubit_gates += qc.n_gates_of_type(OpType.CZ)
-
-    elif provider == "ionq":
-        # gates: ionq_native_gates = ["ms", "rz", "ry", "rx"] or ["rxx", "rz", "ry", "rx"]
-        single_qubit_gates += qc.n_gates_of_type(OpType.Rz)
-        single_qubit_gates += qc.n_gates_of_type(OpType.Ry)
-        single_qubit_gates += qc.n_gates_of_type(OpType.Rx)
-        two_qubit_gates += qc.n_gates_of_type(OpType.XXPhase)
-
-    elif provider == "oqc":
-        # gates: oqc_gates = ["rz", "sx", "x", "ecr"]
-        single_qubit_gates += qc.n_gates_of_type(OpType.Rz)
-        single_qubit_gates += qc.n_gates_of_type(OpType.SX)
-        single_qubit_gates += qc.n_gates_of_type(OpType.X)
-        two_qubit_gates += qc.n_gates_of_type(OpType.ECR)
-    return single_qubit_gates, two_qubit_gates
-
-
-def count_qubit_gates_qiskit(qc, provider: str):
-    """Returns the total gate count of single and two-qubit gates."""
-    count_gates = qc.count_ops()
-    single_qubit_gates = 0
-    two_qubit_gates = 0
-    if provider == "ibm":
-        # gates: ['id', 'rz', 'sx', 'x', 'cx', 'reset']
-        if "id" in count_gates:
-            single_qubit_gates += count_gates["id"]
-        if "rz" in count_gates:
-            single_qubit_gates += count_gates["rz"]
-        if "sx" in count_gates:
-            single_qubit_gates += count_gates["sx"]
-        if "x" in count_gates:
-            single_qubit_gates += count_gates["x"]
-        if "cx" in count_gates:
-            two_qubit_gates += count_gates["cx"]
-
-    elif provider == "rigetti":
-        # gates: rigetti_native_gates = ["rx", "rz", "cz"]
-        if "rx" in count_gates:
-            single_qubit_gates += count_gates["rx"]
-        if "rz" in count_gates:
-            single_qubit_gates += count_gates["rz"]
-        if "cz" in count_gates:
-            two_qubit_gates += count_gates["cz"]
-
-    elif provider == "ionq":
-        # gates: ionq_native_gates = ["ms", "rz", "ry", "rx"] or ["rxx", "rz", "ry", "rx"]
-        if "rx" in count_gates:
-            single_qubit_gates += count_gates["rx"]
-        if "ry" in count_gates:
-            single_qubit_gates += count_gates["ry"]
-        if "rz" in count_gates:
-            single_qubit_gates += count_gates["rz"]
-        if "rxx" in count_gates:
-            two_qubit_gates += count_gates["rxx"]
-
-    elif provider == "oqc":
-        # gates: oqc_gates = ["rz", "sx", "x", "ecr"]
-        if "rz" in count_gates:
-            single_qubit_gates += count_gates["rz"]
-        if "sx" in count_gates:
-            single_qubit_gates += count_gates["sx"]
-        if "x" in count_gates and not "sx" in count_gates:
-            single_qubit_gates += count_gates["x"]
-        if "ecr" in count_gates:
-            two_qubit_gates += count_gates["ecr"]
-    return single_qubit_gates, two_qubit_gates
-
-
 def get_backend_information(name: str):
     """Returns the backend information for all used quantum computers."""
     if name == "ibm_washington":
@@ -109,33 +24,6 @@ def get_backend_information(name: str):
         return get_rigetti_m1()
     elif name == "oqc_lucy":
         return get_oqc_lucy()
-
-
-def calc_score_from_gates_list(count_gates, backend, num_qubits):
-    """This is the evaluation function of a compilation path return its corresponding evaluation score."""
-    penalty_factor_1q = 500
-    penalty_factor_2q = 1000
-
-    t_1 = backend["t1_avg"]
-    t_2 = backend["t2_avg"]
-    avg_gate_time_1q = backend["avg_gate_time_1q"]
-    avg_gate_time_2q = backend["avg_gate_time_2q"]
-    max_depth_1q = t_1 / avg_gate_time_1q
-    max_depth_2q = t_1 / avg_gate_time_2q
-
-    penalty_factor_fid_1q = 1
-    penalty_factor_fid_2q = 10
-    score = (
-        1 - (np.power(backend["fid_1q"], count_gates[0]))
-    ) * penalty_factor_fid_1q + (
-        1 - (np.power(backend["fid_2q"], count_gates[1]))
-    ) * penalty_factor_fid_2q
-
-    # score = (
-    #     count_gates[0] / max_depth_1q / num_qubits * penalty_factor_1q
-    #     + count_gates[1] / max_depth_2q / num_qubits * penalty_factor_2q
-    # )
-    return score
 
 
 def get_cmap_oqc_lucy():
