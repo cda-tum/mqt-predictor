@@ -17,7 +17,7 @@ import copy
 def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name: str):
     offset = 0
     if lineplacement == False:
-        offset = 5
+        offset = 4
     try:
         qc_input = copy.deepcopy(qc)
         ibm_washington = timeout_watcher(
