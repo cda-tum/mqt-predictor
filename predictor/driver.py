@@ -129,6 +129,8 @@ class Predictor:
                         score = utils.calc_eval_score_for_qc(filename)
                         comp_path_index = int(filename.split("_")[-1].split(".")[0])
                         # print("Comp path index: ", comp_path_index, "\n")
+                        if comp_path_index > 14:
+                            comp_path_index -= 1
                         scores[comp_path_index] = score
 
                 num_not_empty_entries = 0
@@ -144,84 +146,84 @@ class Predictor:
                 feature_vec = utils.create_feature_vector(
                     os.path.join(folder_path, benchmark)
                 )
-                training_data.append((feature_vec, np.argmin(scores)))
+                training_data.append((list(feature_vec.values()), np.argmax(scores)))
                 name_list.append(benchmark.split(".")[0])
                 scores_list.append(scores)
 
         return (training_data, name_list, scores_list)
 
-    def generate_trainingdata_from_json(json_path: str = "json_data.json"):
-        """Generates the training data based on the provided json file and defined evaluation score."""
-
-        with open(json_path, "r") as f:
-            data = json.load(f)
-        training_data = []
-        name_list = []
-        scores_list = []
-
-        # print(data)
-        for benchmark in data:
-            scores = []
-            num_qubits = benchmark[1]["num_qubits"]
-            # Qiskit Scores opt2
-            if num_qubits > 127:
-                continue
-
-            for elem in benchmark[2][1]:
-                if elem[0] is None:
-                    score = utils.get_width_penalty()
-                else:
-                    score = utils.calc_score_from_qc_list(
-                        elem[0], utils.get_backend_information(elem[1]), num_qubits
-                    )
-
-                scores.append(score)
-            assert len(scores) == 5
-            # Qiskit Scores opt3
-            if num_qubits > 127:
-                continue
-            for elem in benchmark[2][3]:
-                if elem[0] is None:
-                    score = utils.get_width_penalty()
-                else:
-                    score = utils.calc_score_from_qc_list(
-                        elem[0], utils.get_backend_information(elem[1]), num_qubits
-                    )
-
-                scores.append(score)
-            assert len(scores) == 10
-
-            # Tket Scores Lineplacement
-
-            for elem in benchmark[2][5]:
-                if elem[0] is None:
-                    score = utils.get_width_penalty()
-                else:
-                    score = utils.calc_score_from_qc_list(
-                        elem[0], utils.get_backend_information(elem[1]), num_qubits
-                    )
-
-                scores.append(score)
-            assert len(scores) == 15
-
-            # Tket Scores Graphplacement
-
-            for elem in benchmark[2][7]:
-                if elem[0] is None:
-                    score = utils.get_width_penalty()
-                else:
-                    score = utils.calc_score_from_qc_list(
-                        elem[0], utils.get_backend_information(elem[1]), num_qubits
-                    )
-
-                scores.append(score)
-            assert len(scores) == 19
-
-            training_data.append((list(benchmark[1].values()), np.argmin(scores)))
-            name_list.append(benchmark[0])
-            scores_list.append(scores)
-
-        return (training_data, name_list, scores_list)
+    # def generate_trainingdata_from_json(json_path: str = "json_data.json"):
+    #     """Generates the training data based on the provided json file and defined evaluation score."""
+    #
+    #     with open(json_path, "r") as f:
+    #         data = json.load(f)
+    #     training_data = []
+    #     name_list = []
+    #     scores_list = []
+    #
+    #     # print(data)
+    #     for benchmark in data:
+    #         scores = []
+    #         num_qubits = benchmark[1]["num_qubits"]
+    #         # Qiskit Scores opt2
+    #         if num_qubits > 127:
+    #             continue
+    #
+    #         for elem in benchmark[2][1]:
+    #             if elem[0] is None:
+    #                 score = utils.get_width_penalty()
+    #             else:
+    #                 score = utils.calc_score_from_qc_list(
+    #                     elem[0], utils.get_backend_information(elem[1]), num_qubits
+    #                 )
+    #
+    #             scores.append(score)
+    #         assert len(scores) == 5
+    #         # Qiskit Scores opt3
+    #         if num_qubits > 127:
+    #             continue
+    #         for elem in benchmark[2][3]:
+    #             if elem[0] is None:
+    #                 score = utils.get_width_penalty()
+    #             else:
+    #                 score = utils.calc_score_from_qc_list(
+    #                     elem[0], utils.get_backend_information(elem[1]), num_qubits
+    #                 )
+    #
+    #             scores.append(score)
+    #         assert len(scores) == 10
+    #
+    #         # Tket Scores Lineplacement
+    #
+    #         for elem in benchmark[2][5]:
+    #             if elem[0] is None:
+    #                 score = utils.get_width_penalty()
+    #             else:
+    #                 score = utils.calc_score_from_qc_list(
+    #                     elem[0], utils.get_backend_information(elem[1]), num_qubits
+    #                 )
+    #
+    #             scores.append(score)
+    #         assert len(scores) == 15
+    #
+    #         # Tket Scores Graphplacement
+    #
+    #         for elem in benchmark[2][7]:
+    #             if elem[0] is None:
+    #                 score = utils.get_width_penalty()
+    #             else:
+    #                 score = utils.calc_score_from_qc_list(
+    #                     elem[0], utils.get_backend_information(elem[1]), num_qubits
+    #                 )
+    #
+    #             scores.append(score)
+    #         assert len(scores) == 19
+    #
+    #         training_data.append((list(benchmark[1].values()), np.argmin(scores)))
+    #         name_list.append(benchmark[0])
+    #         scores_list.append(scores)
+    #
+    #     return (training_data, name_list, scores_list)
 
     def train_decision_tree_classifier(
         X, y, name_list=None, actual_scores_list=None, max_depth: int = 5
@@ -249,9 +251,10 @@ class Predictor:
             utils.get_machines()[i] for i in set(Predictor._clf.classes_)
         ]
 
-        openqasm_qc_list = utils.get_openqasm_qc()
+        openqasm_qc_list = utils.get_openqasm_gates()
         res = [openqasm_qc_list[i] for i in range(0, len(openqasm_qc_list))]
         res.append("num_qubits")
+        res.append("depth")
 
         features = np.sort(np.array(res))
 
@@ -362,7 +365,7 @@ class Predictor:
             for j in range(len(tmp_res)):
                 plt.plot(i, tmp_res[j], "b.", alpha=0.2)
 
-            if y_pred_sorted_accordingly[i] != np.argmin(tmp_res):
+            if y_pred_sorted_accordingly[i] != np.argmax(tmp_res):
                 plt.plot(
                     i,
                     tmp_res[y_pred_sorted_accordingly[i]],
