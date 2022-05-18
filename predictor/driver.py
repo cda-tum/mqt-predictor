@@ -443,20 +443,13 @@ class Predictor:
 
         return
 
-    def predict(qasm_str_or_path: str):
-        """Compilation path prediction for a given qasm string or file path to a qasm file."""
-        if ".qasm" in qasm_str_or_path and ".qasm" in qasm_str_or_path:
-            print("Reading from .qasm path: ", qasm_str_or_path)
-            qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
-        elif QuantumCircuit.from_qasm_str(qasm_str_or_path):
-            print("Reading from .qasm str")
-            qc = QuantumCircuit.from_qasm_str(qasm_str_or_path)
-        else:
+    def predict(qasm_path: str):
+        """Compilation path prediction for a given qasm file path to a qasm file."""
+        if not(".qasm" in qasm_path and ".qasm" in qasm_path):
             print("Input is neither a .qasm str nor a path to a .qasm file.")
             return
 
-        ops_list = qc.count_ops()
-        feature_vector = list(utils.create_feature_vector(qasm_str_or_path))
+        feature_vector = list(utils.create_feature_vector(qasm_path))
 
         if not (Predictor._clf):
             print("Decision Tree Classifier must be trained first!")
