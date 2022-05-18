@@ -13,20 +13,6 @@ def get_width_penalty():
     return width_penalty
 
 
-def get_backend_information(name: str):
-    """Returns the backend information for all used quantum computers."""
-    if name == "ibm_washington":
-        return get_ibm_washington()
-    elif name == "ibm_montreal":
-        return get_ibm_washington()
-    elif name == "ionq":
-        return get_ionq()
-    elif name == "rigetti_m1":
-        return get_rigetti_m1()
-    elif name == "oqc_lucy":
-        return get_oqc_lucy()
-
-
 def get_cmap_oqc_lucy():
     """Returns the coupling map of the OQC Lucy quantum computer."""
     # source: https://github.com/aws/amazon-braket-examples/blob/main/examples/braket_features/Verbatim_Compilation.ipynb

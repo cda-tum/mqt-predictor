@@ -15,27 +15,12 @@ def test_get_openqasm_gates():
     assert len(utils.get_openqasm_gates()) == 42
 
 
-@pytest.mark.parametrize(
-    "backend", ["ibm_washington", "ibm_montreal", "ionq", "rigetti_m1", "oqc_lucy"]
-)
-def test_get_backend_information(backend: str):
-    assert not utils.get_backend_information(backend) is None
-
-
 def test_get_width_penalty():
     assert utils.get_width_penalty() >= 0
 
 
 def test_get_width_penalty():
     assert utils.get_width_penalty() > 0
-
-
-def test_get_backend_information():
-    assert not utils.get_backend_information("ibm_washington") is None
-    assert not utils.get_backend_information("ibm_montreal") is None
-    assert not utils.get_backend_information("ionq") is None
-    assert not utils.get_backend_information("rigetti_m1") is None
-    assert not utils.get_backend_information("oqc_lucy") is None
 
 
 def test_get_cmaps():
