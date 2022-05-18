@@ -494,18 +494,24 @@ def calc_eval_score_for_qc(qc_path):
     elif "rigetti" in qc_path:
         with open("rigetti_m1_calibration.json", "r") as f:
             backend = json.load(f)
-
+        mapping = get_rigetti_qubit_dict()
         for instruction, qargs, cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
             if len(qubit_indices) == 1 and gate_type != "measure":
-                specific_fidelity = backend["specs"]["1Q"][str(qubit_indices[0])][
-                    "f1QRB"
-                ]
+                specific_fidelity = backend["specs"]["1Q"][
+                    mapping.get(str(qubit_indices[0]))
+                ]["f1QRB"]
             elif len(qubit_indices) == 1 and gate_type == "measure":
-                specific_fidelity = backend["specs"]["1Q"][str(qubit_indices[0])]["fRO"]
+                specific_fidelity = backend["specs"]["1Q"][
+                    mapping.get(str(qubit_indices[0]))
+                ]["fRO"]
             elif len(qubit_indices) == 2:
-                tmp = str(qubit_indices[0]) + "-" + str(qubit_indices[1])
+                tmp = (
+                    mapping.get(str(qubit_indices[0]))
+                    + "-"
+                    + mapping.get(str(qubit_indices[1]))
+                )
                 specific_fidelity = backend["specs"]["2Q"][tmp]["fCZ"]
 
             res *= specific_fidelity
@@ -539,5 +545,88 @@ def create_feature_vector(qc_path: str):
     return feature_vector
 
 
-def read_rigetti_json():
-    pass
+def get_rigetti_qubit_dict():
+    mapping = {}
+    mapping["32"] = "4"
+    mapping["39"] = "3"
+    mapping["38"] = "2"
+    mapping["37"] = "1"
+    mapping["36"] = "0"
+    mapping["35"] = "7"
+    mapping["34"] = "6"
+    mapping["33"] = "5"
+    mapping["25"] = "15"
+    mapping["24"] = "14"
+    mapping["31"] = "13"
+    mapping["30"] = "12"
+    mapping["29"] = "11"
+    mapping["28"] = "10"
+    mapping["27"] = "17"
+    mapping["26"] = "16"
+    mapping["17"] = "25"
+    mapping["16"] = "24"
+    mapping["23"] = "23"
+    mapping["22"] = "22"
+    mapping["21"] = "21"
+    mapping["20"] = "20"
+    mapping["19"] = "27"
+    mapping["18"] = "26"
+    mapping["8"] = "34"
+    mapping["9"] = "35"
+    mapping["10"] = "36"
+    mapping["11"] = "37"
+    mapping["12"] = "30"
+    mapping["13"] = "31"
+    mapping["14"] = "32"
+    mapping["15"] = "33"
+    mapping["0"] = "44"
+    mapping["1"] = "45"
+    mapping["2"] = "46"
+    mapping["3"] = "47"
+    mapping["4"] = "40"
+    mapping["5"] = "41"
+    mapping["6"] = "42"
+    mapping["7"] = "43"
+    mapping["72"] = "104"
+    mapping["73"] = "105"
+    mapping["74"] = "106"
+    mapping["75"] = "107"
+    mapping["76"] = "100"
+    mapping["77"] = "101"
+    mapping["78"] = "102"
+    mapping["79"] = "103"
+    mapping["64"] = "114"
+    mapping["65"] = "115"
+    mapping["66"] = "116"
+    mapping["67"] = "117"
+    mapping["68"] = "110"
+    mapping["69"] = "111"
+    mapping["70"] = "112"
+    mapping["71"] = "113"
+    mapping["56"] = "124"
+    mapping["57"] = "125"
+    mapping["58"] = "126"
+    mapping["59"] = "127"
+    mapping["60"] = "120"
+    mapping["61"] = "121"
+    mapping["62"] = "122"
+    mapping["63"] = "123"
+    mapping["48"] = "134"
+    mapping["49"] = "135"
+    mapping["50"] = "136"
+    mapping["51"] = "137"
+    mapping["52"] = "130"
+    mapping["53"] = "131"
+    mapping["54"] = "132"
+    mapping["55"] = "133"
+    mapping["40"] = "144"
+    mapping["41"] = "145"
+    mapping["42"] = "146"
+    mapping["43"] = "147"
+    mapping["44"] = "140"
+    mapping["45"] = "141"
+    mapping["46"] = "142"
+    mapping["47"] = "143"
+
+    assert len(mapping) == 80
+    return mapping
