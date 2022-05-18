@@ -140,7 +140,7 @@ class Predictor:
                         scores[comp_path_index] = score
 
                 num_not_empty_entries = 0
-                for i in range(20):
+                for i in range(19):
                     if not scores[i]:
                         scores[i] = utils.get_width_penalty()
                     else:
