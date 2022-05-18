@@ -151,7 +151,7 @@ def get_rigetti_qc(qc, opt_level):
             qc,
             basis_gates=get_rigetti_native_gates(),
             optimization_level=opt_level,
-            coupling_map=get_cmap_rigetti_m1(10),
+            coupling_map=get_cmap_rigetti_m1(),
             seed_transpiler=10,
             layout_method="sabre",
             routing_method="sabre",

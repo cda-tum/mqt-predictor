@@ -49,7 +49,7 @@ def test_get_cmaps():
         [4, 3],
         [4, 5],
     ]
-    assert not utils.get_cmap_rigetti_m1(10) is None
+    assert not utils.get_cmap_rigetti_m1() is None
 
 
 def test_get_openqasm_gates():

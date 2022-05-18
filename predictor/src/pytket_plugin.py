@@ -112,7 +112,7 @@ def get_rigetti_qc(qc, lineplacement: bool):
         return None
     else:
         backend = get_rigetti_rebase()
-        rigetti_arch = architecture.Architecture(get_cmap_rigetti_m1(10))
+        rigetti_arch = architecture.Architecture(get_cmap_rigetti_m1())
 
         backend.apply(qc)
         FullPeepholeOptimise().apply(qc)
