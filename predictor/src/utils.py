@@ -9,7 +9,7 @@ import os
 
 def get_width_penalty():
     """Returns the penalty value if a quantum computer has not enough qubits."""
-    width_penalty = 1000000
+    width_penalty = -10
     return width_penalty
 
 
@@ -650,6 +650,7 @@ def parse_oqc_calibration_config():
     }
     oqc_dict
     return oqc_dict
+
 
 # with open("rigetti_m1_calibration.json", "r") as f:
 #     rigetti_m1_calibration = json.load(f)
