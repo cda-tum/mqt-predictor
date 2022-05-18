@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import json
 import os
+import glob
 import argparse
 
 from sklearn.model_selection import train_test_split
@@ -113,21 +114,24 @@ class Predictor:
                 scores = []
                 for _ in range(20):
                     scores.append([])
-                # iterate over all respective circuits in compiled_path folder
-                for filename in os.listdir(compiled_path):
+                # iterate over all respective circuits in
+                all_relevant_files = glob.glob(
+                    "qasm_compiled/" + benchmark.split(".")[0] + "*"
+                )
+
+                for filename in all_relevant_files:
                     # print("Check: ",filename)
                     if (
                         benchmark.split(".")[0] + "_"
                     ) in filename and filename.endswith(".qasm"):
                         # print("Found: ", filename)
                         # execute function call calc_eval_score_for_qc_and_backend
-                        score = utils.calc_eval_score_for_qc(
-                            os.path.join(compiled_path, filename)
-                        )
+                        score = utils.calc_eval_score_for_qc(filename)
                         comp_path_index = int(filename.split("_")[-1].split(".")[0])
                         # print("Comp path index: ", comp_path_index, "\n")
                         scores[comp_path_index] = score
-
+                if not scores:
+                    break
                 for i in range(20):
                     if not scores[i]:
                         scores[i] = utils.get_width_penalty()
