@@ -116,9 +116,9 @@ class Predictor:
                 # iterate over all respective circuits in compiled_path folder
                 for filename in os.listdir(compiled_path):
                     # print("Check: ",filename)
-                    if benchmark.split(".")[0] in filename and filename.endswith(
-                        ".qasm"
-                    ):
+                    if (
+                        benchmark.split(".")[0] + "_"
+                    ) in filename and filename.endswith(".qasm"):
                         # print("Found: ", filename)
                         # execute function call calc_eval_score_for_qc_and_backend
                         score = utils.calc_eval_score_for_qc(
@@ -445,7 +445,7 @@ class Predictor:
 
     def predict(qasm_path: str):
         """Compilation path prediction for a given qasm file path to a qasm file."""
-        if not(".qasm" in qasm_path and ".qasm" in qasm_path):
+        if not (".qasm" in qasm_path and ".qasm" in qasm_path):
             print("Input is neither a .qasm str nor a path to a .qasm file.")
             return
 
@@ -528,4 +528,4 @@ if __name__ == "__main__":
     # Predictor.save_all_compilation_path_results(
     #     folder_path=args.path, timeout=args.timeout
     # )
-    Predictor.generate_trainingdata_from_qasm_files(folder_path="parsetest/")
+    Predictor.generate_trainingdata_from_qasm_files(folder_path="qasm_compiled/")
