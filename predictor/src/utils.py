@@ -369,6 +369,23 @@ def get_rigetti_m1_fid2():
     return avg_fid2
 
 
+def get_oqc_lucy_fid2():
+    """Calculates and returns the avg two gate fidelity for the OQC Lucy."""
+    with open("oqc_lucy_calibration.json", "r") as f:
+        backend = json.load(f)
+
+    fid2 = []
+    for elem in backend["twoQubitProperties"]:
+        val = backend["twoQubitProperties"][elem]["twoQubitGateFidelity"][0].get(
+            "fidelity"
+        )
+        if val:
+            fid2.append(val)
+
+    avg_fid2 = sum(fid2) / len(fid2)
+    return avg_fid2
+
+
 def dict_to_featurevector(gate_dict):
     """Calculates and returns the feature vector of a given quantum circuit gate dictionary."""
     openqasm_gates_list = get_openqasm_gates()
@@ -489,9 +506,13 @@ def calc_eval_score_for_qc(qc_path):
                 ]["oneQubitFidelity"][1]["fidelity"]
             elif len(qubit_indices) == 2:
                 tmp = str(qubit_indices[0]) + "-" + str(qubit_indices[1])
-                specific_fidelity = backend["twoQubitProperties"][tmp][
-                    "twoQubitGateFidelity"
-                ][0]["fidelity"]
+                if backend["twoQubitProperties"].get(tmp) is None:
+                    # print("Fail: Gate not available at this qubit pair: ", tmp)
+                    specific_fidelity = get_oqc_lucy_fid2()
+                else:
+                    specific_fidelity = backend["twoQubitProperties"][tmp][
+                        "twoQubitGateFidelity"
+                    ][0]["fidelity"]
 
             res *= specific_fidelity
     elif "rigetti" in qc_path:
@@ -525,8 +546,11 @@ def calc_eval_score_for_qc(qc_path):
                         )
                     )
                 )
-                if backend["specs"]["2Q"][tmp].get("fCZ") is None:
-                    print("Fail: Gate not available at this qubit pair!")
+                if (
+                    backend["specs"]["2Q"].get(tmp) is None
+                    or backend["specs"]["2Q"][tmp].get("fCZ") is None
+                ):
+                    # print("Fail: Gate not available at this qubit pair: ", tmp)
                     specific_fidelity = get_rigetti_m1_fid2()
                 else:
                     specific_fidelity = backend["specs"]["2Q"][tmp]["fCZ"]
