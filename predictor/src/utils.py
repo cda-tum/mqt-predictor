@@ -315,7 +315,6 @@ def calc_eval_score_for_qc(qc_path):
         return get_width_penalty()
     res = 1
     if "ibm_washington" in qc_path:
-        df = pd.read_csv("ibm_washington_calibrations.csv")
         for instruction, qargs, cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
@@ -332,16 +331,15 @@ def calc_eval_score_for_qc(qc_path):
                 index = 5
             if index == 12:
                 tmp = str(qubit_indices[0]) + "_" + str(qubit_indices[1])
-                for elem in df.loc[1][12].split(";"):
+                for elem in df_ibm_washington_calibration.loc[1][12].split(";"):
                     if tmp in elem.split(":")[0]:
                         specific_error = elem.split(":")[1]
             elif index in [5, 10, 11]:
-                specific_error = df.loc[first_qubit][index]
+                specific_error = df_ibm_washington_calibration.loc[first_qubit][index]
 
             res *= 1 - float(specific_error)
 
     elif "ibm_montreal" in qc_path:
-        df = pd.read_csv("ibmq_montreal_calibrations.csv")
         for instruction, qargs, cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
@@ -358,52 +356,48 @@ def calc_eval_score_for_qc(qc_path):
                 index = 5
             if index == 12:
                 tmp = str(qubit_indices[0]) + "_" + str(qubit_indices[1])
-                for elem in df.loc[1][12].split(";"):
+                for elem in df_ibm_montreal_calibration.loc[1][12].split(";"):
                     if tmp in elem.split(":")[0]:
                         specific_error = elem.split(":")[1]
             elif index in [5, 10, 11]:
-                specific_error = df.loc[first_qubit][index]
+                specific_error = df_ibm_montreal_calibration.loc[first_qubit][index]
 
             res *= 1 - float(specific_error)
     elif "oqc" in qc_path:
-        with open("oqc_lucy_calibration.json", "r") as f:
-            backend = json.load(f)
-
         for instruction, qargs, cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
             if len(qubit_indices) == 1 and gate_type != "measure":
-                specific_fidelity = backend["oneQubitProperties"][
+                specific_fidelity = oqc_lucy_calibration["oneQubitProperties"][
                     str(qubit_indices[0])
                 ]["oneQubitFidelity"][0]["fidelity"]
             elif len(qubit_indices) == 1 and gate_type == "measure":
-                specific_fidelity = backend["oneQubitProperties"][
+                specific_fidelity = oqc_lucy_calibration["oneQubitProperties"][
                     str(qubit_indices[0])
                 ]["oneQubitFidelity"][1]["fidelity"]
             elif len(qubit_indices) == 2:
                 tmp = str(qubit_indices[0]) + "-" + str(qubit_indices[1])
-                if backend["twoQubitProperties"].get(tmp) is None:
+                if oqc_lucy_calibration["twoQubitProperties"].get(tmp) is None:
                     # print("Fail: Gate not available at this qubit pair: ", tmp)
                     specific_fidelity = get_oqc_lucy_fid2()
                 else:
-                    specific_fidelity = backend["twoQubitProperties"][tmp][
+                    specific_fidelity = oqc_lucy_calibration["twoQubitProperties"][tmp][
                         "twoQubitGateFidelity"
                     ][0]["fidelity"]
 
             res *= specific_fidelity
     elif "rigetti" in qc_path:
-        with open("rigetti_m1_calibration.json", "r") as f:
-            backend = json.load(f)
+
         mapping = get_rigetti_qubit_dict()
         for instruction, qargs, cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
             if len(qubit_indices) == 1 and gate_type != "measure":
-                specific_fidelity = backend["specs"]["1Q"][
+                specific_fidelity = rigetti_m1_calibration["specs"]["1Q"][
                     mapping.get(str(qubit_indices[0]))
                 ]["f1QRB"]
             elif len(qubit_indices) == 1 and gate_type == "measure":
-                specific_fidelity = backend["specs"]["1Q"][
+                specific_fidelity = rigetti_m1_calibration["specs"]["1Q"][
                     mapping.get(str(qubit_indices[0]))
                 ]["fRO"]
             elif len(qubit_indices) == 2:
@@ -423,27 +417,25 @@ def calc_eval_score_for_qc(qc_path):
                     )
                 )
                 if (
-                    backend["specs"]["2Q"].get(tmp) is None
-                    or backend["specs"]["2Q"][tmp].get("fCZ") is None
+                    rigetti_m1_calibration["specs"]["2Q"].get(tmp) is None
+                    or rigetti_m1_calibration["specs"]["2Q"][tmp].get("fCZ") is None
                 ):
                     # print("Fail: Gate not available at this qubit pair: ", tmp)
                     specific_fidelity = get_rigetti_m1_fid2()
                 else:
-                    specific_fidelity = backend["specs"]["2Q"][tmp]["fCZ"]
+                    specific_fidelity = rigetti_m1_calibration["specs"]["2Q"][tmp][
+                        "fCZ"
+                    ]
 
             res *= specific_fidelity
 
     elif "ionq" in qc_path:
-        with open("ionq_calibration.json", "r") as f:
-            backend = json.load(f)
-
         for instruction, qargs, cargs in qc.data:
-            gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
             if len(qubit_indices) == 1:
-                specific_fidelity = backend["fidelity"]["1Q"]["mean"]
+                specific_fidelity = ionq_calibration["fidelity"]["1Q"]["mean"]
             elif len(qubit_indices) == 2:
-                specific_fidelity = backend["fidelity"]["2Q"]["mean"]
+                specific_fidelity = ionq_calibration["fidelity"]["2Q"]["mean"]
             res *= specific_fidelity
     else:
         print("Error: No suitable backend found!")
@@ -452,6 +444,28 @@ def calc_eval_score_for_qc(qc_path):
     # return res
     print("Eval score for :", qc_path, " is ", res)
     return res
+
+
+def init_all_config_files():
+    try:
+        global df_ibm_montreal_calibration
+        df_ibm_montreal_calibration = pd.read_csv("ibmq_montreal_calibrations.csv")
+        global df_ibm_washington_calibration
+        df_ibm_washington_calibration = pd.read_csv("ibm_washington_calibrations.csv")
+        global oqc_lucy_calibration
+        with open("oqc_lucy_calibration.json", "r") as f:
+            oqc_lucy_calibration = json.load(f)
+        global rigetti_m1_calibration
+        with open("rigetti_m1_calibration.json", "r") as f:
+            rigetti_m1_calibration = json.load(f)
+        global ionq_calibration
+        with open("ionq_calibration.json", "r") as f:
+            ionq_calibration = json.load(f)
+    except Exception as e:
+        print("init_all_config_files() failed: ", e)
+        return False
+    else:
+        return True
 
 
 def create_feature_vector(qc_path: str):

@@ -90,6 +90,12 @@ class Predictor:
     def generate_trainingdata_from_qasm_files(
         folder_path: str = "./qasm_files", compiled_path: str = "qasm_compiled/"
     ):
+        if utils.init_all_config_files():
+            print("Calibration files successfully initiated")
+        else:
+            print("Calibration files Initiation failed")
+            return None
+
         # init resulting list (feature vector, name, scores)
         training_data = []
         name_list = []
@@ -152,79 +158,6 @@ class Predictor:
 
         return (training_data, name_list, scores_list)
 
-    # def generate_trainingdata_from_json(json_path: str = "json_data.json"):
-    #     """Generates the training data based on the provided json file and defined evaluation score."""
-    #
-    #     with open(json_path, "r") as f:
-    #         data = json.load(f)
-    #     training_data = []
-    #     name_list = []
-    #     scores_list = []
-    #
-    #     # print(data)
-    #     for benchmark in data:
-    #         scores = []
-    #         num_qubits = benchmark[1]["num_qubits"]
-    #         # Qiskit Scores opt2
-    #         if num_qubits > 127:
-    #             continue
-    #
-    #         for elem in benchmark[2][1]:
-    #             if elem[0] is None:
-    #                 score = utils.get_width_penalty()
-    #             else:
-    #                 score = utils.calc_score_from_qc_list(
-    #                     elem[0], utils.get_backend_information(elem[1]), num_qubits
-    #                 )
-    #
-    #             scores.append(score)
-    #         assert len(scores) == 5
-    #         # Qiskit Scores opt3
-    #         if num_qubits > 127:
-    #             continue
-    #         for elem in benchmark[2][3]:
-    #             if elem[0] is None:
-    #                 score = utils.get_width_penalty()
-    #             else:
-    #                 score = utils.calc_score_from_qc_list(
-    #                     elem[0], utils.get_backend_information(elem[1]), num_qubits
-    #                 )
-    #
-    #             scores.append(score)
-    #         assert len(scores) == 10
-    #
-    #         # Tket Scores Lineplacement
-    #
-    #         for elem in benchmark[2][5]:
-    #             if elem[0] is None:
-    #                 score = utils.get_width_penalty()
-    #             else:
-    #                 score = utils.calc_score_from_qc_list(
-    #                     elem[0], utils.get_backend_information(elem[1]), num_qubits
-    #                 )
-    #
-    #             scores.append(score)
-    #         assert len(scores) == 15
-    #
-    #         # Tket Scores Graphplacement
-    #
-    #         for elem in benchmark[2][7]:
-    #             if elem[0] is None:
-    #                 score = utils.get_width_penalty()
-    #             else:
-    #                 score = utils.calc_score_from_qc_list(
-    #                     elem[0], utils.get_backend_information(elem[1]), num_qubits
-    #                 )
-    #
-    #             scores.append(score)
-    #         assert len(scores) == 19
-    #
-    #         training_data.append((list(benchmark[1].values()), np.argmin(scores)))
-    #         name_list.append(benchmark[0])
-    #         scores_list.append(scores)
-    #
-    #     return (training_data, name_list, scores_list)
-
     def train_decision_tree_classifier(
         X, y, name_list=None, actual_scores_list=None, max_depth: int = 5
     ):
@@ -258,17 +191,6 @@ class Predictor:
 
         features = np.sort(np.array(res))
 
-        # fig = plt.figure(figsize=(10, 5))
-        # plot_tree(
-        #     Predictor._clf,
-        #     feature_names=features,
-        #     class_names=available_machines,
-        #     filled=True,
-        #     impurity=True,
-        #     rounded=True,
-        # )
-        #
-        # plt.savefig("DecisionTreeClassifier.png", dpi=600)
         viz = dtreeviz(
             Predictor._clf,
             X_train,
@@ -283,9 +205,6 @@ class Predictor:
         names_list = [name_list[i] for i in indices_test]
         scores_filtered = [actual_scores_list[i] for i in indices_test]
 
-        # print("len(y_predicted)", len(y_pred))
-
-        # Predictor.plot_eval_all_detailed(names_list, scores_filtered, y_pred, y_test)
         Predictor.plot_eval_all_detailed_compact(
             names_list, scores_filtered, y_pred, y_test
         )
@@ -461,7 +380,7 @@ class Predictor:
             print("Input is neither a .qasm str nor a path to a .qasm file.")
             return
 
-        feature_vector = list(utils.create_feature_vector(qasm_path))
+        feature_vector = list(utils.create_feature_vector(qasm_path).values())
 
         if not (Predictor._clf):
             print("Decision Tree Classifier must be trained first!")
@@ -540,4 +459,4 @@ if __name__ == "__main__":
     # Predictor.save_all_compilation_path_results(
     #     folder_path=args.path, timeout=args.timeout
     # )
-    Predictor.generate_trainingdata_from_qasm_files(folder_path="qasm_compiled/")
+    Predictor.generate_trainingdata_from_qasm_files(folder_path="qasmtest/")
