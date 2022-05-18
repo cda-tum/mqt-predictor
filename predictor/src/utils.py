@@ -12,6 +12,7 @@ def get_width_penalty():
     width_penalty = 1000000
     return width_penalty
 
+
 def get_backend_information(name: str):
     """Returns the backend information for all used quantum computers."""
     if name == "ibm_washington":
