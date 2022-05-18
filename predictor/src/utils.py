@@ -650,3 +650,28 @@ def parse_oqc_calibration_config():
     }
     oqc_dict
     return oqc_dict
+
+# with open("rigetti_m1_calibration.json", "r") as f:
+#     rigetti_m1_calibration = json.load(f)
+# avg_1Q = {}
+# avg_1Q_readout = {}
+# missing_indices = []
+# for elem in rigetti_m1_calibration["specs"]["1Q"]:
+#     avg_1Q[str(elem)] = rigetti_m1_calibration["specs"]["1Q"][elem].get("f1QRB")
+#     avg_1Q_readout[str(elem)] = rigetti_m1_calibration["specs"]["1Q"][elem].get("fRO")
+#
+# avg_2Q_CZ = {}
+# non_list = []
+# for elem in rigetti_m1_calibration["specs"]["2Q"]:
+#     if rigetti_m1_calibration["specs"]["2Q"][elem].get("fCZ") is None:
+#         non_list.append(elem)
+#     else:
+#         avg_2Q_CZ[str(elem)] = rigetti_m1_calibration["specs"]["2Q"][elem].get("fCZ")
+#
+# import numpy as np
+#
+# cz_fid_avg = np.average(list(avg_2Q_CZ.values()))
+#
+# for elem in missing_indices:
+#     avg_2Q_CZ[elem] = cz_fid_avg
+# print(avg_2Q_CZ, len(avg_2Q_CZ))
