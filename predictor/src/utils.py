@@ -369,7 +369,7 @@ def get_rigetti_m1_fid2():
     return avg_fid2
 
 
-def dict_to_featurevector(gate_dict, num_qubits):
+def dict_to_featurevector(gate_dict):
     """Calculates and returns the feature vector of a given quantum circuit gate dictionary."""
     openqasm_gates_list = get_openqasm_gates()
     res_dct = {openqasm_gates_list[i] for i in range(0, len(openqasm_gates_list))}
@@ -378,7 +378,6 @@ def dict_to_featurevector(gate_dict, num_qubits):
         if key in res_dct:
             res_dct[key] = val
 
-    res_dct["num_qubits"] = num_qubits
     return res_dct
 
 
@@ -416,10 +415,14 @@ def get_compiled_output_folder():
 
 def calc_eval_score_for_qc(qc_path):
     # read qasm to Qiskit Quantumcircuit
-    qc = QuantumCircuit.from_qasm_file(qc_path)
+    try:
+        qc = QuantumCircuit.from_qasm_file(qc_path)
+    except Exception as e:
+        print("Fail in calc_eval_score_for_qc: ", e)
+        return get_width_penalty()
     res = 1
     if "ibm_washington" in qc_path:
-        df = pd.read_csv("ibmq_washington_calibrations.csv")
+        df = pd.read_csv("ibm_washington_calibrations.csv")
         for instruction, qargs, cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
@@ -442,7 +445,7 @@ def calc_eval_score_for_qc(qc_path):
             elif index in [5, 10, 11]:
                 specific_error = df.loc[first_qubit][index]
 
-            res *= 1 - specific_error
+            res *= 1 - float(specific_error)
 
     elif "ibm_montreal" in qc_path:
         df = pd.read_csv("ibmq_montreal_calibrations.csv")
@@ -468,7 +471,7 @@ def calc_eval_score_for_qc(qc_path):
             elif index in [5, 10, 11]:
                 specific_error = df.loc[first_qubit][index]
 
-            res *= 1 - specific_error
+            res *= 1 - float(specific_error)
     elif "oqc" in qc_path:
         with open("oqc_lucy_calibration.json", "r") as f:
             backend = json.load(f)
@@ -508,11 +511,25 @@ def calc_eval_score_for_qc(qc_path):
                 ]["fRO"]
             elif len(qubit_indices) == 2:
                 tmp = (
-                    mapping.get(str(qubit_indices[0]))
+                    str(
+                        min(
+                            int(mapping.get(str(qubit_indices[0]))),
+                            int(mapping.get(str(qubit_indices[1]))),
+                        )
+                    )
                     + "-"
-                    + mapping.get(str(qubit_indices[1]))
+                    + str(
+                        max(
+                            int(mapping.get(str(qubit_indices[0]))),
+                            int(mapping.get(str(qubit_indices[1]))),
+                        )
+                    )
                 )
-                specific_fidelity = backend["specs"]["2Q"][tmp]["fCZ"]
+                if backend["specs"]["2Q"][tmp].get("fCZ") is None:
+                    print("Fail: Gate not available at this qubit pair!")
+                    specific_fidelity = get_rigetti_m1_fid2()
+                else:
+                    specific_fidelity = backend["specs"]["2Q"][tmp]["fCZ"]
 
             res *= specific_fidelity
 
@@ -533,7 +550,7 @@ def calc_eval_score_for_qc(qc_path):
 
     # add readout error
     # return res
-
+    print("Eval score for :", qc_path, " is ", res)
     return res
 
 
@@ -541,7 +558,10 @@ def create_feature_vector(qc_path: str):
     qc = QuantumCircuit.from_qasm_file(qc_path)
 
     ops_list = qc.count_ops()
-    feature_vector = dict_to_featurevector(ops_list, qc.num_qubits, qc.depth())
+    feature_vector = dict_to_featurevector(ops_list)
+
+    feature_vector["num_qubits"] = qc.num_qubits
+    feature_vector["depth"] = qc.depth()
     return feature_vector
 
 

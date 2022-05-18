@@ -443,77 +443,6 @@ class Predictor:
 
         return
 
-        # def plot_eval_all_detailed(names_list, scores_filtered, y_pred, y_test):
-        #
-        #     circuit_names = []
-        #     all_rows = []
-        #     all_rows.append(
-        #         [
-        #             "Benchmark",
-        #             "Best Score",
-        #             "MQT Predictor",
-        #             "Best Machine",
-        #             "MQT Predictor",
-        #             "Overhead",
-        #         ]
-        #     )
-        #
-        #     for i in range(len(y_pred)):
-        #         # if y_pred[i] != y_test[i]:
-        #         row = []
-        #         tmp_res = scores_filtered[i]
-        #         assert len(tmp_res) == 5 or len(tmp_res) == 10
-        #         circuit_names.append(names_list[i])
-        #         machines = utils.get_machines()
-        #
-        #         comp_val = tmp_res[y_pred[i]] / tmp_res[y_test[i]]
-        #         row.append(names_list[i])
-        #         row.append(np.round(np.min(tmp_res), 2))
-        #         row.append(np.round(tmp_res[y_pred[i]], 2))
-        #         row.append(y_test[i])
-        #         row.append(y_pred[i])
-        #         row.append(np.round(comp_val - 1.00, 2))
-        #         all_rows.append(row)
-        #
-        #         for j in range(10):
-        #             plt.plot(
-        #                 len(circuit_names),
-        #                 tmp_res[j],
-        #                 ".",
-        #                 alpha=0.5,
-        #                 label=machines[j],
-        #             )
-        #         plt.plot(
-        #             len(circuit_names),
-        #             tmp_res[y_pred[i]],
-        #             "ko",
-        #             label="MQTPredictor",
-        #         )
-        #         plt.xlabel(utils.get_machines())
-        #
-        #         if machines[np.argmin(tmp_res)] != machines[y_pred[i]]:
-        #             assert np.argmin(tmp_res) == y_test[i]
-        #             diff = tmp_res[y_pred[i]] - tmp_res[np.argmin(tmp_res)]
-        #             print(
-        #                 names_list[i],
-        #                 " predicted: ",
-        #                 y_pred[i],
-        #                 " should be: ",
-        #                 y_test[i],
-        #                 " diff: ",
-        #                 diff,
-        #             )
-        #     plt.title("Evaluation: Compilation Flow Prediction")
-        #     plt.xticks(range(len(circuit_names)), circuit_names, rotation=90)
-        #     plt.xlabel("Unseen Benchmarks")
-        #     plt.ylabel("Actual Score")
-        #     handles, labels = plt.gca().get_legend_handles_labels()
-        #     by_label = dict(zip(labels, handles))
-        #     plt.legend(by_label.values(), by_label.keys(), loc="upper right")
-        #     plt.yscale("log")
-        #     plt.tight_layout()
-        #     plt.savefig("y_pred_eval")
-
     def predict(qasm_str_or_path: str):
         """Compilation path prediction for a given qasm string or file path to a qasm file."""
         if ".qasm" in qasm_str_or_path and ".qasm" in qasm_str_or_path:
@@ -527,9 +456,7 @@ class Predictor:
             return
 
         ops_list = qc.count_ops()
-        feature_vector = list(
-            utils.dict_to_featurevector(ops_list, qc.num_qubits).values()
-        )
+        feature_vector = list(utils.create_feature_vector(qasm_str_or_path))
 
         if not (Predictor._clf):
             print("Decision Tree Classifier must be trained first!")
@@ -604,6 +531,8 @@ if __name__ == "__main__":
     # parser.add_argument("--path", type=str, default="test/")
     #
     # args = parser.parse_args()
-
-    # Predictor.save_all_compilation_path_results(folder_path=args.path, timeout=args.timeout)
+    #
+    # Predictor.save_all_compilation_path_results(
+    #     folder_path=args.path, timeout=args.timeout
+    # )
     Predictor.generate_trainingdata_from_qasm_files(folder_path="parsetest/")
