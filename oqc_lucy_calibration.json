@@ -1,0 +1,322 @@
+{
+  "braketSchemaHeader": {
+    "name": "braket.device_schema.standardized_gate_model_qpu_device_properties",
+    "version": "1"
+  },
+  "oneQubitProperties": {
+    "0": {
+      "T1": {
+        "value": 32.1,
+        "unit": "S"
+      },
+      "T2": {
+        "value": 48.5,
+        "unit": "S"
+      },
+      "oneQubitFidelity": [
+        {
+          "fidelityType": {
+            "name": "RANDOMIZED_BENCHMARKING"
+          },
+          "fidelity": 0.9988
+        },
+        {
+          "fidelityType": {
+            "name": "READOUT"
+          },
+          "fidelity": 0.935
+        }
+      ]
+    },
+    "1": {
+      "T1": {
+        "value": 40,
+        "unit": "S"
+      },
+      "T2": {
+        "value": 50.5,
+        "unit": "S"
+      },
+      "oneQubitFidelity": [
+        {
+          "fidelityType": {
+            "name": "RANDOMIZED_BENCHMARKING"
+          },
+          "fidelity": 0.9967
+        },
+        {
+          "fidelityType": {
+            "name": "READOUT"
+          },
+          "fidelity": 0.871
+        }
+      ]
+    },
+    "2": {
+      "T1": {
+        "value": 39.8,
+        "unit": "S"
+      },
+      "T2": {
+        "value": 39.5,
+        "unit": "S"
+      },
+      "oneQubitFidelity": [
+        {
+          "fidelityType": {
+            "name": "RANDOMIZED_BENCHMARKING"
+          },
+          "fidelity": 0.9975
+        },
+        {
+          "fidelityType": {
+            "name": "READOUT"
+          },
+          "fidelity": 0.9
+        }
+      ]
+    },
+    "3": {
+      "T1": {
+        "value": 26.1,
+        "unit": "S"
+      },
+      "T2": {
+        "value": 44.8,
+        "unit": "S"
+      },
+      "oneQubitFidelity": [
+        {
+          "fidelityType": {
+            "name": "RANDOMIZED_BENCHMARKING"
+          },
+          "fidelity": 0.9994
+        },
+        {
+          "fidelityType": {
+            "name": "READOUT"
+          },
+          "fidelity": 0.928
+        }
+      ]
+    },
+    "4": {
+      "T1": {
+        "value": 55.8,
+        "unit": "S"
+      },
+      "T2": {
+        "value": 48.4,
+        "unit": "S"
+      },
+      "oneQubitFidelity": [
+        {
+          "fidelityType": {
+            "name": "RANDOMIZED_BENCHMARKING"
+          },
+          "fidelity": 0.9994
+        },
+        {
+          "fidelityType": {
+            "name": "READOUT"
+          },
+          "fidelity": 0.85
+        }
+      ]
+    },
+    "5": {
+      "T1": {
+        "value": 25.5,
+        "unit": "S"
+      },
+      "T2": {
+        "value": 43.2,
+        "unit": "S"
+      },
+      "oneQubitFidelity": [
+        {
+          "fidelityType": {
+            "name": "RANDOMIZED_BENCHMARKING"
+          },
+          "fidelity": 0.9992
+        },
+        {
+          "fidelityType": {
+            "name": "READOUT"
+          },
+          "fidelity": 0.947
+        }
+      ]
+    },
+    "6": {
+      "T1": {
+        "value": 13.5,
+        "unit": "S"
+      },
+      "T2": {
+        "value": 23.5,
+        "unit": "S"
+      },
+      "oneQubitFidelity": [
+        {
+          "fidelityType": {
+            "name": "RANDOMIZED_BENCHMARKING"
+          },
+          "fidelity": 0.999
+        },
+        {
+          "fidelityType": {
+            "name": "READOUT"
+          },
+          "fidelity": 0.948
+        }
+      ]
+    },
+    "7": {
+      "T1": {
+        "value": 45,
+        "unit": "S"
+      },
+      "T2": {
+        "value": 58.9,
+        "unit": "S"
+      },
+      "oneQubitFidelity": [
+        {
+          "fidelityType": {
+            "name": "RANDOMIZED_BENCHMARKING"
+          },
+          "fidelity": 0.9979
+        },
+        {
+          "fidelityType": {
+            "name": "READOUT"
+          },
+          "fidelity": 0.902
+        }
+      ]
+    }
+  },
+  "twoQubitProperties": {
+    "0-1": {
+      "twoQubitGateFidelity": [
+        {
+          "direction": {
+            "control": 0,
+            "target": 1
+          },
+          "gateName": "ecr",
+          "fidelity": 0.896,
+          "fidelityType": {
+            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
+          }
+        }
+      ]
+    },
+    "0-7": {
+      "twoQubitGateFidelity": [
+        {
+          "direction": {
+            "control": 0,
+            "target": 7
+          },
+          "gateName": "ecr",
+          "fidelity": 0.93,
+          "fidelityType": {
+            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
+          }
+        }
+      ]
+    },
+    "1-2": {
+      "twoQubitGateFidelity": [
+        {
+          "direction": {
+            "control": 1,
+            "target": 2
+          },
+          "gateName": "ecr",
+          "fidelity": 0.936,
+          "fidelityType": {
+            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
+          }
+        }
+      ]
+    },
+    "2-3": {
+      "twoQubitGateFidelity": [
+        {
+          "direction": {
+            "control": 2,
+            "target": 3
+          },
+          "gateName": "ecr",
+          "fidelity": 0.939,
+          "fidelityType": {
+            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
+          }
+        }
+      ]
+    },
+    "4-3": {
+      "twoQubitGateFidelity": [
+        {
+          "direction": {
+            "control": 4,
+            "target": 3
+          },
+          "gateName": "ecr",
+          "fidelity": 0.948,
+          "fidelityType": {
+            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
+          }
+        }
+      ]
+    },
+    "4-5": {
+      "twoQubitGateFidelity": [
+        {
+          "direction": {
+            "control": 4,
+            "target": 5
+          },
+          "gateName": "ecr",
+          "fidelity": 0.968,
+          "fidelityType": {
+            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
+          }
+        }
+      ]
+    },
+    "6-5": {
+      "twoQubitGateFidelity": [
+        {
+          "direction": {
+            "control": 6,
+            "target": 5
+          },
+          "gateName": "ecr",
+          "fidelity": 0.963,
+          "fidelityType": {
+            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
+          }
+        }
+      ]
+    },
+    "7-6": {
+      "twoQubitGateFidelity": [
+        {
+          "direction": {
+            "control": 7,
+            "target": 6
+          },
+          "gateName": "ecr",
+          "fidelity": 0.929,
+          "fidelityType": {
+            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
+          }
+        }
+      ]
+    }
+  }
+}
