@@ -462,6 +462,10 @@ def create_feature_vector(qc_path: str):
 
     feature_vector["num_qubits"] = qc.num_qubits
     feature_vector["depth"] = qc.depth()
+    connectivity = calc_connectivity_for_qc(qc)
+    for i in range(127):
+        feature_vector[str(i) + "_max_interactions"] = connectivity[i]
+
     return feature_vector
 
 
@@ -682,3 +686,22 @@ def parse_rigetti_calibration_config():
         "fid_2Q_CZ": fid_2Q_CZ,
     }
     return rigetti_dict
+
+
+def calc_connectivity_for_qc(qc: QuantumCircuit):
+
+    connectivity = []
+    for i in range(127):
+        connectivity.append([])
+    for instruction, qargs, cargs in qc.data:
+        gate_type = instruction.name
+        qubit_indices = [elem.index for elem in qargs]
+        if len(qubit_indices) == 2 and gate_type != "barrier":
+            first_qubit = int(qubit_indices[0])
+            second_qubit = int(qubit_indices[1])
+            connectivity[first_qubit].append(second_qubit)
+            connectivity[second_qubit].append(first_qubit)
+    for i in range(127):
+        connectivity[i] = len(set(connectivity[i]))
+    connectivity.sort(reverse=True)
+    return connectivity

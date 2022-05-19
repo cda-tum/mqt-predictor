@@ -178,6 +178,8 @@ class Predictor:
         res = [openqasm_qc_list[i] for i in range(0, len(openqasm_qc_list))]
         res.append("num_qubits")
         res.append("depth")
+        for i in range(127):
+            res.append(str(i) + "_max_interactions")
 
         features = np.sort(np.array(res))
 
