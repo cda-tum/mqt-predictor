@@ -358,7 +358,7 @@ class Predictor:
                             label="# of possible Comp. Paths",
                             linewidth=3,
                         )
-                        plt.annotate("8", (x_index - 5, 1))
+                        plt.annotate("8", (x_index - 5, 0.8))
                         x_index = len(scores_filtered)
                         plt.axvline(
                             x_index,
@@ -367,7 +367,7 @@ class Predictor:
                             label="# of possible Comp. Paths",
                             linewidth=3,
                         )
-                        plt.annotate("4", (x_index - 5, 1))
+                        plt.annotate("4", (x_index - 5, 0.8))
 
         handles, labels = plt.gca().get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
