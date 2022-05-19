@@ -3,8 +3,8 @@ import json
 import numpy as np
 from pytket import OpType
 from qiskit import QuantumCircuit
-import pandas as pd
 import os
+from qiskit.test.mock.backends import FakeWashington, FakeMontreal
 
 
 def get_width_penalty():
@@ -314,153 +314,139 @@ def calc_eval_score_for_qc(qc_path):
         print("Fail in calc_eval_score_for_qc: ", e)
         return get_width_penalty()
     res = 1
-    if "ibm_washington" in qc_path:
+
+    if "ibm_montreal" in qc_path or "ibm_washington" in qc_path:
+
+        if "ibm_montreal" in qc_path:
+            backend = ibm_montreal_calibration
+        else:
+            backend = ibm_washington_calibration
         for instruction, qargs, cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
-            first_qubit = int(qubit_indices[0])
-            index = 0
-            specific_error = 0
-            if gate_type == "sx":
-                index = 10
-            elif gate_type == "x":
-                index = 11
-            elif gate_type == "cx":
-                index = 12
-            elif gate_type == "measure":
-                index = 5
-            if index == 12:
-                tmp = str(qubit_indices[0]) + "_" + str(qubit_indices[1])
-                for elem in df_ibm_washington_calibration.loc[1][12].split(";"):
-                    if tmp in elem.split(":")[0]:
-                        specific_error = elem.split(":")[1]
-            elif index in [5, 10, 11]:
-                specific_error = df_ibm_washington_calibration.loc[first_qubit][index]
 
-            res *= 1 - float(specific_error)
+            assert gate_type in ["rz", "sx", "x", "cx", "measure", "barrier"]
 
-    elif "ibm_montreal" in qc_path:
-        for instruction, qargs, cargs in qc.data:
-            gate_type = instruction.name
-            qubit_indices = [elem.index for elem in qargs]
-            first_qubit = int(qubit_indices[0])
-            index = 0
-            specific_error = 0
-            if gate_type == "sx":
-                index = 10
-            elif gate_type == "x":
-                index = 11
-            elif gate_type == "cx":
-                index = 12
-            elif gate_type == "measure":
-                index = 5
-            if index == 12:
-                tmp = str(qubit_indices[0]) + "_" + str(qubit_indices[1])
-                for elem in df_ibm_montreal_calibration.loc[1][12].split(";"):
-                    if tmp in elem.split(":")[0]:
-                        specific_error = elem.split(":")[1]
-            elif index in [5, 10, 11]:
-                specific_error = df_ibm_montreal_calibration.loc[first_qubit][index]
+            if gate_type != "barrier":
+                assert len(qubit_indices) in [1, 2]
 
-            res *= 1 - float(specific_error)
+                first_qubit = int(qubit_indices[0])
+                if len(qubit_indices) == 1 and gate_type != "measure":
+                    specific_error = backend.gate_error(gate_type, [first_qubit])
+                elif len(qubit_indices) == 1 and gate_type == "measure":
+                    specific_error = backend.readout_error(first_qubit)
+                elif len(qubit_indices) == 2:
+                    second_qubit = int(qubit_indices[1])
+                    specific_error = backend.gate_error(
+                        gate_type, [first_qubit, second_qubit]
+                    )
+
+                res *= 1 - float(specific_error)
+
     elif "oqc" in qc_path:
         for instruction, qargs, cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
-            if len(qubit_indices) == 1 and gate_type != "measure":
-                specific_fidelity = oqc_lucy_calibration["oneQubitProperties"][
-                    str(qubit_indices[0])
-                ]["oneQubitFidelity"][0]["fidelity"]
-            elif len(qubit_indices) == 1 and gate_type == "measure":
-                specific_fidelity = oqc_lucy_calibration["oneQubitProperties"][
-                    str(qubit_indices[0])
-                ]["oneQubitFidelity"][1]["fidelity"]
-            elif len(qubit_indices) == 2:
-                tmp = str(qubit_indices[0]) + "-" + str(qubit_indices[1])
-                if oqc_lucy_calibration["twoQubitProperties"].get(tmp) is None:
-                    # print("Fail: Gate not available at this qubit pair: ", tmp)
-                    specific_fidelity = get_oqc_lucy_fid2()
-                else:
-                    specific_fidelity = oqc_lucy_calibration["twoQubitProperties"][tmp][
-                        "twoQubitGateFidelity"
-                    ][0]["fidelity"]
 
-            res *= specific_fidelity
+            assert gate_type in ["rz", "sx", "x", "ecr", "measure", "barrier"]
+            if gate_type != "barrier":
+                assert len(qubit_indices) in [1, 2]
+
+                first_qubit = int(qubit_indices[0])
+                if len(qubit_indices) == 1 and gate_type != "measure":
+                    specific_fidelity = oqc_lucy_calibration["fid_1Q"][str(first_qubit)]
+                elif len(qubit_indices) == 1 and gate_type == "measure":
+                    specific_fidelity = oqc_lucy_calibration["fid_1Q_readout"][
+                        str(first_qubit)
+                    ]
+                elif len(qubit_indices) == 2:
+                    second_qubit = int(qubit_indices[1])
+                    tmp = str(first_qubit) + "-" + str(second_qubit)
+                    if oqc_lucy_calibration["fid_2Q"].get(tmp) is None:
+                        specific_fidelity = oqc_lucy_calibration["avg_2Q"]
+                    else:
+                        specific_fidelity = oqc_lucy_calibration["fid_2Q"][tmp]
+
+                res *= specific_fidelity
     elif "rigetti" in qc_path:
-
         mapping = get_rigetti_qubit_dict()
         for instruction, qargs, cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
-            if len(qubit_indices) == 1 and gate_type != "measure":
-                specific_fidelity = rigetti_m1_calibration["specs"]["1Q"][
-                    mapping.get(str(qubit_indices[0]))
-                ]["f1QRB"]
-            elif len(qubit_indices) == 1 and gate_type == "measure":
-                specific_fidelity = rigetti_m1_calibration["specs"]["1Q"][
-                    mapping.get(str(qubit_indices[0]))
-                ]["fRO"]
-            elif len(qubit_indices) == 2:
-                tmp = (
-                    str(
-                        min(
-                            int(mapping.get(str(qubit_indices[0]))),
-                            int(mapping.get(str(qubit_indices[1]))),
-                        )
-                    )
-                    + "-"
-                    + str(
-                        max(
-                            int(mapping.get(str(qubit_indices[0]))),
-                            int(mapping.get(str(qubit_indices[1]))),
-                        )
-                    )
-                )
-                if (
-                    rigetti_m1_calibration["specs"]["2Q"].get(tmp) is None
-                    or rigetti_m1_calibration["specs"]["2Q"][tmp].get("fCZ") is None
-                ):
-                    # print("Fail: Gate not available at this qubit pair: ", tmp)
-                    specific_fidelity = get_rigetti_m1_fid2()
-                else:
-                    specific_fidelity = rigetti_m1_calibration["specs"]["2Q"][tmp][
-                        "fCZ"
-                    ]
 
-            res *= specific_fidelity
+            assert gate_type in ["rx", "rz", "cz", "measure", "barrier"]
+            if gate_type != "barrier":
+                assert len(qubit_indices) in [1, 2]
+
+                first_qubit = int(qubit_indices[0])
+                if len(qubit_indices) == 1 and gate_type in ["rx", "rz", "cz"]:
+                    specific_fidelity = rigetti_m1_calibration["fid_1Q"][
+                        mapping.get(str(first_qubit))
+                    ]
+                elif len(qubit_indices) == 1 and gate_type == "measure":
+                    specific_fidelity = rigetti_m1_calibration["fid_1Q_readout"][
+                        mapping.get(str(first_qubit))
+                    ]
+                elif len(qubit_indices) == 2:
+                    second_qubit = int(qubit_indices[1])
+                    tmp = (
+                        str(
+                            min(
+                                int(mapping.get(str(first_qubit))),
+                                int(mapping.get(str(second_qubit))),
+                            )
+                        )
+                        + "-"
+                        + str(
+                            max(
+                                int(mapping.get(str(first_qubit))),
+                                int(mapping.get(str(second_qubit))),
+                            )
+                        )
+                    )
+                    if (
+                        rigetti_m1_calibration["fid_2Q_CZ"].get(tmp) is None
+                        or rigetti_m1_calibration["fid_2Q_CZ"][tmp] is None
+                    ):
+                        specific_fidelity = rigetti_m1_calibration["avg_2Q"]
+                    else:
+                        specific_fidelity = rigetti_m1_calibration["fid_2Q_CZ"][tmp]
+
+                res *= specific_fidelity
 
     elif "ionq" in qc_path:
         for instruction, qargs, cargs in qc.data:
+            gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
-            if len(qubit_indices) == 1:
-                specific_fidelity = ionq_calibration["fidelity"]["1Q"]["mean"]
-            elif len(qubit_indices) == 2:
-                specific_fidelity = ionq_calibration["fidelity"]["2Q"]["mean"]
-            res *= specific_fidelity
+
+            assert gate_type in ["rxx", "rz", "ry", "rx", "measure", "barrier"]
+            if gate_type != "barrier":
+                assert len(qubit_indices) in [1, 2]
+
+                if len(qubit_indices) == 1:
+                    specific_fidelity = ionq_calibration["avg_1Q"]
+                elif len(qubit_indices) == 2:
+                    specific_fidelity = ionq_calibration["avg_2Q"]
+                res *= specific_fidelity
     else:
         print("Error: No suitable backend found!")
 
-    # add readout error
-    # return res
     print("Eval score for :", qc_path, " is ", res)
     return res
 
 
 def init_all_config_files():
     try:
-        global df_ibm_montreal_calibration
-        df_ibm_montreal_calibration = pd.read_csv("ibmq_montreal_calibrations.csv")
-        global df_ibm_washington_calibration
-        df_ibm_washington_calibration = pd.read_csv("ibm_washington_calibrations.csv")
+        global ibm_montreal_calibration
+        ibm_montreal_calibration = FakeMontreal().properties()
+        global ibm_washington_calibration
+        ibm_washington_calibration = FakeWashington().properties()
         global oqc_lucy_calibration
-        with open("oqc_lucy_calibration.json", "r") as f:
-            oqc_lucy_calibration = json.load(f)
+        oqc_lucy_calibration = parse_oqc_calibration_config()
         global rigetti_m1_calibration
-        with open("rigetti_m1_calibration.json", "r") as f:
-            rigetti_m1_calibration = json.load(f)
+        rigetti_m1_calibration = parse_rigetti_calibration_config()
         global ionq_calibration
-        with open("ionq_calibration.json", "r") as f:
-            ionq_calibration = json.load(f)
+        ionq_calibration = parse_ionq_calibration_config()
     except Exception as e:
         print("init_all_config_files() failed: ", e)
         return False
@@ -625,54 +611,74 @@ def parse_ionq_calibration_config():
 
 
 def parse_oqc_calibration_config():
-    avg_1Q = {}
-    avg_1Q_readout = {}
+    with open("oqc_lucy_calibration.json", "r") as f:
+        oqc_lucy_calibration = json.load(f)
+    fid_1Q = {}
+    fid_1Q_readout = {}
     for elem in oqc_lucy_calibration["oneQubitProperties"]:
-        avg_1Q[str(elem)] = oqc_lucy_calibration["oneQubitProperties"][elem][
+        fid_1Q[str(elem)] = oqc_lucy_calibration["oneQubitProperties"][elem][
             "oneQubitFidelity"
         ][0].get("fidelity")
-        avg_1Q_readout[str(elem)] = oqc_lucy_calibration["oneQubitProperties"][elem][
+        fid_1Q_readout[str(elem)] = oqc_lucy_calibration["oneQubitProperties"][elem][
             "oneQubitFidelity"
         ][1].get("fidelity")
-        # print(avg_1Q[str(elem)], avg_1Q_readout[str(elem)])
-    avg_2Q = {}
+    fid_2Q = {}
     for elem in oqc_lucy_calibration["twoQubitProperties"]:
-        avg_2Q[str(elem)] = oqc_lucy_calibration["twoQubitProperties"][elem][
+        fid_2Q[str(elem)] = oqc_lucy_calibration["twoQubitProperties"][elem][
             "twoQubitGateFidelity"
         ][0].get("fidelity")
-        # avg_1Q_readout[str(elem)] = oqc_lucy_calibration["oneQubitProperties"][elem]["oneQubitFidelity"][1].get("fidelity")
-    # print(avg_2Q)
+
+    avg_1Q = np.average(list(fid_1Q.values()))
+    avg_2Q = np.average(list(fid_2Q.values()))
     oqc_dict = {
         "backend": "oqc_lucy",
         "avg_1Q": avg_1Q,
-        "avg_1Q_readout": avg_1Q_readout,
+        "fid_1Q": fid_1Q,
+        "fid_1Q_readout": fid_1Q_readout,
         "avg_2Q": avg_2Q,
+        "fid_2Q": fid_2Q,
     }
     oqc_dict
     return oqc_dict
 
 
-# with open("rigetti_m1_calibration.json", "r") as f:
-#     rigetti_m1_calibration = json.load(f)
-# avg_1Q = {}
-# avg_1Q_readout = {}
-# missing_indices = []
-# for elem in rigetti_m1_calibration["specs"]["1Q"]:
-#     avg_1Q[str(elem)] = rigetti_m1_calibration["specs"]["1Q"][elem].get("f1QRB")
-#     avg_1Q_readout[str(elem)] = rigetti_m1_calibration["specs"]["1Q"][elem].get("fRO")
-#
-# avg_2Q_CZ = {}
-# non_list = []
-# for elem in rigetti_m1_calibration["specs"]["2Q"]:
-#     if rigetti_m1_calibration["specs"]["2Q"][elem].get("fCZ") is None:
-#         non_list.append(elem)
-#     else:
-#         avg_2Q_CZ[str(elem)] = rigetti_m1_calibration["specs"]["2Q"][elem].get("fCZ")
-#
-# import numpy as np
-#
-# cz_fid_avg = np.average(list(avg_2Q_CZ.values()))
-#
-# for elem in missing_indices:
-#     avg_2Q_CZ[elem] = cz_fid_avg
-# print(avg_2Q_CZ, len(avg_2Q_CZ))
+def parse_rigetti_calibration_config():
+    with open("rigetti_m1_calibration.json", "r") as f:
+        rigetti_m1_calibration = json.load(f)
+    fid_1Q = {}
+    fid_1Q_readout = {}
+    missing_indices = []
+    for elem in rigetti_m1_calibration["specs"]["1Q"]:
+
+        fid_1Q[str(elem)] = rigetti_m1_calibration["specs"]["1Q"][elem].get("f1QRB")
+        fid_1Q_readout[str(elem)] = rigetti_m1_calibration["specs"]["1Q"][elem].get(
+            "fRO"
+        )
+
+    fid_2Q_CZ = {}
+    non_list = []
+    for elem in rigetti_m1_calibration["specs"]["2Q"]:
+        if rigetti_m1_calibration["specs"]["2Q"][elem].get("fCZ") is None:
+            non_list.append(elem)
+        else:
+            fid_2Q_CZ[str(elem)] = rigetti_m1_calibration["specs"]["2Q"][elem].get(
+                "fCZ"
+            )
+
+    import numpy as np
+
+    cz_fid_avg = np.average(list(fid_2Q_CZ.values()))
+
+    avg_1Q = np.average(list(fid_1Q.values()))
+    for elem in missing_indices:
+        fid_2Q_CZ[elem] = cz_fid_avg
+
+    rigetti_dict = {
+        "backend": "rigetti_aspen_m1",
+        "avg_1Q": avg_1Q,
+        "fid_1Q": fid_1Q,
+        "fid_1Q_readout": fid_1Q_readout,
+        "avg_2Q": cz_fid_avg,
+        "fid_2Q_CZ": fid_2Q_CZ,
+    }
+    return rigetti_dict
