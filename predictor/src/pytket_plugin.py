@@ -11,17 +11,15 @@ from pytket import architecture
 from qiskit.test.mock import FakeMontreal, FakeWashington
 from predictor.src.utils import *
 
-import copy
-
 
 def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name: str):
     offset = 0
     if lineplacement == False:
         offset = 4
     try:
-        qc_input = copy.deepcopy(qc)
+
         ibm_washington = timeout_watcher(
-            get_ibm_washington_qc, [qc_input, lineplacement], timeout
+            get_ibm_washington_qc, [qc.copy(), lineplacement], timeout
         )
         path = get_compiled_output_folder()
         if ibm_washington:
@@ -38,9 +36,8 @@ def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name
             circuit_to_qasm(ibm_washington, output_file=filename)
             ibm_washington = True
 
-        qc_input = copy.deepcopy(qc)
         ibm_montreal = timeout_watcher(
-            get_ibm_montreal_qc, [qc_input, lineplacement], timeout
+            get_ibm_montreal_qc, [qc.copy(), lineplacement], timeout
         )
         if ibm_montreal:
             filename = (
@@ -56,8 +53,7 @@ def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name
             circuit_to_qasm(ibm_montreal, output_file=filename)
             ibm_montreal = True
 
-        qc_input = copy.deepcopy(qc)
-        rigetti = timeout_watcher(get_rigetti_qc, [qc_input, lineplacement], timeout)
+        rigetti = timeout_watcher(get_rigetti_qc, [qc.copy(), lineplacement], timeout)
         if rigetti:
             filename = (
                 path
@@ -72,8 +68,7 @@ def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name
             circuit_to_qasm(rigetti, output_file=filename)
             rigetti = True
 
-        qc_input = copy.deepcopy(qc)
-        oqc = timeout_watcher(get_oqc_qc, [qc_input, lineplacement], timeout)
+        oqc = timeout_watcher(get_oqc_qc, [qc.copy(), lineplacement], timeout)
         if oqc:
             filename = (
                 path
@@ -89,8 +84,7 @@ def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name
             oqc = True
 
         if lineplacement:
-            qc_input = copy.deepcopy(qc)
-            ionq = timeout_watcher(get_ionq_qc, [qc_input], timeout)
+            ionq = timeout_watcher(get_ionq_qc, [qc.copy()], timeout)
             if ionq:
                 filename = (
                     path
