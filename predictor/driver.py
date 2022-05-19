@@ -118,7 +118,7 @@ class Predictor:
             for benchmark in dictionary[alg_class]:
                 print("Find: ", benchmark)
                 scores = []
-                for _ in range(20):
+                for _ in range(19):
                     scores.append([])
                 # iterate over all respective circuits in
                 all_relevant_files = glob.glob(
@@ -146,12 +146,13 @@ class Predictor:
                     else:
                         num_not_empty_entries += 1
 
-                if num_not_empty_entries < 2:
-                    break
+                # if num_not_empty_entries < 2:
+                #     break
 
                 feature_vec = utils.create_feature_vector(
                     os.path.join(folder_path, benchmark)
                 )
+                print(scores)
                 training_data.append((list(feature_vec.values()), np.argmax(scores)))
                 name_list.append(benchmark.split(".")[0])
                 scores_list.append(scores)
@@ -202,11 +203,11 @@ class Predictor:
         )
         viz.save("fancy_tree.svg")
 
-        names_list = [name_list[i] for i in indices_test]
+        names_list_filtered = [name_list[i] for i in indices_test]
         scores_filtered = [actual_scores_list[i] for i in indices_test]
 
         Predictor.plot_eval_all_detailed_compact(
-            names_list, scores_filtered, y_pred, y_test
+            names_list_filtered, scores_filtered, y_pred, y_test
         )
         Predictor.plot_eval_histogram(scores_filtered, y_pred, y_test)
 
@@ -228,7 +229,9 @@ class Predictor:
         for i in range(len(y_pred)):
             # if y_pred[i] != y_test[i]:
             predicted_score = scores_filtered[i][y_pred[i]]
-            score = list(np.sort(scores_filtered[i])).index(predicted_score)
+            score = list(np.sort(scores_filtered[i], reversed=True)).index(
+                predicted_score
+            )
             res.append(score + 1)
 
         assert len(res) == len(y_pred)

@@ -9,7 +9,7 @@ import os
 
 def get_width_penalty():
     """Returns the penalty value if a quantum computer has not enough qubits."""
-    width_penalty = -10
+    width_penalty = -10000
     return width_penalty
 
 
