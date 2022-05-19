@@ -116,7 +116,7 @@ class Predictor:
                     scores.append([])
                 # iterate over all respective circuits in
                 all_relevant_files = glob.glob(
-                    "qasm_compiled/" + benchmark.split(".")[0] + "*"
+                    compiled_path + benchmark.split(".")[0] + "*"
                 )
 
                 for filename in all_relevant_files:
@@ -144,7 +144,7 @@ class Predictor:
                 feature_vec = utils.create_feature_vector(
                     os.path.join(folder_path, benchmark)
                 )
-                print(scores)
+
                 training_data.append((list(feature_vec.values()), np.argmax(scores)))
                 name_list.append(benchmark.split(".")[0])
                 scores_list.append(scores)
@@ -181,14 +181,12 @@ class Predictor:
         for i in range(127):
             res.append(str(i) + "_max_interactions")
 
-        features = np.sort(np.array(res))
-
         viz = dtreeviz(
             Predictor._clf,
             X_train,
             y_train,
             target_name="Compilation Path",
-            feature_names=features,
+            feature_names=res,
             class_names=list(Predictor._clf.classes_),
             fancy=True,
         )
@@ -301,13 +299,13 @@ class Predictor:
         plt.xlabel("Benchmark Width (Number of Qubits)")
         plt.ylabel("Actual Score")
         plt.tight_layout()
-        y_max = np.sort(np.array(list(set(np.array(scores_filtered).flatten()))))[-2]
+        y_max = np.sort(np.array(list(set(np.array(scores_filtered).flatten()))))[-1]
         plt.ylim(0, y_max * 1.1)
         plt.xlim(-1, len(scores_filtered) + 1)
 
         # add vertical lines to annotate the number of possible compilation paths
-        if len(np.where(np.array(qubit_list_sorted) > 8)[0]) > 1:
-            x_index = np.where(np.array(qubit_list_sorted) > 8)[0][0]
+        if len(np.where(np.array(qubit_list_sorted) > 8)) > 1:
+            x_index = np.where(np.array(qubit_list_sorted) > 8)[0]
             plt.axvline(
                 x_index,
                 ls="--",
@@ -318,7 +316,7 @@ class Predictor:
             plt.annotate("19", (x_index - 9, 1))
 
             if len(np.where(np.array(qubit_list_sorted) > 11)[0]) > 1:
-                x_index = np.where(np.array(qubit_list_sorted) > 11)[0][0]
+                x_index = np.where(np.array(qubit_list_sorted) > 11)[0]
                 plt.axvline(
                     x_index,
                     ls="--",
@@ -328,7 +326,7 @@ class Predictor:
                 )
                 plt.annotate("16", (x_index - 9, 1))
                 if len(np.where(np.array(qubit_list_sorted) > 27)[0]) > 1:
-                    x_index = np.where(np.array(qubit_list_sorted) > 27)[0][0]
+                    x_index = np.where(np.array(qubit_list_sorted) > 27)[0]
                     plt.axvline(
                         x_index,
                         ls="--",
@@ -338,7 +336,7 @@ class Predictor:
                     )
                     plt.annotate("12", (x_index - 9, 1))
                     if len(np.where(np.array(qubit_list_sorted) > 80)[0]) > 1:
-                        x_index = np.where(np.array(qubit_list_sorted) > 80)[0][0]
+                        x_index = np.where(np.array(qubit_list_sorted) > 80)[0]
                         plt.axvline(
                             x_index,
                             ls="--",
