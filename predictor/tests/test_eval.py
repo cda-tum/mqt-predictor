@@ -40,7 +40,7 @@ def test_predict(mock_show):
     prediction = Predictor.predict(filename)
     os.remove(filename)
     print("prediction: ", prediction)
-    assert prediction >= 0 and prediction < 10
+    assert prediction >= 0 and prediction < 19
 
 
 @pytest.mark.parametrize("comp_path", [i for i in range(19)])

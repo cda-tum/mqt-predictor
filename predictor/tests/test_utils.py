@@ -16,11 +16,7 @@ def test_get_openqasm_gates():
 
 
 def test_get_width_penalty():
-    assert utils.get_width_penalty() >= 0
-
-
-def test_get_width_penalty():
-    assert utils.get_width_penalty() > 0
+    assert utils.get_width_penalty() < 0
 
 
 def test_get_cmaps():
