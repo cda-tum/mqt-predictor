@@ -1,5 +1,3 @@
-import copy
-
 from predictor.src import qiskit_plugin, pytket_plugin, utils
 
 from qiskit import QuantumCircuit
@@ -131,8 +129,6 @@ class Predictor:
                         score = utils.calc_eval_score_for_qc(filename)
                         comp_path_index = int(filename.split("_")[-1].split(".")[0])
                         # print("Comp path index: ", comp_path_index, "\n")
-                        if comp_path_index > 14:
-                            comp_path_index -= 1
                         scores[comp_path_index] = score
 
                 num_not_empty_entries = 0
@@ -142,8 +138,8 @@ class Predictor:
                     else:
                         num_not_empty_entries += 1
 
-                # if num_not_empty_entries < 2:
-                #     break
+                if num_not_empty_entries == 0:
+                    break
 
                 feature_vec = utils.create_feature_vector(
                     os.path.join(folder_path, benchmark)
