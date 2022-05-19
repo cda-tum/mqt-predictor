@@ -318,7 +318,7 @@ class Predictor:
         plt.xlim(-1, len(scores_filtered) + 1)
 
         # add vertical lines to annotate the number of possible compilation paths
-        if len(np.where(np.array(qubit_list_sorted) > 11)) > 1:
+        if len(np.where(np.array(qubit_list_sorted) > 8)[0]) > 1:
             x_index = np.where(np.array(qubit_list_sorted) > 8)[0][0]
             plt.axvline(
                 x_index,
@@ -329,7 +329,7 @@ class Predictor:
             )
             plt.annotate("19", (x_index - 5, 1))
 
-            if len(np.where(np.array(qubit_list_sorted) > 11)) > 1:
+            if len(np.where(np.array(qubit_list_sorted) > 11)[0]) > 1:
                 x_index = np.where(np.array(qubit_list_sorted) > 11)[0][0]
                 plt.axvline(
                     x_index,
@@ -339,7 +339,7 @@ class Predictor:
                     linewidth=3,
                 )
                 plt.annotate("16", (x_index - 5, 1))
-                if len(np.where(np.array(qubit_list_sorted) > 27)) > 1:
+                if len(np.where(np.array(qubit_list_sorted) > 27)[0]) > 1:
                     x_index = np.where(np.array(qubit_list_sorted) > 27)[0][0]
                     plt.axvline(
                         x_index,
@@ -349,7 +349,7 @@ class Predictor:
                         linewidth=3,
                     )
                     plt.annotate("12", (x_index - 5, 1))
-                    if len(np.where(np.array(qubit_list_sorted) > 80)) > 1:
+                    if len(np.where(np.array(qubit_list_sorted) > 80)[0]) > 1:
                         x_index = np.where(np.array(qubit_list_sorted) > 80)[0][0]
                         plt.axvline(
                             x_index,
@@ -371,7 +371,7 @@ class Predictor:
 
         handles, labels = plt.gca().get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
-        plt.legend(by_label.values(), by_label.keys(), loc="right")
+        plt.legend(by_label.values(), by_label.keys(), loc="upper right")
 
         plt.savefig("y_pred_eval")
 
