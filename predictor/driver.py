@@ -313,7 +313,7 @@ class Predictor:
                 label="# of possible Comp. Paths",
                 linewidth=3,
             )
-            plt.annotate("19", (x_index - 5, 1))
+            plt.annotate("19", (x_index - 9, 1))
 
             if len(np.where(np.array(qubit_list_sorted) > 11)[0]) > 1:
                 x_index = np.where(np.array(qubit_list_sorted) > 11)[0][0]
@@ -324,7 +324,7 @@ class Predictor:
                     label="# of possible Comp. Paths",
                     linewidth=3,
                 )
-                plt.annotate("16", (x_index - 5, 1))
+                plt.annotate("16", (x_index - 9, 1))
                 if len(np.where(np.array(qubit_list_sorted) > 27)[0]) > 1:
                     x_index = np.where(np.array(qubit_list_sorted) > 27)[0][0]
                     plt.axvline(
@@ -334,7 +334,7 @@ class Predictor:
                         label="# of possible Comp. Paths",
                         linewidth=3,
                     )
-                    plt.annotate("12", (x_index - 5, 1))
+                    plt.annotate("12", (x_index - 9, 1))
                     if len(np.where(np.array(qubit_list_sorted) > 80)[0]) > 1:
                         x_index = np.where(np.array(qubit_list_sorted) > 80)[0][0]
                         plt.axvline(
@@ -441,7 +441,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create Training Data")
 
     parser.add_argument("--timeout", type=int, default=10)
-    parser.add_argument("--path", type=str, default="gen_test")
+    parser.add_argument("--path", type=str, default="qasm_files")
 
     args = parser.parse_args()
 
