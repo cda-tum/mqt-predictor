@@ -229,9 +229,7 @@ class Predictor:
         for i in range(len(y_pred)):
             # if y_pred[i] != y_test[i]:
             predicted_score = scores_filtered[i][y_pred[i]]
-            score = list(np.sort(scores_filtered[i], reversed=True)).index(
-                predicted_score
-            )
+            score = list(np.sort(scores_filtered[i])[::-1]).index(predicted_score)
             res.append(score + 1)
 
         assert len(res) == len(y_pred)
