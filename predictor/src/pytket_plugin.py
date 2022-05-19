@@ -36,6 +36,7 @@ def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name
                 + ".qasm"
             )
             circuit_to_qasm(ibm_washington, output_file=filename)
+            ibm_washington = True
 
         qc_input = copy.deepcopy(qc)
         ibm_montreal = timeout_watcher(
@@ -53,6 +54,7 @@ def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name
                 + ".qasm"
             )
             circuit_to_qasm(ibm_montreal, output_file=filename)
+            ibm_montreal = True
 
         qc_input = copy.deepcopy(qc)
         rigetti = timeout_watcher(get_rigetti_qc, [qc_input, lineplacement], timeout)
@@ -68,6 +70,7 @@ def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name
                 + ".qasm"
             )
             circuit_to_qasm(rigetti, output_file=filename)
+            rigetti = True
 
         qc_input = copy.deepcopy(qc)
         oqc = timeout_watcher(get_oqc_qc, [qc_input, lineplacement], timeout)
@@ -83,6 +86,7 @@ def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name
                 + ".qasm"
             )
             circuit_to_qasm(oqc, output_file=filename)
+            oqc = True
 
         if lineplacement:
             qc_input = copy.deepcopy(qc)
@@ -98,8 +102,10 @@ def save_tket_compiled_circuits(qc, lineplacement: bool, timeout, benchmark_name
                     + ".qasm"
                 )
                 circuit_to_qasm(ionq, output_file=filename)
-    except:
-        return False
+                ionq = True
+    except Exception as e:
+        print("fail: ", e)
+        return [None]
     else:
         if lineplacement:
             return [ibm_washington, ibm_montreal, rigetti, oqc, ionq]

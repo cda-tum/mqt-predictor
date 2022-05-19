@@ -25,6 +25,7 @@ def save_qiskit_compiled_circuits(
                 + ".qasm"
             )
             ionq.qasm(filename=filename)
+            ionq = True
 
         ibm_washington = timeout_watcher(
             get_ibm_washington_qc, [qc, opt_level], timeout
@@ -41,6 +42,7 @@ def save_qiskit_compiled_circuits(
                 + ".qasm"
             )
             ibm_washington.qasm(filename=filename)
+            ibm_washington = True
 
         ibm_montreal = timeout_watcher(get_ibm_montreal_qc, [qc, opt_level], timeout)
         if ibm_montreal:
@@ -55,6 +57,7 @@ def save_qiskit_compiled_circuits(
                 + ".qasm"
             )
             ibm_montreal.qasm(filename=filename)
+            ibm_montreal = True
 
         rigetti = timeout_watcher(get_rigetti_qc, [qc, opt_level], timeout)
         if rigetti:
@@ -69,6 +72,7 @@ def save_qiskit_compiled_circuits(
                 + ".qasm"
             )
             rigetti.qasm(filename=filename)
+            rigetti = True
 
         oqc = timeout_watcher(get_oqc_qc, [qc, opt_level], timeout)
         if oqc:
@@ -83,8 +87,10 @@ def save_qiskit_compiled_circuits(
                 + ".qasm"
             )
             oqc.qasm(filename=filename)
-    except:
-        return False
+            oqc = True
+    except Exception as e:
+        print("fail: ", e)
+        return [None]
     else:
         return [ibm_washington, ibm_montreal, rigetti, oqc, ionq]
 

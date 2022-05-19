@@ -47,7 +47,6 @@ class Predictor:
             for benchmark in dictionary[alg_class]:
                 filename = os.path.join(folder_path, benchmark)
                 qc = QuantumCircuit.from_qasm_file(filename)
-                qc_check = copy.deepcopy(qc)
 
                 print(benchmark)
                 if not qc:
@@ -63,10 +62,8 @@ class Predictor:
                     qiskit_opt3 = qiskit_plugin.save_qiskit_compiled_circuits(
                         qc, 3, timeout=timeout, benchmark_name=benchmark
                     )
-                    assert qc == qc_check
 
                     qc_tket = qiskit_to_tk(qc)
-                    qc_tket_check = copy.deepcopy(qc_tket)
 
                     tket_line_True = pytket_plugin.save_tket_compiled_circuits(
                         qc_tket, True, timeout=timeout, benchmark_name=benchmark
@@ -80,7 +77,6 @@ class Predictor:
                     )
                     if all(x is None for x in all_results):
                         break
-                    assert qc_tket == qc_tket_check
 
                 except Exception as e:
                     print("fail: ", e)
@@ -181,9 +177,6 @@ class Predictor:
         print("Compilation paths from Train Data: ", set(y_train))
         print("Compilation paths from Test Data: ", set(y_test))
         print("Compilation paths from Predictions: ", set(y_pred))
-        available_machines = [
-            utils.get_machines()[i] for i in set(Predictor._clf.classes_)
-        ]
 
         openqasm_qc_list = utils.get_openqasm_gates()
         res = [openqasm_qc_list[i] for i in range(0, len(openqasm_qc_list))]
@@ -233,7 +226,6 @@ class Predictor:
             res.append(score + 1)
 
         assert len(res) == len(y_pred)
-        # print(res)
 
         plt.figure(figsize=(10, 5))
         bars = plt.bar(
@@ -450,14 +442,14 @@ class Predictor:
 
 if __name__ == "__main__":
 
-    # parser = argparse.ArgumentParser(description="Create Training Data")
-    #
-    # parser.add_argument("--timeout", type=int, default=10)
-    # parser.add_argument("--path", type=str, default="test/")
-    #
-    # args = parser.parse_args()
-    #
-    # Predictor.save_all_compilation_path_results(
-    #     folder_path=args.path, timeout=args.timeout
-    # )
-    Predictor.generate_trainingdata_from_qasm_files(folder_path="qasmtest/")
+    parser = argparse.ArgumentParser(description="Create Training Data")
+
+    parser.add_argument("--timeout", type=int, default=10)
+    parser.add_argument("--path", type=str, default="gen_test")
+
+    args = parser.parse_args()
+
+    Predictor.save_all_compilation_path_results(
+        folder_path=args.path, timeout=args.timeout
+    )
+    # Predictor.generate_trainingdata_from_qasm_files(folder_path="gentest/")
