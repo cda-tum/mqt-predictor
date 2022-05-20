@@ -173,7 +173,6 @@ class Predictor:
             indices_test,
         ) = train_test_split(X, y, indices, test_size=0.3, random_state=42)
 
-        Predictor._clf = tree.DecisionTreeClassifier()
         tree_param = [
             {
                 "criterion": ["entropy", "gini"],
@@ -184,13 +183,14 @@ class Predictor:
                 "max_features": [i for i in range(1, len(non_zero_indices), 10)],
             },
         ]
-        clf = GridSearchCV(Predictor._clf, tree_param, cv=5)
-        clf.fit(X_train, y_train)
+        Predictor._clf = GridSearchCV(tree.DecisionTreeClassifier(), tree_param, cv=5)
         Predictor._clf = Predictor._clf.fit(X_train, y_train)
-        dump(Predictor._clf, "decision_tree_classifier.joblib")
+        print("Best GridSearch Params: ", Predictor._clf.best_estimator_)
+        print("Best Training accuracy: ", Predictor._clf.best_score_)
+        dump(Predictor._clf.best_estimator_, "decision_tree_classifier.joblib")
 
         y_pred = Predictor._clf.predict(X_test)
-        print(np.mean(y_pred == y_test))
+        print("Test accuracy: ", np.mean(y_pred == y_test))
         print("Compilation paths from Train Data: ", set(y_train))
         print("Compilation paths from Test Data: ", set(y_test))
         print("Compilation paths from Predictions: ", set(y_pred))
@@ -203,11 +203,10 @@ class Predictor:
             res.append(str(i) + "_max_interactions")
 
         machines = utils.get_machines()
-        print("machines: ", [machines[i] for i in list(Predictor._clf.classes_)])
 
         fig = plt.figure(figsize=(17, 6))
         plot_tree(
-            Predictor._clf,
+            Predictor._clf.best_estimator_,
             feature_names=res,
             class_names=machines,  # list(Predictor._clf.classes_),
             filled=True,
@@ -215,18 +214,6 @@ class Predictor:
             rounded=True,
         )
         plt.savefig("decisiontree")
-
-        # plt.savefig("DecisionTreeClassifier.png", dpi=600)
-        # viz = dtreeviz(
-        #     Predictor._clf,
-        #     X_train,
-        #     y_train,
-        #     target_name="Compilation Path",
-        #     feature_names=res,
-        #     class_names=[machines[i] for i in list(Predictor._clf.classes_)],
-        #     fancy=True,
-        # )
-        # viz.save("fancy_tree.svg")
 
         names_list_filtered = [name_list[i] for i in indices_test]
         scores_filtered = [actual_scores_list[i] for i in indices_test]
