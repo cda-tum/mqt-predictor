@@ -3,6 +3,7 @@ from predictor.src import qiskit_plugin, pytket_plugin, utils
 from qiskit import QuantumCircuit
 from pytket.extensions.qiskit import qiskit_to_tk
 
+from joblib import dump, load
 import numpy as np
 import matplotlib.pyplot as plt
 import json
@@ -152,7 +153,7 @@ class Predictor:
         return (training_data, name_list, scores_list)
 
     def train_decision_tree_classifier(
-        X, y, name_list=None, actual_scores_list=None, max_depth: int = 5
+        X, y, name_list=None, actual_scores_list=None, max_depth: int = 15
     ):
 
         X, y, indices = np.array(X), np.array(y), np.array(range(len(y)))
@@ -167,6 +168,7 @@ class Predictor:
 
         Predictor._clf = tree.DecisionTreeClassifier(max_depth=max_depth)
         Predictor._clf = Predictor._clf.fit(X_train, y_train)
+        dump(Predictor._clf, "decision_tree_classifier.joblib")
 
         y_pred = Predictor._clf.predict(X_test)
         print(np.mean(y_pred == y_test))
@@ -178,19 +180,34 @@ class Predictor:
         res = [openqasm_qc_list[i] for i in range(0, len(openqasm_qc_list))]
         res.append("num_qubits")
         res.append("depth")
-        for i in range(127):
+        for i in range(1, 6):
             res.append(str(i) + "_max_interactions")
 
-        viz = dtreeviz(
+        machines = utils.get_machines()
+        print("machines: ", [machines[i] for i in list(Predictor._clf.classes_)])
+
+        fig = plt.figure(figsize=(17, 6))
+        plot_tree(
             Predictor._clf,
-            X_train,
-            y_train,
-            target_name="Compilation Path",
             feature_names=res,
-            class_names=list(Predictor._clf.classes_),
-            fancy=True,
+            class_names=machines,  # list(Predictor._clf.classes_),
+            filled=True,
+            impurity=True,
+            rounded=True,
         )
-        viz.save("fancy_tree.svg")
+        plt.savefig("decisiontree")
+
+        # plt.savefig("DecisionTreeClassifier.png", dpi=600)
+        # viz = dtreeviz(
+        #     Predictor._clf,
+        #     X_train,
+        #     y_train,
+        #     target_name="Compilation Path",
+        #     feature_names=res,
+        #     class_names=[machines[i] for i in list(Predictor._clf.classes_)],
+        #     fancy=True,
+        # )
+        # viz.save("fancy_tree.svg")
 
         names_list_filtered = [name_list[i] for i in indices_test]
         scores_filtered = [actual_scores_list[i] for i in indices_test]
@@ -224,14 +241,18 @@ class Predictor:
         assert len(res) == len(y_pred)
 
         plt.figure(figsize=(10, 5))
+
+        num_of_comp_paths = len(utils.get_machines())
         bars = plt.bar(
-            [i for i in range(1, max(res) + 1, 1)],
-            height=[res.count(i) / len(res) for i in range(1, max(res) + 1, 1)],
+            [i for i in range(1, num_of_comp_paths + 1, 1)],
+            height=[
+                res.count(i) / len(res) for i in range(1, num_of_comp_paths + 1, 1)
+            ],
             width=1,
         )
         plt.xticks(
-            [i for i in range(1, max(res) + 1, 1)],
-            [i for i in range(1, max(res) + 1, 1)],
+            [i for i in range(1, num_of_comp_paths + 1, 1)],
+            [i for i in range(1, num_of_comp_paths + 1, 1)],
         )
         plt.xlabel("MQT Predictor Ranking")
         plt.title("Histogram of Predicted Results")
@@ -239,8 +260,9 @@ class Predictor:
         for bar in bars:
             yval = bar.get_height()
             rounded_val = str(np.round(yval * 100, 2)) + "%"
-            sum += np.round(yval * 100, 2)
-            plt.text(bar.get_x() + 0.26, yval + 0.005, rounded_val)
+            if np.round(yval * 100, 1) > 0.0:
+                sum += np.round(yval * 100, 1)
+                plt.text(bar.get_x() + 0.15, yval + 0.005, rounded_val)
 
         plt.tick_params(left=False, labelleft=False)
         plt.box(False)
@@ -290,58 +312,58 @@ class Predictor:
                     label="MQTPredictor optimal",
                 )
 
-        plt.title("Evaluation: Compilation Flow Prediction")
+        plt.title("Evaluation: Compilation Path Prediction")
         plt.xticks(
             [i for i in range(0, len(scores_filtered), 10)],
             [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 10)],
         )
         # plt.xticks(range(len(names_list_sorted_accordingly)), names_list_sorted_accordingly, rotation=90)
         plt.xlabel("Benchmark Width (Number of Qubits)")
-        plt.ylabel("Actual Score")
+        plt.ylabel("Evaluation Score")
         plt.tight_layout()
         y_max = np.sort(np.array(list(set(np.array(scores_filtered).flatten()))))[-1]
         plt.ylim(0, y_max * 1.1)
         plt.xlim(-1, len(scores_filtered) + 1)
 
         # add vertical lines to annotate the number of possible compilation paths
-        if len(np.where(np.array(qubit_list_sorted) > 8)) > 1:
-            x_index = np.where(np.array(qubit_list_sorted) > 8)[0]
+        if len(np.where(np.array(qubit_list_sorted) > 8)[0]) > 1:
+            x_index = np.where(np.array(qubit_list_sorted) > 8)[0][0]
             plt.axvline(
                 x_index,
                 ls="--",
                 color="k",
-                label="# of possible Comp. Paths",
+                label="# of max. Comp. Paths",
                 linewidth=3,
             )
             plt.annotate("19", (x_index - 9, 1))
 
             if len(np.where(np.array(qubit_list_sorted) > 11)[0]) > 1:
-                x_index = np.where(np.array(qubit_list_sorted) > 11)[0]
+                x_index = np.where(np.array(qubit_list_sorted) > 11)[0][0]
                 plt.axvline(
                     x_index,
                     ls="--",
                     color="k",
-                    label="# of possible Comp. Paths",
+                    label="# of max. Comp. Paths",
                     linewidth=3,
                 )
                 plt.annotate("16", (x_index - 9, 1))
                 if len(np.where(np.array(qubit_list_sorted) > 27)[0]) > 1:
-                    x_index = np.where(np.array(qubit_list_sorted) > 27)[0]
+                    x_index = np.where(np.array(qubit_list_sorted) > 27)[0][0]
                     plt.axvline(
                         x_index,
                         ls="--",
                         color="k",
-                        label="# of possible Comp. Paths",
+                        label="# of max. Comp. Paths",
                         linewidth=3,
                     )
                     plt.annotate("12", (x_index - 9, 1))
                     if len(np.where(np.array(qubit_list_sorted) > 80)[0]) > 1:
-                        x_index = np.where(np.array(qubit_list_sorted) > 80)[0]
+                        x_index = np.where(np.array(qubit_list_sorted) > 80)[0][0]
                         plt.axvline(
                             x_index,
                             ls="--",
                             color="k",
-                            label="# of possible Comp. Paths",
+                            label="# of max. Comp. Paths",
                             linewidth=3,
                         )
                         plt.annotate("8", (x_index - 5, 0.8))
@@ -357,7 +379,9 @@ class Predictor:
 
         handles, labels = plt.gca().get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
-        plt.legend(by_label.values(), by_label.keys(), loc="upper right")
+        plt.legend(
+            by_label.values(), by_label.keys(), loc="upper right", framealpha=1.0
+        )
 
         plt.savefig("y_pred_eval")
 
@@ -368,6 +392,13 @@ class Predictor:
         if not (".qasm" in qasm_path and ".qasm" in qasm_path):
             print("Input is neither a .qasm str nor a path to a .qasm file.")
             return
+
+        if Predictor._clf is None:
+            if os.path.isfile("decision_tree_classifier.joblib"):
+                Predictor._clf = load("decision_tree_classifier.joblib")
+            else:
+                print("Fail: Decision Tree Classifier is neither trained nor saved!")
+                return None
 
         feature_vector = list(utils.create_feature_vector(qasm_path).values())
 
