@@ -187,7 +187,7 @@ class Predictor:
         Predictor._clf = Predictor._clf.fit(X_train, y_train)
         print("Best GridSearch Params: ", Predictor._clf.best_estimator_)
         print("Best Training accuracy: ", Predictor._clf.best_score_)
-        dump(Predictor._clf.best_estimator_, "decision_tree_classifier.joblib")
+        dump(Predictor._clf, "decision_tree_classifier.joblib")
 
         y_pred = Predictor._clf.predict(X_test)
         print("Test accuracy: ", np.mean(y_pred == y_test))
