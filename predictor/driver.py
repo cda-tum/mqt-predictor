@@ -259,14 +259,14 @@ class Predictor:
         sum = 0
         for bar in bars:
             yval = bar.get_height()
-            rounded_val = str(np.round(yval * 100, 2)) + "%"
+            rounded_val = str(np.round(yval * 100, 1)) + "%"
             if np.round(yval * 100, 1) > 0.0:
                 sum += np.round(yval * 100, 1)
-                plt.text(bar.get_x() + 0.15, yval + 0.005, rounded_val)
+                plt.text(bar.get_x(), yval + 0.005, rounded_val)
 
         plt.tick_params(left=False, labelleft=False)
         plt.box(False)
-        plt.savefig("MQTPredictor_hist")
+        plt.savefig("MQTPredictor_hist.pdf")
         plt.show()
         print("sum: ", sum)
 
@@ -332,7 +332,7 @@ class Predictor:
                 x_index,
                 ls="--",
                 color="k",
-                label="# of max. Comp. Paths",
+                label="# of max. Compilation Paths",
                 linewidth=3,
             )
             plt.annotate("19", (x_index - 9, 1))
@@ -343,17 +343,17 @@ class Predictor:
                     x_index,
                     ls="--",
                     color="k",
-                    label="# of max. Comp. Paths",
+                    label="# of max. Compilation Paths",
                     linewidth=3,
                 )
-                plt.annotate("16", (x_index - 9, 1))
+                plt.annotate("15", (x_index - 9, 1))
                 if len(np.where(np.array(qubit_list_sorted) > 27)[0]) > 1:
                     x_index = np.where(np.array(qubit_list_sorted) > 27)[0][0]
                     plt.axvline(
                         x_index,
                         ls="--",
                         color="k",
-                        label="# of max. Comp. Paths",
+                        label="# of max. Compilation Paths",
                         linewidth=3,
                     )
                     plt.annotate("12", (x_index - 9, 1))
@@ -363,7 +363,7 @@ class Predictor:
                             x_index,
                             ls="--",
                             color="k",
-                            label="# of max. Comp. Paths",
+                            label="# of max. Compilation Paths",
                             linewidth=3,
                         )
                         plt.annotate("8", (x_index - 5, 0.8))
@@ -372,7 +372,7 @@ class Predictor:
                             x_index,
                             ls="--",
                             color="k",
-                            label="# of possible Comp. Paths",
+                            label="# of possible Compilation Paths",
                             linewidth=3,
                         )
                         plt.annotate("4", (x_index - 5, 0.8))
@@ -383,7 +383,7 @@ class Predictor:
             by_label.values(), by_label.keys(), loc="upper right", framealpha=1.0
         )
 
-        plt.savefig("y_pred_eval")
+        plt.savefig("y_pred_eval.pdf")
 
         return
 
