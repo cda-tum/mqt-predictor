@@ -11,7 +11,7 @@ import os
 import glob
 import argparse
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.tree import plot_tree
 from sklearn import tree
@@ -152,9 +152,16 @@ class Predictor:
 
         return (training_data, name_list, scores_list)
 
-    def train_decision_tree_classifier(
-        X, y, name_list=None, actual_scores_list=None, max_depth: int = 15
-    ):
+    def train_decision_tree_classifier(X, y, name_list=None, actual_scores_list=None):
+
+        non_zero_indices = []
+        X = np.array(X)
+        y = np.array(y)
+        for i in range(len(X[0])):
+            if sum(X[:, i]) > 0:
+                non_zero_indices.append(i)
+        X = X[:, non_zero_indices]
+        print("Number of used and non-zero features: ", len(non_zero_indices))
 
         X, y, indices = np.array(X), np.array(y), np.array(range(len(y)))
         (
@@ -166,7 +173,19 @@ class Predictor:
             indices_test,
         ) = train_test_split(X, y, indices, test_size=0.3, random_state=42)
 
-        Predictor._clf = tree.DecisionTreeClassifier(max_depth=max_depth)
+        Predictor._clf = tree.DecisionTreeClassifier()
+        tree_param = [
+            {
+                "criterion": ["entropy", "gini"],
+                "max_depth": [i for i in range(1, 15, 1)],
+                "min_samples_split": [i for i in range(2, 20, 4)],
+                "min_samples_leaf": [i for i in range(2, 20, 4)],
+                "max_leaf_nodes": [i for i in range(2, 200, 40)],
+                "max_features": [i for i in range(1, len(non_zero_indices), 10)],
+            },
+        ]
+        clf = GridSearchCV(Predictor._clf, tree_param, cv=5)
+        clf.fit(X_train, y_train)
         Predictor._clf = Predictor._clf.fit(X_train, y_train)
         dump(Predictor._clf, "decision_tree_classifier.joblib")
 
