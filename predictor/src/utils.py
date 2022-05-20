@@ -463,8 +463,8 @@ def create_feature_vector(qc_path: str):
     feature_vector["num_qubits"] = qc.num_qubits
     feature_vector["depth"] = qc.depth()
     connectivity = calc_connectivity_for_qc(qc)
-    for i in range(127):
-        feature_vector[str(i) + "_max_interactions"] = connectivity[i]
+    for i in range(len(connectivity)):
+        feature_vector[str(i + 1) + "_max_interactions"] = connectivity[i]
 
     return feature_vector
 
@@ -704,4 +704,4 @@ def calc_connectivity_for_qc(qc: QuantumCircuit):
     for i in range(127):
         connectivity[i] = len(set(connectivity[i]))
     connectivity.sort(reverse=True)
-    return connectivity
+    return connectivity[:5]
