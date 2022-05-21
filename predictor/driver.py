@@ -260,8 +260,8 @@ class Predictor:
             [i for i in range(1, num_of_comp_paths + 1, 1)],
             [i for i in range(1, num_of_comp_paths + 1, 1)],
         )
-        plt.xlabel("MQT Predictor Ranking")
-        plt.title("Histogram of Predicted Results")
+        #plt.xlabel("MQT Predictor Ranking")
+        plt.title("Prediction Accuracy Ranking")
         sum = 0
         for bar in bars:
             yval = bar.get_height()
@@ -306,7 +306,7 @@ class Predictor:
                     i,
                     tmp_res[y_pred_sorted_accordingly[i]],
                     ".k",
-                    label="MQTPredictor non-optimal",
+                    label="Non-optimal Prediction",
                 )
             else:
                 plt.plot(
@@ -315,7 +315,7 @@ class Predictor:
                     "#ff8600",
                     marker=".",
                     linestyle="None",
-                    label="MQTPredictor optimal",
+                    label="Optimal Prediction",
                 )
 
         plt.title("Evaluation: Compilation Path Prediction")
