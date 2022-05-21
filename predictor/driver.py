@@ -377,7 +377,7 @@ class Predictor:
                             x_index,
                             ls="--",
                             color="k",
-                            label="# of possible Compilation Paths",
+                            label="# of max. Compilation Paths",
                             linewidth=3,
                         )
                         plt.annotate("4", (x_index - 5, 0.8))
@@ -499,7 +499,7 @@ class Predictor:
                             x_index,
                             ls="--",
                             color="k",
-                            label="# of possible Compilation Paths",
+                            label="# of max. Compilation Paths",
                             linewidth=3,
                         )
                         plt.annotate("4", (x_index - 5, 0.8))
