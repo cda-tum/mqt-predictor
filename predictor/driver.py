@@ -181,9 +181,9 @@ class Predictor:
             {
                 "criterion": ["entropy", "gini"],
                 "max_depth": [i for i in range(1, 15, 1)],
-                "min_samples_split": [i for i in range(1, 20, 4)],
-                "min_samples_leaf": [i for i in range(1, 20, 4)],
-                "max_leaf_nodes": [i for i in range(1, 200, 40)],
+                "min_samples_split": [i for i in range(2, 20, 4)],
+                "min_samples_leaf": [i for i in range(2, 20, 4)],
+                "max_leaf_nodes": [i for i in range(2, 200, 40)],
                 "max_features": [i for i in range(1, len(non_zero_indices), 10)],
             },
         ]
