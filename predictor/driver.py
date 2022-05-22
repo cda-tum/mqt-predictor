@@ -7,7 +7,6 @@ from joblib import dump, load
 import numpy as np
 from numpy import asarray, save
 import matplotlib.pyplot as plt
-import json
 import os
 import glob
 import argparse
@@ -18,7 +17,6 @@ from sklearn.tree import plot_tree
 from sklearn import tree
 
 from natsort import natsorted
-from dtreeviz.trees import dtreeviz
 
 
 class Predictor:
@@ -28,7 +26,7 @@ class Predictor:
         folder_path: str = "./qasm_files",
         timeout: int = 10,
     ):
-        """Method to create pre-process data to accelerate the training data generation afterwards. All .qasm files from
+        """Method to create pre-processed data to accelerate the training data generation afterwards. All .qasm files from
         the folder path are considered."""
 
         dictionary = {}
@@ -86,6 +84,9 @@ class Predictor:
     def generate_trainingdata_from_qasm_files(
         folder_path: str = "./qasm_files", compiled_path: str = "qasm_compiled/"
     ):
+        """Method to create training data from pre-process data. All .qasm files from
+        the folder_path used to find suitable pre-processed data in compiled_path."""
+
         if utils.init_all_config_files():
             print("Calibration files successfully initiated")
         else:
@@ -153,6 +154,7 @@ class Predictor:
         return (training_data, name_list, scores_list)
 
     def train_decision_tree_classifier(X, y, name_list=None, actual_scores_list=None):
+        """Method to for the actual training of the decision tree classifier."""
 
         X, y, indices = np.array(X), np.array(y), np.array(range(len(y)))
 
@@ -179,9 +181,9 @@ class Predictor:
             {
                 "criterion": ["entropy", "gini"],
                 "max_depth": [i for i in range(1, 15, 1)],
-                "min_samples_split": [i for i in range(2, 20, 4)],
-                "min_samples_leaf": [i for i in range(2, 20, 4)],
-                "max_leaf_nodes": [i for i in range(2, 200, 40)],
+                "min_samples_split": [i for i in range(1, 20, 4)],
+                "min_samples_leaf": [i for i in range(1, 20, 4)],
+                "max_leaf_nodes": [i for i in range(1, 200, 40)],
                 "max_features": [i for i in range(1, len(non_zero_indices), 10)],
             },
         ]
@@ -220,9 +222,6 @@ class Predictor:
         names_list_filtered = [name_list[i] for i in indices_test]
         scores_filtered = [actual_scores_list[i] for i in indices_test]
 
-        Predictor.plot_eval_all_detailed_compact(
-            names_list_filtered, scores_filtered, y_pred, y_test
-        )
         Predictor.plot_eval_all_detailed_compact_normed(
             names_list_filtered, scores_filtered, y_pred, y_test
         )
@@ -230,7 +229,7 @@ class Predictor:
 
         res = precision_recall_fscore_support(y_test, y_pred)
 
-        with open("metric_table.csv", "w") as csvfile:
+        with open("precision_recall_fscore.csv", "w") as csvfile:
             np.savetxt(
                 csvfile,
                 np.array([list(set(list(y_test) + list(y_pred)))]),
@@ -244,7 +243,7 @@ class Predictor:
     def plot_eval_histogram(scores_filtered, y_pred, y_test):
         res = []
         for i in range(len(y_pred)):
-            # if y_pred[i] != y_test[i]:
+            assert np.argmax(scores_filtered[i]) == y_test[i]
             predicted_score = scores_filtered[i][y_pred[i]]
             score = list(np.sort(scores_filtered[i])[::-1]).index(predicted_score)
             res.append(score + 1)
@@ -281,119 +280,119 @@ class Predictor:
         plt.show()
         print("sum: ", sum)
 
-    def plot_eval_all_detailed_compact(names_list, scores_filtered, y_pred, y_test):
-
-        # Create list of all qubit numbers and sort them
-        names_list_num_qubits = []
-        for i in range(len(names_list)):
-            names_list_num_qubits.append(
-                int(names_list[i].split("_")[-1].split(".")[0])
-            )
-
-        # Sort all other list (names, scores and y_pred) accordingly
-        (
-            qubit_list_sorted,
-            scores_filtered_sorted_accordingly,
-            y_pred_sorted_accordingly,
-        ) = zip(*sorted(zip(names_list_num_qubits, scores_filtered, y_pred)))
-
-        plt.figure(figsize=(17, 6))
-        for i in range(len(names_list_num_qubits)):
-            tmp_res = scores_filtered_sorted_accordingly[i]
-            for j in range(len(tmp_res)):
-                plt.plot(i, tmp_res[j], "b.", alpha=0.2)
-
-            if y_pred_sorted_accordingly[i] != np.argmax(tmp_res):
-                plt.plot(
-                    i,
-                    tmp_res[y_pred_sorted_accordingly[i]],
-                    ".k",
-                    label="Non-optimal Prediction",
-                )
-            else:
-                plt.plot(
-                    i,
-                    tmp_res[y_pred_sorted_accordingly[i]],
-                    "#ff8600",
-                    marker=".",
-                    linestyle="None",
-                    label="Optimal Prediction",
-                )
-
-        plt.title("Evaluation: Compilation Path Prediction")
-        plt.xticks(
-            [i for i in range(0, len(scores_filtered), 10)],
-            [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 10)],
-        )
-        # plt.xticks(range(len(names_list_sorted_accordingly)), names_list_sorted_accordingly, rotation=90)
-        plt.xlabel("Benchmark Width (Number of Qubits)")
-        plt.ylabel("Evaluation Score")
-        plt.tight_layout()
-        y_max = np.sort(np.array(list(set(np.array(scores_filtered).flatten()))))[-1]
-        plt.ylim(0, y_max * 1.1)
-        plt.xlim(-1, len(scores_filtered) + 1)
-
-        # add vertical lines to annotate the number of possible compilation paths
-        if len(np.where(np.array(qubit_list_sorted) > 8)[0]) > 1:
-            x_index = np.where(np.array(qubit_list_sorted) > 8)[0][0]
-            plt.axvline(
-                x_index,
-                ls="--",
-                color="k",
-                label="# of max. Compilation Paths",
-                linewidth=3,
-            )
-            plt.annotate("19", (x_index - 9, 1))
-
-            if len(np.where(np.array(qubit_list_sorted) > 11)[0]) > 1:
-                x_index = np.where(np.array(qubit_list_sorted) > 11)[0][0]
-                plt.axvline(
-                    x_index,
-                    ls="--",
-                    color="k",
-                    label="# of max. Compilation Paths",
-                    linewidth=3,
-                )
-                plt.annotate("15", (x_index - 9, 1))
-                if len(np.where(np.array(qubit_list_sorted) > 27)[0]) > 1:
-                    x_index = np.where(np.array(qubit_list_sorted) > 27)[0][0]
-                    plt.axvline(
-                        x_index,
-                        ls="--",
-                        color="k",
-                        label="# of max. Compilation Paths",
-                        linewidth=3,
-                    )
-                    plt.annotate("12", (x_index - 9, 1))
-                    if len(np.where(np.array(qubit_list_sorted) > 80)[0]) > 1:
-                        x_index = np.where(np.array(qubit_list_sorted) > 80)[0][0]
-                        plt.axvline(
-                            x_index,
-                            ls="--",
-                            color="k",
-                            label="# of max. Compilation Paths",
-                            linewidth=3,
-                        )
-                        plt.annotate("8", (x_index - 5, 0.8))
-                        x_index = len(scores_filtered)
-                        plt.axvline(
-                            x_index,
-                            ls="--",
-                            color="k",
-                            label="# of max. Compilation Paths",
-                            linewidth=3,
-                        )
-                        plt.annotate("4", (x_index - 5, 0.8))
-
-        handles, labels = plt.gca().get_legend_handles_labels()
-        by_label = dict(zip(labels, handles))
-        plt.legend(
-            by_label.values(), by_label.keys(), loc="upper right", framealpha=1.0
-        )
-
-        plt.savefig("y_pred_eval.pdf")
-
-        return
+    # def plot_eval_all_detailed_compact(names_list, scores_filtered, y_pred, y_test):
+    #
+    #     # Create list of all qubit numbers and sort them
+    #     names_list_num_qubits = []
+    #     for i in range(len(names_list)):
+    #         names_list_num_qubits.append(
+    #             int(names_list[i].split("_")[-1].split(".")[0])
+    #         )
+    #
+    #     # Sort all other list (names, scores and y_pred) accordingly
+    #     (
+    #         qubit_list_sorted,
+    #         scores_filtered_sorted_accordingly,
+    #         y_pred_sorted_accordingly,
+    #     ) = zip(*sorted(zip(names_list_num_qubits, scores_filtered, y_pred)))
+    #
+    #     plt.figure(figsize=(17, 6))
+    #     for i in range(len(names_list_num_qubits)):
+    #         tmp_res = scores_filtered_sorted_accordingly[i]
+    #         for j in range(len(tmp_res)):
+    #             plt.plot(i, tmp_res[j], "b.", alpha=0.2)
+    #
+    #         if y_pred_sorted_accordingly[i] != np.argmax(tmp_res):
+    #             plt.plot(
+    #                 i,
+    #                 tmp_res[y_pred_sorted_accordingly[i]],
+    #                 ".k",
+    #                 label="Non-optimal Prediction",
+    #             )
+    #         else:
+    #             plt.plot(
+    #                 i,
+    #                 tmp_res[y_pred_sorted_accordingly[i]],
+    #                 "#ff8600",
+    #                 marker=".",
+    #                 linestyle="None",
+    #                 label="Optimal Prediction",
+    #             )
+    #
+    #     plt.title("Evaluation: Compilation Path Prediction")
+    #     plt.xticks(
+    #         [i for i in range(0, len(scores_filtered), 10)],
+    #         [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 10)],
+    #     )
+    #     # plt.xticks(range(len(names_list_sorted_accordingly)), names_list_sorted_accordingly, rotation=90)
+    #     plt.xlabel("Benchmark Width (Number of Qubits)")
+    #     plt.ylabel("Evaluation Score")
+    #     plt.tight_layout()
+    #     y_max = np.sort(np.array(list(set(np.array(scores_filtered).flatten()))))[-1]
+    #     plt.ylim(0, y_max * 1.1)
+    #     plt.xlim(-1, len(scores_filtered) + 1)
+    #
+    #     # add vertical lines to annotate the number of possible compilation paths
+    #     if len(np.where(np.array(qubit_list_sorted) > 8)[0]) > 1:
+    #         x_index = np.where(np.array(qubit_list_sorted) > 8)[0][0]
+    #         plt.axvline(
+    #             x_index,
+    #             ls="--",
+    #             color="k",
+    #             label="# of max. Compilation Paths",
+    #             linewidth=3,
+    #         )
+    #         plt.annotate("19", (x_index - 9, 1))
+    #
+    #         if len(np.where(np.array(qubit_list_sorted) > 11)[0]) > 1:
+    #             x_index = np.where(np.array(qubit_list_sorted) > 11)[0][0]
+    #             plt.axvline(
+    #                 x_index,
+    #                 ls="--",
+    #                 color="k",
+    #                 label="# of max. Compilation Paths",
+    #                 linewidth=3,
+    #             )
+    #             plt.annotate("15", (x_index - 9, 1))
+    #             if len(np.where(np.array(qubit_list_sorted) > 27)[0]) > 1:
+    #                 x_index = np.where(np.array(qubit_list_sorted) > 27)[0][0]
+    #                 plt.axvline(
+    #                     x_index,
+    #                     ls="--",
+    #                     color="k",
+    #                     label="# of max. Compilation Paths",
+    #                     linewidth=3,
+    #                 )
+    #                 plt.annotate("12", (x_index - 9, 1))
+    #                 if len(np.where(np.array(qubit_list_sorted) > 80)[0]) > 1:
+    #                     x_index = np.where(np.array(qubit_list_sorted) > 80)[0][0]
+    #                     plt.axvline(
+    #                         x_index,
+    #                         ls="--",
+    #                         color="k",
+    #                         label="# of max. Compilation Paths",
+    #                         linewidth=3,
+    #                     )
+    #                     plt.annotate("8", (x_index - 5, 0.8))
+    #                     x_index = len(scores_filtered)
+    #                     plt.axvline(
+    #                         x_index,
+    #                         ls="--",
+    #                         color="k",
+    #                         label="# of max. Compilation Paths",
+    #                         linewidth=3,
+    #                     )
+    #                     plt.annotate("4", (x_index - 5, 0.8))
+    #
+    #     handles, labels = plt.gca().get_legend_handles_labels()
+    #     by_label = dict(zip(labels, handles))
+    #     plt.legend(
+    #         by_label.values(), by_label.keys(), loc="upper right", framealpha=1.0
+    #     )
+    #
+    #     plt.savefig("y_pred_eval.pdf")
+    #
+    #     return
 
     def plot_eval_all_detailed_compact_normed(
         names_list, scores_filtered, y_pred, y_test
@@ -402,22 +401,18 @@ class Predictor:
         # Create list of all qubit numbers and sort them
         names_list_num_qubits = []
         for i in range(len(names_list)):
+            assert np.argmax(scores_filtered[i]) == y_test[i]
             names_list_num_qubits.append(
                 int(names_list[i].split("_")[-1].split(".")[0])
             )
 
         # Sort all other list (num_qubits, scores and y_pred) accordingly
-        # qubit_list_sorted, names_list_sorted_accordingly = zip(
-        #     *sorted(zip(names_list_num_qubits, names_list))
-        # )
+
         (
             qubit_list_sorted,
             scores_filtered_sorted_accordingly,
             y_pred_sorted_accordingly,
         ) = zip(*sorted(zip(names_list_num_qubits, scores_filtered, y_pred)))
-        # qubit_list_sorted, y_pred_sorted_accordingly = zip(
-        #     *sorted(zip(names_list_num_qubits, y_pred))
-        # )
         plt.figure(figsize=(17, 6))
         for i in range(len(names_list_num_qubits)):
             tmp_res = scores_filtered_sorted_accordingly[i]
@@ -458,9 +453,9 @@ class Predictor:
         return
 
     def predict(qasm_path: str):
-        """Compilation path prediction for a given qasm file path to a qasm file."""
-        if not (".qasm" in qasm_path and ".qasm" in qasm_path):
-            print("Input is neither a .qasm str nor a path to a .qasm file.")
+        """Compilation path prediction for a given qasm file file."""
+        if not (".qasm" in qasm_path):
+            print("Input is not a .qasm file.")
             return
 
         if Predictor._clf is None:
@@ -475,19 +470,18 @@ class Predictor:
         non_zero_indices = np.load("non_zero_indices.npy", allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
-        if not (Predictor._clf):
-            print("Decision Tree Classifier must be trained first!")
-            print(Predictor._clf)
-            return
-
         return Predictor._clf.predict([feature_vector])[0]
 
     def compile_predicted_compilation_path(qasm_str_or_path: str, prediction: int):
         """Returns the compiled quantum circuit as a qasm string when the original qasm circuit is provided as either
         a string or a file path and the prediction index is given."""
+
+        if prediction < 0 or prediction > len(utils.get_machines()):
+            print("Provided prection is faulty.")
+            return None
         compilation_path = utils.get_machines()[prediction]
 
-        if ".qasm" in qasm_str_or_path and ".qasm" in qasm_str_or_path:
+        if ".qasm" in qasm_str_or_path:
             print("Reading from .qasm path: ", qasm_str_or_path)
             qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
         elif QuantumCircuit.from_qasm_str(qasm_str_or_path):
@@ -533,9 +527,6 @@ class Predictor:
             compiled_qc = pytket_plugin.get_rigetti_qc(qc_tket, False)
         elif compilation_path == "tket_oqc_graph":
             compiled_qc = pytket_plugin.get_oqc_qc(qc_tket, False)
-        else:
-            print("Compilation Path not found")
-            return
 
         return compiled_qc
 
