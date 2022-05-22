@@ -188,7 +188,7 @@ class Predictor:
         print("Best Training accuracy: ", Predictor._clf.best_score_)
         dump(Predictor._clf, "decision_tree_classifier.joblib")
 
-        y_pred = Predictor._clf.predict(X_test)
+        y_pred = np.array(list(Predictor._clf.predict(X_test)))
         print("Test accuracy: ", np.mean(y_pred == y_test))
         print("Compilation paths from Train Data: ", set(y_train))
         print("Compilation paths from Test Data: ", set(y_test))
@@ -274,7 +274,7 @@ class Predictor:
 
         plt.tick_params(left=False, labelleft=False)
         plt.box(False)
-        plt.savefig("MQTPredictor_hist.pdf")
+        plt.savefig("hist_predictions.pdf")
         plt.show()
         print("sum: ", sum)
 
@@ -420,95 +420,35 @@ class Predictor:
             tmp_res = scores_filtered_sorted_accordingly[i]
             max_score = max(tmp_res)
             for j in range(len(tmp_res)):
-                plt.plot(i, tmp_res[j] / max_score, "b.", alpha=0.2)
+                plt.plot(i, tmp_res[j] / max_score, "b.", alpha=1.0, markersize=1.7)
 
-            if y_pred_sorted_accordingly[i] != np.argmax(tmp_res):
-                plt.plot(
-                    i,
-                    tmp_res[y_pred_sorted_accordingly[i]] / max_score,
-                    ".k",
-                    label="Non-optimal Prediction",
-                )
-            else:
-                plt.plot(
-                    i,
-                    tmp_res[y_pred_sorted_accordingly[i]] / max_score,
-                    "#ff8600",
-                    marker=".",
-                    linestyle="None",
-                    label="Optimal Prediction",
-                )
+            plt.plot(
+                i,
+                tmp_res[y_pred_sorted_accordingly[i]] / max_score,
+                "#ff8600",
+                marker=".",
+                linestyle="None",
+                label="Optimal Prediction",
+            )
 
         plt.title("Evaluation: Compilation Path Prediction")
         plt.xticks(
-            [i for i in range(0, len(scores_filtered), 10)],
+            [i for i in range(0, len(scores_filtered), 10)],  # "",
             [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 10)],
         )
         # plt.xticks(range(len(names_list_sorted_accordingly)), names_list_sorted_accordingly, rotation=90)
         plt.xlabel("Benchmark Width (Number of Qubits)")
         plt.ylabel("Relative Prediction Quality of Compilation Paths")
         plt.tight_layout()
-        y_max = np.sort(np.array(list(set(np.array(scores_filtered).flatten()))))[-1]
+
         plt.ylim(0, 1.05)
         plt.xlim(-1, len(scores_filtered) + 1)
 
-        # add vertical lines to annotate the number of possible compilation paths
-        if len(np.where(np.array(qubit_list_sorted) > 8)[0]) > 1:
-            x_index = np.where(np.array(qubit_list_sorted) > 8)[0][0]
-            plt.axvline(
-                x_index,
-                ls="--",
-                color="k",
-                label="# of max. Compilation Paths",
-                linewidth=3,
-            )
-            plt.annotate("19", (x_index - 9, 1))
-
-            if len(np.where(np.array(qubit_list_sorted) > 11)[0]) > 1:
-                x_index = np.where(np.array(qubit_list_sorted) > 11)[0][0]
-                plt.axvline(
-                    x_index,
-                    ls="--",
-                    color="k",
-                    label="# of max. Compilation Paths",
-                    linewidth=3,
-                )
-                plt.annotate("15", (x_index - 9, 1))
-                if len(np.where(np.array(qubit_list_sorted) > 27)[0]) > 1:
-                    x_index = np.where(np.array(qubit_list_sorted) > 27)[0][0]
-                    plt.axvline(
-                        x_index,
-                        ls="--",
-                        color="k",
-                        label="# of max. Compilation Paths",
-                        linewidth=3,
-                    )
-                    plt.annotate("12", (x_index - 9, 1))
-                    if len(np.where(np.array(qubit_list_sorted) > 80)[0]) > 1:
-                        x_index = np.where(np.array(qubit_list_sorted) > 80)[0][0]
-                        plt.axvline(
-                            x_index,
-                            ls="--",
-                            color="k",
-                            label="# of max. Compilation Paths",
-                            linewidth=3,
-                        )
-                        plt.annotate("8", (x_index - 5, 0.8))
-                        x_index = len(scores_filtered)
-                        plt.axvline(
-                            x_index,
-                            ls="--",
-                            color="k",
-                            label="# of max. Compilation Paths",
-                            linewidth=3,
-                        )
-                        plt.annotate("4", (x_index - 5, 0.8))
-
-        handles, labels = plt.gca().get_legend_handles_labels()
-        by_label = dict(zip(labels, handles))
-        plt.legend(
-            by_label.values(), by_label.keys(), loc="upper right", framealpha=1.0
-        )
+        # handles, labels = plt.gca().get_legend_handles_labels()
+        # by_label = dict(zip(labels, handles))
+        # plt.legend(
+        #     by_label.values(), by_label.keys(), loc="right", framealpha=1.0
+        # )
 
         plt.savefig("y_pred_eval_normed.pdf")
 
