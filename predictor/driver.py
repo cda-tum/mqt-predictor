@@ -5,6 +5,7 @@ from pytket.extensions.qiskit import qiskit_to_tk
 
 from joblib import dump, load
 import numpy as np
+from numpy import asarray, save
 import matplotlib.pyplot as plt
 import json
 import os
@@ -121,7 +122,6 @@ class Predictor:
                 )
 
                 for filename in all_relevant_files:
-                    # print("Check: ",filename)
                     if (
                         benchmark.split(".")[0] + "_"
                     ) in filename and filename.endswith(".qasm"):
@@ -161,6 +161,9 @@ class Predictor:
             if sum(X[:, i]) > 0:
                 non_zero_indices.append(i)
         X = X[:, non_zero_indices]
+        data = asarray(non_zero_indices)
+        save("non_zero_indices.npy", data)
+
         print("Number of used and non-zero features: ", len(non_zero_indices))
 
         (
@@ -468,6 +471,9 @@ class Predictor:
                 return None
 
         feature_vector = list(utils.create_feature_vector(qasm_path).values())
+
+        non_zero_indices = np.load("non_zero_indices.npy", allow_pickle=True)
+        feature_vector = [feature_vector[i] for i in non_zero_indices]
 
         if not (Predictor._clf):
             print("Decision Tree Classifier must be trained first!")
