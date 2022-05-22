@@ -69,12 +69,6 @@ def get_rigetti_m1():
         "provider": "rigetti",
         "name": "m1",
         "num_qubits": 80,
-        "t1_avg": 33.845,
-        "t2_avg": 28.230,
-        "avg_gate_time_1q": 60e-3,  # source: https://qcs.rigetti.com/qpus -> ASPEN-M-1
-        "avg_gate_time_2q": 160e-3,  # source: https://qcs.rigetti.com/qpus -> ASPEN-M-1
-        "fid_1q": get_rigetti_m1_fid1(),  # calculated by myself based on data sheet from aws
-        "fid_2q": get_rigetti_m1_fid2(),  # calculated by myself based on data sheet from aws
     }
     return rigetti_m1
 
@@ -85,12 +79,6 @@ def get_ibm_washington():
         "provider": "ibm",
         "name": "washington",
         "num_qubits": 127,
-        "t1_avg": 103.39,
-        "t2_avg": 97.75,
-        "avg_gate_time_1q": 159.8e-3,  # estimated, based on the rigetti relation between 1q and 2q and given avg 2q time
-        "avg_gate_time_2q": 550.41e-3,  # source: https://quantum-computing.ibm.com/services?services=systems&system=ibm_washington
-        "fid_1q": 0.998401,  # from IBMQ website
-        "fid_2q": 0.95439,  # from IBMQ website
     }
     return ibm_washington
 
@@ -101,12 +89,6 @@ def get_ibm_montreal():
         "provider": "ibm",
         "name": "Montreal",
         "num_qubits": 27,
-        "t1_avg": 120.55,
-        "t2_avg": 74.16,
-        "avg_gate_time_1q": 206e-3,  # estimated, based on the rigetti relation between 1q and 2q and given avg 2q time
-        "avg_gate_time_2q": 426.159e-3,  # source: https://quantum-computing.ibm.com/services?services=systems&system=ibm_montreal
-        "fid_1q": 0.9994951,  # from IBMQ website
-        "fid_2q": 0.98129,  # from IBMQ website
     }
     return ibm_montreal
 
@@ -117,12 +99,6 @@ def get_ionq():
         "provider": "ionq",
         "name": "IonQ",
         "num_qubits": 11,
-        "t1_avg": 10000,
-        "t2_avg": 0.2,
-        "avg_gate_time_1q": 0.00001,
-        "avg_gate_time_2q": 0.0002,
-        "fid_1q": 0.9963,  # from AWS
-        "fid_2q": 0.9581,  # from AWS
     }
     return ionq
 
@@ -133,12 +109,6 @@ def get_oqc_lucy():
         "provider": "oqc",
         "name": "Lucy",
         "num_qubits": 8,
-        "t1_avg": 34.2375,
-        "t2_avg": 49.2875,
-        "avg_gate_time_1q": 60e-3,  # copied from Rigetti Aspen, number is NOT official from OQC itself
-        "avg_gate_time_2q": 160e-3,  # copied from Rigetti Aspen, number is NOT official from OQC itself
-        "fid_1q": 0.99905,  # from AWS averaged by myself
-        "fid_2q": 0.9375,  # from AWS averaged by myself
     }
     return oqc_lucy
 
@@ -216,50 +186,6 @@ def get_machines():
         "tket_oqc_graph",
     ]
     return machines
-
-
-def get_rigetti_m1_fid1():
-    """Calculates and returns the single gate fidelity for the Rigetti M1."""
-    f = open("rigetti_m1_calibration.json")
-    rigetti_json = json.load(f)
-
-    fid1 = []
-    for elem in rigetti_json["specs"]["1Q"]:
-        # for elem2 in (rigetti_json["specs"]["1Q"][elem]):
-        fid1.append(rigetti_json["specs"]["1Q"][elem]["f1QRB"])
-    avg_fid1 = sum(fid1) / len(fid1)
-
-    return avg_fid1
-
-
-def get_rigetti_m1_fid2():
-    """Calculates and returns the two gate fidelity for the Rigetti M1."""
-    f = open("rigetti_m1_calibration.json")
-    rigetti_json = json.load(f)
-    fid2 = []
-    for elem in rigetti_json["specs"]["2Q"]:
-        val = rigetti_json["specs"]["2Q"][elem].get("fCZ")
-        if val:
-            fid2.append(val)
-    avg_fid2 = sum(fid2) / len(fid2)
-    return avg_fid2
-
-
-def get_oqc_lucy_fid2():
-    """Calculates and returns the avg two gate fidelity for the OQC Lucy."""
-    with open("oqc_lucy_calibration.json", "r") as f:
-        backend = json.load(f)
-
-    fid2 = []
-    for elem in backend["twoQubitProperties"]:
-        val = backend["twoQubitProperties"][elem]["twoQubitGateFidelity"][0].get(
-            "fidelity"
-        )
-        if val:
-            fid2.append(val)
-
-    avg_fid2 = sum(fid2) / len(fid2)
-    return avg_fid2
 
 
 def dict_to_featurevector(gate_dict):
