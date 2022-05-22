@@ -15,13 +15,14 @@ MQT Predictor is a framework to create a software tool suggesting a compilation 
 ## Usage of pre-trained Model
 ## Adaption of Model for custom use case
 
-# Usage via pip
-# Usage via repository
-
 # Instantiation
 ## Compilation Path and Compilation Pipelines
 ## Evaluation Metric
 ## Generation of Training Data
+
+# Usage
+## via pip
+## via repository
 
 # Repository Structure
 # References
