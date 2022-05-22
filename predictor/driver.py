@@ -187,7 +187,7 @@ class Predictor:
                 "max_features": [i for i in range(1, len(non_zero_indices), 10)],
             },
         ]
-        Predictor._clf = GridSearchCV(tree.DecisionTreeClassifier(), tree_param, cv=5)
+        Predictor._clf = GridSearchCV(tree.DecisionTreeClassifier(random_state=42), tree_param, cv=5)
         Predictor._clf = Predictor._clf.fit(X_train, y_train)
         print("Best GridSearch Params: ", Predictor._clf.best_estimator_)
         print("Best Training accuracy: ", Predictor._clf.best_score_)
@@ -264,8 +264,7 @@ class Predictor:
             [i for i in range(1, num_of_comp_paths + 1, 1)],
             [i for i in range(1, num_of_comp_paths + 1, 1)],
         )
-        # plt.xlabel("MQT Predictor Ranking")
-        plt.title("Prediction Accuracy Ranking")
+
         sum = 0
         for bar in bars:
             yval = bar.get_height()
@@ -276,6 +275,9 @@ class Predictor:
 
         plt.tick_params(left=False, labelleft=False)
         plt.box(False)
+
+        plt.xlabel("Best ranking                         worst ranking")
+        plt.ylabel("Frequency")
         plt.savefig("hist_predictions.pdf")
         plt.show()
         print("sum: ", sum)
@@ -434,19 +436,13 @@ class Predictor:
             [i for i in range(0, len(scores_filtered), 10)],  # "",
             [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 10)],
         )
-        # plt.xticks(range(len(names_list_sorted_accordingly)), names_list_sorted_accordingly, rotation=90)
-        plt.xlabel("Benchmark Width (Number of Qubits)")
-        plt.ylabel("Relative Prediction Quality of Compilation Paths")
+
+        plt.xlabel("Unseen training circuits (sorted along the number of qubits)")
+        plt.ylabel("Evaluation score of compilation paths \n (normalized per training circuit)")
         plt.tight_layout()
 
         plt.ylim(0, 1.05)
-        plt.xlim(-1, len(scores_filtered) + 1)
-
-        # handles, labels = plt.gca().get_legend_handles_labels()
-        # by_label = dict(zip(labels, handles))
-        # plt.legend(
-        #     by_label.values(), by_label.keys(), loc="right", framealpha=1.0
-        # )
+        plt.xlim(0, len(scores_filtered))
 
         plt.savefig("y_pred_eval_normed.pdf")
 
