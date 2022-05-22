@@ -105,13 +105,6 @@ def test_get_machines():
     assert len(utils.get_machines()) == 19
 
 
-def test_rigetti_fids():
-    fid1 = utils.get_rigetti_m1_fid1()
-    fid2 = utils.get_rigetti_m1_fid2()
-    assert fid1 > 0 and fid1 < 1
-    assert fid2 > 0 and fid2 < 1
-
-
 def test_qubit_counts():
 
     qc = benchmark_generator.get_one_benchmark("dj", 1, 5)
