@@ -188,10 +188,11 @@ class Predictor:
             },
         ]
         Predictor._clf = GridSearchCV(
-            tree.DecisionTreeClassifier(random_state=5), tree_param, cv=5
+            tree.DecisionTreeClassifier(random_state=5), tree_param, cv=5, n_jobs=8
         )
         Predictor._clf = Predictor._clf.fit(X_train, y_train)
-        print("Best GridSearch Params: ", Predictor._clf.best_estimator_)
+        print("Best GridSearch Estimator: ", Predictor._clf.best_estimator_)
+        print("Best GridSearch Params: ", Predictor._clf.best_params_)
         print("Num Training Circuits: ", len(X_train))
         print("Num Test Circuits: ", len(X_test))
         print("Best Training accuracy: ", Predictor._clf.best_score_)
@@ -210,13 +211,13 @@ class Predictor:
         for i in range(1, 6):
             res.append(str(i) + "_max_interactions")
 
+        res = [res[i] for i in non_zero_indices]
         machines = utils.get_machines()
-
         fig = plt.figure(figsize=(17, 6))
         plot_tree(
             Predictor._clf.best_estimator_,
             feature_names=res,
-            class_names=machines,  # list(Predictor._clf.classes_),
+            class_names=[machines[i] for i in list(Predictor._clf.classes_)],
             filled=True,
             impurity=True,
             rounded=True,
@@ -323,13 +324,12 @@ class Predictor:
                 label="Optimal Prediction",
             )
 
-        plt.title("Evaluation: Compilation Path Prediction")
         plt.xticks(
             [i for i in range(0, len(scores_filtered), 10)],  # "",
             [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 10)],
         )
 
-        plt.xlabel("Unseen training circuits (sorted along the number of qubits)")
+        plt.xlabel("Unseen test circuits (sorted along the number of qubits)")
         plt.ylabel(
             "Evaluation scores of compilation paths \n (normalized per training circuit)"
         )
