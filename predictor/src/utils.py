@@ -373,6 +373,7 @@ def init_all_config_files():
         rigetti_m1_calibration = parse_rigetti_calibration_config()
         global ionq_calibration
         ionq_calibration = parse_ionq_calibration_config()
+
     except Exception as e:
         print("init_all_config_files() failed: ", e)
         return False
