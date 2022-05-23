@@ -282,9 +282,9 @@ class Predictor:
         plt.box(False)
 
         plt.xlabel(
-            "Best ranking                                                                                                            Worst ranking"
+            "Best prediction                                                                                                            Worst prediction"
         )
-        plt.ylabel("Frequency")
+        plt.ylabel("Relative frequency")
         plt.savefig("hist_predictions.pdf")
         plt.show()
         print("sum: ", sum)
@@ -332,7 +332,7 @@ class Predictor:
 
         plt.xlabel("Unseen test circuits (sorted along the number of qubits)")
         plt.ylabel(
-            "Evaluation scores of compilation paths \n (normalized per training circuit)"
+            "Evaluation scores of combinations of options \n (normalized per training circuit)"
         )
         plt.tight_layout()
 
