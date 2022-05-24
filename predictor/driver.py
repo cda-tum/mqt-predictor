@@ -261,27 +261,29 @@ class Predictor:
 
         num_of_comp_paths = len(utils.get_machines())
         bars = plt.bar(
-            [i for i in range(1, num_of_comp_paths + 1, 1)],
+            [i for i in range(0, num_of_comp_paths, 1)],
             height=[
                 res.count(i) / len(res) for i in range(1, num_of_comp_paths + 1, 1)
             ],
             width=1,
         )
         plt.xticks(
+            [i for i in range(0, num_of_comp_paths, 1)],
             [i for i in range(1, num_of_comp_paths + 1, 1)],
-            [i for i in range(1, num_of_comp_paths + 1, 1)],
+            fontsize=18,
         )
+        plt.yticks(fontsize=18)
 
-        sum = 0
-        for bar in bars:
-            yval = bar.get_height()
-            rounded_val = str(np.round(yval * 100, 1)) + "%"
-            if np.round(yval * 100, 1) > 0.0:
-                sum += np.round(yval * 100, 1)
-                plt.text(bar.get_x(), yval + 0.005, rounded_val)
+        # sum = 0
+        # for bar in bars:
+        #     yval = bar.get_height()
+        #     rounded_val = str(np.round(yval * 100, 1)) + "%"
+        #     if np.round(yval * 100) > 0.0:
+        #         sum += np.round(yval * 100)
+        #         plt.text(bar.get_x()+0.1, yval + 0.005, rounded_val, fontsize=18)
 
-        plt.tick_params(left=False, labelleft=False)
-        plt.box(False)
+        # plt.tick_params(left=True, labelleft=True)
+        # plt.box(False)
 
         plt.xlabel(
             "Best prediction                                                        Worst prediction",
@@ -290,7 +292,7 @@ class Predictor:
         plt.ylabel("Relative frequency", fontsize=18)
         plt.savefig("hist_predictions.pdf")
         plt.show()
-        print("sum: ", sum)
+        # print("sum: ", sum)
 
     def plot_eval_all_detailed_compact_normed(
         names_list, scores_filtered, y_pred, y_test
@@ -330,8 +332,9 @@ class Predictor:
         plt.xticks(
             [i for i in range(0, len(scores_filtered), 10)],
             [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 10)],
+            fontsize=18,
         )
-
+        plt.yticks(fontsize=18)
         plt.xlabel(
             "Unseen test circuits (sorted along the number of qubits)", fontsize=18
         )
