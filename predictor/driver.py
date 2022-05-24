@@ -7,6 +7,8 @@ from joblib import dump, load
 import numpy as np
 from numpy import asarray, save
 import matplotlib.pyplot as plt
+
+plt.rcParams["font.family"] = "Times New Roman"
 import os
 import glob
 import argparse
@@ -282,9 +284,10 @@ class Predictor:
         plt.box(False)
 
         plt.xlabel(
-            "Best prediction                                                                                                            Worst prediction"
+            "Best prediction                                                        Worst prediction",
+            fontsize=18,
         )
-        plt.ylabel("Relative frequency")
+        plt.ylabel("Relative frequency", fontsize=18)
         plt.savefig("hist_predictions.pdf")
         plt.show()
         print("sum: ", sum)
@@ -308,7 +311,7 @@ class Predictor:
             scores_filtered_sorted_accordingly,
             y_pred_sorted_accordingly,
         ) = zip(*sorted(zip(names_list_num_qubits, scores_filtered, y_pred)))
-        plt.figure(figsize=(17, 6))
+        plt.figure(figsize=(17, 8))
         print("# Entries Graph: ", len(names_list_num_qubits))
         for i in range(len(names_list_num_qubits)):
             tmp_res = scores_filtered_sorted_accordingly[i]
@@ -329,9 +332,12 @@ class Predictor:
             [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 10)],
         )
 
-        plt.xlabel("Unseen test circuits (sorted along the number of qubits)")
+        plt.xlabel(
+            "Unseen test circuits (sorted along the number of qubits)", fontsize=18
+        )
         plt.ylabel(
-            "Evaluation scores of combinations of options \n (normalized per test circuit)"
+            "Evaluation scores of combinations of options \n (normalized per test circuit)",
+            fontsize=18,
         )
         plt.tight_layout()
 
