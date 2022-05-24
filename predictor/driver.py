@@ -322,17 +322,16 @@ class Predictor:
                 "#ff8600",
                 marker=".",
                 linestyle="None",
-                label="Optimal Prediction",
             )
 
         plt.xticks(
-            [i for i in range(0, len(scores_filtered), 10)],  # "",
+            [i for i in range(0, len(scores_filtered), 10)],
             [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 10)],
         )
 
         plt.xlabel("Unseen test circuits (sorted along the number of qubits)")
         plt.ylabel(
-            "Evaluation scores of combinations of options \n (normalized per training circuit)"
+            "Evaluation scores of combinations of options \n (normalized per test circuit)"
         )
         plt.tight_layout()
 
