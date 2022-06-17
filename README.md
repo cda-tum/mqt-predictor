@@ -1,28 +1,30 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Lint](https://github.com/nquetschlich/MQTPredictor/actions/workflows/linter.yml/badge.svg)](https://github.com/nquetschlich/MQTPredictor/actions/workflows/linter.yml)
+[![CodeCov](https://github.com/nquetschlich/MQTPredictor/actions/workflows/coverage.yml/badge.svg)](https://github.com/nquetschlich/MQTPredictor/actions/workflows/coverage.yml)
 
 
 
 
 
+# MQT Predictor: Automatic Prediction of Good Compilation Paths
+MQT Predictor is a framework to create a software tool suggesting a compilation path to use for an arbitrary quantum circuit according to the user's needs.
 
-# MQT Predictor: Determining a good Compilation Flow for unseen Quantum Circuits
-MQT Predictor is a framework to create a software tool suggesting a compilation flow to use for an arbitrary quantum circuit according to the user's needs.
-Here, compilation flow is defined as the combination of an actual quantum computer and a respective compiler.
+
+# Guide
+## Usage of pre-trained Model
+## Adaption of Model for custom use case
 
 # Instantiation
-## Inputs
-### Compilation Flows
-### Evaluation Metric
-## Training Data Generation
-## Machine Learning Model
+## Compilation Path and Compilation Pipelines
+## Evaluation Metric
+## Generation of Training Data
 
-# Examplary usage via pip
-
+# Usage
+## via pip
+## via repository
 
 # Repository Structure
-# Repository Usage
 # References
 In case you are using MQT Predictor in your work, we would be thankful if you referred to it by citing the following publication:
 ```bibtex
