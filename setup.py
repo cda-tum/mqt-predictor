@@ -25,7 +25,7 @@ setup(
         "pytket~=1.1",
         "numpy>=1.21.5,<1.23.0",
         "mqt.bench~=0.1.0rc1",
-        "pytket-qiskit~=0.24.0",
+        "pytket-qiskit>=0.24,<0.27",
         "matplotlib~=3.5.1",
         "scikit-learn~=1.0.2",
         "natsort~=8.1.0",
