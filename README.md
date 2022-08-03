@@ -30,7 +30,7 @@ This software can be used in two ways:
 # Repository Structure
 # References
 In case you are using MQT Predictor in your work, we would be thankful if you referred to it by citing the following publication:
-[1]: ```bibtex
+```bibtex
 @misc{quetschlich2022mqtpredictor,
   title={{{MQT Predictor}}: Automatic Prediction of Good Compilation Paths},
   author={Quetschlich, Nils and Burgholzer, Lukas and Wille, Robert},
