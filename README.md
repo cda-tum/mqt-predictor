@@ -8,7 +8,10 @@
 
 
 # MQT Predictor: Automatic Prediction of Good Compilation Paths
-MQT Predictor is a framework to create a software tool suggesting a compilation path to use for an arbitrary quantum circuit according to the user's needs.
+MQT Predictor is a framework to create a software tool suggesting a compilation options to use for an arbitrary quantum circuit according to the user's needs.
+This software can be used in two ways:
+1) User-specific instantiation
+2) Usage of the pre-trained model used in the experimental evaluations of the corresponding [Paper](#references) 
 
 
 # Guide
@@ -27,9 +30,9 @@ MQT Predictor is a framework to create a software tool suggesting a compilation 
 # Repository Structure
 # References
 In case you are using MQT Predictor in your work, we would be thankful if you referred to it by citing the following publication:
-```bibtex
-@misc{2022_abc,
-  title={abc},
+[1]: ```bibtex
+@misc{quetschlich2022mqtpredictor,
+  title={{{MQT Predictor}}: Automatic Prediction of Good Compilation Paths},
   author={Quetschlich, Nils and Burgholzer, Lukas and Wille, Robert},
   year={2022},
 }
