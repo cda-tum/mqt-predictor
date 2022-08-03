@@ -28,7 +28,7 @@ This software can be used in two ways:
 ## via repository
 
 # Repository Structure
-#Reference
+# Reference
 In case you are using MQT Predictor in your work, we would be thankful if you referred to it by citing the following publication:
 ```bibtex
 @misc{quetschlich2022mqtpredictor,
