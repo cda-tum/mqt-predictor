@@ -19,6 +19,7 @@ from sklearn.tree import plot_tree
 from sklearn import tree
 
 from natsort import natsorted
+from joblib import Parallel, delayed
 
 
 class Predictor:
@@ -32,56 +33,80 @@ class Predictor:
         the folder path are considered."""
 
         dictionary = {}
-        for subdir, dirs, files in os.walk(folder_path):
-            for file in natsorted(files):
-                if "qasm" in file:
-                    key = file.split("_")[
-                        0
-                    ]  # The key is the first 16 characters of the file name
-                    group = dictionary.get(key, [])
-                    group.append(file)
-                    dictionary[key] = group
+        source_circuits_list = []
 
-        print(dictionary.keys())
-        for alg_class in dictionary:
-            for benchmark in dictionary[alg_class]:
-                filename = os.path.join(folder_path, benchmark)
-                qc = QuantumCircuit.from_qasm_file(filename)
+        for file in os.listdir(folder_path):
+            if "qasm" in file:
+                source_circuits_list.append(file)
 
-                print(benchmark)
-                if not qc:
-                    continue
-                actual_num_qubits = qc.num_qubits
-                if actual_num_qubits > 127:
-                    break
-                try:
-                    qiskit_opt2 = qiskit_plugin.save_qiskit_compiled_circuits(
-                        qc, 2, timeout=timeout, benchmark_name=benchmark
-                    )
+        Parallel(n_jobs=-1, verbose=100)(
+            delayed(compile_all_circuits_for_qc)(filename)
+            for filename in source_circuits_list
+        )
 
-                    qiskit_opt3 = qiskit_plugin.save_qiskit_compiled_circuits(
-                        qc, 3, timeout=timeout, benchmark_name=benchmark
-                    )
+    def compile_all_circuits_for_qc(filename: str, folder_path: str = "./qasm_files"):
 
-                    qc_tket = qiskit_to_tk(qc)
+        filename = os.path.join(folder_path, benchmark)
+        qc = QuantumCircuit.from_qasm_file(filename)
 
-                    tket_line_True = pytket_plugin.save_tket_compiled_circuits(
-                        qc_tket, True, timeout=timeout, benchmark_name=benchmark
-                    )
+        print(benchmark)
+        if not qc:
+            return False
 
-                    tket_line_False = pytket_plugin.save_tket_compiled_circuits(
-                        qc_tket, False, timeout=timeout, benchmark_name=benchmark
-                    )
-                    all_results = (
-                        qiskit_opt2 + qiskit_opt3 + tket_line_False + tket_line_True
-                    )
-                    if all(x is None for x in all_results):
-                        break
+        try:
 
-                except Exception as e:
-                    print("fail: ", e)
+            # import mqt.bench
+            # for each device, compiler, settings combination -> one respective mqt.bench function call
+            # idead: add some kind of identifier as function parameter to mark that a specific combination was
+            # used as an alternative to parse the filename strings
 
-        return
+            # sinnvoller Parameter: target location for file
+            # erwartet pro Call: RM ob es klappte (True) oder nicht (False)
+
+            compilation_paths = [
+                ("ibm", [("ibm_washington", 127), ("ibm_montreal", 27)]),
+                ("rigetti", [("rigetti_aspen_m1", 80)]),
+                ("ionq", [("ionq11", 11)]),
+                ("oqc", [("oqc_lucy", 8)]),
+            ]
+
+            results = []
+            for device_name, max_qubits in devices:
+                for opt_level in range(4):
+                    # Creating the circuit on target-dependent: mapped level qiskit
+                    if max_qubits >= qc.num_qubits:
+                        tmp = qiskit_helper.get_mapped_level(
+                            qc,
+                            gate_set_name,
+                            qc.num_qubits,
+                            device_name,
+                            opt_level,
+                            file_precheck,
+                        )
+                        results.append(tmp)
+
+            for device_name, max_qubits in devices:
+                if max_qubits >= qc.num_qubits:
+                    for lineplacement in (False, True):
+                        # Creating the circuit on target-dependent: mapped level tket
+                        tmp = tket_helper.get_mapped_level(
+                            qc,
+                            gate_set_name,
+                            qc.num_qubits,
+                            device_name,
+                            lineplacement,
+                            file_precheck,
+                        )
+                        results.append(tmp)
+
+            if all(x is False for x in all_results):
+                print("No compilation succeed for this quantum circuit.")
+                return False
+            return True
+
+        except Exception as e:
+            print("fail: ", e)
+            return False
 
     def generate_trainingdata_from_qasm_files(
         folder_path: str = "./qasm_files", compiled_path: str = "qasm_compiled/"
