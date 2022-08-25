@@ -12,6 +12,7 @@ plt.rcParams["font.family"] = "Times New Roman"
 import os
 import glob
 import argparse
+import signal
 
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import precision_recall_fscore_support
@@ -26,13 +27,16 @@ from mqt.bench.utils import tket_helper, qiskit_helper
 
 class Predictor:
     _clf = None
+    _timeout = 0
 
     def compile_all_circuits_for_qc(
-        filename: str, target_directory: str = "./qasm_files"
+        filename: str,
+        source_path: str = "./source",
+        target_directory: str = "./qasm_files",
     ):
-        print(filename)
+        print("compile_all_circuits_for_qc:", filename)
 
-        qc = QuantumCircuit.from_qasm_file(filename)
+        qc = QuantumCircuit.from_qasm_file(os.path.join(source_path, filename))
 
         if not qc:
             return False
@@ -50,7 +54,9 @@ class Predictor:
             for gate_set_name, devices in compilation_paths:
                 for device_name, max_qubits in devices:
                     for opt_level in range(4):
-                        target_filename = filename.split(".qasm")[0] + str(comp_path_id)
+                        target_filename = (
+                            filename.split(".qasm")[0] + "_" + str(comp_path_id)
+                        )
                         if max_qubits >= qc.num_qubits:
                             tmp = qiskit_helper.get_mapped_level(
                                 qc,
@@ -69,8 +75,8 @@ class Predictor:
                 for device_name, max_qubits in devices:
                     if max_qubits >= qc.num_qubits:
                         for lineplacement in (False, True):
-                            target_filename = filename.split(".qasm")[0] + str(
-                                comp_path_id
+                            target_filename = (
+                                filename.split(".qasm")[0] + "_" + str(comp_path_id)
                             )
                             tmp = tket_helper.get_mapped_level(
                                 qc,
@@ -96,6 +102,32 @@ class Predictor:
             print("fail: ", e)
             return False
 
+    def compilation_watcher(func, args):
+        class TimeoutException(Exception):  # Custom exception class
+            pass
+
+        def timeout_handler(signum, frame):  # Custom signal handler
+            raise TimeoutException
+
+        # Change the behavior of SIGALRM
+        signal.signal(signal.SIGALRM, timeout_handler)
+
+        signal.alarm(1)
+        try:
+            print("Predictor._timeout:", Predictor._timeout)
+            res = func(*args)
+        except TimeoutException:
+            print("Calculation/Generation exceeded timeout limit for ", func, args[1:])
+            return False
+        except Exception as e:
+            print("Something else went wrong: ", e)
+            return False
+        else:
+            # Reset the alarm
+            signal.alarm(Predictor._timeout)
+
+        return res
+
     def save_all_compilation_path_results(
         source_path: str = "./qasm_files",
         target_path: str = "./qasm_files",
@@ -104,20 +136,22 @@ class Predictor:
         """Method to create pre-processed data to accelerate the training data generation afterwards. All .qasm files from
         the folder path are considered."""
 
-        dictionary = {}
+        Predictor._timeout = timeout
         source_circuits_list = []
 
         for file in os.listdir(source_path):
             if "qasm" in file:
-                source_circuits_list.append(os.path.join(source_path, file))
+                source_circuits_list.append(file)
 
-        print(source_circuits_list)
-        # Parallel(n_jobs=-1, verbose=100, timeout=timeout)(
-        #     delayed(Predictor.compile_all_circuits_for_qc)(filename, target_path)
-        #     for filename in source_circuits_list
-        # )
-        for filename in source_circuits_list:
-            Predictor.compile_all_circuits_for_qc(filename, target_path)
+        Parallel(n_jobs=-1, verbose=100)(
+            delayed(Predictor.compilation_watcher)(
+                Predictor.compile_all_circuits_for_qc,
+                [filename, source_path, target_path],
+            )
+            for filename in source_circuits_list
+        )
+        # for filename in source_circuits_list:
+        #    Predictor.compile_all_circuits_for_qc(filename, source_path, target_path)
 
     def generate_trainingdata_from_qasm_files(
         folder_path: str = "./qasm_files", compiled_path: str = "qasm_compiled/"
@@ -476,6 +510,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     Predictor.save_all_compilation_path_results(
-        folder_path=args.path, timeout=args.timeout
+        source_path="./comp_test_source", target_path="./comp_test", timeout=5
     )
     # Predictor.generate_trainingdata_from_qasm_files(folder_path="gentest/")
