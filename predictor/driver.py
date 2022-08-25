@@ -21,6 +21,8 @@ from sklearn import tree
 from natsort import natsorted
 from joblib import Parallel, delayed
 
+from mqt.bench.utils import tket_helper, qiskit_helper
+
 
 class Predictor:
     _clf = None
@@ -40,66 +42,70 @@ class Predictor:
                 source_circuits_list.append(file)
 
         Parallel(n_jobs=-1, verbose=100)(
-            delayed(compile_all_circuits_for_qc)(filename)
+            delayed(compile_all_circuits_for_qc, timeout=timeout)(filename)
             for filename in source_circuits_list
         )
 
-    def compile_all_circuits_for_qc(filename: str, folder_path: str = "./qasm_files"):
+    def compile_all_circuits_for_qc(
+        filename: str, target_directory: str = "./qasm_files"
+    ):
 
-        filename = os.path.join(folder_path, benchmark)
         qc = QuantumCircuit.from_qasm_file(filename)
 
-        print(benchmark)
         if not qc:
             return False
 
+        compilation_paths = [
+            ("ibm", [("ibm_washington", 127), ("ibm_montreal", 27)]),
+            ("rigetti", [("rigetti_aspen_m1", 80)]),
+            ("ionq", [("ionq11", 11)]),
+            ("oqc", [("oqc_lucy", 8)]),
+        ]
+
+        results = []
+        comp_path_id = 0
         try:
+            for gate_set_name, devices in compilation_paths:
+                for device_name, max_qubits in devices:
+                    for opt_level in range(4):
+                        target_filename = filename.split(".qasm")[0] + str(comp_path_id)
+                        if max_qubits >= qc.num_qubits:
+                            tmp = qiskit_helper.get_mapped_level(
+                                qc,
+                                gate_set_name,
+                                qc.num_qubits,
+                                device_name,
+                                opt_level,
+                                False,
+                                False,
+                                target_directory,
+                                target_filename,
+                            )
+                            results.append(tmp)
+                            comp_path_id += 1
 
-            # import mqt.bench
-            # for each device, compiler, settings combination -> one respective mqt.bench function call
-            # idead: add some kind of identifier as function parameter to mark that a specific combination was
-            # used as an alternative to parse the filename strings
-
-            # sinnvoller Parameter: target location for file
-            # erwartet pro Call: RM ob es klappte (True) oder nicht (False)
-
-            compilation_paths = [
-                ("ibm", [("ibm_washington", 127), ("ibm_montreal", 27)]),
-                ("rigetti", [("rigetti_aspen_m1", 80)]),
-                ("ionq", [("ionq11", 11)]),
-                ("oqc", [("oqc_lucy", 8)]),
-            ]
-
-            results = []
-            for device_name, max_qubits in devices:
-                for opt_level in range(4):
-                    # Creating the circuit on target-dependent: mapped level qiskit
+                for device_name, max_qubits in devices:
                     if max_qubits >= qc.num_qubits:
-                        tmp = qiskit_helper.get_mapped_level(
-                            qc,
-                            gate_set_name,
-                            qc.num_qubits,
-                            device_name,
-                            opt_level,
-                            file_precheck,
-                        )
-                        results.append(tmp)
+                        for lineplacement in (False, True):
+                            target_filename = filename.split(".qasm")[0] + str(
+                                comp_path_id
+                            )
+                            tmp = tket_helper.get_mapped_level(
+                                qc,
+                                gate_set_name,
+                                qc.num_qubits,
+                                device_name,
+                                lineplacement,
+                                False,
+                                False,
+                                target_directory,
+                                target_filename,
+                            )
 
-            for device_name, max_qubits in devices:
-                if max_qubits >= qc.num_qubits:
-                    for lineplacement in (False, True):
-                        # Creating the circuit on target-dependent: mapped level tket
-                        tmp = tket_helper.get_mapped_level(
-                            qc,
-                            gate_set_name,
-                            qc.num_qubits,
-                            device_name,
-                            lineplacement,
-                            file_precheck,
-                        )
-                        results.append(tmp)
+                            results.append(tmp)
+                            comp_path_id += 1
 
-            if all(x is False for x in all_results):
+            if all(x is False for x in results):
                 print("No compilation succeed for this quantum circuit.")
                 return False
             return True
