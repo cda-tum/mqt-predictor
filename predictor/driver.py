@@ -27,28 +27,10 @@ from mqt.bench.utils import tket_helper, qiskit_helper
 class Predictor:
     _clf = None
 
-    def save_all_compilation_path_results(
-        folder_path: str = "./qasm_files",
-        timeout: int = 10,
-    ):
-        """Method to create pre-processed data to accelerate the training data generation afterwards. All .qasm files from
-        the folder path are considered."""
-
-        dictionary = {}
-        source_circuits_list = []
-
-        for file in os.listdir(folder_path):
-            if "qasm" in file:
-                source_circuits_list.append(file)
-
-        Parallel(n_jobs=-1, verbose=100)(
-            delayed(compile_all_circuits_for_qc, timeout=timeout)(filename)
-            for filename in source_circuits_list
-        )
-
     def compile_all_circuits_for_qc(
         filename: str, target_directory: str = "./qasm_files"
     ):
+        print(filename)
 
         qc = QuantumCircuit.from_qasm_file(filename)
 
@@ -113,6 +95,29 @@ class Predictor:
         except Exception as e:
             print("fail: ", e)
             return False
+
+    def save_all_compilation_path_results(
+        source_path: str = "./qasm_files",
+        target_path: str = "./qasm_files",
+        timeout: int = 10,
+    ):
+        """Method to create pre-processed data to accelerate the training data generation afterwards. All .qasm files from
+        the folder path are considered."""
+
+        dictionary = {}
+        source_circuits_list = []
+
+        for file in os.listdir(source_path):
+            if "qasm" in file:
+                source_circuits_list.append(os.path.join(source_path, file))
+
+        print(source_circuits_list)
+        # Parallel(n_jobs=-1, verbose=100, timeout=timeout)(
+        #     delayed(Predictor.compile_all_circuits_for_qc)(filename, target_path)
+        #     for filename in source_circuits_list
+        # )
+        for filename in source_circuits_list:
+            Predictor.compile_all_circuits_for_qc(filename, target_path)
 
     def generate_trainingdata_from_qasm_files(
         folder_path: str = "./qasm_files", compiled_path: str = "qasm_compiled/"
