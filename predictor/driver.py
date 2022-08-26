@@ -1,4 +1,4 @@
-from predictor.src import qiskit_plugin, pytket_plugin, utils
+from predictor.src import utils
 
 from qiskit import QuantumCircuit
 from pytket.extensions.qiskit import qiskit_to_tk
@@ -183,15 +183,11 @@ class Predictor:
 
         for file in os.listdir(source_path):
             if "qasm" in file:
-
-                print("Find: ", file)
                 scores = []
                 for _ in range(30):
                     scores.append([])
-                # iterate over all respective circuits in
-                print(file.split(".")[0], target_path + file.split(".")[0] + "*")
+
                 all_relevant_files = glob.glob(target_path + file.split(".")[0] + "*")
-                print(all_relevant_files)
 
                 for filename in all_relevant_files:
                     if (file.split(".")[0] + "_") in filename and filename.endswith(

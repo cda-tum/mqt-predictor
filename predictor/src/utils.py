@@ -163,6 +163,7 @@ def get_openqasm_gates():
     return gate_list
 
 
+# TODO: Adjust
 def get_machines():
     machines = [
         "qiskit_ionq_opt2",
