@@ -232,7 +232,7 @@ def get_compiled_output_folder():
     return "qasm_compiled/"
 
 
-def calc_eval_score_for_qc(qc_path):
+def calc_eval_score_for_qc(qc_path: str, device: str):
     # read qasm to Qiskit Quantumcircuit
     try:
         qc = QuantumCircuit.from_qasm_file(qc_path)
@@ -241,9 +241,9 @@ def calc_eval_score_for_qc(qc_path):
         return get_width_penalty()
     res = 1
 
-    if "ibm_montreal" in qc_path or "ibm_washington" in qc_path:
+    if "ibm_montreal" in device or "ibm_washington" in device:
 
-        if "ibm_montreal" in qc_path:
+        if "ibm_montreal" in device:
             backend = ibm_montreal_calibration
         else:
             backend = ibm_washington_calibration
@@ -269,7 +269,7 @@ def calc_eval_score_for_qc(qc_path):
 
                 res *= 1 - float(specific_error)
 
-    elif "oqc" in qc_path:
+    elif "oqc" in device:
         for instruction, qargs, cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
@@ -294,7 +294,7 @@ def calc_eval_score_for_qc(qc_path):
                         specific_fidelity = oqc_lucy_calibration["fid_2Q"][tmp]
 
                 res *= specific_fidelity
-    elif "rigetti" in qc_path:
+    elif "rigetti" in device:
         mapping = get_rigetti_qubit_dict()
         for instruction, qargs, cargs in qc.data:
             gate_type = instruction.name
@@ -340,7 +340,7 @@ def calc_eval_score_for_qc(qc_path):
 
                 res *= specific_fidelity
 
-    elif "ionq" in qc_path:
+    elif "ionq" in device:
         for instruction, qargs, cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
@@ -357,7 +357,7 @@ def calc_eval_score_for_qc(qc_path):
     else:
         print("Error: No suitable backend found!")
 
-    print("Eval score for :", qc_path, " is ", res)
+    # print("Eval score for :", qc_path, " is ", res)
     return res
 
 

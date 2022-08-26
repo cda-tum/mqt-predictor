@@ -57,6 +57,7 @@ class Predictor:
                         target_filename = (
                             filename.split(".qasm")[0] + "_" + str(comp_path_id)
                         )
+                        comp_path_id += 1
                         if max_qubits >= qc.num_qubits:
                             tmp = Predictor.compilation_watcher(
                                 qiskit_helper.get_mapped_level,
@@ -74,16 +75,15 @@ class Predictor:
                                 timeout,
                             )
                             results.append(tmp)
-                            comp_path_id += 1
                             if not tmp:
                                 continue
 
-                for device_name, max_qubits in devices:
-                    if max_qubits >= qc.num_qubits:
-                        for lineplacement in (False, True):
-                            target_filename = (
-                                filename.split(".qasm")[0] + "_" + str(comp_path_id)
-                            )
+                    for lineplacement in (False, True):
+                        target_filename = (
+                            filename.split(".qasm")[0] + "_" + str(comp_path_id)
+                        )
+                        comp_path_id += 1
+                        if max_qubits >= qc.num_qubits:
                             tmp = Predictor.compilation_watcher(
                                 tket_helper.get_mapped_level,
                                 [
@@ -101,7 +101,6 @@ class Predictor:
                             )
 
                             results.append(tmp)
-                            comp_path_id += 1
                             if not tmp:
                                 continue
 
@@ -166,7 +165,7 @@ class Predictor:
         #    Predictor.compile_all_circuits_for_qc(filename, source_path, target_path)
 
     def generate_trainingdata_from_qasm_files(
-        folder_path: str = "./qasm_files", compiled_path: str = "qasm_compiled/"
+        source_path: str = "./qasm_files", target_path: str = "qasm_compiled/"
     ):
         """Method to create training data from pre-process data. All .qasm files from
         the folder_path used to find suitable pre-processed data in compiled_path."""
@@ -182,43 +181,40 @@ class Predictor:
         name_list = []
         scores_list = []
 
-        dictionary = {}
-        # for each circuit in qasm_files
-        for subdir, dirs, files in os.walk(folder_path):
-            for file in natsorted(files):
-                if "qasm" in file:
-                    key = file.split("_")[
-                        0
-                    ]  # The key is the first 16 characters of the file name
-                    group = dictionary.get(key, [])
-                    group.append(file)
-                    dictionary[key] = group
+        for file in os.listdir(source_path):
+            if "qasm" in file:
 
-        print(dictionary.keys())
-        for alg_class in dictionary:
-            for benchmark in dictionary[alg_class]:
-                print("Find: ", benchmark)
+                print("Find: ", file)
                 scores = []
-                for _ in range(19):
+                for _ in range(30):
                     scores.append([])
                 # iterate over all respective circuits in
-                all_relevant_files = glob.glob(
-                    compiled_path + benchmark.split(".")[0] + "*"
-                )
+                print(file.split(".")[0], target_path + file.split(".")[0] + "*")
+                all_relevant_files = glob.glob(target_path + file.split(".")[0] + "*")
+                print(all_relevant_files)
 
                 for filename in all_relevant_files:
-                    if (
-                        benchmark.split(".")[0] + "_"
-                    ) in filename and filename.endswith(".qasm"):
-                        # print("Found: ", filename)
-                        # execute function call calc_eval_score_for_qc_and_backend
-                        score = utils.calc_eval_score_for_qc(filename)
+                    if (file.split(".")[0] + "_") in filename and filename.endswith(
+                        ".qasm"
+                    ):
+
                         comp_path_index = int(filename.split("_")[-1].split(".")[0])
-                        # print("Comp path index: ", comp_path_index, "\n")
+                        if comp_path_index < 6:
+                            device = "ibm_washington"
+                        elif comp_path_index < 12:
+                            device = "ibm_montreal"
+                        elif comp_path_index < 18:
+                            device = "rigetti_aspen_m1"
+                        elif comp_path_index < 24:
+                            device = "ionq11"
+                        elif comp_path_index < 30:
+                            device = "oqc_lucy"
+
+                        score = utils.calc_eval_score_for_qc(filename, device)
                         scores[comp_path_index] = score
 
                 num_not_empty_entries = 0
-                for i in range(19):
+                for i in range(30):
                     if not scores[i]:
                         scores[i] = utils.get_width_penalty()
                     else:
@@ -228,11 +224,11 @@ class Predictor:
                     break
 
                 feature_vec = utils.create_feature_vector(
-                    os.path.join(folder_path, benchmark)
+                    os.path.join(source_path, file)
                 )
 
                 training_data.append((list(feature_vec.values()), np.argmax(scores)))
-                name_list.append(benchmark.split(".")[0])
+                name_list.append(file.split(".")[0])
                 scores_list.append(scores)
 
         return (training_data, name_list, scores_list)
@@ -521,7 +517,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    Predictor.save_all_compilation_path_results(
-        source_path="./comp_test_source", target_path="./comp_test", timeout=5
+    # Predictor.save_all_compilation_path_results(
+    #    source_path="./comp_test_source", target_path="./comp_test", timeout=5
+    # )
+    res = Predictor.generate_trainingdata_from_qasm_files(
+        source_path="./comp_test_source", target_path="./comp_test/"
     )
+    print(res)
     # Predictor.generate_trainingdata_from_qasm_files(folder_path="gentest/")
