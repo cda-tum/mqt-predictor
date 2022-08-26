@@ -12,7 +12,7 @@ def test_train_decision_tree_classifier(mock_show):
         name_list,
         scores_list,
     ) = Predictor.generate_trainingdata_from_qasm_files(
-        folder_path="./test_source/", compiled_path="./test_compiled_target/"
+        source_path="./comp_test_source", target_path="./comp_test/"
     )
     X, y = zip(*training_data)
     res = Predictor.train_decision_tree_classifier(X, y, name_list, scores_list)
@@ -35,11 +35,15 @@ def test_predict(mock_show):
     assert prediction >= 0 and prediction < 19
 
 
-@pytest.mark.parametrize("comp_path", [i for i in range(19)])
+@pytest.mark.parametrize("comp_path", [i for i in range(30)])
 def test_compilation_paths(comp_path):
     qc_qasm = benchmark_generator.get_one_benchmark("dj", 1, 2).qasm()
-    qc = benchmark_generator.get_one_benchmark("dj", 1, 2)
     res = Predictor.compile_predicted_compilation_path(qc_qasm, comp_path)
-    assert not res is None
-    res = Predictor.compile_predicted_compilation_path(qc_qasm, 20)
-    assert res is None
+    assert res
+    qc = benchmark_generator.get_one_benchmark("dj", 1, 2)
+    tmp_filename = "test.qasm"
+    qc.qasm(filename=tmp_filename)
+    res = Predictor.compile_predicted_compilation_path(tmp_filename, comp_path)
+    assert res
+    if os.path.isfile(tmp_filename):
+        os.remove(tmp_filename)

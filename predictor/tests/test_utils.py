@@ -1,121 +1,57 @@
 from predictor.src import utils
-from predictor.src import pytket_plugin, qiskit_plugin
-
-import pytest
-
-from mqt.bench import benchmark_generator
-from pytket.extensions.qiskit import qiskit_to_tk
-
-
-def test_get_machines():
-    assert len(utils.get_machines()) == 19
-
-
-def test_get_openqasm_gates():
-    assert len(utils.get_openqasm_gates()) == 42
 
 
 def test_get_width_penalty():
     assert utils.get_width_penalty() < 0
 
 
-def test_get_cmaps():
-    assert utils.get_cmap_oqc_lucy() == [
-        [0, 1],
-        [0, 7],
-        [1, 2],
-        [2, 3],
-        [7, 6],
-        [6, 5],
-        [4, 3],
-        [4, 5],
-    ]
-    assert not utils.get_cmap_rigetti_m1() is None
+def test_get_index_to_comppath_LUT():
+    expected = {
+        0: ("ibm", "ibm_washington", "qiskit", 0),
+        1: ("ibm", "ibm_washington", "qiskit", 1),
+        2: ("ibm", "ibm_washington", "qiskit", 2),
+        3: ("ibm", "ibm_washington", "qiskit", 3),
+        4: ("ibm", "ibm_washington", "tket", False),
+        5: ("ibm", "ibm_washington", "tket", True),
+        6: ("ibm", "ibm_montreal", "qiskit", 0),
+        7: ("ibm", "ibm_montreal", "qiskit", 1),
+        8: ("ibm", "ibm_montreal", "qiskit", 2),
+        9: ("ibm", "ibm_montreal", "qiskit", 3),
+        10: ("ibm", "ibm_montreal", "tket", False),
+        11: ("ibm", "ibm_montreal", "tket", True),
+        12: ("rigetti", "rigetti_aspen_m1", "qiskit", 0),
+        13: ("rigetti", "rigetti_aspen_m1", "qiskit", 1),
+        14: ("rigetti", "rigetti_aspen_m1", "qiskit", 2),
+        15: ("rigetti", "rigetti_aspen_m1", "qiskit", 3),
+        16: ("rigetti", "rigetti_aspen_m1", "tket", False),
+        17: ("rigetti", "rigetti_aspen_m1", "tket", True),
+        18: ("ionq", "ionq11", "qiskit", 0),
+        19: ("ionq", "ionq11", "qiskit", 1),
+        20: ("ionq", "ionq11", "qiskit", 2),
+        21: ("ionq", "ionq11", "qiskit", 3),
+        22: ("ionq", "ionq11", "tket", False),
+        23: ("ionq", "ionq11", "tket", True),
+        24: ("oqc", "oqc_lucy", "qiskit", 0),
+        25: ("oqc", "oqc_lucy", "qiskit", 1),
+        26: ("oqc", "oqc_lucy", "qiskit", 2),
+        27: ("oqc", "oqc_lucy", "qiskit", 3),
+        28: ("oqc", "oqc_lucy", "tket", False),
+        29: ("oqc", "oqc_lucy", "tket", True),
+    }
+    assert utils.get_index_to_comppath_LUT() == expected
 
 
-def test_get_openqasm_gates():
-    assert utils.get_openqasm_gates() == [
-        "u3",
-        "u2",
-        "u1",
-        "cx",
-        "id",
-        "u0",
-        "u",
-        "p",
-        "x",
-        "y",
-        "z",
-        "h",
-        "s",
-        "sdg",
-        "t",
-        "tdg",
-        "rx",
-        "ry",
-        "rz",
-        "sx",
-        "sxdg",
-        "cz",
-        "cy",
-        "swap",
-        "ch",
-        "ccx",
-        "cswap",
-        "crx",
-        "cry",
-        "crz",
-        "cu1",
-        "cp",
-        "cu3",
-        "csx",
-        "cu",
-        "rxx",
-        "rzz",
-        "rccx",
-        "rc3x",
-        "c3x",
-        "c3sqrtx",
-        "c4x",
-    ]
-
-
-def test_get_machines():
-    assert utils.get_machines() == [
-        "qiskit_ionq_opt2",
-        "qiskit_ibm_washington_opt2",
-        "qiskit_ibm_montreal_opt2",
-        "qiskit_rigetti_opt2",
-        "qiskit_oqc_opt2",
-        "qiskit_ionq_opt3",
-        "qiskit_ibm_washington_opt3",
-        "qiskit_ibm_montreal_opt3",
-        "qiskit_rigetti_opt3",
-        "qiskit_oqc_opt3",
-        "tket_ionq",
-        "tket_ibm_washington_line",
-        "tket_ibm_montreal_line",
-        "tket_rigetti_line",
-        "tket_oqc_line",
-        "tket_ibm_washington_graph",
-        "tket_ibm_montreal_graph",
-        "tket_rigetti_graph",
-        "tket_oqc_graph",
-    ]
-    assert len(utils.get_machines()) == 19
-
-
-def test_qubit_counts():
-
-    qc = benchmark_generator.get_one_benchmark("dj", 1, 5)
-    num_qubits = qc.num_qubits
-
-    qiskit_gates = qiskit_plugin.save_qiskit_compiled_circuits(
-        qc, 2, 10, "dj_indep_5.qasm"
-    )
-    assert qiskit_gates
-    qc_tket = qiskit_to_tk(qc)
-    tket_gates = pytket_plugin.save_tket_compiled_circuits(
-        qc_tket, True, 10, "dj_indep_5.qasm"
-    )
-    assert tket_gates
+def test_get_compilation_pipeline():
+    expected = {
+        "devices": {
+            "ibm": [("ibm_washington", 127), ("ibm_montreal", 27)],
+            "rigetti": [("rigetti_aspen_m1", 80)],
+            "ionq": [("ionq11", 11)],
+            "oqc": [("oqc_lucy", 8)],
+        },
+        "compiler": {
+            "qiskit": {"optimization_level": [0, 1, 2, 3]},
+            "tket": {"lineplacement": [False, True]},
+        },
+    }
+    assert utils.get_compilation_pipeline() == expected
