@@ -27,12 +27,12 @@ from mqt.bench.utils import tket_helper, qiskit_helper
 
 class Predictor:
     _clf = None
-    _timeout = 0
 
     def compile_all_circuits_for_qc(
         filename: str,
         source_path: str = "./source",
         target_directory: str = "./qasm_files",
+        timeout: int = 10,
     ):
         print("compile_all_circuits_for_qc:", filename)
 
@@ -58,19 +58,25 @@ class Predictor:
                             filename.split(".qasm")[0] + "_" + str(comp_path_id)
                         )
                         if max_qubits >= qc.num_qubits:
-                            tmp = qiskit_helper.get_mapped_level(
-                                qc,
-                                gate_set_name,
-                                qc.num_qubits,
-                                device_name,
-                                opt_level,
-                                False,
-                                False,
-                                target_directory,
-                                target_filename,
+                            tmp = Predictor.compilation_watcher(
+                                qiskit_helper.get_mapped_level,
+                                [
+                                    qc,
+                                    gate_set_name,
+                                    qc.num_qubits,
+                                    device_name,
+                                    opt_level,
+                                    False,
+                                    False,
+                                    target_directory,
+                                    target_filename,
+                                ],
+                                timeout,
                             )
                             results.append(tmp)
                             comp_path_id += 1
+                            if not tmp:
+                                continue
 
                 for device_name, max_qubits in devices:
                     if max_qubits >= qc.num_qubits:
@@ -78,20 +84,26 @@ class Predictor:
                             target_filename = (
                                 filename.split(".qasm")[0] + "_" + str(comp_path_id)
                             )
-                            tmp = tket_helper.get_mapped_level(
-                                qc,
-                                gate_set_name,
-                                qc.num_qubits,
-                                device_name,
-                                lineplacement,
-                                False,
-                                False,
-                                target_directory,
-                                target_filename,
+                            tmp = Predictor.compilation_watcher(
+                                tket_helper.get_mapped_level,
+                                [
+                                    qc,
+                                    gate_set_name,
+                                    qc.num_qubits,
+                                    device_name,
+                                    lineplacement,
+                                    False,
+                                    False,
+                                    target_directory,
+                                    target_filename,
+                                ],
+                                timeout,
                             )
 
                             results.append(tmp)
                             comp_path_id += 1
+                            if not tmp:
+                                continue
 
             if all(x is False for x in results):
                 print("No compilation succeed for this quantum circuit.")
@@ -102,7 +114,7 @@ class Predictor:
             print("fail: ", e)
             return False
 
-    def compilation_watcher(func, args):
+    def compilation_watcher(func, args, timeout):
         class TimeoutException(Exception):  # Custom exception class
             pass
 
@@ -112,9 +124,8 @@ class Predictor:
         # Change the behavior of SIGALRM
         signal.signal(signal.SIGALRM, timeout_handler)
 
-        signal.alarm(1)
+        signal.alarm(timeout)
         try:
-            print("Predictor._timeout:", Predictor._timeout)
             res = func(*args)
         except TimeoutException:
             print("Calculation/Generation exceeded timeout limit for ", func, args[1:])
@@ -124,7 +135,7 @@ class Predictor:
             return False
         else:
             # Reset the alarm
-            signal.alarm(Predictor._timeout)
+            signal.alarm(0)
 
         return res
 
@@ -136,7 +147,9 @@ class Predictor:
         """Method to create pre-processed data to accelerate the training data generation afterwards. All .qasm files from
         the folder path are considered."""
 
-        Predictor._timeout = timeout
+        global TIMEOUT
+        TIMEOUT = timeout
+
         source_circuits_list = []
 
         for file in os.listdir(source_path):
@@ -144,9 +157,8 @@ class Predictor:
                 source_circuits_list.append(file)
 
         Parallel(n_jobs=-1, verbose=100)(
-            delayed(Predictor.compilation_watcher)(
-                Predictor.compile_all_circuits_for_qc,
-                [filename, source_path, target_path],
+            delayed(Predictor.compile_all_circuits_for_qc)(
+                filename, source_path, target_path, timeout
             )
             for filename in source_circuits_list
         )
