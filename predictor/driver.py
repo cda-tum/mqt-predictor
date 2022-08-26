@@ -41,64 +41,61 @@ class Predictor:
         if not qc:
             return False
 
-        compilation_paths = [
-            ("ibm", [("ibm_washington", 127), ("ibm_montreal", 27)]),
-            ("rigetti", [("rigetti_aspen_m1", 80)]),
-            ("ionq", [("ionq11", 11)]),
-            ("oqc", [("oqc_lucy", 8)]),
-        ]
+        compilation_pipeline = utils.get_compilation_pipeline()
 
         results = []
         comp_path_id = 0
         try:
-            for gate_set_name, devices in compilation_paths:
+            for gate_set_name, devices in compilation_pipeline.get("devices").items():
                 for device_name, max_qubits in devices:
-                    for opt_level in range(4):
-                        target_filename = (
-                            filename.split(".qasm")[0] + "_" + str(comp_path_id)
-                        )
-                        comp_path_id += 1
-                        if max_qubits >= qc.num_qubits:
-                            tmp = Predictor.compilation_watcher(
-                                qiskit_helper.get_mapped_level,
-                                [
-                                    qc,
-                                    gate_set_name,
-                                    qc.num_qubits,
-                                    device_name,
-                                    opt_level,
-                                    False,
-                                    False,
-                                    target_directory,
-                                    target_filename,
-                                ],
-                                timeout,
-                            )
-                            results.append(tmp)
-                            if not tmp:
-                                continue
-
-                    for lineplacement in (False, True):
-                        target_filename = (
-                            filename.split(".qasm")[0] + "_" + str(comp_path_id)
-                        )
-                        comp_path_id += 1
-                        if max_qubits >= qc.num_qubits:
-                            tmp = Predictor.compilation_watcher(
-                                tket_helper.get_mapped_level,
-                                [
-                                    qc,
-                                    gate_set_name,
-                                    qc.num_qubits,
-                                    device_name,
-                                    lineplacement,
-                                    False,
-                                    False,
-                                    target_directory,
-                                    target_filename,
-                                ],
-                                timeout,
-                            )
+                    for compiler, settings in compilation_pipeline["compiler"].items():
+                        if "qiskit" in compiler:
+                            for opt_level in settings["optimization_level"]:
+                                target_filename = (
+                                    filename.split(".qasm")[0] + "_" + str(comp_path_id)
+                                )
+                                comp_path_id += 1
+                                if max_qubits >= qc.num_qubits:
+                                    tmp = utils.timeout_watcher(
+                                        qiskit_helper.get_mapped_level,
+                                        [
+                                            qc,
+                                            gate_set_name,
+                                            qc.num_qubits,
+                                            device_name,
+                                            opt_level,
+                                            False,
+                                            False,
+                                            target_directory,
+                                            target_filename,
+                                        ],
+                                        timeout,
+                                    )
+                                    results.append(tmp)
+                                    if not tmp:
+                                        continue
+                        elif "tket" in compiler:
+                            for lineplacement in settings["lineplacement"]:
+                                target_filename = (
+                                    filename.split(".qasm")[0] + "_" + str(comp_path_id)
+                                )
+                                comp_path_id += 1
+                                if max_qubits >= qc.num_qubits:
+                                    tmp = utils.timeout_watcher(
+                                        tket_helper.get_mapped_level,
+                                        [
+                                            qc,
+                                            gate_set_name,
+                                            qc.num_qubits,
+                                            device_name,
+                                            lineplacement,
+                                            False,
+                                            False,
+                                            target_directory,
+                                            target_filename,
+                                        ],
+                                        timeout,
+                                    )
 
                             results.append(tmp)
                             if not tmp:
@@ -112,31 +109,6 @@ class Predictor:
         except Exception as e:
             print("fail: ", e)
             return False
-
-    def compilation_watcher(func, args, timeout):
-        class TimeoutException(Exception):  # Custom exception class
-            pass
-
-        def timeout_handler(signum, frame):  # Custom signal handler
-            raise TimeoutException
-
-        # Change the behavior of SIGALRM
-        signal.signal(signal.SIGALRM, timeout_handler)
-
-        signal.alarm(timeout)
-        try:
-            res = func(*args)
-        except TimeoutException:
-            print("Calculation/Generation exceeded timeout limit for ", func, args[1:])
-            return False
-        except Exception as e:
-            print("Something else went wrong: ", e)
-            return False
-        else:
-            # Reset the alarm
-            signal.alarm(0)
-
-        return res
 
     def save_all_compilation_path_results(
         source_path: str = "./qasm_files",
@@ -181,10 +153,11 @@ class Predictor:
         name_list = []
         scores_list = []
 
+        LUT = utils.get_index_to_comppath_LUT()
         for file in os.listdir(source_path):
             if "qasm" in file:
                 scores = []
-                for _ in range(30):
+                for _ in range(len(LUT)):
                     scores.append([])
 
                 all_relevant_files = glob.glob(target_path + file.split(".")[0] + "*")
@@ -195,16 +168,7 @@ class Predictor:
                     ):
 
                         comp_path_index = int(filename.split("_")[-1].split(".")[0])
-                        if comp_path_index < 6:
-                            device = "ibm_washington"
-                        elif comp_path_index < 12:
-                            device = "ibm_montreal"
-                        elif comp_path_index < 18:
-                            device = "rigetti_aspen_m1"
-                        elif comp_path_index < 24:
-                            device = "ionq11"
-                        elif comp_path_index < 30:
-                            device = "oqc_lucy"
+                        device = LUT.get(comp_path_index)[0]
 
                         score = utils.calc_eval_score_for_qc(filename, device)
                         scores[comp_path_index] = score
@@ -521,5 +485,3 @@ if __name__ == "__main__":
     res = Predictor.generate_trainingdata_from_qasm_files(
         source_path="./comp_test_source", target_path="./comp_test/"
     )
-    print(res)
-    # Predictor.generate_trainingdata_from_qasm_files(folder_path="gentest/")

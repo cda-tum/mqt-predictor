@@ -163,30 +163,46 @@ def get_openqasm_gates():
     return gate_list
 
 
-# TODO: Adjust
-def get_machines():
-    machines = [
-        "qiskit_ionq_opt2",
-        "qiskit_ibm_washington_opt2",
-        "qiskit_ibm_montreal_opt2",
-        "qiskit_rigetti_opt2",
-        "qiskit_oqc_opt2",
-        "qiskit_ionq_opt3",
-        "qiskit_ibm_washington_opt3",
-        "qiskit_ibm_montreal_opt3",
-        "qiskit_rigetti_opt3",
-        "qiskit_oqc_opt3",
-        "tket_ionq",
-        "tket_ibm_washington_line",
-        "tket_ibm_montreal_line",
-        "tket_rigetti_line",
-        "tket_oqc_line",
-        "tket_ibm_washington_graph",
-        "tket_ibm_montreal_graph",
-        "tket_rigetti_graph",
-        "tket_oqc_graph",
-    ]
-    return machines
+def get_compilation_pipeline():
+    compilation_pipeline = {
+        "devices": {
+            "ibm": [("ibm_washington", 127), ("ibm_montreal", 27)],
+            "rigetti": [("rigetti_aspen_m1", 80)],
+            "ionq": [("ionq11", 11)],
+            "oqc": [("oqc_lucy", 8)],
+        },
+        "compiler": {
+            "qiskit": {"optimization_level": [0, 1, 2, 3]},
+            "tket": {"lineplacement": [False, True]},
+        },
+    }
+    return compilation_pipeline
+
+
+def get_index_to_comppath_LUT():
+    compilation_pipeline = get_compilation_pipeline()
+    index = 0
+    index_to_comppath_LUT = {}
+    for gate_set_name, devices in compilation_pipeline.get("devices").items():
+        for device_name, max_qubits in devices:
+            for compiler, settings in compilation_pipeline["compiler"].items():
+                if "qiskit" in compiler:
+                    for opt_level in settings["optimization_level"]:
+                        index_to_comppath_LUT[index] = (
+                            device_name,
+                            compiler,
+                            opt_level,
+                        )
+                        index += 1
+                elif "tket" in compiler:
+                    for lineplacement in settings["lineplacement"]:
+                        index_to_comppath_LUT[index] = (
+                            device_name,
+                            compiler,
+                            lineplacement,
+                        )
+                        index += 1
+    return index_to_comppath_LUT
 
 
 def dict_to_featurevector(gate_dict):
@@ -218,10 +234,10 @@ def timeout_watcher(func, args, timeout):
         res = func(*args)
     except TimeoutException:
         print("Calculation/Generation exceeded timeout limit for ", func, args[1:])
-        return None
+        return False
     except Exception as e:
         print("Something else went wrong: ", e)
-        return None
+        return False
     else:
         # Reset the alarm
         signal.alarm(0)
@@ -270,7 +286,7 @@ def calc_eval_score_for_qc(qc_path: str, device: str):
 
                 res *= 1 - float(specific_error)
 
-    elif "oqc" in device:
+    elif "oqc_lucy" in device:
         for instruction, qargs, cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
@@ -295,7 +311,7 @@ def calc_eval_score_for_qc(qc_path: str, device: str):
                         specific_fidelity = oqc_lucy_calibration["fid_2Q"][tmp]
 
                 res *= specific_fidelity
-    elif "rigetti" in device:
+    elif "rigetti_aspen_m1" in device:
         mapping = get_rigetti_qubit_dict()
         for instruction, qargs, cargs in qc.data:
             gate_type = instruction.name
@@ -341,7 +357,7 @@ def calc_eval_score_for_qc(qc_path: str, device: str):
 
                 res *= specific_fidelity
 
-    elif "ionq" in device:
+    elif "ionq11" in device:
         for instruction, qargs, cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
