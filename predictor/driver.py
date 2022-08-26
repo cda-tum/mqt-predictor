@@ -133,8 +133,6 @@ class Predictor:
             )
             for filename in source_circuits_list
         )
-        # for filename in source_circuits_list:
-        #    Predictor.compile_all_circuits_for_qc(filename, source_path, target_path)
 
     def generate_trainingdata_from_qasm_files(
         source_path: str = "./qasm_files", target_path: str = "qasm_compiled/"
@@ -168,7 +166,7 @@ class Predictor:
                     ):
 
                         comp_path_index = int(filename.split("_")[-1].split(".")[0])
-                        device = LUT.get(comp_path_index)[0]
+                        device = LUT.get(comp_path_index)[1]
 
                         score = utils.calc_eval_score_for_qc(filename, device)
                         scores[comp_path_index] = score
@@ -252,12 +250,12 @@ class Predictor:
             res.append(str(i) + "_max_interactions")
 
         res = [res[i] for i in non_zero_indices]
-        machines = utils.get_machines()
+        machines = utils.get_index_to_comppath_LUT()
         fig = plt.figure(figsize=(17, 6))
         plot_tree(
             Predictor._clf.best_estimator_,
             feature_names=res,
-            class_names=[machines[i] for i in list(Predictor._clf.classes_)],
+            class_names=[machines[i][1] for i in list(Predictor._clf.classes_)],
             filled=True,
             impurity=True,
             rounded=True,
@@ -297,7 +295,7 @@ class Predictor:
 
         plt.figure(figsize=(10, 5))
 
-        num_of_comp_paths = len(utils.get_machines())
+        num_of_comp_paths = len(utils.get_index_to_comppath_LUT())
         bars = plt.bar(
             [i for i in range(0, num_of_comp_paths, 1)],
             height=[
@@ -311,17 +309,6 @@ class Predictor:
             fontsize=18,
         )
         plt.yticks(fontsize=18)
-
-        # sum = 0
-        # for bar in bars:
-        #     yval = bar.get_height()
-        #     rounded_val = str(np.round(yval * 100, 1)) + "%"
-        #     if np.round(yval * 100) > 0.0:
-        #         sum += np.round(yval * 100)
-        #         plt.text(bar.get_x()+0.1, yval + 0.005, rounded_val, fontsize=18)
-
-        # plt.tick_params(left=True, labelleft=True)
-        # plt.box(False)
 
         plt.xlabel(
             "Best prediction                                                        Worst prediction",
@@ -413,59 +400,48 @@ class Predictor:
         """Returns the compiled quantum circuit as a qasm string when the original qasm circuit is provided as either
         a string or a file path and the prediction index is given."""
 
-        if prediction < 0 or prediction > len(utils.get_machines()):
-            print("Provided prection is faulty.")
+        LUT = utils.get_index_to_comppath_LUT()
+        if prediction < 0 or prediction >= len(LUT):
+            print("Provided prediction is faulty.")
             return None
-        compilation_path = utils.get_machines()[prediction]
+        compilation_path = LUT.get(prediction)
 
-        if ".qasm" in qasm_str_or_path:
+        if os.path.isfile(qasm_str_or_path):
             print("Reading from .qasm path: ", qasm_str_or_path)
             qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
         elif QuantumCircuit.from_qasm_str(qasm_str_or_path):
             print("Reading from .qasm str")
             qc = QuantumCircuit.from_qasm_str(qasm_str_or_path)
-        qc_tket = qiskit_to_tk(qc)
+        else:
+            print("Neither a qasm file path nor a qasm str has been provided.")
+            return False
 
-        if compilation_path == "qiskit_ionq_opt2":
-            compiled_qc = qiskit_plugin.get_ionq_qc(qc, 2)
-        elif compilation_path == "qiskit_ibm_washington_opt2":
-            compiled_qc = qiskit_plugin.get_ibm_washington_qc(qc, 2)
-        elif compilation_path == "qiskit_ibm_montreal_opt2":
-            compiled_qc = qiskit_plugin.get_ibm_montreal_qc(qc, 2)
-        elif compilation_path == "qiskit_rigetti_opt2":
-            compiled_qc = qiskit_plugin.get_rigetti_qc(qc, 2)
-        elif compilation_path == "qiskit_oqc_opt2":
-            compiled_qc = qiskit_plugin.get_oqc_qc(qc, 2)
-        elif compilation_path == "qiskit_ionq_opt3":
-            compiled_qc = qiskit_plugin.get_ionq_qc(qc, 3)
-        elif compilation_path == "qiskit_ibm_washington_opt3":
-            compiled_qc = qiskit_plugin.get_ibm_washington_qc(qc, 3)
-        elif compilation_path == "qiskit_ibm_montreal_opt3":
-            compiled_qc = qiskit_plugin.get_ibm_montreal_qc(qc, 3)
-        elif compilation_path == "qiskit_rigetti_opt3":
-            compiled_qc = qiskit_plugin.get_rigetti_qc(qc, 3)
-        elif compilation_path == "qiskit_oqc_opt3":
-            compiled_qc = qiskit_plugin.get_oqc_qc(qc, 3)
-        elif compilation_path == "tket_ionq":
-            compiled_qc = pytket_plugin.get_ionq_qc(qc_tket)
-        elif compilation_path == "tket_ibm_washington_line":
-            compiled_qc = pytket_plugin.get_ibm_washington_qc(qc_tket, True)
-        elif compilation_path == "tket_ibm_montreal_line":
-            compiled_qc = pytket_plugin.get_ibm_montreal_qc(qc_tket, True)
-        elif compilation_path == "tket_rigetti_line":
-            compiled_qc = pytket_plugin.get_rigetti_qc(qc_tket, True)
-        elif compilation_path == "tket_oqc_line":
-            compiled_qc = pytket_plugin.get_oqc_qc(qc_tket, True)
-        elif compilation_path == "tket_ibm_washington_graph":
-            compiled_qc = pytket_plugin.get_ibm_washington_qc(qc_tket, False)
-        elif compilation_path == "tket_ibm_montreal_graph":
-            compiled_qc = pytket_plugin.get_ibm_montreal_qc(qc_tket, False)
-        elif compilation_path == "tket_rigetti_graph":
-            compiled_qc = pytket_plugin.get_rigetti_qc(qc_tket, False)
-        elif compilation_path == "tket_oqc_graph":
-            compiled_qc = pytket_plugin.get_oqc_qc(qc_tket, False)
+        prediction_information = LUT.get(prediction)
+        gate_set_name = prediction_information[0]
+        device = prediction_information[1]
+        compiler = prediction_information[2]
+        compiler_settings = prediction_information[3]
 
-        return compiled_qc
+        if compiler == "qiskit":
+            compiled_qc = qiskit_helper.get_mapped_level(
+                qc, gate_set_name, qc.num_qubits, device, compiler_settings, False, True
+            )
+            return compiled_qc
+        elif compiler == "tket":
+            compiled_qc = (tket_helper.get_mapped_level,)
+            (
+                qc,
+                gate_set_name,
+                qc.num_qubits,
+                device,
+                compiler_settings,
+                False,
+                True,
+            )
+            return compiled_qc
+        else:
+            print("Error: Compiler not found.")
+            return False
 
 
 if __name__ == "__main__":

@@ -189,6 +189,7 @@ def get_index_to_comppath_LUT():
                 if "qiskit" in compiler:
                     for opt_level in settings["optimization_level"]:
                         index_to_comppath_LUT[index] = (
+                            gate_set_name,
                             device_name,
                             compiler,
                             opt_level,
@@ -197,6 +198,7 @@ def get_index_to_comppath_LUT():
                 elif "tket" in compiler:
                     for lineplacement in settings["lineplacement"]:
                         index_to_comppath_LUT[index] = (
+                            gate_set_name,
                             device_name,
                             compiler,
                             lineplacement,
