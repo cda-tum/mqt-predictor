@@ -632,3 +632,53 @@ def calc_connectivity_for_qc(qc: QuantumCircuit):
         connectivity[i] = len(set(connectivity[i]))
     connectivity.sort(reverse=True)
     return connectivity[:5]
+
+
+def postprocess_ocr_qasm_files(directory: str):
+    for filename in os.listdir(directory):
+        print(filename)
+        if "qasm" in filename:
+            comp_path_index = int(filename.split("_")[-1].split(".")[0])
+            print("comp_path_index: ", comp_path_index)
+            f = os.path.join(directory, filename)
+            # checking if it is a file
+            if comp_path_index >= 24 and comp_path_index <= 27:
+                with open(f, "r") as f:
+                    lines = f.readlines()
+                new_name = os.path.join(directory, filename)
+                with open(new_name, "w") as f:
+                    for line in lines:
+                        if not (
+                            "gate rzx" in line.strip("\n")
+                            or "gate ecr" in line.strip("\n")
+                        ):
+                            f.write(line)
+                        if "gate ecr" in line.strip("\n"):
+                            f.write(
+                                "gate rzx(param0) q0,q1 { h q1; cx q0,q1; rz(param0) q1; cx q0,q1; h q1; }\n"
+                            )
+                            f.write(
+                                "gate ecr q0,q1 { rzx(pi/4) q0,q1; x q0; rzx(-pi/4) q0,q1; }\n"
+                            )
+
+                qc = QuantumCircuit.from_qasm_file(new_name)
+                print("New qasm file for: ", new_name)
+
+            elif comp_path_index >= 28 and comp_path_index <= 29:
+                with open(f, "r") as f:
+                    lines = f.readlines()
+                new_name = os.path.join(directory, filename)
+                with open(new_name, "w") as f:
+                    count = 0
+                    for line in lines:
+                        f.write(line)
+                        count += 1
+                        if count == 9:
+                            f.write(
+                                "gate rzx(param0) q0,q1 { h q1; cx q0,q1; rz(param0) q1; cx q0,q1; h q1; }\n"
+                            )
+                            f.write(
+                                "gate ecr q0,q1 { rzx(pi/4) q0,q1; x q0; rzx(-pi/4) q0,q1; }\n"
+                            )
+                qc = QuantumCircuit.from_qasm_file(new_name)
+                print("New qasm file for: ", new_name)
