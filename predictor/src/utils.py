@@ -509,10 +509,8 @@ def calc_connectivity_for_qc(qc: QuantumCircuit):
 
 def postprocess_ocr_qasm_files(directory: str):
     for filename in os.listdir(directory):
-        print(filename)
         if "qasm" in filename:
             comp_path_index = int(filename.split("_")[-1].split(".")[0])
-            print("comp_path_index: ", comp_path_index)
             f = os.path.join(directory, filename)
             # checking if it is a file
             if comp_path_index >= 24 and comp_path_index <= 27:
@@ -555,3 +553,30 @@ def postprocess_ocr_qasm_files(directory: str):
                             )
                 qc = QuantumCircuit.from_qasm_file(new_name)
                 print("New qasm file for: ", new_name)
+
+
+def save_training_data(res):
+    training_data, names_list, scores_list = res
+
+    data = np.asarray(training_data)
+    np.save("training_data.npy", data)
+    data = np.asarray(names_list)
+    np.save("names_list.npy", data)
+    data = np.asarray(scores_list)
+    np.save("scores_list.npy", data)
+
+
+def load_trainig_data():
+    training_data = np.load("training_data.npy", allow_pickle=True)
+
+    names_list = list(np.load("names_list.npy", allow_pickle=True))
+
+    scores_list = list(np.load("scores_list.npy", allow_pickle=True))
+    X, y = zip(*training_data)
+    X = list(X)
+    y = list(y)
+    for i in range(len(X)):
+        X[i] = list(X[i])
+        scores_list[i] = list(scores_list[i])
+
+    return training_data, names_list, scores_list

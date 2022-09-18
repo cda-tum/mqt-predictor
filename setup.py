@@ -24,7 +24,7 @@ setup(
         "qiskit~=0.35",
         "pytket~=1.1",
         "numpy>=1.21.5,<1.24.0",
-        "mqt.bench~=0.1.0rc1",
+        "mqt.bench~=0.1.3",
         "pytket-qiskit>=0.24,<0.28",
         "matplotlib~=3.5.1",
         "scikit-learn>=1.0.2,<1.2.0",

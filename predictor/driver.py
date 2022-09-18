@@ -154,6 +154,7 @@ class Predictor:
         LUT = utils.get_index_to_comppath_LUT()
         for file in os.listdir(source_path):
             if "qasm" in file:
+                print("Checking ", file)
                 scores = []
                 for _ in range(len(LUT)):
                     scores.append([])
@@ -179,7 +180,7 @@ class Predictor:
                         num_not_empty_entries += 1
 
                 if num_not_empty_entries == 0:
-                    break
+                    continue
 
                 feature_vec = utils.create_feature_vector(
                     os.path.join(source_path, file)
@@ -454,10 +455,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     Predictor.save_all_compilation_path_results(
-        source_path="./comp_test_source", target_path="./comp_test", timeout=5
+        source_path="./comp_test_source", target_path="./comp_test", timeout=60
     )
-    utils.postprocess_ocr_qasm_files(directory="./comp_test")
+    # utils.postprocess_ocr_qasm_files(directory="./comp_test")
 
     res = Predictor.generate_trainingdata_from_qasm_files(
         source_path="./comp_test_source", target_path="./comp_test/"
     )
+    utils.save_training_data(res)
