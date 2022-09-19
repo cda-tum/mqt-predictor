@@ -14,9 +14,7 @@ def test_train_decision_tree_classifier(mock_show):
         training_data,
         name_list,
         scores_list,
-    ) = Predictor.generate_trainingdata_from_qasm_files(
-        source_path="./comp_test_source", target_path="./comp_test/"
-    )
+    ) = utils.load_trainig_data()
     X, y = zip(*training_data)
     res = Predictor.train_decision_tree_classifier(X, y, name_list, scores_list)
     assert not res is None
