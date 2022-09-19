@@ -454,10 +454,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    Predictor.save_all_compilation_path_results(
-        source_path="./comp_test_source", target_path="./comp_test", timeout=60
-    )
-    # utils.postprocess_ocr_qasm_files(directory="./comp_test")
+    # Predictor.save_all_compilation_path_results(
+    #     source_path="./comp_test_source", target_path="./comp_test", timeout=60
+    # )
+    utils.postprocess_ocr_qasm_files(directory="./comp_test")
 
     res = Predictor.generate_trainingdata_from_qasm_files(
         source_path="./comp_test_source", target_path="./comp_test/"
