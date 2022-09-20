@@ -1,4 +1,4 @@
-from predictor.src import qiskit_plugin, pytket_plugin, utils
+from predictor.src import utils
 
 from qiskit import QuantumCircuit
 from pytket.extensions.qiskit import qiskit_to_tk
@@ -12,6 +12,7 @@ plt.rcParams["font.family"] = "Times New Roman"
 import os
 import glob
 import argparse
+import signal
 
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import precision_recall_fscore_support
@@ -19,72 +20,122 @@ from sklearn.tree import plot_tree
 from sklearn import tree
 
 from natsort import natsorted
+from joblib import Parallel, delayed
+
+from mqt.bench.utils import tket_helper, qiskit_helper
 
 
 class Predictor:
     _clf = None
 
+    def compile_all_circuits_for_qc(
+        filename: str,
+        source_path: str = "./source",
+        target_directory: str = "./qasm_files",
+        timeout: int = 10,
+    ):
+        print("compile_all_circuits_for_qc:", filename)
+
+        qc = QuantumCircuit.from_qasm_file(os.path.join(source_path, filename))
+
+        if not qc:
+            return False
+
+        compilation_pipeline = utils.get_compilation_pipeline()
+
+        results = []
+        comp_path_id = 0
+        try:
+            for gate_set_name, devices in compilation_pipeline.get("devices").items():
+                for device_name, max_qubits in devices:
+                    for compiler, settings in compilation_pipeline["compiler"].items():
+                        if "qiskit" in compiler:
+                            for opt_level in settings["optimization_level"]:
+                                target_filename = (
+                                    filename.split(".qasm")[0] + "_" + str(comp_path_id)
+                                )
+                                comp_path_id += 1
+                                if max_qubits >= qc.num_qubits:
+                                    tmp = utils.timeout_watcher(
+                                        qiskit_helper.get_mapped_level,
+                                        [
+                                            qc,
+                                            gate_set_name,
+                                            qc.num_qubits,
+                                            device_name,
+                                            opt_level,
+                                            False,
+                                            False,
+                                            target_directory,
+                                            target_filename,
+                                        ],
+                                        timeout,
+                                    )
+                                    results.append(tmp)
+                                    if not tmp:
+                                        continue
+                        elif "tket" in compiler:
+                            for lineplacement in settings["lineplacement"]:
+                                target_filename = (
+                                    filename.split(".qasm")[0] + "_" + str(comp_path_id)
+                                )
+                                comp_path_id += 1
+                                if max_qubits >= qc.num_qubits:
+                                    tmp = utils.timeout_watcher(
+                                        tket_helper.get_mapped_level,
+                                        [
+                                            qc,
+                                            gate_set_name,
+                                            qc.num_qubits,
+                                            device_name,
+                                            lineplacement,
+                                            False,
+                                            False,
+                                            target_directory,
+                                            target_filename,
+                                        ],
+                                        timeout,
+                                    )
+
+                            results.append(tmp)
+                            if not tmp:
+                                continue
+
+            if all(x is False for x in results):
+                print("No compilation succeed for this quantum circuit.")
+                return False
+            return True
+
+        except Exception as e:
+            print("fail: ", e)
+            return False
+
     def save_all_compilation_path_results(
-        folder_path: str = "./qasm_files",
+        source_path: str = "./qasm_files",
+        target_path: str = "./qasm_files",
         timeout: int = 10,
     ):
         """Method to create pre-processed data to accelerate the training data generation afterwards. All .qasm files from
         the folder path are considered."""
 
-        dictionary = {}
-        for subdir, dirs, files in os.walk(folder_path):
-            for file in natsorted(files):
-                if "qasm" in file:
-                    key = file.split("_")[
-                        0
-                    ]  # The key is the first 16 characters of the file name
-                    group = dictionary.get(key, [])
-                    group.append(file)
-                    dictionary[key] = group
+        global TIMEOUT
+        TIMEOUT = timeout
 
-        print(dictionary.keys())
-        for alg_class in dictionary:
-            for benchmark in dictionary[alg_class]:
-                filename = os.path.join(folder_path, benchmark)
-                qc = QuantumCircuit.from_qasm_file(filename)
+        source_circuits_list = []
 
-                print(benchmark)
-                if not qc:
-                    continue
-                actual_num_qubits = qc.num_qubits
-                if actual_num_qubits > 127:
-                    break
-                try:
-                    qiskit_opt2 = qiskit_plugin.save_qiskit_compiled_circuits(
-                        qc, 2, timeout=timeout, benchmark_name=benchmark
-                    )
+        for file in os.listdir(source_path):
+            if "qasm" in file:
+                source_circuits_list.append(file)
 
-                    qiskit_opt3 = qiskit_plugin.save_qiskit_compiled_circuits(
-                        qc, 3, timeout=timeout, benchmark_name=benchmark
-                    )
-
-                    qc_tket = qiskit_to_tk(qc)
-
-                    tket_line_True = pytket_plugin.save_tket_compiled_circuits(
-                        qc_tket, True, timeout=timeout, benchmark_name=benchmark
-                    )
-
-                    tket_line_False = pytket_plugin.save_tket_compiled_circuits(
-                        qc_tket, False, timeout=timeout, benchmark_name=benchmark
-                    )
-                    all_results = (
-                        qiskit_opt2 + qiskit_opt3 + tket_line_False + tket_line_True
-                    )
-                    if all(x is None for x in all_results):
-                        break
-
-                except Exception as e:
-                    print("fail: ", e)
-
-        return
+        Parallel(n_jobs=-1, verbose=100)(
+            delayed(Predictor.compile_all_circuits_for_qc)(
+                filename, source_path, target_path, timeout
+            )
+            for filename in source_circuits_list
+        )
 
     def generate_trainingdata_from_qasm_files(
-        folder_path: str = "./qasm_files", compiled_path: str = "qasm_compiled/"
+        source_path: str = "./qasm_files", target_path: str = "qasm_compiled/"
     ):
         """Method to create training data from pre-process data. All .qasm files from
         the folder_path used to find suitable pre-processed data in compiled_path."""
@@ -100,57 +151,43 @@ class Predictor:
         name_list = []
         scores_list = []
 
-        dictionary = {}
-        # for each circuit in qasm_files
-        for subdir, dirs, files in os.walk(folder_path):
-            for file in natsorted(files):
-                if "qasm" in file:
-                    key = file.split("_")[
-                        0
-                    ]  # The key is the first 16 characters of the file name
-                    group = dictionary.get(key, [])
-                    group.append(file)
-                    dictionary[key] = group
-
-        print(dictionary.keys())
-        for alg_class in dictionary:
-            for benchmark in dictionary[alg_class]:
-                print("Find: ", benchmark)
+        LUT = utils.get_index_to_comppath_LUT()
+        for file in os.listdir(source_path):
+            if "qasm" in file:
+                print("Checking ", file)
                 scores = []
-                for _ in range(19):
+                for _ in range(len(LUT)):
                     scores.append([])
-                # iterate over all respective circuits in
-                all_relevant_files = glob.glob(
-                    compiled_path + benchmark.split(".")[0] + "*"
-                )
+
+                all_relevant_files = glob.glob(target_path + file.split(".")[0] + "*")
 
                 for filename in all_relevant_files:
-                    if (
-                        benchmark.split(".")[0] + "_"
-                    ) in filename and filename.endswith(".qasm"):
-                        # print("Found: ", filename)
-                        # execute function call calc_eval_score_for_qc_and_backend
-                        score = utils.calc_eval_score_for_qc(filename)
+                    if (file.split(".")[0] + "_") in filename and filename.endswith(
+                        ".qasm"
+                    ):
+
                         comp_path_index = int(filename.split("_")[-1].split(".")[0])
-                        # print("Comp path index: ", comp_path_index, "\n")
+                        device = LUT.get(comp_path_index)[1]
+
+                        score = utils.calc_eval_score_for_qc(filename, device)
                         scores[comp_path_index] = score
 
                 num_not_empty_entries = 0
-                for i in range(19):
+                for i in range(30):
                     if not scores[i]:
                         scores[i] = utils.get_width_penalty()
                     else:
                         num_not_empty_entries += 1
 
                 if num_not_empty_entries == 0:
-                    break
+                    continue
 
                 feature_vec = utils.create_feature_vector(
-                    os.path.join(folder_path, benchmark)
+                    os.path.join(source_path, file)
                 )
 
                 training_data.append((list(feature_vec.values()), np.argmax(scores)))
-                name_list.append(benchmark.split(".")[0])
+                name_list.append(file.split(".")[0])
                 scores_list.append(scores)
 
         return (training_data, name_list, scores_list)
@@ -214,12 +251,12 @@ class Predictor:
             res.append(str(i) + "_max_interactions")
 
         res = [res[i] for i in non_zero_indices]
-        machines = utils.get_machines()
+        machines = utils.get_index_to_comppath_LUT()
         fig = plt.figure(figsize=(17, 6))
         plot_tree(
             Predictor._clf.best_estimator_,
             feature_names=res,
-            class_names=[machines[i] for i in list(Predictor._clf.classes_)],
+            class_names=[machines[i][1] for i in list(Predictor._clf.classes_)],
             filled=True,
             impurity=True,
             rounded=True,
@@ -259,7 +296,7 @@ class Predictor:
 
         plt.figure(figsize=(10, 5))
 
-        num_of_comp_paths = len(utils.get_machines())
+        num_of_comp_paths = len(utils.get_index_to_comppath_LUT())
         bars = plt.bar(
             [i for i in range(0, num_of_comp_paths, 1)],
             height=[
@@ -273,17 +310,6 @@ class Predictor:
             fontsize=18,
         )
         plt.yticks(fontsize=18)
-
-        # sum = 0
-        # for bar in bars:
-        #     yval = bar.get_height()
-        #     rounded_val = str(np.round(yval * 100, 1)) + "%"
-        #     if np.round(yval * 100) > 0.0:
-        #         sum += np.round(yval * 100)
-        #         plt.text(bar.get_x()+0.1, yval + 0.005, rounded_val, fontsize=18)
-
-        # plt.tick_params(left=True, labelleft=True)
-        # plt.box(False)
 
         plt.xlabel(
             "Best prediction                                                        Worst prediction",
@@ -375,59 +401,48 @@ class Predictor:
         """Returns the compiled quantum circuit as a qasm string when the original qasm circuit is provided as either
         a string or a file path and the prediction index is given."""
 
-        if prediction < 0 or prediction > len(utils.get_machines()):
-            print("Provided prection is faulty.")
+        LUT = utils.get_index_to_comppath_LUT()
+        if prediction < 0 or prediction >= len(LUT):
+            print("Provided prediction is faulty.")
             return None
-        compilation_path = utils.get_machines()[prediction]
+        compilation_path = LUT.get(prediction)
 
-        if ".qasm" in qasm_str_or_path:
+        if os.path.isfile(qasm_str_or_path):
             print("Reading from .qasm path: ", qasm_str_or_path)
             qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
         elif QuantumCircuit.from_qasm_str(qasm_str_or_path):
             print("Reading from .qasm str")
             qc = QuantumCircuit.from_qasm_str(qasm_str_or_path)
-        qc_tket = qiskit_to_tk(qc)
+        else:
+            print("Neither a qasm file path nor a qasm str has been provided.")
+            return False
 
-        if compilation_path == "qiskit_ionq_opt2":
-            compiled_qc = qiskit_plugin.get_ionq_qc(qc, 2)
-        elif compilation_path == "qiskit_ibm_washington_opt2":
-            compiled_qc = qiskit_plugin.get_ibm_washington_qc(qc, 2)
-        elif compilation_path == "qiskit_ibm_montreal_opt2":
-            compiled_qc = qiskit_plugin.get_ibm_montreal_qc(qc, 2)
-        elif compilation_path == "qiskit_rigetti_opt2":
-            compiled_qc = qiskit_plugin.get_rigetti_qc(qc, 2)
-        elif compilation_path == "qiskit_oqc_opt2":
-            compiled_qc = qiskit_plugin.get_oqc_qc(qc, 2)
-        elif compilation_path == "qiskit_ionq_opt3":
-            compiled_qc = qiskit_plugin.get_ionq_qc(qc, 3)
-        elif compilation_path == "qiskit_ibm_washington_opt3":
-            compiled_qc = qiskit_plugin.get_ibm_washington_qc(qc, 3)
-        elif compilation_path == "qiskit_ibm_montreal_opt3":
-            compiled_qc = qiskit_plugin.get_ibm_montreal_qc(qc, 3)
-        elif compilation_path == "qiskit_rigetti_opt3":
-            compiled_qc = qiskit_plugin.get_rigetti_qc(qc, 3)
-        elif compilation_path == "qiskit_oqc_opt3":
-            compiled_qc = qiskit_plugin.get_oqc_qc(qc, 3)
-        elif compilation_path == "tket_ionq":
-            compiled_qc = pytket_plugin.get_ionq_qc(qc_tket)
-        elif compilation_path == "tket_ibm_washington_line":
-            compiled_qc = pytket_plugin.get_ibm_washington_qc(qc_tket, True)
-        elif compilation_path == "tket_ibm_montreal_line":
-            compiled_qc = pytket_plugin.get_ibm_montreal_qc(qc_tket, True)
-        elif compilation_path == "tket_rigetti_line":
-            compiled_qc = pytket_plugin.get_rigetti_qc(qc_tket, True)
-        elif compilation_path == "tket_oqc_line":
-            compiled_qc = pytket_plugin.get_oqc_qc(qc_tket, True)
-        elif compilation_path == "tket_ibm_washington_graph":
-            compiled_qc = pytket_plugin.get_ibm_washington_qc(qc_tket, False)
-        elif compilation_path == "tket_ibm_montreal_graph":
-            compiled_qc = pytket_plugin.get_ibm_montreal_qc(qc_tket, False)
-        elif compilation_path == "tket_rigetti_graph":
-            compiled_qc = pytket_plugin.get_rigetti_qc(qc_tket, False)
-        elif compilation_path == "tket_oqc_graph":
-            compiled_qc = pytket_plugin.get_oqc_qc(qc_tket, False)
+        prediction_information = LUT.get(prediction)
+        gate_set_name = prediction_information[0]
+        device = prediction_information[1]
+        compiler = prediction_information[2]
+        compiler_settings = prediction_information[3]
 
-        return compiled_qc
+        if compiler == "qiskit":
+            compiled_qc = qiskit_helper.get_mapped_level(
+                qc, gate_set_name, qc.num_qubits, device, compiler_settings, False, True
+            )
+            return compiled_qc
+        elif compiler == "tket":
+            compiled_qc = (tket_helper.get_mapped_level,)
+            (
+                qc,
+                gate_set_name,
+                qc.num_qubits,
+                device,
+                compiler_settings,
+                False,
+                True,
+            )
+            return compiled_qc
+        else:
+            print("Error: Compiler not found.")
+            return False
 
 
 if __name__ == "__main__":
@@ -439,7 +454,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    Predictor.save_all_compilation_path_results(
-        folder_path=args.path, timeout=args.timeout
+    # Predictor.save_all_compilation_path_results(
+    #     source_path="./comp_test_source", target_path="./comp_test", timeout=60
+    # )
+    utils.postprocess_ocr_qasm_files(directory="./comp_test")
+
+    res = Predictor.generate_trainingdata_from_qasm_files(
+        source_path="./comp_test_source", target_path="./comp_test/"
     )
-    # Predictor.generate_trainingdata_from_qasm_files(folder_path="gentest/")
+    utils.save_training_data(res)
