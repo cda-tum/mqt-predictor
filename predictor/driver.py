@@ -313,7 +313,8 @@ class Predictor:
         plt.ylabel("Relative frequency", fontsize=18)
         plt.savefig("hist_predictions.pdf")
         plt.show()
-        # print("sum: ", sum)
+
+        return res
 
     def plot_eval_all_detailed_compact_normed(
         self, names_list, scores_filtered, y_pred, y_test
