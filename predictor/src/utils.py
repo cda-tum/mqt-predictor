@@ -1,10 +1,10 @@
-import signal
 import json
-import numpy as np
-from pytket import OpType
-from qiskit import QuantumCircuit
 import os
-from qiskit.test.mock.backends import FakeWashington, FakeMontreal
+import signal
+
+import numpy as np
+from qiskit import QuantumCircuit
+from qiskit.test.mock.backends import FakeMontreal, FakeWashington
 
 
 def get_width_penalty():
@@ -84,7 +84,7 @@ def get_index_to_comppath_LUT():
     index = 0
     index_to_comppath_LUT = {}
     for gate_set_name, devices in compilation_pipeline.get("devices").items():
-        for device_name, max_qubits in devices:
+        for device_name, _max_qubits in devices:
             for compiler, settings in compilation_pipeline["compiler"].items():
                 if "qiskit" in compiler:
                     for opt_level in settings["optimization_level"]:
@@ -166,7 +166,7 @@ def calc_eval_score_for_qc(qc_path: str, device: str):
             backend = ibm_montreal_calibration
         else:
             backend = ibm_washington_calibration
-        for instruction, qargs, cargs in qc.data:
+        for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
 
@@ -189,7 +189,7 @@ def calc_eval_score_for_qc(qc_path: str, device: str):
                 res *= 1 - float(specific_error)
 
     elif "oqc_lucy" in device:
-        for instruction, qargs, cargs in qc.data:
+        for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
 
@@ -215,7 +215,7 @@ def calc_eval_score_for_qc(qc_path: str, device: str):
                 res *= specific_fidelity
     elif "rigetti_aspen_m1" in device:
         mapping = get_rigetti_qubit_dict()
-        for instruction, qargs, cargs in qc.data:
+        for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
 
@@ -260,7 +260,7 @@ def calc_eval_score_for_qc(qc_path: str, device: str):
                 res *= specific_fidelity
 
     elif "ionq11" in device:
-        for instruction, qargs, cargs in qc.data:
+        for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
             qubit_indices = [elem.index for elem in qargs]
 
@@ -316,94 +316,95 @@ def create_feature_vector(qc_path: str):
 
 
 def get_rigetti_qubit_dict():
-    mapping = {}
-    mapping["32"] = "4"
-    mapping["39"] = "3"
-    mapping["38"] = "2"
-    mapping["37"] = "1"
-    mapping["36"] = "0"
-    mapping["35"] = "7"
-    mapping["34"] = "6"
-    mapping["33"] = "5"
-    mapping["25"] = "15"
-    mapping["24"] = "14"
-    mapping["31"] = "13"
-    mapping["30"] = "12"
-    mapping["29"] = "11"
-    mapping["28"] = "10"
-    mapping["27"] = "17"
-    mapping["26"] = "16"
-    mapping["17"] = "25"
-    mapping["16"] = "24"
-    mapping["23"] = "23"
-    mapping["22"] = "22"
-    mapping["21"] = "21"
-    mapping["20"] = "20"
-    mapping["19"] = "27"
-    mapping["18"] = "26"
-    mapping["8"] = "34"
-    mapping["9"] = "35"
-    mapping["10"] = "36"
-    mapping["11"] = "37"
-    mapping["12"] = "30"
-    mapping["13"] = "31"
-    mapping["14"] = "32"
-    mapping["15"] = "33"
-    mapping["0"] = "44"
-    mapping["1"] = "45"
-    mapping["2"] = "46"
-    mapping["3"] = "47"
-    mapping["4"] = "40"
-    mapping["5"] = "41"
-    mapping["6"] = "42"
-    mapping["7"] = "43"
-    mapping["72"] = "104"
-    mapping["73"] = "105"
-    mapping["74"] = "106"
-    mapping["75"] = "107"
-    mapping["76"] = "100"
-    mapping["77"] = "101"
-    mapping["78"] = "102"
-    mapping["79"] = "103"
-    mapping["64"] = "114"
-    mapping["65"] = "115"
-    mapping["66"] = "116"
-    mapping["67"] = "117"
-    mapping["68"] = "110"
-    mapping["69"] = "111"
-    mapping["70"] = "112"
-    mapping["71"] = "113"
-    mapping["56"] = "124"
-    mapping["57"] = "125"
-    mapping["58"] = "126"
-    mapping["59"] = "127"
-    mapping["60"] = "120"
-    mapping["61"] = "121"
-    mapping["62"] = "122"
-    mapping["63"] = "123"
-    mapping["48"] = "134"
-    mapping["49"] = "135"
-    mapping["50"] = "136"
-    mapping["51"] = "137"
-    mapping["52"] = "130"
-    mapping["53"] = "131"
-    mapping["54"] = "132"
-    mapping["55"] = "133"
-    mapping["40"] = "144"
-    mapping["41"] = "145"
-    mapping["42"] = "146"
-    mapping["43"] = "147"
-    mapping["44"] = "140"
-    mapping["45"] = "141"
-    mapping["46"] = "142"
-    mapping["47"] = "143"
+    mapping = {
+        "32": "4",
+        "39": "3",
+        "38": "2",
+        "37": "1",
+        "36": "0",
+        "35": "7",
+        "34": "6",
+        "33": "5",
+        "25": "15",
+        "24": "14",
+        "31": "13",
+        "30": "12",
+        "29": "11",
+        "28": "10",
+        "27": "17",
+        "26": "16",
+        "17": "25",
+        "16": "24",
+        "23": "23",
+        "22": "22",
+        "21": "21",
+        "20": "20",
+        "19": "27",
+        "18": "26",
+        "8": "34",
+        "9": "35",
+        "10": "36",
+        "11": "37",
+        "12": "30",
+        "13": "31",
+        "14": "32",
+        "15": "33",
+        "0": "44",
+        "1": "45",
+        "2": "46",
+        "3": "47",
+        "4": "40",
+        "5": "41",
+        "6": "42",
+        "7": "43",
+        "72": "104",
+        "73": "105",
+        "74": "106",
+        "75": "107",
+        "76": "100",
+        "77": "101",
+        "78": "102",
+        "79": "103",
+        "64": "114",
+        "65": "115",
+        "66": "116",
+        "67": "117",
+        "68": "110",
+        "69": "111",
+        "70": "112",
+        "71": "113",
+        "56": "124",
+        "57": "125",
+        "58": "126",
+        "59": "127",
+        "60": "120",
+        "61": "121",
+        "62": "122",
+        "63": "123",
+        "48": "134",
+        "49": "135",
+        "50": "136",
+        "51": "137",
+        "52": "130",
+        "53": "131",
+        "54": "132",
+        "55": "133",
+        "40": "144",
+        "41": "145",
+        "42": "146",
+        "43": "147",
+        "44": "140",
+        "45": "141",
+        "46": "142",
+        "47": "143",
+    }
 
     assert len(mapping) == 80
     return mapping
 
 
 def parse_ionq_calibration_config():
-    with open("ionq_calibration.json", "r") as f:
+    with open("ionq_calibration.json") as f:
         ionq_calibration = json.load(f)
     ionq_dict = {
         "backend": "ionq",
@@ -415,7 +416,7 @@ def parse_ionq_calibration_config():
 
 
 def parse_oqc_calibration_config():
-    with open("oqc_lucy_calibration.json", "r") as f:
+    with open("oqc_lucy_calibration.json") as f:
         oqc_lucy_calibration = json.load(f)
     fid_1Q = {}
     fid_1Q_readout = {}
@@ -447,7 +448,7 @@ def parse_oqc_calibration_config():
 
 
 def parse_rigetti_calibration_config():
-    with open("rigetti_m1_calibration.json", "r") as f:
+    with open("rigetti_m1_calibration.json") as f:
         rigetti_m1_calibration = json.load(f)
     fid_1Q = {}
     fid_1Q_readout = {}
@@ -491,9 +492,9 @@ def parse_rigetti_calibration_config():
 def calc_connectivity_for_qc(qc: QuantumCircuit):
 
     connectivity = []
-    for i in range(127):
+    for _i in range(127):
         connectivity.append([])
-    for instruction, qargs, cargs in qc.data:
+    for instruction, qargs, _cargs in qc.data:
         gate_type = instruction.name
         qubit_indices = [elem.index for elem in qargs]
         if len(qubit_indices) == 2 and gate_type != "barrier":
@@ -514,7 +515,7 @@ def postprocess_ocr_qasm_files(directory: str):
             f = os.path.join(directory, filename)
             # checking if it is a file
             if comp_path_index >= 24 and comp_path_index <= 27:
-                with open(f, "r") as f:
+                with open(f) as f:
                     lines = f.readlines()
                 new_name = os.path.join(directory, filename)
                 with open(new_name, "w") as f:
@@ -532,18 +533,15 @@ def postprocess_ocr_qasm_files(directory: str):
                                 "gate ecr q0,q1 { rzx(pi/4) q0,q1; x q0; rzx(-pi/4) q0,q1; }\n"
                             )
 
-                qc = QuantumCircuit.from_qasm_file(new_name)
                 print("New qasm file for: ", new_name)
 
             elif comp_path_index >= 28 and comp_path_index <= 29:
-                with open(f, "r") as f:
+                with open(f) as f:
                     lines = f.readlines()
                 new_name = os.path.join(directory, filename)
                 with open(new_name, "w") as f:
-                    count = 0
-                    for line in lines:
+                    for count, line in enumerate(lines):
                         f.write(line)
-                        count += 1
                         if count == 9:
                             f.write(
                                 "gate rzx(param0) q0,q1 { h q1; cx q0,q1; rz(param0) q1; cx q0,q1; h q1; }\n"
@@ -551,7 +549,6 @@ def postprocess_ocr_qasm_files(directory: str):
                             f.write(
                                 "gate ecr q0,q1 { rzx(pi/4) q0,q1; x q0; rzx(-pi/4) q0,q1; }\n"
                             )
-                qc = QuantumCircuit.from_qasm_file(new_name)
                 print("New qasm file for: ", new_name)
 
 

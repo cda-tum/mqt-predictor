@@ -1,34 +1,29 @@
+import argparse
+import glob
+import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+from joblib import Parallel, delayed, dump, load
+from mqt.bench.utils import qiskit_helper, tket_helper
+from numpy import asarray, save
+from qiskit import QuantumCircuit
+from sklearn import tree
+from sklearn.metrics import precision_recall_fscore_support
+from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.tree import plot_tree
+
 from predictor.src import utils
 
-from qiskit import QuantumCircuit
-from pytket.extensions.qiskit import qiskit_to_tk
-
-from joblib import dump, load
-import numpy as np
-from numpy import asarray, save
-import matplotlib.pyplot as plt
-
 plt.rcParams["font.family"] = "Times New Roman"
-import os
-import glob
-import argparse
-import signal
-
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.metrics import precision_recall_fscore_support
-from sklearn.tree import plot_tree
-from sklearn import tree
-
-from natsort import natsorted
-from joblib import Parallel, delayed
-
-from mqt.bench.utils import tket_helper, qiskit_helper
 
 
 class Predictor:
-    _clf = None
+    def __init__(self):
+        self.clf = None
 
     def compile_all_circuits_for_qc(
+        self,
         filename: str,
         source_path: str = "./source",
         target_directory: str = "./qasm_files",
@@ -111,6 +106,7 @@ class Predictor:
             return False
 
     def save_all_compilation_path_results(
+        self,
         source_path: str = "./qasm_files",
         target_path: str = "./qasm_files",
         timeout: int = 10,
@@ -128,14 +124,14 @@ class Predictor:
                 source_circuits_list.append(file)
 
         Parallel(n_jobs=-1, verbose=100)(
-            delayed(Predictor.compile_all_circuits_for_qc)(
+            delayed(self.compile_all_circuits_for_qc)(
                 filename, source_path, target_path, timeout
             )
             for filename in source_circuits_list
         )
 
     def generate_trainingdata_from_qasm_files(
-        source_path: str = "./qasm_files", target_path: str = "qasm_compiled/"
+        self, source_path: str = "./qasm_files", target_path: str = "qasm_compiled/"
     ):
         """Method to create training data from pre-process data. All .qasm files from
         the folder_path used to find suitable pre-processed data in compiled_path."""
@@ -192,7 +188,9 @@ class Predictor:
 
         return (training_data, name_list, scores_list)
 
-    def train_decision_tree_classifier(X, y, name_list=None, actual_scores_list=None):
+    def train_decision_tree_classifier(
+        self, X, y, name_list=None, actual_scores_list=None
+    ):
         """Method to for the actual training of the decision tree classifier."""
 
         X, y, indices = np.array(X), np.array(y), np.array(range(len(y)))
@@ -219,25 +217,24 @@ class Predictor:
         tree_param = [
             {
                 "criterion": ["entropy", "gini"],
-                "max_depth": [i for i in range(1, 15, 1)],
-                "min_samples_split": [i for i in range(2, 20, 4)],
-                "min_samples_leaf": [i for i in range(2, 20, 4)],
-                "max_leaf_nodes": [i for i in range(2, 200, 40)],
-                "max_features": [i for i in range(1, len(non_zero_indices), 10)],
+                "max_depth": list(range(1, 15, 1)),
+                "min_samples_split": list(range(2, 20, 4)),
+                "min_samples_leaf": list(range(2, 20, 4)),
+                "max_leaf_nodes": list(range(2, 200, 40)),
+                "max_features": list(range(1, len(non_zero_indices), 10)),
             },
         ]
-        Predictor._clf = GridSearchCV(
+        self.clf = GridSearchCV(
             tree.DecisionTreeClassifier(random_state=5), tree_param, cv=5, n_jobs=8
-        )
-        Predictor._clf = Predictor._clf.fit(X_train, y_train)
-        print("Best GridSearch Estimator: ", Predictor._clf.best_estimator_)
-        print("Best GridSearch Params: ", Predictor._clf.best_params_)
+        ).fit(X_train, y_train)
+        print("Best GridSearch Estimator: ", self.clf.best_estimator_)
+        print("Best GridSearch Params: ", self.clf.best_params_)
         print("Num Training Circuits: ", len(X_train))
         print("Num Test Circuits: ", len(X_test))
-        print("Best Training accuracy: ", Predictor._clf.best_score_)
-        dump(Predictor._clf, "decision_tree_classifier.joblib")
+        print("Best Training accuracy: ", self.clf.best_score_)
+        dump(self.clf, "decision_tree_classifier.joblib")
 
-        y_pred = np.array(list(Predictor._clf.predict(X_test)))
+        y_pred = np.array(list(self.clf.predict(X_test)))
         print("Test accuracy: ", np.mean(y_pred == y_test))
         print("Compilation paths from Train Data: ", set(y_train))
         print("Compilation paths from Test Data: ", set(y_test))
@@ -252,11 +249,11 @@ class Predictor:
 
         res = [res[i] for i in non_zero_indices]
         machines = utils.get_index_to_comppath_LUT()
-        fig = plt.figure(figsize=(17, 6))
+        plt.figure(figsize=(17, 6))
         plot_tree(
-            Predictor._clf.best_estimator_,
+            self.clf.best_estimator_,
             feature_names=res,
-            class_names=[machines[i][1] for i in list(Predictor._clf.classes_)],
+            class_names=[machines[i][1] for i in list(self.clf.classes_)],
             filled=True,
             impurity=True,
             rounded=True,
@@ -266,10 +263,10 @@ class Predictor:
         names_list_filtered = [name_list[i] for i in indices_test]
         scores_filtered = [actual_scores_list[i] for i in indices_test]
 
-        Predictor.plot_eval_all_detailed_compact_normed(
+        self.plot_eval_all_detailed_compact_normed(
             names_list_filtered, scores_filtered, y_pred, y_test
         )
-        Predictor.plot_eval_histogram(scores_filtered, y_pred, y_test)
+        self.plot_eval_histogram(scores_filtered, y_pred, y_test)
 
         res = precision_recall_fscore_support(y_test, y_pred)
 
@@ -284,7 +281,7 @@ class Predictor:
 
         return np.mean(y_pred == y_test)
 
-    def plot_eval_histogram(scores_filtered, y_pred, y_test):
+    def plot_eval_histogram(self, scores_filtered, y_pred, y_test):
         res = []
         for i in range(len(y_pred)):
             assert np.argmax(scores_filtered[i]) == y_test[i]
@@ -297,16 +294,16 @@ class Predictor:
         plt.figure(figsize=(10, 5))
 
         num_of_comp_paths = len(utils.get_index_to_comppath_LUT())
-        bars = plt.bar(
-            [i for i in range(0, num_of_comp_paths, 1)],
+        plt.bar(
+            list(range(0, num_of_comp_paths, 1)),
             height=[
                 res.count(i) / len(res) for i in range(1, num_of_comp_paths + 1, 1)
             ],
             width=1,
         )
         plt.xticks(
-            [i for i in range(0, num_of_comp_paths, 1)],
-            [i for i in range(1, num_of_comp_paths + 1, 1)],
+            list(range(0, num_of_comp_paths, 1)),
+            list(range(1, num_of_comp_paths + 1, 1)),
             fontsize=18,
         )
         plt.yticks(fontsize=18)
@@ -321,7 +318,7 @@ class Predictor:
         # print("sum: ", sum)
 
     def plot_eval_all_detailed_compact_normed(
-        names_list, scores_filtered, y_pred, y_test
+        self, names_list, scores_filtered, y_pred, y_test
     ):
 
         # Create list of all qubit numbers and sort them
@@ -356,7 +353,7 @@ class Predictor:
             )
 
         plt.xticks(
-            [i for i in range(0, len(scores_filtered), 10)],
+            list(range(0, len(scores_filtered), 10)),
             [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 10)],
             fontsize=18,
         )
@@ -377,15 +374,15 @@ class Predictor:
 
         return
 
-    def predict(qasm_path: str):
+    def predict(self, qasm_path: str):
         """Compilation path prediction for a given qasm file file."""
-        if not (".qasm" in qasm_path):
+        if ".qasm" not in qasm_path:
             print("Input is not a .qasm file.")
             return
 
-        if Predictor._clf is None:
+        if self.clf is None:
             if os.path.isfile("decision_tree_classifier.joblib"):
-                Predictor._clf = load("decision_tree_classifier.joblib")
+                self.clf = load("decision_tree_classifier.joblib")
             else:
                 print("Fail: Decision Tree Classifier is neither trained nor saved!")
                 return None
@@ -395,9 +392,11 @@ class Predictor:
         non_zero_indices = np.load("non_zero_indices.npy", allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
-        return Predictor._clf.predict([feature_vector])[0]
+        return self.clf.predict([feature_vector])[0]
 
-    def compile_predicted_compilation_path(qasm_str_or_path: str, prediction: int):
+    def compile_predicted_compilation_path(
+        self, qasm_str_or_path: str, prediction: int
+    ):
         """Returns the compiled quantum circuit as a qasm string when the original qasm circuit is provided as either
         a string or a file path and the prediction index is given."""
 
@@ -405,7 +404,6 @@ class Predictor:
         if prediction < 0 or prediction >= len(LUT):
             print("Provided prediction is faulty.")
             return None
-        compilation_path = LUT.get(prediction)
 
         if os.path.isfile(qasm_str_or_path):
             print("Reading from .qasm path: ", qasm_str_or_path)
@@ -454,12 +452,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Predictor.save_all_compilation_path_results(
+    # save_all_compilation_path_results(
     #     source_path="./comp_test_source", target_path="./comp_test", timeout=60
     # )
     utils.postprocess_ocr_qasm_files(directory="./comp_test")
-
-    res = Predictor.generate_trainingdata_from_qasm_files(
+    predictor = Predictor()
+    res = predictor.generate_trainingdata_from_qasm_files(
         source_path="./comp_test_source", target_path="./comp_test/"
     )
     utils.save_training_data(res)
