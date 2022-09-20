@@ -14,7 +14,7 @@ def test_train_decision_tree_classifier(mock_show):
         training_data,
         name_list,
         scores_list,
-    ) = utils.load_trainig_data()
+    ) = utils.load_training_data()
     X, y = zip(*training_data)
     predictor = Predictor()
     res = predictor.train_decision_tree_classifier(X, y, name_list, scores_list)

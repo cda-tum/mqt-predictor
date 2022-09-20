@@ -97,11 +97,11 @@ repos:
       - id: codespell
         args: ["-L", "wille,linz,fRO"]
         exclude: >
-            (?x)^(
-                .*calibration\.json|
-                .*\.ipynb|
-                predictor/src/utils.py
-            )$
+          (?x)^(
+              .*calibration\.json|
+              .*\.ipynb|
+              predictor/src/utils.py
+          )$
 
   # Format configuration files with prettier
   - repo: https://github.com/pre-commit/mirrors-prettier

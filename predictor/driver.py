@@ -105,7 +105,7 @@ class Predictor:
             print("fail: ", e)
             return False
 
-    def save_all_compilation_path_results(
+    def generate_compiled_circuits(
         self,
         source_path: str = "./qasm_files",
         target_path: str = "./qasm_files",
@@ -178,9 +178,7 @@ class Predictor:
                 if num_not_empty_entries == 0:
                     continue
 
-                feature_vec = utils.create_feature_vector(
-                    os.path.join(source_path, file)
-                )
+                feature_vec = utils.create_feature_dict(os.path.join(source_path, file))
 
                 training_data.append((list(feature_vec.values()), np.argmax(scores)))
                 name_list.append(file.split(".")[0])
@@ -374,11 +372,8 @@ class Predictor:
 
         return
 
-    def predict(self, qasm_path: str):
-        """Compilation path prediction for a given qasm file file."""
-        if ".qasm" not in qasm_path:
-            print("Input is not a .qasm file.")
-            return
+    def predict(self, qasm_str_or_path: str):
+        """Compilation path prediction for a given qasm file file or qasm string."""
 
         if self.clf is None:
             if os.path.isfile("decision_tree_classifier.joblib"):
@@ -387,7 +382,10 @@ class Predictor:
                 print("Fail: Decision Tree Classifier is neither trained nor saved!")
                 return None
 
-        feature_vector = list(utils.create_feature_vector(qasm_path).values())
+        feature_dict = utils.create_feature_dict(qasm_str_or_path)
+        if not feature_dict:
+            return None
+        feature_vector = list(feature_dict.values())
 
         non_zero_indices = np.load("non_zero_indices.npy", allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]

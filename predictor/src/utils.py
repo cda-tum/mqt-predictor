@@ -300,8 +300,14 @@ def init_all_config_files():
         return True
 
 
-def create_feature_vector(qc_path: str):
-    qc = QuantumCircuit.from_qasm_file(qc_path)
+def create_feature_dict(qasm_str_or_path: str):
+    if os.path.isfile(qasm_str_or_path):
+        qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
+    elif "OPENQASM" in qasm_str_or_path:
+        qc = QuantumCircuit.from_qasm_str(qasm_str_or_path)
+    else:
+        print("Neither a qasm file path nor a qasm str has been provided.")
+        return False
 
     ops_list = qc.count_ops()
     feature_vector = dict_to_featurevector(ops_list)
@@ -563,7 +569,7 @@ def save_training_data(res):
     np.save("scores_list.npy", data)
 
 
-def load_trainig_data():
+def load_training_data():
     training_data = np.load("training_data.npy", allow_pickle=True)
 
     names_list = list(np.load("names_list.npy", allow_pickle=True))

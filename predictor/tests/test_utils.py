@@ -55,3 +55,7 @@ def test_get_compilation_pipeline():
         },
     }
     assert utils.get_compilation_pipeline() == expected
+
+
+def test_load_training_data():
+    assert utils.load_training_data() is not None
