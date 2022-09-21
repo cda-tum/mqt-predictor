@@ -156,8 +156,8 @@ class Predictor:
             if not sample:
                 continue
 
-            training_data, circuit_name, scores = sample
-            training_data.append(training_data)
+            training_sample, circuit_name, scores = sample
+            training_data.append(training_sample)
             name_list.append(circuit_name)
             scores_list.append(scores)
 
@@ -201,10 +201,10 @@ class Predictor:
             return False
 
         feature_vec = utils.create_feature_dict(os.path.join(source_path, file))
-        training_data = (list(feature_vec.values()), np.argmax(scores))
+        training_sample = (list(feature_vec.values()), np.argmax(scores))
         circuit_name = file.split(".")[0]
 
-        return (training_data, circuit_name, scores)
+        return (training_sample, circuit_name, scores)
 
     def train_decision_tree_classifier(
         self, X, y, name_list=None, actual_scores_list=None
