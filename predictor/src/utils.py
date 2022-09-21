@@ -109,9 +109,7 @@ def get_index_to_comppath_LUT():
 
 def dict_to_featurevector(gate_dict):
     """Calculates and returns the feature vector of a given quantum circuit gate dictionary."""
-    openqasm_gates_list = get_openqasm_gates()
-    res_dct = {openqasm_gates_list[i] for i in range(0, len(openqasm_gates_list))}
-    res_dct = dict.fromkeys(res_dct, 0)
+    res_dct = dict.fromkeys(get_openqasm_gates(), 0)
     for key, val in dict(gate_dict).items():
         if key in res_dct:
             res_dct[key] = val
