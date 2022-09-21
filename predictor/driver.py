@@ -245,6 +245,7 @@ class Predictor:
         res.append("program_communication")
         res.append("entanglement_ratio")
         res.append("parallelism")
+        res.append("liveness")
         res = [res[i] for i in non_zero_indices]
 
         machines = utils.get_index_to_comppath_LUT()

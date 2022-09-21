@@ -515,14 +515,19 @@ def calc_supermarq_features(qc: QuantumCircuit):
 
     num_gates = sum(qc.count_ops().values())
     num_multiple_qubit_gates = qc.num_nonlocal_gates()
+    depth = qc.depth()
     program_communication = np.sum(connectivity) / (qc.num_qubits * (qc.num_qubits - 1))
 
     entanglement_ratio = num_multiple_qubit_gates / num_gates
     assert num_multiple_qubit_gates <= num_gates
 
-    parallelism = (num_gates / qc.depth() - 1) * (1 / (qc.num_qubits - 1))
+    parallelism = (num_gates / depth - 1) * (1 / (qc.num_qubits - 1))
 
-    return program_communication, entanglement_ratio, parallelism
+    liveness = (
+        (num_gates - num_multiple_qubit_gates) + num_multiple_qubit_gates * 2
+    ) / (depth * qc.num_qubits)
+
+    return program_communication, entanglement_ratio, parallelism, liveness
 
 
 def postprocess_ocr_qasm_files(directory: str):
