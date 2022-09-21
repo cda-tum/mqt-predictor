@@ -242,11 +242,13 @@ class Predictor:
         res = [openqasm_qc_list[i] for i in range(0, len(openqasm_qc_list))]
         res.append("num_qubits")
         res.append("depth")
-        for i in range(1, 6):
-            res.append(str(i) + "_max_interactions")
-
+        res.append("program_communication")
+        res.append("entanglement_ratio")
+        res.append("parallelism")
         res = [res[i] for i in non_zero_indices]
+
         machines = utils.get_index_to_comppath_LUT()
+
         plt.figure(figsize=(17, 6))
         plot_tree(
             self.clf.best_estimator_,

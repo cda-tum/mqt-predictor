@@ -310,15 +310,17 @@ def create_feature_dict(qasm_str_or_path: str):
         return False
 
     ops_list = qc.count_ops()
-    feature_vector = dict_to_featurevector(ops_list)
+    feature_dict = dict_to_featurevector(ops_list)
 
-    feature_vector["num_qubits"] = qc.num_qubits
-    feature_vector["depth"] = qc.depth()
-    connectivity = calc_connectivity_for_qc(qc)
-    for i in range(len(connectivity)):
-        feature_vector[str(i + 1) + "_max_interactions"] = connectivity[i]
+    feature_dict["num_qubits"] = qc.num_qubits
+    feature_dict["depth"] = qc.depth()
 
-    return feature_vector
+    program_communication, entanglement_ratio, parallelism = calc_supermarq_features(qc)
+    feature_dict["program_communication"] = program_communication
+    feature_dict["entanglement_ratio"] = entanglement_ratio
+    feature_dict["parallelism"] = parallelism
+
+    return feature_dict
 
 
 def get_rigetti_qubit_dict():
@@ -495,10 +497,10 @@ def parse_rigetti_calibration_config():
     return rigetti_dict
 
 
-def calc_connectivity_for_qc(qc: QuantumCircuit):
+def calc_supermarq_features(qc: QuantumCircuit):
 
     connectivity = []
-    for _i in range(127):
+    for _i in range(qc.num_qubits):
         connectivity.append([])
     for instruction, qargs, _cargs in qc.data:
         gate_type = instruction.name
@@ -508,10 +510,19 @@ def calc_connectivity_for_qc(qc: QuantumCircuit):
             second_qubit = int(qubit_indices[1])
             connectivity[first_qubit].append(second_qubit)
             connectivity[second_qubit].append(first_qubit)
-    for i in range(127):
+    for i in range(qc.num_qubits):
         connectivity[i] = len(set(connectivity[i]))
-    connectivity.sort(reverse=True)
-    return connectivity[:5]
+
+    num_gates = sum(qc.count_ops().values())
+    num_multiple_qubit_gates = qc.num_nonlocal_gates()
+    program_communication = np.sum(connectivity) / (qc.num_qubits * (qc.num_qubits - 1))
+
+    entanglement_ratio = num_multiple_qubit_gates / num_gates
+    assert num_multiple_qubit_gates <= num_gates
+
+    parallelism = (num_gates / qc.depth() - 1) * (1 / (qc.num_qubits - 1))
+
+    return program_communication, entanglement_ratio, parallelism
 
 
 def postprocess_ocr_qasm_files(directory: str):
@@ -575,11 +586,5 @@ def load_training_data():
     names_list = list(np.load("names_list.npy", allow_pickle=True))
 
     scores_list = list(np.load("scores_list.npy", allow_pickle=True))
-    X, y = zip(*training_data)
-    X = list(X)
-    y = list(y)
-    for i in range(len(X)):
-        X[i] = list(X[i])
-        scores_list[i] = list(scores_list[i])
 
     return training_data, names_list, scores_list
