@@ -169,7 +169,7 @@ class Predictor:
                         scores[comp_path_index] = score
 
                 num_not_empty_entries = 0
-                for i in range(30):
+                for i in range(len(LUT)):
                     if not scores[i]:
                         scores[i] = utils.get_width_penalty()
                     else:
@@ -313,7 +313,8 @@ class Predictor:
         plt.ylabel("Relative frequency", fontsize=18)
         plt.savefig("hist_predictions.pdf")
         plt.show()
-        # print("sum: ", sum)
+
+        return res
 
     def plot_eval_all_detailed_compact_normed(
         self, names_list, scores_filtered, y_pred, y_test
