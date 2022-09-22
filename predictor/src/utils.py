@@ -317,11 +317,13 @@ def create_feature_dict(qasm_str_or_path: str):
 
     (
         program_communication,
+        critical_depth,
         entanglement_ratio,
         parallelism,
         liveness,
     ) = calc_supermarq_features(qc)
     feature_dict["program_communication"] = program_communication
+    feature_dict["critical_depth"] = critical_depth
     feature_dict["entanglement_ratio"] = entanglement_ratio
     feature_dict["parallelism"] = parallelism
     feature_dict["liveness"] = liveness
@@ -555,7 +557,6 @@ def calc_supermarq_features(qc: QuantumCircuit):
         entanglement_ratio,
         parallelism,
         liveness,
-        connectivity,
     )
 
 
