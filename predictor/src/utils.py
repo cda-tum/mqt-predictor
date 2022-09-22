@@ -274,7 +274,6 @@ def calc_eval_score_for_qc(qc_path: str, device: str):
     else:
         print("Error: No suitable backend found!")
 
-    # print("Eval score for :", qc_path, " is ", res)
     return res
 
 
@@ -538,9 +537,12 @@ def calc_supermarq_features(qc: QuantumCircuit):
     depth = qc.depth()
     program_communication = np.sum(connectivity) / (qc.num_qubits * (qc.num_qubits - 1))
 
-    critical_depth = (
-        qc.depth(filter_function=lambda x: len(x[1]) > 1) / num_multiple_qubit_gates
-    )
+    if num_multiple_qubit_gates == 0:
+        critical_depth = 0
+    else:
+        critical_depth = (
+            qc.depth(filter_function=lambda x: len(x[1]) > 1) / num_multiple_qubit_gates
+        )
 
     entanglement_ratio = num_multiple_qubit_gates / num_gates
     assert num_multiple_qubit_gates <= num_gates
