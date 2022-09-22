@@ -315,11 +315,13 @@ def create_feature_dict(qasm_str_or_path: str):
 
     (
         program_communication,
+        critical_depth,
         entanglement_ratio,
         parallelism,
         liveness,
     ) = calc_supermarq_features(qc)
     feature_dict["program_communication"] = program_communication
+    feature_dict["critical_depth"] = critical_depth
     feature_dict["entanglement_ratio"] = entanglement_ratio
     feature_dict["parallelism"] = parallelism
     feature_dict["liveness"] = liveness
@@ -504,16 +506,30 @@ def parse_rigetti_calibration_config():
 def calc_supermarq_features(qc: QuantumCircuit):
 
     connectivity = []
-    for _i in range(qc.num_qubits):
+    liveness_A_matrix = 0
+    for _ in range(qc.num_qubits):
         connectivity.append([])
+
+    offset_map = {}
+    offset = 0
+    for elem in qc.qregs:
+        offset_map[elem.name] = offset
+        offset += elem.size
+
     for instruction, qargs, _cargs in qc.data:
         gate_type = instruction.name
-        qubit_indices = [elem.index for elem in qargs]
-        if len(qubit_indices) == 2 and gate_type != "barrier":
-            first_qubit = int(qubit_indices[0])
-            second_qubit = int(qubit_indices[1])
-            connectivity[first_qubit].append(second_qubit)
-            connectivity[second_qubit].append(first_qubit)
+        qubit_indices = []
+        for elem in qargs:
+            qubit_indices.append(elem.index + offset_map.get(elem.register.name))
+
+        liveness_A_matrix += len(qubit_indices)
+        if gate_type != "barrier":
+            all_indices = set(qubit_indices)
+            for qubit_index in all_indices:
+                to_be_added_entries = all_indices.copy()
+                to_be_added_entries.remove(int(qubit_index))
+                connectivity[int(qubit_index)].extend(to_be_added_entries)
+
     for i in range(qc.num_qubits):
         connectivity[i] = len(set(connectivity[i]))
 
@@ -522,16 +538,24 @@ def calc_supermarq_features(qc: QuantumCircuit):
     depth = qc.depth()
     program_communication = np.sum(connectivity) / (qc.num_qubits * (qc.num_qubits - 1))
 
+    critical_depth = (
+        qc.depth(filter_function=lambda x: len(x[1]) > 1) / num_multiple_qubit_gates
+    )
+
     entanglement_ratio = num_multiple_qubit_gates / num_gates
     assert num_multiple_qubit_gates <= num_gates
 
-    parallelism = (num_gates / depth - 1) * (1 / (qc.num_qubits - 1))
+    parallelism = (num_gates / depth - 1) / (qc.num_qubits - 1)
 
-    liveness = (
-        (num_gates - num_multiple_qubit_gates) + num_multiple_qubit_gates * 2
-    ) / (depth * qc.num_qubits)
+    liveness = liveness_A_matrix / (depth * qc.num_qubits)
 
-    return program_communication, entanglement_ratio, parallelism, liveness
+    return (
+        program_communication,
+        critical_depth,
+        entanglement_ratio,
+        parallelism,
+        liveness,
+    )
 
 
 def postprocess_ocr_qasm_files(directory: str):
