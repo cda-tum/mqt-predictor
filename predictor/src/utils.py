@@ -506,7 +506,8 @@ def parse_rigetti_calibration_config():
 def calc_supermarq_features(qc: QuantumCircuit):
 
     connectivity = []
-    for _i in range(qc.num_qubits):
+    liveness_A_matrix = 0
+    for _ in range(qc.num_qubits):
         connectivity.append([])
     for instruction, qargs, _cargs in qc.data:
         gate_type = instruction.name
@@ -527,13 +528,17 @@ def calc_supermarq_features(qc: QuantumCircuit):
     entanglement_ratio = num_multiple_qubit_gates / num_gates
     assert num_multiple_qubit_gates <= num_gates
 
-    parallelism = (num_gates / depth - 1) * (1 / (qc.num_qubits - 1))
+    parallelism = (num_gates / depth - 1) / (qc.num_qubits - 1)
 
-    liveness = (
-        (num_gates - num_multiple_qubit_gates) + num_multiple_qubit_gates * 2
-    ) / (depth * qc.num_qubits)
+    liveness = liveness_A_matrix / (depth * qc.num_qubits)
 
-    return program_communication, entanglement_ratio, parallelism, liveness
+    return (
+        program_communication,
+        entanglement_ratio,
+        parallelism,
+        liveness,
+        connectivity,
+    )
 
 
 def postprocess_ocr_qasm_files(directory: str):
