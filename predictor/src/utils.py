@@ -538,6 +538,10 @@ def calc_supermarq_features(qc: QuantumCircuit):
     depth = qc.depth()
     program_communication = np.sum(connectivity) / (qc.num_qubits * (qc.num_qubits - 1))
 
+    critical_depth = (
+        qc.depth(filter_function=lambda x: len(x[1]) > 1) / num_multiple_qubit_gates
+    )
+
     entanglement_ratio = num_multiple_qubit_gates / num_gates
     assert num_multiple_qubit_gates <= num_gates
 
@@ -547,6 +551,7 @@ def calc_supermarq_features(qc: QuantumCircuit):
 
     return (
         program_communication,
+        critical_depth,
         entanglement_ratio,
         parallelism,
         liveness,

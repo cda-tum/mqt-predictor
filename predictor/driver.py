@@ -243,6 +243,7 @@ class Predictor:
         res.append("num_qubits")
         res.append("depth")
         res.append("program_communication")
+        res.append("critical_depth")
         res.append("entanglement_ratio")
         res.append("parallelism")
         res.append("liveness")
