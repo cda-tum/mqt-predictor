@@ -303,7 +303,9 @@ class Predictor:
 
         return np.mean(y_pred == y_test)
 
-    def plot_eval_histogram(self, scores_filtered, y_pred, y_test):
+    def plot_eval_histogram(
+        self, scores_filtered, y_pred, y_test, filename="histogram"
+    ):
         res = []
         for i in range(len(y_pred)):
             assert np.argmax(scores_filtered[i]) == y_test[i]
@@ -335,7 +337,7 @@ class Predictor:
             fontsize=18,
         )
         plt.ylabel("Relative frequency", fontsize=18)
-        plt.savefig("hist_predictions.pdf")
+        plt.savefig(filename + ".pdf")
         plt.show()
 
         return res
