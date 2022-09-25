@@ -608,18 +608,18 @@ def save_training_data(res):
     training_data, names_list, scores_list = res
 
     data = np.asarray(training_data)
-    np.save("training_data.npy", data)
+    np.save("training_data/training_data.npy", data)
     data = np.asarray(names_list)
-    np.save("names_list.npy", data)
+    np.save("training_data/names_list.npy", data)
     data = np.asarray(scores_list)
-    np.save("scores_list.npy", data)
+    np.save("training_data/scores_list.npy", data)
 
 
 def load_training_data():
-    training_data = np.load("training_data.npy", allow_pickle=True)
+    training_data = np.load("training_data/training_data.npy", allow_pickle=True)
 
-    names_list = list(np.load("names_list.npy", allow_pickle=True))
+    names_list = list(np.load("training_data/names_list.npy", allow_pickle=True))
 
-    scores_list = list(np.load("scores_list.npy", allow_pickle=True))
+    scores_list = list(np.load("training_data/scores_list.npy", allow_pickle=True))
 
     return training_data, names_list, scores_list
