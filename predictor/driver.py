@@ -481,7 +481,7 @@ if __name__ == "__main__":
     # predictor.generate_compiled_circuits(
     #     source_path="./comp_test_source", target_path="./comp_test", timeout=120
     # )
-    #utils.postprocess_ocr_qasm_files(directory="./comp_test")
+    # utils.postprocess_ocr_qasm_files(directory="./comp_test")
     res = predictor.generate_trainingdata_from_qasm_files(
         source_path="./comp_test_source", target_path="./comp_test/"
     )
