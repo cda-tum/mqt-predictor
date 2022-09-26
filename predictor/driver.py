@@ -7,6 +7,7 @@ import numpy as np
 from joblib import Parallel, delayed, dump, load
 from mqt.bench.utils import qiskit_helper, tket_helper
 from numpy import asarray, save
+from pytket.qasm import circuit_to_qasm_str
 from qiskit import QuantumCircuit
 from sklearn import tree
 from sklearn.metrics import precision_recall_fscore_support
@@ -451,7 +452,7 @@ class Predictor:
             compiled_qc = qiskit_helper.get_mapped_level(
                 qc, gate_set_name, qc.num_qubits, device, compiler_settings, False, True
             )
-            return compiled_qc
+            return compiled_qc.qasm()
         elif compiler == "tket":
             compiled_qc = tket_helper.get_mapped_level(
                 qc,
@@ -462,7 +463,7 @@ class Predictor:
                 False,
                 True,
             )
-            return compiled_qc
+            return circuit_to_qasm_str(compiled_qc)
         else:
             print("Error: Compiler not found.")
             return False
