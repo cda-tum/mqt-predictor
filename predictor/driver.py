@@ -453,7 +453,7 @@ class Predictor:
             )
             return compiled_qc
         elif compiler == "tket":
-            compiled_qc = qiskit_helper.get_mapped_level(
+            compiled_qc = tket_helper.get_mapped_level(
                 qc,
                 gate_set_name,
                 qc.num_qubits,
