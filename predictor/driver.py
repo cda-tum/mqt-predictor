@@ -326,7 +326,7 @@ class Predictor:
             width=1,
         )
         plt.xticks(
-            list(range(0, num_of_comp_paths, 1)),
+            list(range(0, num_of_comp_paths, 2)),
             list(range(1, num_of_comp_paths + 1, 1)),
             fontsize=18,
         )
@@ -378,8 +378,8 @@ class Predictor:
             )
 
         plt.xticks(
-            list(range(0, len(scores_filtered), 10)),
-            [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 10)],
+            list(range(0, len(scores_filtered), 20)),
+            [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 20)],
             fontsize=18,
         )
         plt.yticks(fontsize=18)
