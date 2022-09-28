@@ -176,14 +176,17 @@ def calc_eval_score_for_qc(qc_path: str, device: str):
                 first_qubit = int(qubit_indices[0])
                 if len(qubit_indices) == 1 and gate_type != "measure":
                     specific_error = backend.gate_error(gate_type, [first_qubit])
+                    print(specific_error, gate_type,first_qubit, "gate" )
                 elif len(qubit_indices) == 1 and gate_type == "measure":
                     specific_error = backend.readout_error(first_qubit)
+                    print(specific_error, gate_type,first_qubit, "readout" )
                 elif len(qubit_indices) == 2:
                     second_qubit = int(qubit_indices[1])
                     specific_error = backend.gate_error(
                         gate_type, [first_qubit, second_qubit]
                     )
-
+                    print(specific_error, gate_type,first_qubit, second_qubit, "gate" )
+                print(res)
                 res *= 1 - float(specific_error)
 
     elif "oqc_lucy" in device:
