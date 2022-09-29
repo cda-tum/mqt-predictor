@@ -620,6 +620,8 @@ def load_training_data():
 
     names_list = list(np.load("training_data/names_list.npy", allow_pickle=True))
 
+
     scores_list = list(np.load("training_data/scores_list.npy", allow_pickle=True))
+
 
     return training_data, names_list, scores_list
