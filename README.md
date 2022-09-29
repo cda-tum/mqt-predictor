@@ -91,7 +91,42 @@ An exemplary metric could be the overall fidelity of a compiled quantum circuit 
 
 ### Generation of Training Data
 
-To train the model, sufficient training data must be provided.
+To train the model, sufficient training data must be provided as qasm files in the `./training_samples_folder`.
+We provide the training data used for the pre-trained model.
+
+After the adjustment is finished, the following methods need to be called to generate the training data:
+
+```python
+from mqt.predictor import Predictor
+
+predictor = Predictor()
+predictor.generate_compiled_circuits(
+    source_path="./training_samples",
+    target_path="./training_samples_compiled",
+    timeout=120,
+)
+utils.postprocess_ocr_qasm_files(directory="./training_samples_compiled")
+res = predictor.generate_trainingdata_from_qasm_files(
+    source_path="./training_samples", target_path="./training_samples_compiled/"
+)
+utils.save_training_data(res)
+```
+
+After the training data is saved, it can be loaded and used for any machine learning model:
+
+```python
+import numpy as np
+
+training_data, names_list, scores_list = utils.load_training_data()
+X, y = zip(*training_data)
+X = list(X)
+y = list(y)
+for i in range(len(X)):
+    X[i] = list(X[i])
+    scores_list[i] = list(scores_list[i])
+
+X, y = np.array(X), np.array(y)
+```
 
 # Repository Structure
 
