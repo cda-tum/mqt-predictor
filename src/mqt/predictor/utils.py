@@ -413,7 +413,7 @@ def get_rigetti_qubit_dict():
 
 
 def parse_ionq_calibration_config():
-    with open("src/mqt/predictor/calibration_files/ionq_calibration.json") as f:
+    with open("mqt/predictor/calibration_files/ionq_calibration.json") as f:
         ionq_calibration = json.load(f)
     ionq_dict = {
         "backend": "ionq",
@@ -425,7 +425,7 @@ def parse_ionq_calibration_config():
 
 
 def parse_oqc_calibration_config():
-    with open("src/mqt/predictor/calibration_files/oqc_lucy_calibration.json") as f:
+    with open("mqt/predictor/calibration_files/oqc_lucy_calibration.json") as f:
         oqc_lucy_calibration = json.load(f)
     fid_1Q = {}
     fid_1Q_readout = {}
@@ -599,36 +599,34 @@ def postprocess_ocr_qasm_files(directory: str):
 
 
 def save_classifier(clf):
-    dump(clf, "src/mqt/predictor/trained_clf.joblib")
+    dump(clf, "mqt/predictor/trained_clf.joblib")
 
 
 def save_training_data(res):
     training_data, names_list, scores_list = res
 
     data = np.asarray(training_data)
-    np.save("src/mqt/predictor/training_data/training_data.npy", data)
+    np.save("mqt/predictor/training_data/training_data.npy", data)
     data = np.asarray(names_list)
-    np.save("src/mqt/predictor/training_data/names_list.npy", data)
+    np.save("mqt/predictor/training_data/names_list.npy", data)
     data = np.asarray(scores_list)
-    np.save("src/mqt/predictor/training_data/scores_list.npy", data)
+    np.save("mqt/predictor/training_data/scores_list.npy", data)
 
 
 def load_training_data():
     if (
-        os.path.isfile("src/mqt/predictor/training_data/training_data.npy")
-        and os.path.isfile("src/mqt/predictor/training_data/names_list.npy")
-        and os.path.isfile("src/mqt/predictor/training_data/scores_list.npy")
+        os.path.isfile("mqt/predictor/training_data/training_data.npy")
+        and os.path.isfile("mqt/predictor/training_data/names_list.npy")
+        and os.path.isfile("mqt/predictor/training_data/scores_list.npy")
     ):
         training_data = np.load(
-            "src/mqt/predictor/training_data/training_data.npy", allow_pickle=True
+            "mqt/predictor/training_data/training_data.npy", allow_pickle=True
         )
         names_list = list(
-            np.load("src/mqt/predictor/training_data/names_list.npy", allow_pickle=True)
+            np.load("mqt/predictor/training_data/names_list.npy", allow_pickle=True)
         )
         scores_list = list(
-            np.load(
-                "src/mqt/predictor/training_data/scores_list.npy", allow_pickle=True
-            )
+            np.load("mqt/predictor/training_data/scores_list.npy", allow_pickle=True)
         )
     else:
         print("Training data loading failed.")

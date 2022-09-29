@@ -1,6 +1,6 @@
 import os
 
-from setuptools import setup
+from setuptools import find_namespace_packages, setup
 from setuptools_scm import get_version
 
 README_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)), "README.md")
@@ -14,6 +14,7 @@ version = get_version(root=".", relative_to=__file__)
 setup(
     name="mqt.predictor",
     package_dir={"mqt.predictor": "src"},
+    packages=find_namespace_packages(include=["mqt.*"]),
     setup_requires=["setuptools_scm"],
     include_package_data=True,
     python_requires=">=3.8",
