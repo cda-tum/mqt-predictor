@@ -10,7 +10,7 @@ from src.mqt.predictor.driver import Predictor
 
 @patch("matplotlib.pyplot.show")
 def test_predict(mock_show):
-    assert os.path.isfile("trained_clf.joblib")
+    assert os.path.isfile("mqt/predictor/trained_clf.joblib")
     filename = "test_qasm.qasm"
     benchmark_generator.get_one_benchmark("dj", 1, 8).qasm(filename=filename)
     predictor = Predictor()

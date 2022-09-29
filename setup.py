@@ -13,8 +13,8 @@ version = get_version(root=".", relative_to=__file__)
 
 setup(
     name="mqt.predictor",
+    packages=find_namespace_packages(include=["*mqt.*"]),
     package_dir={"mqt.predictor": "src"},
-    packages=find_namespace_packages(include=["mqt.*"]),
     setup_requires=["setuptools_scm"],
     include_package_data=True,
     python_requires=">=3.8",
