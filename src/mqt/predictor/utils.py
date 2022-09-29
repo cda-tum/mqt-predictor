@@ -599,35 +599,29 @@ def postprocess_ocr_qasm_files(directory: str):
 
 
 def save_classifier(clf):
-    dump(clf, "mqt/predictor/trained_clf.joblib")
+    dump(clf, "trained_clf.joblib")
 
 
 def save_training_data(res):
     training_data, names_list, scores_list = res
 
     data = np.asarray(training_data)
-    np.save("mqt/predictor/training_data/training_data.npy", data)
+    np.save("training_data/training_data.npy", data)
     data = np.asarray(names_list)
-    np.save("mqt/predictor/training_data/names_list.npy", data)
+    np.save("training_data/names_list.npy", data)
     data = np.asarray(scores_list)
-    np.save("mqt/predictor/training_data/scores_list.npy", data)
+    np.save("training_data/scores_list.npy", data)
 
 
 def load_training_data():
     if (
-        os.path.isfile("mqt/predictor/training_data/training_data.npy")
-        and os.path.isfile("mqt/predictor/training_data/names_list.npy")
-        and os.path.isfile("mqt/predictor/training_data/scores_list.npy")
+        os.path.isfile("training_data/training_data.npy")
+        and os.path.isfile("training_data/names_list.npy")
+        and os.path.isfile("training_data/scores_list.npy")
     ):
-        training_data = np.load(
-            "mqt/predictor/training_data/training_data.npy", allow_pickle=True
-        )
-        names_list = list(
-            np.load("mqt/predictor/training_data/names_list.npy", allow_pickle=True)
-        )
-        scores_list = list(
-            np.load("mqt/predictor/training_data/scores_list.npy", allow_pickle=True)
-        )
+        training_data = np.load("training_data/training_data.npy", allow_pickle=True)
+        names_list = list(np.load("training_data/names_list.npy", allow_pickle=True))
+        scores_list = list(np.load("training_data/scores_list.npy", allow_pickle=True))
     else:
         print("Training data loading failed.")
         return

@@ -24,8 +24,8 @@ class Predictor:
     def compile_all_circuits_for_qc(
         self,
         filename: str,
-        source_path: str = "./mqt/predictor/training_samples",
-        target_directory: str = "./mqt/predictor/training_samples_compiled",
+        source_path: str = "training_samples",
+        target_directory: str = "training_samples_compiled",
         timeout: int = 10,
     ):
         """Handles the creation of one training sample.
@@ -119,8 +119,8 @@ class Predictor:
 
     def generate_compiled_circuits(
         self,
-        source_path: str = "./mqt/predictor/training_samples",
-        target_path: str = "./mqt/predictor/training_samples_compiled",
+        source_path: str = "training_samples",
+        target_path: str = "training_samples_compiled",
         timeout: int = 10,
     ):
         """Handles the creation of all training samples.
@@ -162,8 +162,8 @@ class Predictor:
 
     def generate_trainingdata_from_qasm_files(
         self,
-        source_path: str = "./mqt/predictor/training_samples",
-        target_path: str = "./mqt/predictor/training_samples_compiled",
+        source_path: str = "training_samples",
+        target_path: str = "training_samples_compiled",
     ):
         """Handles to create training data from all generated training samples
 
@@ -207,8 +207,8 @@ class Predictor:
     def generate_training_sample(
         self,
         file: str,
-        source_path: str = "./mqt/predictor/training_samples",
-        target_path: str = "./mqt/predictor/training_samples_compiled",
+        source_path: str = "training_samples",
+        target_path: str = "training_samples_compiled",
     ):
         """Handles to create training data from a single generated training sample
 
@@ -304,7 +304,7 @@ class Predictor:
             fontsize=18,
         )
         plt.ylabel("Relative frequency", fontsize=18)
-        plt.savefig("mqt/predictor/results/" + filename + ".pdf")
+        plt.savefig("results/" + filename + ".pdf")
         plt.show()
 
         return res
@@ -370,7 +370,7 @@ class Predictor:
         plt.ylim(0, 1.05)
         plt.xlim(0, len(scores_filtered))
 
-        plt.savefig("mqt/predictor/results/y_pred_eval_normed.pdf")
+        plt.savefig("results/y_pred_eval_normed.pdf")
 
         return
 
@@ -378,8 +378,8 @@ class Predictor:
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
 
         if self.clf is None:
-            if os.path.isfile("mqt/predictor/trained_clf.joblib"):
-                self.clf = load("mqt/predictor/trained_clf.joblib")
+            if os.path.isfile("trained_clf.joblib"):
+                self.clf = load("trained_clf.joblib")
             else:
                 print("Fail: Classifier is neither trained nor saved!")
                 return None
@@ -454,11 +454,11 @@ if __name__ == "__main__":
 
     predictor = Predictor()
     # predictor.generate_compiled_circuits(
-    #     source_path="./mqt/predictor/training_samples", target_path="./mqt/predictor/training_samples_compiled", timeout=120
+    #     source_path="training_samples", target_path="training_samples_compiled", timeout=120
     # )
-    # utils.postprocess_ocr_qasm_files(directory="./mqt/predictor/training_samples_compiled")
+    # utils.postprocess_ocr_qasm_files(directory="training_samples_compiled")
     res = predictor.generate_trainingdata_from_qasm_files(
-        source_path="./mqt/predictor/training_samples",
-        target_path="./mqt/predictor/training_samples_compiled",
+        source_path="training_samples",
+        target_path="training_samples_compiled",
     )
     utils.save_training_data(res)

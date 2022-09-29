@@ -10,7 +10,7 @@ from src.mqt.predictor.driver import Predictor
 
 @patch("matplotlib.pyplot.show")
 def test_predict(mock_show):
-    assert os.path.isfile("mqt/predictor/trained_clf.joblib")
+    assert os.path.isfile("trained_clf.joblib")
     filename = "test_qasm.qasm"
     benchmark_generator.get_one_benchmark("dj", 1, 8).qasm(filename=filename)
     predictor = Predictor()
@@ -49,8 +49,8 @@ def test_compile_all_circuits_for_qc():
     predictor = Predictor()
     assert predictor.compile_all_circuits_for_qc(
         filename=tmp_filename,
-        source_path="",
-        target_directory="./training_samples_compiled/",
+        source_path=".",
+        target_directory="training_samples_compiled/",
     )
     if os.path.isfile(tmp_filename):
         os.remove(tmp_filename)
