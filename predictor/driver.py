@@ -7,6 +7,7 @@ import numpy as np
 from joblib import Parallel, delayed, dump, load
 from mqt.bench.utils import qiskit_helper, tket_helper
 from numpy import asarray, save
+from pytket.qasm import circuit_to_qasm_str
 from qiskit import QuantumCircuit
 from sklearn import tree
 from sklearn.metrics import precision_recall_fscore_support
@@ -147,44 +148,64 @@ class Predictor:
         name_list = []
         scores_list = []
 
-        LUT = utils.get_index_to_comppath_LUT()
-        for file in os.listdir(source_path):
-            if "qasm" in file:
-                print("Checking ", file)
-                scores = []
-                for _ in range(len(LUT)):
-                    scores.append([])
+        results = Parallel(n_jobs=-1, verbose=100)(
+            delayed(self.generate_training_sample)(filename, source_path, target_path)
+            for filename in os.listdir(source_path)
+        )
 
-                all_relevant_files = glob.glob(target_path + file.split(".")[0] + "*")
+        for sample in results:
+            if not sample:
+                continue
 
-                for filename in all_relevant_files:
-                    if (file.split(".")[0] + "_") in filename and filename.endswith(
-                        ".qasm"
-                    ):
-
-                        comp_path_index = int(filename.split("_")[-1].split(".")[0])
-                        device = LUT.get(comp_path_index)[1]
-
-                        score = utils.calc_eval_score_for_qc(filename, device)
-                        scores[comp_path_index] = score
-
-                num_not_empty_entries = 0
-                for i in range(len(LUT)):
-                    if not scores[i]:
-                        scores[i] = utils.get_width_penalty()
-                    else:
-                        num_not_empty_entries += 1
-
-                if num_not_empty_entries == 0:
-                    continue
-
-                feature_vec = utils.create_feature_dict(os.path.join(source_path, file))
-
-                training_data.append((list(feature_vec.values()), np.argmax(scores)))
-                name_list.append(file.split(".")[0])
-                scores_list.append(scores)
+            training_sample, circuit_name, scores = sample
+            training_data.append(training_sample)
+            name_list.append(circuit_name)
+            scores_list.append(scores)
 
         return (training_data, name_list, scores_list)
+
+    def generate_training_sample(
+        self,
+        file: str,
+        source_path: str = "./qasm_files",
+        target_path: str = "qasm_compiled/",
+    ):
+        """Method to create training data from pre-process data. All .qasm files from
+        the folder_path used to find suitable pre-processed data in compiled_path."""
+
+        if ".qasm" not in file:
+            return False
+        LUT = utils.get_index_to_comppath_LUT()
+        utils.init_all_config_files()
+        print("Checking ", file)
+        scores = []
+        for _ in range(len(LUT)):
+            scores.append([])
+
+        all_relevant_files = glob.glob(target_path + file.split(".")[0] + "*")
+        for filename in all_relevant_files:
+            if (file.split(".")[0] + "_") in filename and filename.endswith(".qasm"):
+                comp_path_index = int(filename.split("_")[-1].split(".")[0])
+                device = LUT.get(comp_path_index)[1]
+
+                score = utils.calc_eval_score_for_qc(filename, device)
+                scores[comp_path_index] = score
+
+        num_not_empty_entries = 0
+        for i in range(len(LUT)):
+            if not scores[i]:
+                scores[i] = utils.get_width_penalty()
+            else:
+                num_not_empty_entries += 1
+
+        if num_not_empty_entries == 0:
+            return False
+
+        feature_vec = utils.create_feature_dict(os.path.join(source_path, file))
+        training_sample = (list(feature_vec.values()), np.argmax(scores))
+        circuit_name = file.split(".")[0]
+
+        return (training_sample, circuit_name, scores)
 
     def train_decision_tree_classifier(
         self, X, y, name_list=None, actual_scores_list=None
@@ -283,7 +304,9 @@ class Predictor:
 
         return np.mean(y_pred == y_test)
 
-    def plot_eval_histogram(self, scores_filtered, y_pred, y_test):
+    def plot_eval_histogram(
+        self, scores_filtered, y_pred, y_test, filename="histogram"
+    ):
         res = []
         for i in range(len(y_pred)):
             assert np.argmax(scores_filtered[i]) == y_test[i]
@@ -304,8 +327,8 @@ class Predictor:
             width=1,
         )
         plt.xticks(
-            list(range(0, num_of_comp_paths, 1)),
-            list(range(1, num_of_comp_paths + 1, 1)),
+            list(range(0, num_of_comp_paths, 2)),
+            list(range(1, num_of_comp_paths + 1, 2)),
             fontsize=18,
         )
         plt.yticks(fontsize=18)
@@ -315,7 +338,7 @@ class Predictor:
             fontsize=18,
         )
         plt.ylabel("Relative frequency", fontsize=18)
-        plt.savefig("hist_predictions.pdf")
+        plt.savefig("results/" + filename + ".pdf")
         plt.show()
 
         return res
@@ -356,8 +379,8 @@ class Predictor:
             )
 
         plt.xticks(
-            list(range(0, len(scores_filtered), 10)),
-            [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 10)],
+            list(range(0, len(scores_filtered), 20)),
+            [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 20)],
             fontsize=18,
         )
         plt.yticks(fontsize=18)
@@ -424,14 +447,14 @@ class Predictor:
         compiler = prediction_information[2]
         compiler_settings = prediction_information[3]
 
+        print("")
         if compiler == "qiskit":
             compiled_qc = qiskit_helper.get_mapped_level(
                 qc, gate_set_name, qc.num_qubits, device, compiler_settings, False, True
             )
-            return compiled_qc
+            return compiled_qc.qasm()
         elif compiler == "tket":
-            compiled_qc = (tket_helper.get_mapped_level,)
-            (
+            compiled_qc = tket_helper.get_mapped_level(
                 qc,
                 gate_set_name,
                 qc.num_qubits,
@@ -440,7 +463,7 @@ class Predictor:
                 False,
                 True,
             )
-            return compiled_qc
+            return circuit_to_qasm_str(compiled_qc)
         else:
             print("Error: Compiler not found.")
             return False
@@ -455,11 +478,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # save_all_compilation_path_results(
-    #     source_path="./comp_test_source", target_path="./comp_test", timeout=60
-    # )
-    utils.postprocess_ocr_qasm_files(directory="./comp_test")
     predictor = Predictor()
+    # predictor.generate_compiled_circuits(
+    #     source_path="./comp_test_source", target_path="./comp_test", timeout=120
+    # )
+    # utils.postprocess_ocr_qasm_files(directory="./comp_test")
     res = predictor.generate_trainingdata_from_qasm_files(
         source_path="./comp_test_source", target_path="./comp_test/"
     )

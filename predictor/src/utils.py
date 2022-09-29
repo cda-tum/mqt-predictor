@@ -109,9 +109,7 @@ def get_index_to_comppath_LUT():
 
 def dict_to_featurevector(gate_dict):
     """Calculates and returns the feature vector of a given quantum circuit gate dictionary."""
-    openqasm_gates_list = get_openqasm_gates()
-    res_dct = {openqasm_gates_list[i] for i in range(0, len(openqasm_gates_list))}
-    res_dct = dict.fromkeys(res_dct, 0)
+    res_dct = dict.fromkeys(get_openqasm_gates(), 0)
     for key, val in dict(gate_dict).items():
         if key in res_dct:
             res_dct[key] = val
@@ -276,7 +274,6 @@ def calc_eval_score_for_qc(qc_path: str, device: str):
     else:
         print("Error: No suitable backend found!")
 
-    # print("Eval score for :", qc_path, " is ", res)
     return res
 
 
@@ -540,9 +537,12 @@ def calc_supermarq_features(qc: QuantumCircuit):
     depth = qc.depth()
     program_communication = np.sum(connectivity) / (qc.num_qubits * (qc.num_qubits - 1))
 
-    critical_depth = (
-        qc.depth(filter_function=lambda x: len(x[1]) > 1) / num_multiple_qubit_gates
-    )
+    if num_multiple_qubit_gates == 0:
+        critical_depth = 0
+    else:
+        critical_depth = (
+            qc.depth(filter_function=lambda x: len(x[1]) > 1) / num_multiple_qubit_gates
+        )
 
     entanglement_ratio = num_multiple_qubit_gates / num_gates
     assert num_multiple_qubit_gates <= num_gates
@@ -608,11 +608,11 @@ def save_training_data(res):
     training_data, names_list, scores_list = res
 
     data = np.asarray(training_data)
-    np.save("training_data.npy", data)
+    np.save("training_data/training_data.npy", data)
     data = np.asarray(names_list)
-    np.save("names_list.npy", data)
+    np.save("training_data/names_list.npy", data)
     data = np.asarray(scores_list)
-    np.save("scores_list.npy", data)
+    np.save("training_data/scores_list.npy", data)
 
 
 def load_training_data():
