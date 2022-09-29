@@ -3,6 +3,7 @@ import os
 import signal
 
 import numpy as np
+from joblib import dump
 from qiskit import QuantumCircuit
 from qiskit.test.mock.backends import FakeMontreal, FakeWashington
 
@@ -145,12 +146,7 @@ def timeout_watcher(func, args, timeout):
     return res
 
 
-def get_compiled_output_folder():
-    return "qasm_compiled/"
-
-
 def calc_eval_score_for_qc(qc_path: str, device: str):
-    # read qasm to Qiskit Quantumcircuit
     try:
         qc = QuantumCircuit.from_qasm_file(qc_path)
     except Exception as e:
@@ -417,7 +413,7 @@ def get_rigetti_qubit_dict():
 
 
 def parse_ionq_calibration_config():
-    with open("ionq_calibration.json") as f:
+    with open("mqt/predictor/calibration_files/ionq_calibration.json") as f:
         ionq_calibration = json.load(f)
     ionq_dict = {
         "backend": "ionq",
@@ -429,7 +425,7 @@ def parse_ionq_calibration_config():
 
 
 def parse_oqc_calibration_config():
-    with open("oqc_lucy_calibration.json") as f:
+    with open("mqt/predictor/calibration_files/oqc_lucy_calibration.json") as f:
         oqc_lucy_calibration = json.load(f)
     fid_1Q = {}
     fid_1Q_readout = {}
@@ -461,7 +457,7 @@ def parse_oqc_calibration_config():
 
 
 def parse_rigetti_calibration_config():
-    with open("rigetti_m1_calibration.json") as f:
+    with open("mqt/predictor/calibration_files/rigetti_m1_calibration.json") as f:
         rigetti_m1_calibration = json.load(f)
     fid_1Q = {}
     fid_1Q_readout = {}
@@ -482,8 +478,6 @@ def parse_rigetti_calibration_config():
             fid_2Q_CZ[str(elem)] = rigetti_m1_calibration["specs"]["2Q"][elem].get(
                 "fCZ"
             )
-
-    import numpy as np
 
     cz_fid_avg = np.average(list(fid_2Q_CZ.values()))
 
@@ -602,6 +596,10 @@ def postprocess_ocr_qasm_files(directory: str):
                                 "gate ecr q0,q1 { rzx(pi/4) q0,q1; x q0; rzx(-pi/4) q0,q1; }\n"
                             )
                 print("New qasm file for: ", new_name)
+
+
+def save_classifier(clf):
+    dump(clf, "trained_clf.joblib")
 
 
 def save_training_data(res):

@@ -2,23 +2,10 @@ import os
 from unittest.mock import patch
 
 import pytest
+
 from mqt.bench import benchmark_generator
-
-from predictor.driver import Predictor
-from predictor.src import utils
-
-
-@patch("matplotlib.pyplot.show")
-def test_train_decision_tree_classifier(mock_show):
-    (
-        training_data,
-        name_list,
-        scores_list,
-    ) = utils.load_training_data()
-    X, y = zip(*training_data)
-    predictor = Predictor()
-    res = predictor.train_decision_tree_classifier(X, y, name_list, scores_list)
-    assert res is not None
+from mqt.predictor.driver import Predictor
+from mqt.predictor.src import utils
 
 
 @patch("matplotlib.pyplot.show")
@@ -61,7 +48,9 @@ def test_compile_all_circuits_for_qc():
     qc.qasm(filename=tmp_filename)
     predictor = Predictor()
     assert predictor.compile_all_circuits_for_qc(
-        filename=tmp_filename, source_path=".", target_directory="./comp_test/"
+        filename=tmp_filename,
+        source_path="",
+        target_directory="./training_samples_compiled/",
     )
     if os.path.isfile(tmp_filename):
         os.remove(tmp_filename)

@@ -4,8 +4,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from joblib import Parallel, delayed, dump, load
-from mqt.bench.utils import qiskit_helper, tket_helper
+from joblib import Parallel, delayed, load
 from numpy import asarray, save
 from pytket.qasm import circuit_to_qasm_str
 from qiskit import QuantumCircuit
@@ -14,7 +13,8 @@ from sklearn.metrics import precision_recall_fscore_support
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.tree import plot_tree
 
-from predictor.src import utils
+from mqt.bench.utils import qiskit_helper, tket_helper
+from mqt.predictor.src import utils
 
 plt.rcParams["font.family"] = "Times New Roman"
 
@@ -23,13 +23,29 @@ class Predictor:
     def __init__(self):
         self.clf = None
 
+    def set_classifier(self, clf):
+        self.clf = clf
+
     def compile_all_circuits_for_qc(
         self,
         filename: str,
-        source_path: str = "./source",
-        target_directory: str = "./qasm_files",
+        source_path: str = "./training_samples",
+        target_directory: str = "./training_samples_compiled",
         timeout: int = 10,
     ):
+        """Handles the creation of one training sample.
+
+        Keyword arguments:
+        filename -- qasm circuit sample filename
+        source_path -- path to file
+        target_directory -- path to directory for compiled circuit
+        timeout -- timeout in seconds
+
+        Return values:
+        True -- at least one compilation option succeeded
+        False -- if not
+        """
+
         print("compile_all_circuits_for_qc:", filename)
 
         qc = QuantumCircuit.from_qasm_file(os.path.join(source_path, filename))
@@ -98,7 +114,7 @@ class Predictor:
                                 continue
 
             if all(x is False for x in results):
-                print("No compilation succeed for this quantum circuit.")
+                print("No compilation succeeded for this quantum circuit.")
                 return False
             return True
 
@@ -108,12 +124,18 @@ class Predictor:
 
     def generate_compiled_circuits(
         self,
-        source_path: str = "./qasm_files",
-        target_path: str = "./qasm_files",
+        source_path: str = "./training_samples",
+        target_path: str = "./training_samples_compiled",
         timeout: int = 10,
     ):
-        """Method to create pre-processed data to accelerate the training data generation afterwards. All .qasm files from
-        the folder path are considered."""
+        """Handles the creation of all training samples.
+
+        Keyword arguments:
+        source_path -- path to file
+        target_directory -- path to directory for compiled circuit
+        timeout -- timeout in seconds
+
+        """
 
         global TIMEOUT
         TIMEOUT = timeout
@@ -124,6 +146,15 @@ class Predictor:
             if "qasm" in file:
                 source_circuits_list.append(file)
 
+        if len(source_circuits_list) == 0 and os.path.isfile(
+            os.path.join(source_path, "mqtbench_training_samples.zip")
+        ):
+            path_zip = os.path.join(source_path, "mqtbench_training_samples.zip")
+            import zipfile
+
+            with zipfile.ZipFile(path_zip, "r") as zip_ref:
+                zip_ref.extractall(source_path)
+
         Parallel(n_jobs=-1, verbose=100)(
             delayed(self.compile_all_circuits_for_qc)(
                 filename, source_path, target_path, timeout
@@ -132,10 +163,21 @@ class Predictor:
         )
 
     def generate_trainingdata_from_qasm_files(
-        self, source_path: str = "./qasm_files", target_path: str = "qasm_compiled/"
+        self,
+        source_path: str = "./training_samples",
+        target_path: str = "./training_samples_compiled",
     ):
-        """Method to create training data from pre-process data. All .qasm files from
-        the folder_path used to find suitable pre-processed data in compiled_path."""
+        """Handles to create training data from all generated training samples
+
+        Keyword arguments:
+        source_path -- path to file
+        target_directory -- path to directory for compiled circuit
+
+        Return values:
+        training_data -- training data
+        name_list -- names of all training samples
+        scores -- evaluation scores for all compilation options
+        """
 
         if utils.init_all_config_files():
             print("Calibration files successfully initiated")
@@ -170,8 +212,18 @@ class Predictor:
         source_path: str = "./qasm_files",
         target_path: str = "qasm_compiled/",
     ):
-        """Method to create training data from pre-process data. All .qasm files from
-        the folder_path used to find suitable pre-processed data in compiled_path."""
+        """Handles to create training data from a single generated training sample
+
+        Keyword arguments:
+        file -- filename for the training sample
+        source_path -- path to file
+        target_directory -- path to directory for compiled circuit
+
+        Return values:
+        training_sample -- training data sample
+        circuit_name -- names of the training sample circuit
+        scores -- evaluation scores for all compilation options
+        """
 
         if ".qasm" not in file:
             return False
@@ -207,106 +259,22 @@ class Predictor:
 
         return (training_sample, circuit_name, scores)
 
-    def train_decision_tree_classifier(
-        self, X, y, name_list=None, actual_scores_list=None
-    ):
-        """Method to for the actual training of the decision tree classifier."""
-
-        X, y, indices = np.array(X), np.array(y), np.array(range(len(y)))
-
-        non_zero_indices = []
-        for i in range(len(X[0])):
-            if sum(X[:, i]) > 0:
-                non_zero_indices.append(i)
-        X = X[:, non_zero_indices]
-        data = asarray(non_zero_indices)
-        save("non_zero_indices.npy", data)
-
-        print("Number of used and non-zero features: ", len(non_zero_indices))
-
-        (
-            X_train,
-            X_test,
-            y_train,
-            y_test,
-            indices_train,
-            indices_test,
-        ) = train_test_split(X, y, indices, test_size=0.3, random_state=5)
-
-        tree_param = [
-            {
-                "criterion": ["entropy", "gini"],
-                "max_depth": list(range(1, 15, 1)),
-                "min_samples_split": list(range(2, 20, 4)),
-                "min_samples_leaf": list(range(2, 20, 4)),
-                "max_leaf_nodes": list(range(2, 200, 40)),
-                "max_features": list(range(1, len(non_zero_indices), 10)),
-            },
-        ]
-        self.clf = GridSearchCV(
-            tree.DecisionTreeClassifier(random_state=5), tree_param, cv=5, n_jobs=8
-        ).fit(X_train, y_train)
-        print("Best GridSearch Estimator: ", self.clf.best_estimator_)
-        print("Best GridSearch Params: ", self.clf.best_params_)
-        print("Num Training Circuits: ", len(X_train))
-        print("Num Test Circuits: ", len(X_test))
-        print("Best Training accuracy: ", self.clf.best_score_)
-        dump(self.clf, "decision_tree_classifier.joblib")
-
-        y_pred = np.array(list(self.clf.predict(X_test)))
-        print("Test accuracy: ", np.mean(y_pred == y_test))
-        print("Compilation paths from Train Data: ", set(y_train))
-        print("Compilation paths from Test Data: ", set(y_test))
-        print("Compilation paths from Predictions: ", set(y_pred))
-
-        openqasm_qc_list = utils.get_openqasm_gates()
-        res = [openqasm_qc_list[i] for i in range(0, len(openqasm_qc_list))]
-        res.append("num_qubits")
-        res.append("depth")
-        res.append("program_communication")
-        res.append("critical_depth")
-        res.append("entanglement_ratio")
-        res.append("parallelism")
-        res.append("liveness")
-        res = [res[i] for i in non_zero_indices]
-
-        machines = utils.get_index_to_comppath_LUT()
-
-        plt.figure(figsize=(17, 6))
-        plot_tree(
-            self.clf.best_estimator_,
-            feature_names=res,
-            class_names=[machines[i][1] for i in list(self.clf.classes_)],
-            filled=True,
-            impurity=True,
-            rounded=True,
-        )
-        plt.savefig("decisiontree.pdf")
-
-        names_list_filtered = [name_list[i] for i in indices_test]
-        scores_filtered = [actual_scores_list[i] for i in indices_test]
-
-        self.plot_eval_all_detailed_compact_normed(
-            names_list_filtered, scores_filtered, y_pred, y_test
-        )
-        self.plot_eval_histogram(scores_filtered, y_pred, y_test)
-
-        res = precision_recall_fscore_support(y_test, y_pred)
-
-        with open("precision_recall_fscore.csv", "w") as csvfile:
-            np.savetxt(
-                csvfile,
-                np.array([list(set(list(y_test) + list(y_pred)))]),
-                delimiter=",",
-                fmt="%s",
-            )
-            np.savetxt(csvfile, np.round(np.array(res), 3), delimiter=",", fmt="%s")
-
-        return np.mean(y_pred == y_test)
-
     def plot_eval_histogram(
         self, scores_filtered, y_pred, y_test, filename="histogram"
     ):
+        """Method to generate the histogram of the resulting ranks
+
+        Keyword arguments:
+        scores_filtered -- all scores filtered for the respectively predicted indices of all training data
+        y_pred -- predicted labels
+        y_test -- actual labels
+        filename -- name of the saved figure
+
+        Return values:
+        training_sample -- training data sample
+        circuit_name -- names of the training sample circuit
+        scores -- all achieved ranks
+        """
         res = []
         for i in range(len(y_pred)):
             assert np.argmax(scores_filtered[i]) == y_test[i]
@@ -346,6 +314,14 @@ class Predictor:
     def plot_eval_all_detailed_compact_normed(
         self, names_list, scores_filtered, y_pred, y_test
     ):
+        """Method to generate the detailed graph to examine the differences in evaluation scores
+
+        Keyword arguments:
+        names_list -- all names filtered for the respectively predicted indices of all training data
+        scores_filtered -- all scores filtered for the respectively predicted indices of all training data
+        y_pred -- predicted labels
+        y_test -- actual labels
+        """
 
         # Create list of all qubit numbers and sort them
         names_list_num_qubits = []
@@ -396,18 +372,18 @@ class Predictor:
         plt.ylim(0, 1.05)
         plt.xlim(0, len(scores_filtered))
 
-        plt.savefig("y_pred_eval_normed.pdf")
+        plt.savefig("results/y_pred_eval_normed.pdf")
 
         return
 
     def predict(self, qasm_str_or_path: str):
-        """Compilation path prediction for a given qasm file file or qasm string."""
+        """Returns a compilation option prediction index for a given qasm file path or qasm string."""
 
         if self.clf is None:
-            if os.path.isfile("decision_tree_classifier.joblib"):
-                self.clf = load("decision_tree_classifier.joblib")
+            if os.path.isfile("trained_clf.joblib"):
+                self.clf = load("trained_clf.joblib")
             else:
-                print("Fail: Decision Tree Classifier is neither trained nor saved!")
+                print("Fail: Classifier is neither trained nor saved!")
                 return None
 
         feature_dict = utils.create_feature_dict(qasm_str_or_path)
@@ -480,10 +456,10 @@ if __name__ == "__main__":
 
     predictor = Predictor()
     # predictor.generate_compiled_circuits(
-    #     source_path="./comp_test_source", target_path="./comp_test", timeout=120
+    #     source_path="./training_samples", target_path="./training_samples_compiled", timeout=120
     # )
-    # utils.postprocess_ocr_qasm_files(directory="./comp_test")
+    # utils.postprocess_ocr_qasm_files(directory="./training_samples_compiled")
     res = predictor.generate_trainingdata_from_qasm_files(
-        source_path="./comp_test_source", target_path="./comp_test/"
+        source_path="./training_samples", target_path="./training_samples_compiled/"
     )
     utils.save_training_data(res)

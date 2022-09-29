@@ -1,4 +1,4 @@
-from predictor.src import utils
+from mqt.predictor.src import utils
 
 
 def test_get_width_penalty():
