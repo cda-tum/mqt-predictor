@@ -45,6 +45,16 @@ predictor = Predictor()
 prediction_index = predictor.predict("qasm_file_path")
 ```
 
+This prediction index can be translated into a tuple of (gate set, device, compiler, compiler_settings):
+
+```python
+from mqt.predictor import utils
+
+look_up_table = utils.get_index_to_comppath_LUT()
+prediction_tuple = look_up_table[prediction_index]
+print(prediction_tuple)
+```
+
 Afterwards, the circuit can be compiled respectively and the compiled circuit is returned as a qasm string:
 
 ```python
