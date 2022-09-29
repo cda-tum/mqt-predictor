@@ -39,7 +39,7 @@ First, the package must be installed:
 Now a prediction can be made for any qasm file:
 
 ```python
-from mqt.predictor import Predictor
+from source.mqt import Predictor
 
 predictor = Predictor()
 prediction_index = predictor.predict("qasm_file_path")
@@ -48,7 +48,7 @@ prediction_index = predictor.predict("qasm_file_path")
 This prediction index can be translated into a tuple of (gate set, device, compiler, compiler_settings):
 
 ```python
-from mqt.predictor import utils
+from source.mqt import utils
 
 look_up_table = utils.get_index_to_comppath_LUT()
 prediction_tuple = look_up_table[prediction_index]
@@ -58,7 +58,7 @@ print(prediction_tuple)
 Afterwards, the circuit can be compiled respectively and the compiled circuit is returned as a qasm string:
 
 ```python
-from mqt.predictor import Predictor
+from source.mqt import Predictor
 
 compiled_qasm_str = predictor.compile_predicted_compilation_path(
     "qasm_file_path", prediction_index
@@ -97,17 +97,18 @@ We provide the training data used for the pre-trained model.
 After the adjustment is finished, the following methods need to be called to generate the training data:
 
 ```python
-from mqt.predictor import Predictor
+from source.mqt import Predictor, utils
 
 predictor = Predictor()
 predictor.generate_compiled_circuits(
-    source_path="./training_samples",
+    source_path="src/mqt/predictor/training_samples",
     target_path="./training_samples_compiled",
     timeout=120,
 )
 utils.postprocess_ocr_qasm_files(directory="./training_samples_compiled")
 res = predictor.generate_trainingdata_from_qasm_files(
-    source_path="./training_samples", target_path="./training_samples_compiled/"
+    source_path="src/mqt/predictor/training_samples",
+    target_path="./training_samples_compiled/",
 )
 utils.save_training_data(res)
 ```
@@ -115,6 +116,7 @@ utils.save_training_data(res)
 After the training data is saved, it can be loaded and used for any machine learning model:
 
 ```python
+from source.mqt import utils
 import numpy as np
 
 training_data, names_list, scores_list = utils.load_training_data()

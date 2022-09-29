@@ -1,18 +1,21 @@
 import os
 
 from setuptools import setup
+from setuptools_scm import get_version
 
 README_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)), "README.md")
 with open(README_PATH) as readme_file:
     README = readme_file.read()
 
+
+version = get_version(root=".", relative_to=__file__)
+
+
 setup(
     name="mqt.predictor",
-    packages=[
-        "predictor",
-        "predictor.src",
-    ],
-    version="0.1.0rc1",
+    package_dir={"mqt.predictor": "src"},
+    setup_requires=["setuptools_scm"],
+    include_package_data=True,
     python_requires=">=3.8",
     license="MIT",
     description="MQT Predictor",
@@ -30,8 +33,6 @@ setup(
         "matplotlib~=3.5.1",
         "scikit-learn>=1.0.2,<1.2.0",
         "natsort~=8.1.0",
-        "graphviz~=0.20",
-        "dtreeviz~=1.3.6",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",

@@ -30,7 +30,7 @@ jobs:
           path: dist/*.whl
 
   build_sdist:
-    name: Build source distribution
+    name: Build src distribution
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
