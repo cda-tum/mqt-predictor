@@ -1,0 +1,3 @@
+include mqt/predictor/training_samples/*
+include mqt/predictor/training_samples_compiled/*
+include mqt/predictor/calibration_files/*
