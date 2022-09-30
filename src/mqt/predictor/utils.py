@@ -510,18 +510,15 @@ def calc_supermarq_features(qc: QuantumCircuit):
     for _ in range(qc.num_qubits):
         connectivity.append([])
 
-    offset_map = {}
     offset = 0
+    qubit_indices = []
     for elem in qc.qregs:
-        offset_map[elem.name] = offset
+        for i in range(elem.size):
+            qubit_indices.append(offset + i)
         offset += elem.size
 
-    for instruction, qargs, _cargs in qc.data:
+    for instruction, _, _ in qc.data:
         gate_type = instruction.name
-        qubit_indices = []
-        for elem in qargs:
-            qubit_indices.append(elem.index + offset_map.get(elem.register.name))
-
         liveness_A_matrix += len(qubit_indices)
         if gate_type != "barrier":
             all_indices = set(qubit_indices)
