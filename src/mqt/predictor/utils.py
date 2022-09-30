@@ -1,6 +1,12 @@
 import json
 import os
 import signal
+import sys
+
+if sys.version_info < (3, 10, 0):
+    import importlib_resources as resources
+else:
+    from importlib import resources
 
 import numpy as np
 from joblib import dump
@@ -413,19 +419,20 @@ def get_rigetti_qubit_dict():
 
 
 def parse_ionq_calibration_config():
-    with open("mqt/predictor/calibration_files/ionq_calibration.json") as f:
+    ref = resources.files("mqt.predictor") / "calibration_files" / "ionq_calibration.json"
+    with ref.open() as f:
         ionq_calibration = json.load(f)
     ionq_dict = {
         "backend": "ionq",
         "avg_1Q": ionq_calibration["fidelity"]["1Q"].get("mean"),
         "avg_2Q": ionq_calibration["fidelity"]["2Q"].get("mean"),
     }
-
     return ionq_dict
 
 
 def parse_oqc_calibration_config():
-    with open("mqt/predictor/calibration_files/oqc_lucy_calibration.json") as f:
+    ref = resources.files("mqt.predictor") / "calibration_files" / "oqc_lucy_calibration.json"
+    with ref.open() as f:
         oqc_lucy_calibration = json.load(f)
     fid_1Q = {}
     fid_1Q_readout = {}
@@ -452,12 +459,12 @@ def parse_oqc_calibration_config():
         "avg_2Q": avg_2Q,
         "fid_2Q": fid_2Q,
     }
-    oqc_dict
     return oqc_dict
 
 
 def parse_rigetti_calibration_config():
-    with open("mqt/predictor/calibration_files/rigetti_m1_calibration.json") as f:
+    ref = resources.files("mqt.predictor") / "calibration_files" / "rigetti_m1_calibration.json"
+    with ref.open() as f:
         rigetti_m1_calibration = json.load(f)
     fid_1Q = {}
     fid_1Q_readout = {}
@@ -605,25 +612,27 @@ def save_classifier(clf):
 def save_training_data(res):
     training_data, names_list, scores_list = res
 
-    data = np.asarray(training_data)
-    np.save("training_data/training_data.npy", data)
-    data = np.asarray(names_list)
-    np.save("training_data/names_list.npy", data)
-    data = np.asarray(scores_list)
-    np.save("training_data/scores_list.npy", data)
+    with resources.as_file(resources.files("mqt.predictor") / "training_data") as path:
+        data = np.asarray(training_data)
+        np.save(str(path / "training_data.npy"), data)
+        data = np.asarray(names_list)
+        np.save(str(path / "names_list.npy"), data)
+        data = np.asarray(scores_list)
+        np.save(str(path / "scores_list.npy"), data)
 
 
 def load_training_data():
-    if (
-        os.path.isfile("training_data/training_data.npy")
-        and os.path.isfile("training_data/names_list.npy")
-        and os.path.isfile("training_data/scores_list.npy")
-    ):
-        training_data = np.load("training_data/training_data.npy", allow_pickle=True)
-        names_list = list(np.load("training_data/names_list.npy", allow_pickle=True))
-        scores_list = list(np.load("training_data/scores_list.npy", allow_pickle=True))
-    else:
-        print("Training data loading failed.")
-        return
+    with resources.as_file(resources.files("mqt.predictor") / "training_data") as path:
+        if (
+            path.joinpath("training_data.npy").is_file()
+            and path.joinpath("names_list.npy").is_file()
+            and path.joinpath("scores_list.npy").is_file()
+        ):
+            training_data = np.load(str(path / "training_data.npy"), allow_pickle=True)
+            names_list = list(np.load(str(path / "names_list.npy"), allow_pickle=True))
+            scores_list = list(np.load(str(path / "scores_list.npy"), allow_pickle=True))
+        else:
+            print("Training data loading failed.")
+            return
 
-    return training_data, names_list, scores_list
+        return training_data, names_list, scores_list

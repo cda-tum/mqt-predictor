@@ -1,6 +1,7 @@
 import argparse
 import glob
 import os
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,6 +11,11 @@ from pytket.qasm import circuit_to_qasm_str
 from qiskit import QuantumCircuit
 
 from mqt.predictor import utils
+
+if sys.version_info < (3, 10, 0):
+    import importlib_resources as resources
+else:
+    from importlib import resources
 
 plt.rcParams["font.family"] = "Times New Roman"
 
@@ -24,8 +30,8 @@ class Predictor:
     def compile_all_circuits_for_qc(
         self,
         filename: str,
-        source_path: str = "training_samples",
-        target_directory: str = "training_samples_compiled",
+        source_path: str = None,
+        target_path: str = None,
         timeout: int = 10,
     ):
         """Handles the creation of one training sample.
@@ -33,13 +39,18 @@ class Predictor:
         Keyword arguments:
         filename -- qasm circuit sample filename
         source_path -- path to file
-        target_directory -- path to directory for compiled circuit
+        target_path -- path to directory for compiled circuit
         timeout -- timeout in seconds
 
         Return values:
         True -- at least one compilation option succeeded
         False -- if not
         """
+        if source_path is None:
+            source_path = str(resources.files("mqt.predictor").joinpath("training_samples"))
+
+        if target_path is None:
+            target_path = str(resources.files("mqt.predictor").joinpath("training_samples_compiled"))
 
         print("compile_all_circuits_for_qc:", filename)
 
@@ -73,7 +84,7 @@ class Predictor:
                                             opt_level,
                                             False,
                                             False,
-                                            target_directory,
+                                            target_path,
                                             target_filename,
                                         ],
                                         timeout,
@@ -98,7 +109,7 @@ class Predictor:
                                             lineplacement,
                                             False,
                                             False,
-                                            target_directory,
+                                            target_path,
                                             target_filename,
                                         ],
                                         timeout,
@@ -119,8 +130,8 @@ class Predictor:
 
     def generate_compiled_circuits(
         self,
-        source_path: str = "training_samples",
-        target_path: str = "training_samples_compiled",
+        source_path: str = None,
+        target_path: str = None,
         timeout: int = 10,
     ):
         """Handles the creation of all training samples.
@@ -131,6 +142,11 @@ class Predictor:
         timeout -- timeout in seconds
 
         """
+        if source_path is None:
+            source_path = str(resources.files("mqt.predictor").joinpath("training_samples"))
+
+        if target_path is None:
+            target_path = str(resources.files("mqt.predictor").joinpath("training_samples_compiled"))
 
         global TIMEOUT
         TIMEOUT = timeout
@@ -162,8 +178,8 @@ class Predictor:
 
     def generate_trainingdata_from_qasm_files(
         self,
-        source_path: str = "training_samples",
-        target_path: str = "training_samples_compiled",
+        source_path: str = None,
+        target_path: str = None,
     ):
         """Handles to create training data from all generated training samples
 
@@ -176,6 +192,11 @@ class Predictor:
         name_list -- names of all training samples
         scores -- evaluation scores for all compilation options
         """
+        if source_path is None:
+            source_path = str(resources.files("mqt.predictor").joinpath("training_samples"))
+
+        if target_path is None:
+            target_path = str(resources.files("mqt.predictor").joinpath("training_samples_compiled"))
 
         if utils.init_all_config_files():
             print("Calibration files successfully initiated")
@@ -207,21 +228,26 @@ class Predictor:
     def generate_training_sample(
         self,
         file: str,
-        source_path: str = "training_samples",
-        target_path: str = "training_samples_compiled",
+        source_path: str = None,
+        target_path: str = None,
     ):
         """Handles to create training data from a single generated training sample
 
         Keyword arguments:
         file -- filename for the training sample
         source_path -- path to file
-        target_directory -- path to directory for compiled circuit
+        target_path -- path to directory for compiled circuit
 
         Return values:
         training_sample -- training data sample
         circuit_name -- names of the training sample circuit
         scores -- evaluation scores for all compilation options
         """
+        if source_path is None:
+            source_path = str(resources.files("mqt.predictor").joinpath("training_samples"))
+
+        if target_path is None:
+            target_path = str(resources.files("mqt.predictor").joinpath("training_samples_compiled"))
 
         if ".qasm" not in file:
             return False
@@ -304,7 +330,8 @@ class Predictor:
             fontsize=18,
         )
         plt.ylabel("Relative frequency", fontsize=18)
-        plt.savefig("results/" + filename + ".pdf")
+        path = str(resources.files("mqt.predictor") / "results" / filename / ".pdf")
+        plt.savefig(path)
         plt.show()
 
         return res
@@ -369,8 +396,8 @@ class Predictor:
 
         plt.ylim(0, 1.05)
         plt.xlim(0, len(scores_filtered))
-
-        plt.savefig("results/y_pred_eval_normed.pdf")
+        path = str(resources.files("mqt.predictor") / "results" / "y_pred_eval_normed.pdf")
+        plt.savefig(path)
 
         return
 
@@ -378,8 +405,9 @@ class Predictor:
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
 
         if self.clf is None:
-            if os.path.isfile("trained_clf.joblib"):
-                self.clf = load("trained_clf.joblib")
+            path = resources.files("mqt.predictor") / "trained_clf.joblib"
+            if path.is_file():
+                self.clf = load(str(path))
             else:
                 print("Fail: Classifier is neither trained nor saved!")
                 return None
@@ -389,7 +417,8 @@ class Predictor:
             return None
         feature_vector = list(feature_dict.values())
 
-        non_zero_indices = np.load("non_zero_indices.npy", allow_pickle=True)
+        path = resources.files("mqt.predictor") / "non_zero_indices.npy"
+        non_zero_indices = np.load(str(path), allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
         return self.clf.predict([feature_vector])[0]
@@ -457,8 +486,5 @@ if __name__ == "__main__":
     #     source_path="training_samples", target_path="training_samples_compiled", timeout=120
     # )
     # utils.postprocess_ocr_qasm_files(directory="training_samples_compiled")
-    res = predictor.generate_trainingdata_from_qasm_files(
-        source_path="training_samples",
-        target_path="training_samples_compiled",
-    )
+    res = predictor.generate_trainingdata_from_qasm_files()
     utils.save_training_data(res)

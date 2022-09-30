@@ -1,16 +1,23 @@
 import os
+import sys
 from unittest.mock import patch
+
+if sys.version_info < (3, 10, 0):
+    import importlib_resources as resources
+else:
+    from importlib import resources
 
 import pytest
 from mqt.bench import benchmark_generator
 
-from src.mqt.predictor import utils
-from src.mqt.predictor.driver import Predictor
+from mqt.predictor import utils
+from mqt.predictor.driver import Predictor
 
 
 @patch("matplotlib.pyplot.show")
 def test_predict(mock_show):
-    assert os.path.isfile("trained_clf.joblib")
+    path = resources.files("mqt.predictor") / "trained_clf.joblib"
+    assert path.is_file()
     filename = "test_qasm.qasm"
     benchmark_generator.get_one_benchmark("dj", 1, 8).qasm(filename=filename)
     predictor = Predictor()
@@ -50,7 +57,6 @@ def test_compile_all_circuits_for_qc():
     assert predictor.compile_all_circuits_for_qc(
         filename=tmp_filename,
         source_path=".",
-        target_directory="training_samples_compiled/",
     )
     if os.path.isfile(tmp_filename):
         os.remove(tmp_filename)
