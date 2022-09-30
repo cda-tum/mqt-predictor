@@ -47,10 +47,14 @@ class Predictor:
         False -- if not
         """
         if source_path is None:
-            source_path = str(resources.files("mqt.predictor").joinpath("training_samples"))
+            source_path = str(
+                resources.files("mqt.predictor").joinpath("training_samples")
+            )
 
         if target_path is None:
-            target_path = str(resources.files("mqt.predictor").joinpath("training_samples_compiled"))
+            target_path = str(
+                resources.files("mqt.predictor").joinpath("training_samples_compiled")
+            )
 
         print("compile_all_circuits_for_qc:", filename)
 
@@ -142,10 +146,14 @@ class Predictor:
 
         """
         if source_path is None:
-            source_path = str(resources.files("mqt.predictor").joinpath("training_samples"))
+            source_path = str(
+                resources.files("mqt.predictor").joinpath("training_samples")
+            )
 
         if target_path is None:
-            target_path = str(resources.files("mqt.predictor").joinpath("training_samples_compiled"))
+            target_path = str(
+                resources.files("mqt.predictor").joinpath("training_samples_compiled")
+            )
 
         global TIMEOUT
         TIMEOUT = timeout
@@ -192,10 +200,14 @@ class Predictor:
         scores -- evaluation scores for all compilation options
         """
         if source_path is None:
-            source_path = str(resources.files("mqt.predictor").joinpath("training_samples"))
+            source_path = str(
+                resources.files("mqt.predictor").joinpath("training_samples")
+            )
 
         if target_path is None:
-            target_path = str(resources.files("mqt.predictor").joinpath("training_samples_compiled"))
+            target_path = str(
+                resources.files("mqt.predictor").joinpath("training_samples_compiled")
+            )
 
         if utils.init_all_config_files():
             print("Calibration files successfully initiated")
@@ -243,10 +255,14 @@ class Predictor:
         scores -- evaluation scores for all compilation options
         """
         if source_path is None:
-            source_path = str(resources.files("mqt.predictor").joinpath("training_samples"))
+            source_path = str(
+                resources.files("mqt.predictor").joinpath("training_samples")
+            )
 
         if target_path is None:
-            target_path = str(resources.files("mqt.predictor").joinpath("training_samples_compiled"))
+            target_path = str(
+                resources.files("mqt.predictor").joinpath("training_samples_compiled")
+            )
 
         if ".qasm" not in file:
             return False
@@ -395,7 +411,9 @@ class Predictor:
 
         plt.ylim(0, 1.05)
         plt.xlim(0, len(scores_filtered))
-        path = str(resources.files("mqt.predictor") / "results" / "y_pred_eval_normed.pdf")
+        path = str(
+            resources.files("mqt.predictor") / "results" / "y_pred_eval_normed.pdf"
+        )
         plt.savefig(path)
 
         return

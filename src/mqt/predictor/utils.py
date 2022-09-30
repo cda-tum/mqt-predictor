@@ -419,7 +419,9 @@ def get_rigetti_qubit_dict():
 
 
 def parse_ionq_calibration_config():
-    ref = resources.files("mqt.predictor") / "calibration_files" / "ionq_calibration.json"
+    ref = (
+        resources.files("mqt.predictor") / "calibration_files" / "ionq_calibration.json"
+    )
     with ref.open() as f:
         ionq_calibration = json.load(f)
     ionq_dict = {
@@ -431,7 +433,11 @@ def parse_ionq_calibration_config():
 
 
 def parse_oqc_calibration_config():
-    ref = resources.files("mqt.predictor") / "calibration_files" / "oqc_lucy_calibration.json"
+    ref = (
+        resources.files("mqt.predictor")
+        / "calibration_files"
+        / "oqc_lucy_calibration.json"
+    )
     with ref.open() as f:
         oqc_lucy_calibration = json.load(f)
     fid_1Q = {}
@@ -463,7 +469,11 @@ def parse_oqc_calibration_config():
 
 
 def parse_rigetti_calibration_config():
-    ref = resources.files("mqt.predictor") / "calibration_files" / "rigetti_m1_calibration.json"
+    ref = (
+        resources.files("mqt.predictor")
+        / "calibration_files"
+        / "rigetti_m1_calibration.json"
+    )
     with ref.open() as f:
         rigetti_m1_calibration = json.load(f)
     fid_1Q = {}
@@ -627,7 +637,9 @@ def load_training_data():
         ):
             training_data = np.load(str(path / "training_data.npy"), allow_pickle=True)
             names_list = list(np.load(str(path / "names_list.npy"), allow_pickle=True))
-            scores_list = list(np.load(str(path / "scores_list.npy"), allow_pickle=True))
+            scores_list = list(
+                np.load(str(path / "scores_list.npy"), allow_pickle=True)
+            )
         else:
             print("Training data loading failed.")
             return
