@@ -39,7 +39,7 @@ First, the package must be installed:
 Now a prediction can be made for any qasm file:
 
 ```python
-from source.mqt import Predictor
+from mqt.predictor.driver import Predictor
 
 predictor = Predictor()
 prediction_index = predictor.predict("qasm_file_path")
@@ -48,7 +48,7 @@ prediction_index = predictor.predict("qasm_file_path")
 This prediction index can be translated into a tuple of (gate set, device, compiler, compiler_settings):
 
 ```python
-from source.mqt import utils
+from mqt.predictor import utils
 
 look_up_table = utils.get_index_to_comppath_LUT()
 prediction_tuple = look_up_table[prediction_index]
@@ -58,8 +58,9 @@ print(prediction_tuple)
 Afterwards, the circuit can be compiled respectively and the compiled circuit is returned as a qasm string:
 
 ```python
-from source.mqt import Predictor
+from mqt.predictor.driver import Predictor
 
+predictor = Predictor()
 compiled_qasm_str = predictor.compile_predicted_compilation_path(
     "qasm_file_path", prediction_index
 )
@@ -97,7 +98,8 @@ We provide the training data used for the pre-trained model.
 After the adjustment is finished, the following methods need to be called to generate the training data:
 
 ```python
-from source.mqt import Predictor, utils
+from mqt.predictor.driver import Predictor
+from mqt.predictor import utils
 
 predictor = Predictor()
 predictor.generate_compiled_circuits(
@@ -116,7 +118,7 @@ utils.save_training_data(res)
 After the training data is saved, it can be loaded and used for any machine learning model:
 
 ```python
-from source.mqt import utils
+from mqt.predictor import utils
 import numpy as np
 
 training_data, names_list, scores_list = utils.load_training_data()
@@ -134,18 +136,18 @@ X, y = np.array(X), np.array(y)
 
 ```
 MQTPredictor/
-│ - README.md
-│ - mqt_predictor.ipynb
-│
-└───mqt/predictor/
-    │───benchmark_generator.py
-    │───driver.py
-    └───tests/
-    │   └───...
-    └───calibration files/
-    │    └───...
-    └───src/
-        │ - utils.py
+|-- src
+|   |-- mqt
+|       `-- predictor
+|           |-- mqt_predictor.ipynb
+|           |-- driver.py
+|           |-- utils.py
+|           |-- calibration_files/
+|           |-- results/
+|           |-- training_data/
+|           |-- training_samples/
+|           `-- training_samples_compiled/
+`-- tests/
 ```
 
 # Reference
