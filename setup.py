@@ -1,15 +1,10 @@
 import os
 
 from setuptools import setup
-from setuptools_scm import get_version
 
 README_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)), "README.md")
 with open(README_PATH) as readme_file:
     README = readme_file.read()
-
-
-version = get_version(root=".", relative_to=__file__)
-
 
 setup(
     name="mqt.predictor",
