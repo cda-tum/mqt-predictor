@@ -49,7 +49,8 @@ classifiers = [
 
 [project.optional-dependencies]
 test = ["pytest>=7"]
-dev = ["mqt.predictor[test]"]
+coverage = ["mqt.predictor[test]", "coverage[toml]~=6.5.0", "pytest-cov~=4.0.0"]
+dev = ["mqt.predictor[coverage]"]
 
 [project.urls]
 Homepage = "https://github.com/cda-tum/mqtpredictor"
