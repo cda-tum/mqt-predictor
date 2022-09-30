@@ -114,10 +114,9 @@ class Predictor:
                                         ],
                                         timeout,
                                     )
-
-                            results.append(tmp)
-                            if not tmp:
-                                continue
+                                    results.append(tmp)
+                                    if not tmp:
+                                        continue
 
             if all(x is False for x in results):
                 print("No compilation succeeded for this quantum circuit.")
