@@ -345,7 +345,7 @@ class Predictor:
             fontsize=18,
         )
         plt.ylabel("Relative frequency", fontsize=18)
-        path = str(resources.files("mqt.predictor") / "results" / filename / ".pdf")
+        path = str(resources.files("mqt.predictor") / "results" / (filename + ".pdf"))
         plt.savefig(path)
         plt.show()
 
