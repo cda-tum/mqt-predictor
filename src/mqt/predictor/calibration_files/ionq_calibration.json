@@ -1,0 +1,25 @@
+{
+  "braketSchemaHeader": {
+    "name": "braket.device_schema.ionq.ionq_provider_properties",
+    "version": "1"
+  },
+  "fidelity": {
+    "1Q": {
+      "mean": 0.99738302445822
+    },
+    "2Q": {
+      "mean": 0.964245965332989
+    },
+    "spam": {
+      "mean": 0.99752
+    }
+  },
+  "timing": {
+    "T1": 10000,
+    "T2": 0.2,
+    "1Q": 0.00001,
+    "2Q": 0.0002,
+    "readout": 0.00013,
+    "reset": 0.00002
+  }
+}

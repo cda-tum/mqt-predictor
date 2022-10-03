@@ -6,7 +6,6 @@ on:
   push:
     branches: [main, master]
   pull_request:
-    branches: [main, master]
   workflow_dispatch:
 
 jobs:
@@ -15,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v4
         name: Install Python
         with:
@@ -30,10 +31,12 @@ jobs:
           path: dist/*.whl
 
   build_sdist:
-    name: Build source distribution
+    name: Build src distribution
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v4
         name: Install Python
         with:

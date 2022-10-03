@@ -100,7 +100,7 @@ repos:
           (?x)^(
               .*calibration\.json|
               .*\.ipynb|
-              predictor/src/utils.py
+              src/mqt/predictor/utils.py
           )$
 
   # Format configuration files with prettier
