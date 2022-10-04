@@ -334,11 +334,11 @@ class Predictor:
             width=1,
         )
         plt.xticks(
-            list(range(0, num_of_comp_paths, 2)),
-            list(range(1, num_of_comp_paths + 1, 2)),
-            fontsize=18,
+            list(range(0, num_of_comp_paths, 1)),
+            list(range(1, num_of_comp_paths + 1, 1)),
+            fontsize=16,
         )
-        plt.yticks(fontsize=18)
+        plt.yticks(fontsize=16)
 
         plt.xlabel(
             "Best prediction                                                        Worst prediction",
