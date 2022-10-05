@@ -15,9 +15,9 @@ For evaluation of our methodology, seven supervised machine learning classifiers
 - Gradient Boosting
 - Decision Tree
 - Nearest Neighbor
-- Support Vector Machine (SVM)
+- Multilayer Perceptron
+- Support Vector Machine
 - Naive Bayes
-- Stochastic Gradient Descent (SGD)
 
 In our exemplary scenario, the Random Forest classifier achieved the best performance.
 
