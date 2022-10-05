@@ -72,7 +72,7 @@ To play a round with the models examined by us, please use the provided Jupyter 
 
 # Adjustment of training data generation process
 
-The adjustment of all three parts is possible and described in the following:
+The adjustment of the following parts is possible:
 
 ### Compilation Path and Compilation Pipelines
 
@@ -103,13 +103,13 @@ from mqt.predictor import utils
 
 predictor = Predictor()
 predictor.generate_compiled_circuits(
-    source_path="src/mqt/predictor/training_samples",
+    source_path="./training_samples",
     target_path="./training_samples_compiled",
     timeout=120,
 )
 utils.postprocess_ocr_qasm_files(directory="./training_samples_compiled")
 res = predictor.generate_trainingdata_from_qasm_files(
-    source_path="src/mqt/predictor/training_samples",
+    source_path="./training_samples",
     target_path="./training_samples_compiled/",
 )
 utils.save_training_data(res)
