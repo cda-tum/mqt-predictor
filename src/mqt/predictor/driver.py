@@ -346,7 +346,7 @@ class Predictor:
                 names_filtered, scores_filtered, y_pred, y_test
             )
 
-        predictor.set_classifier(clf.best_estimator_)
+        self.set_classifier(clf.best_estimator_)
         utils.save_classifier(clf.best_estimator_)
         print("Random Forest classifier is trained and saved.")
 
