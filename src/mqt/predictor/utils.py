@@ -1,5 +1,4 @@
 import json
-import os
 import signal
 import sys
 
@@ -7,6 +6,8 @@ if sys.version_info < (3, 10, 0):
     import importlib_resources as resources
 else:
     from importlib import resources
+
+from pathlib import Path
 
 import numpy as np
 from joblib import dump
@@ -300,7 +301,8 @@ def init_all_config_files():
 
 
 def create_feature_dict(qasm_str_or_path: str):
-    if os.path.isfile(qasm_str_or_path):
+
+    if Path(qasm_str_or_path).exists():
         qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
     elif "OPENQASM" in qasm_str_or_path:
         qc = QuantumCircuit.from_qasm_str(qasm_str_or_path)
@@ -569,47 +571,45 @@ def calc_supermarq_features(qc: QuantumCircuit):
 
 
 def postprocess_ocr_qasm_files(directory: str):
-    for filename in os.listdir(directory):
+    for filename in Path(directory).iterdir():
         if "qasm" in filename:
             comp_path_index = int(filename.split("_")[-1].split(".")[0])
-            f = os.path.join(directory, filename)
+            filepath = str(Path(directory) / filename)
             # checking if it is a file
             if comp_path_index >= 24 and comp_path_index <= 27:
-                with open(f) as f:
-                    lines = f.readlines()
-                new_name = os.path.join(directory, filename)
-                with open(new_name, "w") as f:
+                with open(filepath) as filepath:
+                    lines = filepath.readlines()
+                with open(filepath, "w") as filepath:
                     for line in lines:
                         if not (
                             "gate rzx" in line.strip("\n")
                             or "gate ecr" in line.strip("\n")
                         ):
-                            f.write(line)
+                            filepath.write(line)
                         if "gate ecr" in line.strip("\n"):
-                            f.write(
+                            filepath.write(
                                 "gate rzx(param0) q0,q1 { h q1; cx q0,q1; rz(param0) q1; cx q0,q1; h q1; }\n"
                             )
-                            f.write(
+                            filepath.write(
                                 "gate ecr q0,q1 { rzx(pi/4) q0,q1; x q0; rzx(-pi/4) q0,q1; }\n"
                             )
 
-                print("New qasm file for: ", new_name)
+                print("New qasm file for: ", filepath)
 
             elif comp_path_index >= 28 and comp_path_index <= 29:
-                with open(f) as f:
-                    lines = f.readlines()
-                new_name = os.path.join(directory, filename)
-                with open(new_name, "w") as f:
+                with open(filepath) as filepath:
+                    lines = filepath.readlines()
+                with open(filepath, "w") as filepath:
                     for count, line in enumerate(lines):
-                        f.write(line)
+                        filepath.write(line)
                         if count == 9:
-                            f.write(
+                            filepath.write(
                                 "gate rzx(param0) q0,q1 { h q1; cx q0,q1; rz(param0) q1; cx q0,q1; h q1; }\n"
                             )
-                            f.write(
+                            filepath.write(
                                 "gate ecr q0,q1 { rzx(pi/4) q0,q1; x q0; rzx(-pi/4) q0,q1; }\n"
                             )
-                print("New qasm file for: ", new_name)
+                print("New qasm file for: ", filepath)
 
 
 def save_classifier(clf):

@@ -1,13 +1,14 @@
-import os
 import sys
+from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 if sys.version_info < (3, 10, 0):
     import importlib_resources as resources
 else:
     from importlib import resources
 
-import pytest
 from mqt.bench import benchmark_generator
 
 from mqt.predictor import utils
@@ -28,7 +29,7 @@ def test_predict(mock_show):
 
     predictor.clf = None
     prediction = predictor.predict(filename)
-    os.remove(filename)
+    Path(filename).unlink()
     assert prediction >= 0 and prediction < len(utils.get_index_to_comppath_LUT())
 
 
@@ -45,8 +46,8 @@ def test_compilation_paths(comp_path):
     qc.qasm(filename=tmp_filename)
     res = predictor.compile_predicted_compilation_path(tmp_filename, comp_path)
     assert res
-    if os.path.isfile(tmp_filename):
-        os.remove(tmp_filename)
+    if Path(tmp_filename).exists():
+        Path(tmp_filename).unlink()
 
 
 def test_compile_all_circuits_for_qc():
