@@ -372,7 +372,6 @@ class Predictor:
             )
 
         # Sort all other list (num_qubits, scores and y_pred) accordingly
-
         (
             qubit_list_sorted,
             scores_filtered_sorted_accordingly,
@@ -499,9 +498,16 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     predictor = Predictor()
-    # predictor.generate_compiled_circuits(
-    #     source_path="training_samples", target_path="training_samples_compiled", timeout=120
-    # )
-    # utils.postprocess_ocr_qasm_files(directory="training_samples_compiled")
+
+    # Generate compiled circuits and save them as qasm files
+    predictor.generate_compiled_circuits(
+        source_path="training_samples",
+        target_path="training_samples_compiled",
+        timeout=120,
+    )
+    # Postprocess some of those qasm files
+    utils.postprocess_ocr_qasm_files(directory="training_samples_compiled")
+    # Generate training data from qasm files
     res = predictor.generate_trainingdata_from_qasm_files()
+    # Save those training data for faster re-processing
     utils.save_training_data(res)
