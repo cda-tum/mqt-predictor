@@ -59,3 +59,11 @@ def test_get_compilation_pipeline():
 
 def test_load_training_data():
     assert utils.load_training_data() is not None
+
+
+# def test_calc_eval_score_for_qc():
+#     filepath = ""
+#     score = utils.calc_eval_score_for_qc(filepath, 'ibm_washington')
+#     assert score >=0 and score <=1
+#
+#     pass

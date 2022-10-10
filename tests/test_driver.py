@@ -59,5 +59,12 @@ def test_compile_all_circuits_for_qc():
         filename=tmp_filename,
         source_path=".",
     )
-    if os.path.isfile(tmp_filename):
-        os.remove(tmp_filename)
+    if Path(tmp_filename).exists():
+        Path(tmp_filename).unlink()
+
+
+def test_train_random_forest_classifier():
+    predictor = Predictor()
+    assert predictor.clf is None
+    predictor.train_random_forest_classifier()
+    assert predictor.clf is not None
