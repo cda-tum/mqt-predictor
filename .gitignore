@@ -2,6 +2,7 @@
 .idea/*
 *.png
 *.csv
+*.qasm
 
 
 

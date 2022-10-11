@@ -2,27 +2,28 @@ name: Deploy to PyPI
 
 on:
   release:
-    types: [ published ]
+    types: [published]
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
   build_wheel:
-    name:    Build wheel
+    name: Build wheel
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v4
         name: Install Python
         with:
-          python-version: '3.9'
+          python-version: "3.9"
       - name: Install dependencies
         run: python -m pip install build
       - name: Build wheel
-        run:  python -m build --wheel
+        run: python -m build --wheel
       - name: Install wheel
         run: python -m pip install --verbose dist/*.whl
       - uses: actions/upload-artifact@v3
@@ -30,18 +31,20 @@ jobs:
           path: dist/*.whl
 
   build_sdist:
-    name:    Build source distribution
+    name: Build src distribution
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v4
         name: Install Python
         with:
-          python-version: '3.9'
+          python-version: "3.9"
       - name: Install dependencies
         run: python -m pip install build
       - name: Build sdist
-        run:  python -m build --sdist
+        run: python -m build --sdist
       - name: Install sdist
         run: python -m pip install --verbose dist/*.tar.gz
       - uses: actions/upload-artifact@v3
@@ -49,9 +52,9 @@ jobs:
           path: dist/*.tar.gz
 
   upload_pypi:
-    needs: [ build_wheel, build_sdist ]
+    needs: [build_wheel, build_sdist]
     runs-on: ubuntu-latest
-    if:      github.event_name == 'release' && github.event.action == 'published'
+    if: github.event_name == 'release' && github.event.action == 'published'
     steps:
       - uses: actions/download-artifact@v3
         with:
@@ -59,9 +62,7 @@ jobs:
           path: dist
       - uses: pypa/gh-action-pypi-publish@master
         with:
-          user:          __token__
-          password:      ${{ secrets.pypi_password }}
+          user: __token__
+          password: ${{ secrets.pypi_password }}
           skip_existing: true
-          verbose:       true
-
-
+          verbose: true
