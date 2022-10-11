@@ -102,16 +102,9 @@ from mqt.predictor.driver import Predictor
 from mqt.predictor import utils
 
 predictor = Predictor()
-predictor.generate_compiled_circuits(
-    source_path="./training_samples",
-    target_path="./training_samples_compiled",
-    timeout=120,
-)
-utils.postprocess_ocr_qasm_files(directory="./training_samples_compiled")
-res = predictor.generate_trainingdata_from_qasm_files(
-    source_path="./training_samples",
-    target_path="./training_samples_compiled/",
-)
+predictor.generate_compiled_circuits()
+utils.postprocess_ocr_qasm_files()
+res = predictor.generate_trainingdata_from_qasm_files()
 utils.save_training_data(res)
 ```
 
