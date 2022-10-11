@@ -94,6 +94,7 @@ def test_generate_compiled_circuits():
     assert training_sample
     assert circuit_name
     assert scores
+
     (
         training_data,
         name_list,

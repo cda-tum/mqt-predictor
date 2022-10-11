@@ -591,7 +591,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Create Training Data")
 
-    parser.add_argument("--timeout", type=int, default=10)
+    parser.add_argument("--timeout", type=int, default=120)
 
     args = parser.parse_args()
 
@@ -599,10 +599,10 @@ if __name__ == "__main__":
 
     # Generate compiled circuits and save them as qasm files
     predictor.generate_compiled_circuits(
-        timeout=120,
+        timeout=args.timeout,
     )
     # Postprocess some of those qasm files
-    utils.postprocess_ocr_qasm_files(directory="training_samples_compiled")
+    utils.postprocess_ocr_qasm_files()
     # Generate training data from qasm files
     res = predictor.generate_trainingdata_from_qasm_files()
     # Save those training data for faster re-processing
