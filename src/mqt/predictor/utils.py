@@ -572,41 +572,42 @@ def calc_supermarq_features(qc: QuantumCircuit):
 
 def postprocess_ocr_qasm_files(directory: str):
     for filename in Path(directory).iterdir():
+        filename = str(filename).split("/")[-1]
         if "qasm" in filename:
             comp_path_index = int(filename.split("_")[-1].split(".")[0])
             filepath = str(Path(directory) / filename)
             # checking if it is a file
             if comp_path_index >= 24 and comp_path_index <= 27:
-                with open(filepath) as filepath:
-                    lines = filepath.readlines()
-                with open(filepath, "w") as filepath:
+                with open(filepath) as f:
+                    lines = f.readlines()
+                with open(filepath, "w") as f:
                     for line in lines:
                         if not (
                             "gate rzx" in line.strip("\n")
                             or "gate ecr" in line.strip("\n")
                         ):
-                            filepath.write(line)
+                            f.write(line)
                         if "gate ecr" in line.strip("\n"):
-                            filepath.write(
+                            f.write(
                                 "gate rzx(param0) q0,q1 { h q1; cx q0,q1; rz(param0) q1; cx q0,q1; h q1; }\n"
                             )
-                            filepath.write(
+                            f.write(
                                 "gate ecr q0,q1 { rzx(pi/4) q0,q1; x q0; rzx(-pi/4) q0,q1; }\n"
                             )
 
                 print("New qasm file for: ", filepath)
 
             elif comp_path_index >= 28 and comp_path_index <= 29:
-                with open(filepath) as filepath:
-                    lines = filepath.readlines()
-                with open(filepath, "w") as filepath:
+                with open(filepath) as f:
+                    lines = f.readlines()
+                with open(filepath, "w") as f:
                     for count, line in enumerate(lines):
-                        filepath.write(line)
+                        f.write(line)
                         if count == 9:
-                            filepath.write(
+                            f.write(
                                 "gate rzx(param0) q0,q1 { h q1; cx q0,q1; rz(param0) q1; cx q0,q1; h q1; }\n"
                             )
-                            filepath.write(
+                            f.write(
                                 "gate ecr q0,q1 { rzx(pi/4) q0,q1; x q0; rzx(-pi/4) q0,q1; }\n"
                             )
                 print("New qasm file for: ", filepath)
