@@ -163,8 +163,8 @@ class Predictor:
         source_circuits_list = []
 
         for file in Path(source_path).iterdir():
-            if "qasm" in file:
-                source_circuits_list.append(file)
+            if "qasm" in str(file):
+                source_circuits_list.append(str(file))
 
         if (
             len(source_circuits_list) == 0
@@ -224,10 +224,11 @@ class Predictor:
         scores_list = []
 
         results = Parallel(n_jobs=-1, verbose=100)(
-            delayed(self.generate_training_sample)(filename, source_path, target_path)
+            delayed(self.generate_training_sample)(
+                str(filename), source_path, target_path
+            )
             for filename in Path(source_path).iterdir()
         )
-
         for sample in results:
             if not sample:
                 continue
@@ -266,17 +267,18 @@ class Predictor:
             target_path = str(
                 resources.files("mqt.predictor").joinpath("training_samples_compiled")
             )
-
         if ".qasm" not in file:
             return False
+
         LUT = utils.get_index_to_comppath_LUT()
         utils.init_all_config_files()
         print("Checking ", file)
         scores = []
         for _ in range(len(LUT)):
             scores.append([])
+        all_relevant_paths = Path(target_path) / (file.split(".")[0] + "*")
+        all_relevant_files = glob.glob(str(all_relevant_paths))
 
-        all_relevant_files = glob.glob(target_path + file.split(".")[0] + "*")
         for filename in all_relevant_files:
             if (file.split(".")[0] + "_") in filename and filename.endswith(".qasm"):
                 comp_path_index = int(filename.split("_")[-1].split(".")[0])
@@ -312,7 +314,7 @@ class Predictor:
             indices_test,
             names_list,
             scores_list,
-        ) = self.get_prepared_training_data()
+        ) = self.get_prepared_training_data(save_non_zero_indices=True)
 
         scores_filtered = [scores_list[i] for i in indices_test]
         names_filtered = [names_list[i] for i in indices_test]
@@ -333,7 +335,7 @@ class Predictor:
 
         if visualize_results:
             y_pred = np.array(list(clf.predict(X_test)))
-            res = predictor.plot_eval_histogram(
+            res = self.plot_eval_histogram(
                 scores_filtered, y_pred, y_test, filename="RandomForestClassifier"
             )
 
@@ -342,7 +344,7 @@ class Predictor:
             print("Top 3: ", top3)
             print("Feature Importance: ", clf.best_estimator_.feature_importances_)
 
-            predictor.plot_eval_all_detailed_compact_normed(
+            self.plot_eval_all_detailed_compact_normed(
                 names_filtered, scores_filtered, y_pred, y_test
             )
 
