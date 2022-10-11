@@ -15,15 +15,15 @@ For evaluation of our methodology, seven supervised machine learning classifiers
 - Gradient Boosting
 - Decision Tree
 - Nearest Neighbor
-- Support Vector Machine (SVM)
+- Multilayer Perceptron
+- Support Vector Machine
 - Naive Bayes
-- Stochastic Gradient Descent (SGD)
 
 In our exemplary scenario, the Random Forest classifier achieved the best performance.
 
 This software comprises three main functionalities:
 
-- The trained Random Forest classifier to easily predict compilation options for an unseen quantum circuit
+- The pre-trained Random Forest classifier to easily predict compilation options for an unseen quantum circuit
   in real-time and compile for the respective prediction,
 - all other trained algorithms, and
 - the possibility to adjust and customize the whole training data generation process, e.g., to add training data, compilation options, or adapt the evaluation function.
@@ -68,11 +68,11 @@ compiled_qasm_str = predictor.compile_predicted_compilation_path(
 
 # Examination of all seven trained classifiers
 
-To play a round with the models examined by us, please use the provided Jupyter notebook `mqt_predictor.ipynb`.
+To play around with all the examined models, please use the `notebooks/mqt_predictor.ipynb` Jupyter notebook.
 
 # Adjustment of training data generation process
 
-The adjustment of all three parts is possible and described in the following:
+The adjustment of the following parts is possible:
 
 ### Compilation Path and Compilation Pipelines
 
@@ -102,48 +102,50 @@ from mqt.predictor.driver import Predictor
 from mqt.predictor import utils
 
 predictor = Predictor()
-predictor.generate_compiled_circuits(
-    source_path="src/mqt/predictor/training_samples",
-    target_path="./training_samples_compiled",
-    timeout=120,
-)
-utils.postprocess_ocr_qasm_files(directory="./training_samples_compiled")
-res = predictor.generate_trainingdata_from_qasm_files(
-    source_path="src/mqt/predictor/training_samples",
-    target_path="./training_samples_compiled/",
-)
+predictor.generate_compiled_circuits()
+utils.postprocess_ocr_qasm_files()
+res = predictor.generate_trainingdata_from_qasm_files()
 utils.save_training_data(res)
 ```
 
-After the training data is saved, it can be loaded and used for any machine learning model:
+Now, the Random Forest classifier can be trained:
+
+```python
+predictor.train_random_forest_classifier()
+```
+
+Additionally, the raw training data may be extracted and can be used for any machine learning model:
 
 ```python
 from mqt.predictor import utils
 import numpy as np
 
-training_data, names_list, scores_list = utils.load_training_data()
-X, y = zip(*training_data)
-X = list(X)
-y = list(y)
-for i in range(len(X)):
-    X[i] = list(X[i])
-    scores_list[i] = list(scores_list[i])
-
-X, y = np.array(X), np.array(y)
+(
+    X_train,
+    X_test,
+    y_train,
+    y_test,
+    indices_train,
+    indices_test,
+    names_list,
+    scores_list,
+) = predictor.get_prepared_training_data(save_non_zero_indices=True)
 ```
 
 # Repository Structure
 
 ```
-MQTPredictor/
+.
+|-- notebooks
+|   |-- runtime_comparison.ipynb
+|   |-- mqt_predictor.ipynb
+|   |-- results/
 |-- src
 |   |-- mqt
 |       `-- predictor
-|           |-- mqt_predictor.ipynb
 |           |-- driver.py
 |           |-- utils.py
 |           |-- calibration_files/
-|           |-- results/
 |           |-- training_data/
 |           |-- training_samples/
 |           `-- training_samples_compiled/

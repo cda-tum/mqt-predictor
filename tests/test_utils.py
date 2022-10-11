@@ -1,3 +1,8 @@
+from pathlib import Path
+
+from mqt.bench import benchmark_generator
+from mqt.bench.utils import qiskit_helper
+
 from mqt.predictor import utils
 
 
@@ -59,3 +64,40 @@ def test_get_compilation_pipeline():
 
 def test_load_training_data():
     assert utils.load_training_data() is not None
+
+
+def test_calc_eval_score_for_qc():
+    qc = benchmark_generator.get_one_benchmark("dj", 1, 3)
+    compilation_pipeline = utils.get_compilation_pipeline()
+
+    utils.init_all_config_files()
+
+    filename_qasm = "eval_test.qasm"
+    for gate_set_name, devices in compilation_pipeline.get("devices").items():
+        for device_name, max_qubits in devices:
+            for compiler, settings in compilation_pipeline["compiler"].items():
+                if "qiskit" in compiler:
+                    for opt_level in settings["optimization_level"]:
+                        if max_qubits >= qc.num_qubits:
+                            qiskit_helper.get_mapped_level(
+                                qc,
+                                gate_set_name,
+                                qc.num_qubits,
+                                device_name,
+                                opt_level,
+                                False,
+                                False,
+                                ".",
+                                "eval_test",
+                            )
+                            score = utils.calc_eval_score_for_qc(
+                                filename_qasm, device=device_name
+                            )
+                            assert (
+                                score >= 0
+                                and score <= 1
+                                or score == utils.get_width_penalty()
+                            )
+
+    if Path(filename_qasm).is_file():
+        Path(filename_qasm).unlink()
