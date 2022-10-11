@@ -570,7 +570,12 @@ def calc_supermarq_features(qc: QuantumCircuit):
     )
 
 
-def postprocess_ocr_qasm_files(directory: str):
+def postprocess_ocr_qasm_files(directory: str = None):
+    if directory is None:
+        directory = str(
+            resources.files("mqt.predictor").joinpath("training_samples_compiled")
+        )
+
     for filename in Path(directory).iterdir():
         filename = str(filename).split("/")[-1]
         if "qasm" in filename:
