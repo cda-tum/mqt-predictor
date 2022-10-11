@@ -354,7 +354,7 @@ class Predictor:
 
         return self.clf is not None
 
-    def get_prepared_training_data(self):
+    def get_prepared_training_data(self, save_non_zero_indices=False):
         training_data, names_list, scores_list = utils.load_training_data()
         X, y = zip(*training_data)
         X = list(X)
@@ -371,8 +371,10 @@ class Predictor:
             if sum(X[:, i]) > 0:
                 non_zero_indices.append(i)
         X = X[:, non_zero_indices]
-        data = np.asarray(non_zero_indices)
-        np.save("non_zero_indices.npy", data)
+
+        if save_non_zero_indices:
+            data = np.asarray(non_zero_indices)
+            np.save("non_zero_indices.npy", data)
 
         (
             X_train,
@@ -590,7 +592,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create Training Data")
 
     parser.add_argument("--timeout", type=int, default=10)
-    parser.add_argument("--path", type=str, default="qasm_files")
 
     args = parser.parse_args()
 
@@ -598,8 +599,6 @@ if __name__ == "__main__":
 
     # Generate compiled circuits and save them as qasm files
     predictor.generate_compiled_circuits(
-        source_path="training_samples",
-        target_path="training_samples_compiled",
         timeout=120,
     )
     # Postprocess some of those qasm files
