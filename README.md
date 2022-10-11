@@ -68,7 +68,7 @@ compiled_qasm_str = predictor.compile_predicted_compilation_path(
 
 # Examination of all seven trained classifiers
 
-To play a round with all the models examined by us, please use the provided Jupyter notebook `notebooks/mqt_predictor.ipynb`.
+To play around with all the examined models, please use the `notebooks/mqt_predictor.ipynb` Jupyter notebook.
 
 # Adjustment of training data generation process
 
@@ -137,15 +137,15 @@ import numpy as np
 ```
 .
 |-- notebooks
-|   |-- mqt_predictor.ipynb
 |   |-- runtime_comparison.ipynb
+|   |-- mqt_predictor.ipynb
+|   |-- results/
 |-- src
 |   |-- mqt
 |       `-- predictor
 |           |-- driver.py
 |           |-- utils.py
 |           |-- calibration_files/
-|           |-- results/
 |           |-- training_data/
 |           |-- training_samples/
 |           `-- training_samples_compiled/
