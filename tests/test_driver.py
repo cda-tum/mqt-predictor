@@ -63,8 +63,50 @@ def test_compile_all_circuits_for_qc():
         Path(tmp_filename).unlink()
 
 
-def test_train_random_forest_classifier():
+@patch("matplotlib.pyplot.show")
+def test_train_random_forest_classifier(mock_pyplot):
     predictor = Predictor()
     assert predictor.clf is None
-    predictor.train_random_forest_classifier()
+    predictor.train_random_forest_classifier(visualize_results=True)
+    if Path("non_zero_indices.npy").exists():
+        Path("non_zero_indices.npy").unlink()
+
     assert predictor.clf is not None
+
+
+def test_generate_compiled_circuits():
+
+    predictor = Predictor()
+    source_path = "."
+    target_path = Path("test_compiled_circuits")
+    if not target_path.exists():
+        target_path.mkdir()
+
+    qc = benchmark_generator.get_one_benchmark("dj", 1, 3)
+    qasm_path = Path("compiled_test.qasm")
+    qc.qasm(filename=str(qasm_path))
+    predictor.generate_compiled_circuits(source_path, str(target_path))
+    utils.postprocess_ocr_qasm_files(str(target_path))
+
+    training_sample, circuit_name, scores = predictor.generate_training_sample(
+        str(qasm_path), source_path, target_path
+    )
+    assert training_sample
+    assert circuit_name
+    assert scores
+    (
+        training_data,
+        name_list,
+        scores_list,
+    ) = predictor.generate_trainingdata_from_qasm_files(source_path, str(target_path))
+    assert training_data
+    assert name_list
+    assert scores_list
+
+    if target_path.exists():
+        for file in target_path.iterdir():
+            file.unlink()
+        target_path.rmdir()
+
+    if qasm_path.exists():
+        qasm_path.unlink()
