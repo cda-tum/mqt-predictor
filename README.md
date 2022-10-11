@@ -23,7 +23,7 @@ In our exemplary scenario, the Random Forest classifier achieved the best perfor
 
 This software comprises three main functionalities:
 
-- The trained Random Forest classifier to easily predict compilation options for an unseen quantum circuit
+- The pre-trained Random Forest classifier to easily predict compilation options for an unseen quantum circuit
   in real-time and compile for the respective prediction,
 - all other trained algorithms, and
 - the possibility to adjust and customize the whole training data generation process, e.g., to add training data, compilation options, or adapt the evaluation function.
@@ -68,7 +68,7 @@ compiled_qasm_str = predictor.compile_predicted_compilation_path(
 
 # Examination of all seven trained classifiers
 
-To play a round with the models examined by us, please use the provided Jupyter notebook `mqt_predictor.ipynb`.
+To play a round with all the models examined by us, please use the provided Jupyter notebook `notebooks/mqt_predictor.ipynb`.
 
 # Adjustment of training data generation process
 
@@ -115,31 +115,40 @@ res = predictor.generate_trainingdata_from_qasm_files(
 utils.save_training_data(res)
 ```
 
-After the training data is saved, it can be loaded and used for any machine learning model:
+Now, the Random Forest classifier can be trained:
+
+```python
+predictor.train_random_forest_classifier()
+```
+
+Additionally, the raw training data may be extracted and can be used for any machine learning model:
 
 ```python
 from mqt.predictor import utils
 import numpy as np
 
-training_data, names_list, scores_list = utils.load_training_data()
-X, y = zip(*training_data)
-X = list(X)
-y = list(y)
-for i in range(len(X)):
-    X[i] = list(X[i])
-    scores_list[i] = list(scores_list[i])
-
-X, y = np.array(X), np.array(y)
+(
+    X_train,
+    X_test,
+    y_train,
+    y_test,
+    indices_train,
+    indices_test,
+    names_list,
+    scores_list,
+) = predictor.get_prepared_training_data(save_non_zero_indices=True)
 ```
 
 # Repository Structure
 
 ```
-MQTPredictor/
+.
+|-- notebooks
+|   |-- mqt_predictor.ipynb
+|   |-- runtime_comparison.ipynb
 |-- src
 |   |-- mqt
 |       `-- predictor
-|           |-- mqt_predictor.ipynb
 |           |-- driver.py
 |           |-- utils.py
 |           |-- calibration_files/
