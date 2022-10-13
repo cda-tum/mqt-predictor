@@ -151,15 +151,3 @@ import numpy as np
 |           `-- training_samples_compiled/
 `-- tests/
 ```
-
-# Reference
-
-In case you are using MQT Predictor in your work, we would be thankful if you referred to it by citing the following publication:
-
-```bibtex
-@misc{quetschlich2022mqtpredictor,
-  title={{{MQT Predictor}}: Automatic Prediction of Good Compilation Paths},
-  author={Quetschlich, Nils and Burgholzer, Lukas and Wille, Robert},
-  year={2022},
-}
-```
