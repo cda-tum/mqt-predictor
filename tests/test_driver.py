@@ -20,9 +20,12 @@ def test_predict(mock_show):
     path = resources.files("mqt.predictor") / "trained_clf.joblib"
     assert path.is_file()
     filename = "test_qasm.qasm"
-    benchmark_generator.get_one_benchmark("dj", 1, 8).qasm(filename=filename)
+    qc = benchmark_generator.get_one_benchmark("dj", 1, 8)
+    qc.qasm(filename=filename)
     predictor = Predictor()
     prediction = predictor.predict(filename)
+    assert prediction >= 0 and prediction < len(utils.get_index_to_comppath_LUT())
+    prediction = predictor.predict(qc.qasm())
     assert prediction >= 0 and prediction < len(utils.get_index_to_comppath_LUT())
     prediction = predictor.predict("fail test")
     assert not prediction
