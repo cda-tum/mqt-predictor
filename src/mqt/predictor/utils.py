@@ -302,7 +302,7 @@ def init_all_config_files():
 
 def create_feature_dict(qasm_str_or_path: str):
 
-    if Path(qasm_str_or_path).exists():
+    if len(qasm_str_or_path) < 260 and Path(qasm_str_or_path).exists():
         qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
     elif "OPENQASM" in qasm_str_or_path:
         qc = QuantumCircuit.from_qasm_str(qasm_str_or_path)
