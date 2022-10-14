@@ -297,7 +297,7 @@ class Predictor:
         if num_not_empty_entries == 0:
             return False
 
-        feature_vec = utils.create_feature_dict(Path(source_path) / file)
+        feature_vec = utils.create_feature_dict(str(Path(source_path) / file))
         training_sample = (list(feature_vec.values()), np.argmax(scores))
         circuit_name = file.split(".")[0]
 
