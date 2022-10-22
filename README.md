@@ -153,3 +153,19 @@ import numpy as np
 |           `-- training_samples_compiled/
 `-- tests/
 ```
+
+# References
+
+In case you are using MQT Predictor in your work, we would be thankful if you referred to it by citing the following publication:
+
+```bibtex
+@misc{quetschlich2022mqtpredictor,
+  title={Predicting Good Quantum Circuit Compilation Options},
+  shorttitle = {{{MQT Predictor}}},
+  author={Quetschlich, Nils and Burgholzer, Lukas and Wille, Robert},
+  year={2022},
+  eprint = {2210.08027},
+  eprinttype = {arxiv},
+  publisher = {arXiv},
+}
+```
