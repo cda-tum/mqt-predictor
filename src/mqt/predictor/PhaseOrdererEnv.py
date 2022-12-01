@@ -6,13 +6,12 @@ from pathlib import Path
 import numpy as np
 from gym import Env
 from gym.spaces import Box, Discrete
+from mqt.phaseorderer import utils, RL_utils
 from multiprocess.connection import wait
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
-
-from mqt.phaseorderer import utils
 
 
 class PhaseOrdererEnv(Env):
@@ -31,35 +30,35 @@ class PhaseOrdererEnv(Env):
         self.actions_opt_indices = []
 
         index = 0
-        for elem in utils.get_actions_platform_selection():
+        for elem in RL_utils.get_actions_platform_selection():
             self.action_set[index] = elem
             self.actions_platform.append(index)
             index += 1
 
-        for elem in utils.get_actions_synthesis():
+        for elem in RL_utils.get_actions_synthesis():
             self.action_set[index] = elem
             self.actions_synthesis_indices.append(index)
             index += 1
 
-        for elem in utils.get_actions_devices():
+        for elem in RL_utils.get_actions_devices():
             self.action_set[index] = elem
             self.actions_devices_indices.append(index)
             index += 1
-        for elem in utils.get_actions_layout():
+        for elem in RL_utils.get_actions_layout():
             self.action_set[index] = elem
             self.actions_layout_indices.append(index)
             index += 1
-        for elem in utils.get_actions_routing():
+        for elem in RL_utils.get_actions_routing():
             self.action_set[index] = elem
             self.actions_routing_indices.append(index)
             index += 1
 
-        for elem in utils.get_actions_opt():
+        for elem in RL_utils.get_actions_opt():
             self.action_set[index] = elem
             self.actions_opt_indices.append(index)
             index += 1
 
-        self.action_set[index] = utils.get_action_terminate()
+        self.action_set[index] = RL_utils.get_action_terminate()
         self.action_terminate_index = index
 
         self.reward_function = reward_function
@@ -125,7 +124,7 @@ class PhaseOrdererEnv(Env):
         if qc_filepath:
             self.state = QuantumCircuit.from_qasm_file(str(qc_filepath))
         else:
-            self.state = utils.get_random_state_sample()
+            self.state = RL_utils.get_random_state_sample()
         if not self.state:
             self.reset()
 
@@ -193,7 +192,7 @@ class PhaseOrdererEnv(Env):
                     for elem in transpile_pass:
                         conn_read, conn_write = Pipe(duplex=False)
                         p = Process(
-                            target=utils.execute_TKET_pass,
+                            target=RL_utils.execute_TKET_pass,
                             args=(
                                 tket_qc,
                                 elem,
