@@ -183,25 +183,25 @@ def get_actions_platform_selection():
     return [
         {
             "name": "IBM",
-            "gates": utils.get_ibm_native_gates(),
+            "gates": get_ibm_native_gates(),
             "devices": ["ibm_washington", "ibm_montreal"],
             "max_qubit_size": 127,
         },
         {
             "name": "Rigetti",
-            "gates": utils.get_rigetti_native_gates(),
+            "gates": get_rigetti_native_gates(),
             "devices": ["rigetti_aspen_m2"],
             "max_qubit_size": 80,
         },
         {
             "name": "OQC",
-            "gates": utils.get_oqc_native_gates(),
+            "gates": get_oqc_native_gates(),
             "devices": ["oqc_lucy"],
             "max_qubit_size": 8,
         },
         {
             "name": "IonQ",
-            "gates": utils.get_ionq_native_gates(),
+            "gates": get_ionq_native_gates(),
             "devices": ["ionq11"],
             "max_qubit_size": 11,
         },
@@ -230,7 +230,7 @@ def get_actions_devices():
             "name": "ibm_washington",
             "transpile_pass": [],
             "full_connectivity": False,
-            "cmap": utils.get_cmap_from_devicename("ibm_washington"),
+            "cmap": get_cmap_from_devicename("ibm_washington"),
             "max_qubits": 127,
         },
         {
@@ -238,7 +238,7 @@ def get_actions_devices():
             "transpile_pass": [],
             "device": "ibm_montreal",
             "full_connectivity": False,
-            "cmap": utils.get_cmap_from_devicename("ibm_montreal"),
+            "cmap": get_cmap_from_devicename("ibm_montreal"),
             "max_qubits": 27,
         },
         {
@@ -246,7 +246,7 @@ def get_actions_devices():
             "transpile_pass": [],
             "device": "oqc_lucy",
             "full_connectivity": False,
-            "cmap": utils.get_cmap_from_devicename("oqc_lucy"),
+            "cmap": get_cmap_from_devicename("oqc_lucy"),
             "max_qubits": 8,
         },
         {
@@ -254,7 +254,7 @@ def get_actions_devices():
             "transpile_pass": [],
             "device": "rigetti_aspen_m2",
             "full_connectivity": False,
-            "cmap": utils.get_cmap_from_devicename("rigetti_aspen_m2"),
+            "cmap": get_cmap_from_devicename("rigetti_aspen_m2"),
             "max_qubits": 80,
         },
         {
@@ -262,7 +262,7 @@ def get_actions_devices():
             "transpile_pass": [],
             "device": "ionq11",
             "full_connectivity": True,
-            "cmap": utils.get_cmap_from_devicename("ionq"),
+            "cmap": get_cmap_from_devicename("ionq"),
             "max_qubits": 11,
         },
     ]
@@ -277,3 +277,90 @@ def get_random_state_sample():
         print("ERROR: ", file_list[random_index])
         return False
     return qc
+
+
+def get_ibm_native_gates():
+    ibm_gates = ["rz", "sx", "x", "cx", "measure"]
+    return ibm_gates
+
+
+def get_rigetti_native_gates():
+    rigetti_gates = ["rx", "rz", "cz", "measure"]
+    return rigetti_gates
+
+
+def get_ionq_native_gates():
+    ionq_gates = ["rxx", "rz", "ry", "rx", "measure"]
+    return ionq_gates
+
+
+def get_oqc_native_gates():
+    oqc_gates = ["rz", "sx", "x", "ecr", "measure"]
+    return oqc_gates
+
+
+
+def get_rigetti_aspen_m2_map():
+    """Returns a coupling map of Rigetti Aspen M2 chip."""
+    c_map_rigetti = []
+    for j in range(5):
+        for i in range(0, 7):
+            c_map_rigetti.append([i + j * 8, i + 1 + j * 8])
+
+            if i == 6:
+                c_map_rigetti.append([0 + j * 8, 7 + j * 8])
+
+        if j != 0:
+            c_map_rigetti.append([j * 8 - 6, j * 8 + 5])
+            c_map_rigetti.append([j * 8 - 7, j * 8 + 6])
+
+    for j in range(5):
+        m = 8 * j + 5 * 8
+        for i in range(0, 7):
+            c_map_rigetti.append([i + m, i + 1 + m])
+
+            if i == 6:
+                c_map_rigetti.append([0 + m, 7 + m])
+
+        if j != 0:
+            c_map_rigetti.append([m - 6, m + 5])
+            c_map_rigetti.append([m - 7, m + 6])
+
+    for n in range(5):
+        c_map_rigetti.append([n * 8 + 3, n * 8 + 5 * 8])
+        c_map_rigetti.append([n * 8 + 4, n * 8 + 7 + 5 * 8])
+
+    inverted = [[item[1], item[0]] for item in c_map_rigetti]
+    c_map_rigetti = c_map_rigetti + inverted
+
+    return c_map_rigetti
+
+
+def get_ionq11_c_map():
+    ionq11_c_map = []
+    for i in range(0, 11):
+        for j in range(0, 11):
+            if i != j:
+                ionq11_c_map.append([i, j])
+    return ionq11_c_map
+
+def get_cmap_oqc_lucy():
+    """Returns the coupling map of the OQC Lucy quantum computer."""
+    # source: https://github.com/aws/amazon-braket-examples/blob/main/examples/braket_features/Verbatim_Compilation.ipynb
+
+    # Connections are NOT bidirectional, this is not an accident
+    c_map_oqc_lucy = [[0, 1], [0, 7], [1, 2], [2, 3], [7, 6], [6, 5], [4, 3], [4, 5]]
+
+    return c_map_oqc_lucy
+
+def get_cmap_from_devicename(device: str):
+    if device == "ibm_washington":
+        return FakeWashington().configuration().coupling_map
+    elif device == "ibm_montreal":
+        return FakeMontreal().configuration().coupling_map
+    elif device == "rigetti_aspen_m2":
+        return get_rigetti_aspen_m2_map()
+    elif device == "oqc_lucy":
+        return get_cmap_oqc_lucy()
+    elif device == "ionq11":
+        return get_ionq11_c_map()
