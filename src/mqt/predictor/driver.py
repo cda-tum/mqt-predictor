@@ -8,7 +8,7 @@ from time import time
 import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed, load
-from mqt.bench.utils import qiskit_helper, tket_helper
+#from mqt.bench.utils import qiskit_helper, tket_helper
 from multiprocess.connection import wait
 from pytket import OpType, architecture
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
@@ -806,7 +806,7 @@ class Predictor:
         )
 
         results = Parallel(n_jobs=-1, verbose=3, backend="threading")(
-            delayed(evaluate_sample_circuit)(file)
+            delayed(self.evaluate_sample_circuit)(file)
             for file in list(Path("./sample_circuits").glob("*.qasm"))
         )
         for res in results:
@@ -815,165 +815,168 @@ class Predictor:
         np.savetxt("res.csv", res_csv, delimiter=",", fmt="%s")
 
 
-def evaluate_sample_circuit(file):
-    print(file)
+    def evaluate_sample_circuit(self, file):
+        print(file)
 
-    reward_functions = ["parallelism", "fidelity", "critical_depth"]
-    for rew in reward_functions:
-        model = MaskablePPO.load("model_" + rew)
+        reward_functions = ["parallelism", "fidelity", "critical_depth"]
+        for rew in reward_functions:
+            model = MaskablePPO.load("model_" + rew)
 
-        env = PhaseOrdererEnv(rew)
-        obs, _ = env.reset(file)
-        qc = env.state
+            env = PhaseOrdererEnv(rew)
+            obs, _ = env.reset(file)
+            qc = env.state
+            start_time = time.time()
+            while True:
+                action_masks = get_action_masks(env)
+                action, _states = model.predict(obs, action_masks=action_masks)
+                action = int(action)
+                obs, reward, done, trunc, info = env.step(action)
+                if done:
+                    duration = time.time() - start_time
+                    if rew == "fidelity":
+                        RL_fid = np.round(
+                            utils.reward_expected_fidelity(env.state, env.device), 2
+                        )
+                        RL_fid_time = np.round(duration, 2)
+                        RL_fid_crit_depth = np.round(utils.reward_crit_depth(env.state), 2)
+                        RL_fid_parallelism = np.round(
+                            utils.reward_parallelism(env.state), 2
+                        )
+                    elif rew == "parallelism":
+                        RL_parallelism = np.round(utils.reward_parallelism(env.state), 2)
+                        RL_parallelism_time = np.round(duration, 2)
+                        RL_parallelism_fid = np.round(
+                            utils.reward_expected_fidelity(env.state, env.device), 2
+                        )
+                        RL_parallelism_crit_depth = np.round(
+                            utils.reward_crit_depth(env.state), 2
+                        )
+                    elif rew == "critical_depth":
+                        RL_crit_depth = np.round(utils.reward_crit_depth(env.state), 2)
+                        RL_crit_depth_time = np.round(duration, 2)
+                        RL_crit_depth_fid = np.round(
+                            utils.reward_expected_fidelity(env.state, env.device), 2
+                        )
+                        RL_crit_depth_parallelism = np.round(
+                            utils.reward_parallelism(env.state), 2
+                        )
+                    break
+
         start_time = time.time()
-        while True:
-            action_masks = get_action_masks(env)
-            action, _states = model.predict(obs, action_masks=action_masks)
-            action = int(action)
-            obs, reward, done, trunc, info = env.step(action)
-            if done:
-                duration = time.time() - start_time
-                if rew == "fidelity":
-                    RL_fid = np.round(
-                        utils.reward_expected_fidelity(env.state, env.device), 2
-                    )
-                    RL_fid_time = np.round(duration, 2)
-                    RL_fid_crit_depth = np.round(utils.reward_crit_depth(env.state), 2)
-                    RL_fid_parallelism = np.round(
-                        utils.reward_parallelism(env.state), 2
-                    )
-                elif rew == "parallelism":
-                    RL_parallelism = np.round(utils.reward_parallelism(env.state), 2)
-                    RL_parallelism_time = np.round(duration, 2)
-                    RL_parallelism_fid = np.round(
-                        utils.reward_expected_fidelity(env.state, env.device), 2
-                    )
-                    RL_parallelism_crit_depth = np.round(
-                        utils.reward_crit_depth(env.state), 2
-                    )
-                elif rew == "critical_depth":
-                    RL_crit_depth = np.round(utils.reward_crit_depth(env.state), 2)
-                    RL_crit_depth_time = np.round(duration, 2)
-                    RL_crit_depth_fid = np.round(
-                        utils.reward_expected_fidelity(env.state, env.device), 2
-                    )
-                    RL_crit_depth_parallelism = np.round(
-                        utils.reward_parallelism(env.state), 2
-                    )
-                break
+        transpiled_qc_qiskit = transpile(
+            qc,
+            basis_gates=utils.get_ibm_native_gates(),
+            coupling_map=utils.get_cmap_from_devicename("ibm_washington"),
+            optimization_level=3,
+            seed_transpiler=1,
+        )
+        duration = time.time() - start_time
+        qiskit_o3_fid = np.round(
+            utils.reward_expected_fidelity(transpiled_qc_qiskit, "ibm_washington"), 2
+        )
+        qiskit_o3_crit_depth = utils.reward_crit_depth(transpiled_qc_qiskit)
+        qiskit_o3_parallel = utils.reward_parallelism(transpiled_qc_qiskit)
+        qiskit_o3_time = np.round(duration, 2)
 
-    start_time = time.time()
-    transpiled_qc_qiskit = transpile(
-        qc,
-        basis_gates=utils.get_ibm_native_gates(),
-        coupling_map=utils.get_cmap_from_devicename("ibm_washington"),
-        optimization_level=3,
-        seed_transpiler=1,
-    )
-    duration = time.time() - start_time
-    qiskit_o3_fid = np.round(
-        utils.reward_expected_fidelity(transpiled_qc_qiskit, "ibm_washington"), 2
-    )
-    qiskit_o3_crit_depth = utils.reward_crit_depth(transpiled_qc_qiskit)
-    qiskit_o3_parallel = utils.reward_parallelism(transpiled_qc_qiskit)
-    qiskit_o3_time = np.round(duration, 2)
+        tket_qc = qiskit_to_tk(qc)
+        arch = architecture.Architecture(utils.get_cmap_from_devicename("ibm_washington"))
+        ibm_rebase = auto_rebase_pass(
+            {OpType.Rz, OpType.SX, OpType.X, OpType.CX, OpType.Measure}
+        )
 
-    tket_qc = qiskit_to_tk(qc)
-    arch = architecture.Architecture(utils.get_cmap_from_devicename("ibm_washington"))
-    ibm_rebase = auto_rebase_pass(
-        {OpType.Rz, OpType.SX, OpType.X, OpType.CX, OpType.Measure}
-    )
+        start_time = time.time()
+        ibm_rebase.apply(tket_qc)
 
-    start_time = time.time()
-    ibm_rebase.apply(tket_qc)
+        conn_read, conn_write = Pipe(duplex=False)
+        p = Process(
+            target=utils.execute_TKET_FullPeephole,
+            args=(
+                tket_qc,
+                conn_write,
+            ),
+        )
+        p.start()
 
-    conn_read, conn_write = Pipe(duplex=False)
-    p = Process(
-        target=utils.execute_TKET_FullPeephole,
-        args=(
-            tket_qc,
-            conn_write,
-        ),
-    )
-    p.start()
+        success = False
+        while p.is_alive():
+            wait([p.sentinel, conn_read])  # block-wait until something gets ready
+            if conn_read.poll():  # check if something can be received
+                msg = conn_read.recv()
+                success = msg == "success"
+        p.join()
+        if not success:
+            print("Fail in execute_TKET_FullPeephole")
+            return False
 
-    success = False
-    while p.is_alive():
-        wait([p.sentinel, conn_read])  # block-wait until something gets ready
-        if conn_read.poll():  # check if something can be received
-            msg = conn_read.recv()
-            success = msg == "success"
-    p.join()
-    if not success:
-        print("Fail in execute_TKET_FullPeephole")
-        return False
+        PlacementPass(GraphPlacement(arch)).apply(tket_qc)
+        RoutingPass(arch).apply(tket_qc)
+        ibm_rebase.apply(tket_qc)
+        duration = time.time() - start_time
 
-    PlacementPass(GraphPlacement(arch)).apply(tket_qc)
-    RoutingPass(arch).apply(tket_qc)
-    ibm_rebase.apply(tket_qc)
-    duration = time.time() - start_time
+        transpiled_qc_tket = tk_to_qiskit(tket_qc)
 
-    transpiled_qc_tket = tk_to_qiskit(tket_qc)
+        tket_fid = np.round(
+            utils.reward_expected_fidelity(transpiled_qc_tket, "ibm_washington"), 2
+        )
+        tket_crit_depth = utils.reward_crit_depth(transpiled_qc_tket)
+        tket_parallelism = utils.reward_parallelism(transpiled_qc_tket)
+        tket_time = np.round(duration, 2)
 
-    tket_fid = np.round(
-        utils.reward_expected_fidelity(transpiled_qc_tket, "ibm_washington"), 2
-    )
-    tket_crit_depth = utils.reward_crit_depth(transpiled_qc_tket)
-    tket_parallelism = utils.reward_parallelism(transpiled_qc_tket)
-    tket_time = np.round(duration, 2)
+        return (
+            str(file).split("/")[-1].split(".")[0].replace("_", " ").split(" ")[0],
+            str(file).split("/")[-1].split(".")[0].replace("_", " ").split(" ")[-1],
+            qiskit_o3_fid,
+            tket_fid,
+            RL_fid,
+            qiskit_o3_parallel,
+            tket_parallelism,
+            RL_parallelism,
+            qiskit_o3_crit_depth,
+            tket_crit_depth,
+            RL_crit_depth,
+            qiskit_o3_time,
+            tket_time,
+            RL_fid_time,
+            RL_parallelism_time,
+            RL_crit_depth_time,
+            RL_fid_crit_depth,
+            RL_fid_parallelism,
+            RL_crit_depth_fid,
+            RL_crit_depth_parallelism,
+            RL_parallelism_fid,
+            RL_parallelism_crit_depth,
+        )
 
-    return (
-        str(file).split("/")[-1].split(".")[0].replace("_", " ").split(" ")[0],
-        str(file).split("/")[-1].split(".")[0].replace("_", " ").split(" ")[-1],
-        qiskit_o3_fid,
-        tket_fid,
-        RL_fid,
-        qiskit_o3_parallel,
-        tket_parallelism,
-        RL_parallelism,
-        qiskit_o3_crit_depth,
-        tket_crit_depth,
-        RL_crit_depth,
-        qiskit_o3_time,
-        tket_time,
-        RL_fid_time,
-        RL_parallelism_time,
-        RL_crit_depth_time,
-        RL_fid_crit_depth,
-        RL_fid_parallelism,
-        RL_crit_depth_fid,
-        RL_crit_depth_parallelism,
-        RL_parallelism_fid,
-        RL_parallelism_crit_depth,
-    )
+    def instantiate_supervised_ML_model(self, timeout):
+        # Generate compiled circuits and save them as qasm files
+        predictor.generate_compiled_circuits(
+            timeout=timeout,
+        )
+        # Generate training data from qasm files
+        res = predictor.generate_trainingdata_from_qasm_files()
+        # Save those training data for faster re-processing
+        utils.save_training_data(res)
+        # Train the Random Forest Classifier on created training data
+        predictor.train_random_forest_classifier()
 
+    def instantiate_RL_model(self, fid, dep, par):
+
+        utils.init_all_config_files()
+        self.train_all_RL_models(timestep=1000, tensorboard_log="./training", verbose=2, fid=fid, dep=dep, par=par)
+        self.eval_all_sample_circuits_using_RL()
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Create Training Data")
-
-    parser.add_argument("--timeout", type=int, default=120)
-
-    args = parser.parse_args()
+    parser = argparse.ArgumentParser(description="MQT Predictor")
+    #parser.add_argument("--timeout", type=int, default=120)
+   #args = parser.parse_args()
 
     predictor = Predictor()
+    predictor.instantiate_RL_model(True, True, True)
 
-    # Generate compiled circuits and save them as qasm files
-    predictor.generate_compiled_circuits(
-        timeout=args.timeout,
-    )
-    # Postprocess some of those qasm files
-    utils.postprocess_ocr_qasm_files()
-    # Generate training data from qasm files
-    res = predictor.generate_trainingdata_from_qasm_files()
-    # Save those training data for faster re-processing
-    utils.save_training_data(res)
-    # Train the Random Forest Classifier on created training data
-    predictor.train_random_forest_classifier()
 
     # Old RL driver
-    # parser = argparse.ArgumentParser(description="Create RL Models")
-    #
+
     # parser.add_argument("--fid", type=bool, default=False)
     # parser.add_argument("--dep", type=bool, default=False)
     # parser.add_argument("--par", type=bool, default=False)
