@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from gym import Env
 from gym.spaces import Box, Discrete
-from mqt.phaseorderer import utils, RL_utils
+from mqt.predictor import utils, RL_utils
 from multiprocess.connection import wait
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
@@ -19,7 +19,7 @@ class PhaseOrdererEnv(Env):
         if qc_filepath:
             self.state = QuantumCircuit.from_qasm_file(str(qc_filepath))
         else:
-            self.state = utils.get_random_state_sample()
+            self.state = RL_utils.get_random_state_sample()
 
         self.action_set = {}
         self.actions_platform = []
@@ -77,7 +77,7 @@ class PhaseOrdererEnv(Env):
     def step(self, action):
         altered_qc = self.apply_action(action)
         if not altered_qc:
-            observation = utils.create_feature_dict(self.state).values()
+            observation = utils.create_feature_dict_RL(self.state).values()
             return (
                 np.array(list(observation), dtype=np.uint8),
                 0,
@@ -91,7 +91,7 @@ class PhaseOrdererEnv(Env):
 
         self.valid_actions = self.determine_valid_actions_for_state()
         if len(self.valid_actions) == 0:
-            observation = utils.create_feature_dict(self.state).values()
+            observation = utils.create_feature_dict_RL(self.state).values()
             return (
                 np.array(list(observation), dtype=np.uint8),
                 0,
@@ -113,7 +113,7 @@ class PhaseOrdererEnv(Env):
             reward = 0
             done = False
 
-        observation = utils.create_feature_dict(self.state).values()
+        observation = utils.create_feature_dict_RL(self.state).values()
         self.state = self.state.decompose(gates_to_decompose="unitary")
         return np.array(list(observation), dtype=np.uint8), reward, done, False, {}
 
@@ -130,7 +130,7 @@ class PhaseOrdererEnv(Env):
 
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
-        observation = utils.create_feature_dict(self.state).values()
+        observation = utils.create_feature_dict_RL(self.state).values()
         info = {}
 
         self.native_gateset_name = None
