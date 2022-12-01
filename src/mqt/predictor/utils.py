@@ -152,8 +152,28 @@ def timeout_watcher(func, args, timeout):
 
     return res
 
+def reward_crit_depth(qc):
+    (
+        program_communication,
+        critical_depth,
+        entanglement_ratio,
+        parallelism,
+        liveness,
+    ) = calc_supermarq_features(qc)
+    return 1 - critical_depth
 
-def calc_eval_score_for_qc(qc_path: str, device: str):
+
+def reward_parallelism(qc):
+    (
+        program_communication,
+        critical_depth,
+        entanglement_ratio,
+        parallelism,
+        liveness,
+    ) = calc_supermarq_features(qc)
+    return critical_depth
+
+def reward_expected_fidelity(qc_path: str, device: str):
     try:
         qc = QuantumCircuit.from_qasm_file(qc_path)
     except Exception as e:
