@@ -295,7 +295,7 @@ class Predictor:
                 comp_path_index = int(filename.split("_")[-1].split(".")[0])
                 device = LUT.get(comp_path_index)[1]
 
-                score = utils.calc_eval_score_for_qc(filename, device)
+                score = utils.reward_expected_fidelity(filename, device)
                 scores[comp_path_index] = score
 
         num_not_empty_entries = 0
