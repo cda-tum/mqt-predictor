@@ -90,7 +90,7 @@ def test_calc_eval_score_for_qc():
                                 ".",
                                 "eval_test",
                             )
-                            score = utils.calc_eval_score_for_qc(
+                            score = utils.reward_expected_fidelity(
                                 filename_qasm, device=device_name
                             )
                             assert (
