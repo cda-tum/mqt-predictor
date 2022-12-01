@@ -551,7 +551,7 @@ def calc_supermarq_features(qc: QuantumCircuit):
         critical_depth = 0
     else:
         critical_depth = (
-            qc.depth(filter_function=lambda x: len(x[1]) > 1) / num_multiple_qubit_gates
+            qc.depth(filter_function=lambda x: len(x[1]) > 1 and x[0].name != "barrier") / num_multiple_qubit_gates
         )
 
     entanglement_ratio = num_multiple_qubit_gates / num_gates
