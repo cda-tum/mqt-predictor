@@ -173,12 +173,15 @@ def reward_parallelism(qc):
     ) = calc_supermarq_features(qc)
     return critical_depth
 
-def reward_expected_fidelity(qc_path: str, device: str):
-    try:
-        qc = QuantumCircuit.from_qasm_file(qc_path)
-    except Exception as e:
-        print("Fail in calc_eval_score_for_qc: ", e)
-        return get_width_penalty()
+def reward_expected_fidelity(qc_or_path: str, device: str):
+    if isinstance(qc_or_path, QuantumCircuit):
+        qc = qc_or_path
+    else:
+        try:
+            qc = QuantumCircuit.from_qasm_file(qc_or_path)
+        except Exception as e:
+            print("Fail in reward_expected_fidelity: ", e)
+            return get_width_penalty()
     res = 1
 
     if "ibm_montreal" in device or "ibm_washington" in device:
@@ -371,8 +374,26 @@ def init_all_config_files():
     else:
         return True
 
+def create_feature_dict_RL(qc):
+    feature_dict = {"num_qubits": qc.num_qubits, "depth": qc.depth()}
+
+    (
+        program_communication,
+        critical_depth,
+        entanglement_ratio,
+        parallelism,
+        liveness,
+    ) = calc_supermarq_features(qc)
+    feature_dict["program_communication"] = int(program_communication * 100)
+    feature_dict["critical_depth"] = int(critical_depth * 100)
+    feature_dict["entanglement_ratio"] = int(entanglement_ratio * 100)
+    feature_dict["parallelism"] = int(parallelism * 100)
+    feature_dict["liveness"] = int(liveness * 100)
+
+    return feature_dict
 
 def create_feature_dict(qasm_str_or_path: str):
+
 
     if len(qasm_str_or_path) < 260 and Path(qasm_str_or_path).exists():
         qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
