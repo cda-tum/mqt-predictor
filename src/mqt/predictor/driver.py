@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed, load
 
-# from mqt.bench.utils import qiskit_helper, tket_helper
+from mqt.bench.utils import qiskit_helper, tket_helper
 from multiprocess.connection import wait
 from pytket import OpType, architecture
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
@@ -394,7 +394,7 @@ class Predictor:
 
         if save_non_zero_indices:
             data = np.asarray(non_zero_indices)
-            np.save("./trained_model_ML/non_zero_indices.npy", data)
+            np.save("./src/mqt/predictor/trained_model_ML/non_zero_indices.npy", data)
 
         (
             X_train,
@@ -653,14 +653,14 @@ class Predictor:
                 gamma=0.98,
             )
             model.learn(total_timesteps=timestep, progress_bar=True)
-            model.save("./trained_model_RL/model_" + rew)
+            model.save("./src/mqt/predictor/trained_model_RL/model_" + rew)
 
     def evaluate_sample_circuit_using_RL(self, file):
         print(file)
 
         reward_functions = ["parallelism", "fidelity", "critical_depth"]
         for rew in reward_functions:
-            model = MaskablePPO.load("./trained_model_RL/model_" + rew)
+            model = MaskablePPO.load("./src/mqt/predictor/trained_model_RL/model_" + rew)
 
             env = PhaseOrdererEnv(rew)
             obs, _ = env.reset(file)

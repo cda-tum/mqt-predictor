@@ -75,7 +75,7 @@ def get_compilation_pipeline():
     compilation_pipeline = {
         "devices": {
             "ibm": [("ibm_washington", 127), ("ibm_montreal", 27)],
-            "rigetti": [("rigetti_aspen_m1", 80)],
+            "rigetti": [("rigetti_aspen_m2", 80)],
             "ionq": [("ionq11", 11)],
             "oqc": [("oqc_lucy", 8)],
         },
@@ -601,7 +601,7 @@ def parse_rigetti_calibration_config():
         fid_2Q_CZ[elem] = cz_fid_avg
 
     rigetti_dict = {
-        "backend": "rigetti_aspen_m1",
+        "backend": "rigetti_aspen_m2",
         "avg_1Q": avg_1Q,
         "fid_1Q": fid_1Q,
         "fid_1Q_readout": fid_1Q_readout,
@@ -716,7 +716,7 @@ def postprocess_ocr_qasm_files(directory: str = None):
 
 
 def save_classifier(clf):
-    dump(clf, "./trained_model_ML/trained_clf.joblib")
+    dump(clf, "./src/mqt/predictor/trained_model_ML/trained_clf.joblib")
 
 
 def save_training_data(res):
@@ -726,7 +726,7 @@ def save_training_data(res):
         resources.files("mqt.predictor") / "training_data_ML_aggregated"
     ) as path:
         data = np.asarray(training_data)
-        np.save(str(path / "training_data_ML_aggregated.npy"), data)
+        np.save(str(path / "training_data.npy"), data)
         data = np.asarray(names_list)
         np.save(str(path / "names_list.npy"), data)
         data = np.asarray(scores_list)
@@ -738,12 +738,12 @@ def load_training_data():
         resources.files("mqt.predictor") / "training_data_ML_aggregated"
     ) as path:
         if (
-            path.joinpath("training_data_ML_aggregated.npy").is_file()
+            path.joinpath("training_data.npy").is_file()
             and path.joinpath("names_list.npy").is_file()
             and path.joinpath("scores_list.npy").is_file()
         ):
             training_data = np.load(
-                str(path / "training_data_ML_aggregated.npy"), allow_pickle=True
+                str(path / "training_data.npy"), allow_pickle=True
             )
             names_list = list(np.load(str(path / "names_list.npy"), allow_pickle=True))
             scores_list = list(

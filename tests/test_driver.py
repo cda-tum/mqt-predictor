@@ -17,10 +17,10 @@ from mqt.predictor.driver import Predictor
 
 @patch("matplotlib.pyplot.show")
 def test_predict(mock_show):
-    path = resources.files("mqt.predictor") / "trained_clf.joblib"
+    path = resources.files("mqt.predictor") / "trained_model_ML" / "trained_clf.joblib"
     assert path.is_file()
     filename = "test_qasm.qasm"
-    qc = benchmark_generator.get_one_benchmark("dj", 1, 8)
+    qc = benchmark_generator.get_benchmark("dj", 1, 8)
     qc.qasm(filename=filename)
     predictor = Predictor()
     prediction = predictor.predict(filename)
@@ -41,10 +41,10 @@ def test_predict(mock_show):
 )
 def test_compilation_paths(comp_path):
     predictor = Predictor()
-    qc_qasm = benchmark_generator.get_one_benchmark("dj", 1, 2).qasm()
+    qc_qasm = benchmark_generator.get_benchmark("dj", 1, 2).qasm()
     res = predictor.compile_predicted_compilation_path(qc_qasm, comp_path)
     assert res
-    qc = benchmark_generator.get_one_benchmark("dj", 1, 2)
+    qc = benchmark_generator.get_benchmark("dj", 1, 2)
     tmp_filename = "test.qasm"
     qc.qasm(filename=tmp_filename)
     res = predictor.compile_predicted_compilation_path(tmp_filename, comp_path)
@@ -54,7 +54,7 @@ def test_compilation_paths(comp_path):
 
 
 def test_compile_all_circuits_for_qc():
-    qc = benchmark_generator.get_one_benchmark("dj", 1, 2)
+    qc = benchmark_generator.get_benchmark("dj", 1, 2)
     tmp_filename = "test.qasm"
     qc.qasm(filename=tmp_filename)
     predictor = Predictor()
@@ -85,7 +85,7 @@ def test_generate_compiled_circuits():
     if not target_path.exists():
         target_path.mkdir()
 
-    qc = benchmark_generator.get_one_benchmark("dj", 1, 3)
+    qc = benchmark_generator.get_benchmark("dj", 1, 3)
     qasm_path = Path("compiled_test.qasm")
     qc.qasm(filename=str(qasm_path))
     predictor.generate_compiled_circuits(source_path, str(target_path))
