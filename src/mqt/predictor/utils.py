@@ -152,6 +152,7 @@ def timeout_watcher(func, args, timeout):
 
     return res
 
+
 def reward_crit_depth(qc):
     (
         program_communication,
@@ -172,6 +173,7 @@ def reward_parallelism(qc):
         liveness,
     ) = calc_supermarq_features(qc)
     return critical_depth
+
 
 def reward_expected_fidelity(qc_or_path: str, device: str):
     if isinstance(qc_or_path, QuantumCircuit):
@@ -374,6 +376,7 @@ def init_all_config_files():
     else:
         return True
 
+
 def create_feature_dict_RL(qc):
     feature_dict = {"num_qubits": qc.num_qubits, "depth": qc.depth()}
 
@@ -392,8 +395,8 @@ def create_feature_dict_RL(qc):
 
     return feature_dict
 
-def create_feature_dict(qasm_str_or_path: str):
 
+def create_feature_dict(qasm_str_or_path: str):
 
     if len(qasm_str_or_path) < 260 and Path(qasm_str_or_path).exists():
         qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
@@ -713,15 +716,17 @@ def postprocess_ocr_qasm_files(directory: str = None):
 
 
 def save_classifier(clf):
-    dump(clf, "trained_clf.joblib")
+    dump(clf, "./trained_model_ML/trained_clf.joblib")
 
 
 def save_training_data(res):
     training_data, names_list, scores_list = res
 
-    with resources.as_file(resources.files("mqt.predictor") / "training_data") as path:
+    with resources.as_file(
+        resources.files("mqt.predictor") / "training_data_ML_aggregated"
+    ) as path:
         data = np.asarray(training_data)
-        np.save(str(path / "training_data.npy"), data)
+        np.save(str(path / "training_data_ML_aggregated.npy"), data)
         data = np.asarray(names_list)
         np.save(str(path / "names_list.npy"), data)
         data = np.asarray(scores_list)
@@ -729,13 +734,17 @@ def save_training_data(res):
 
 
 def load_training_data():
-    with resources.as_file(resources.files("mqt.predictor") / "training_data") as path:
+    with resources.as_file(
+        resources.files("mqt.predictor") / "training_data_ML_aggregated"
+    ) as path:
         if (
-            path.joinpath("training_data.npy").is_file()
+            path.joinpath("training_data_ML_aggregated.npy").is_file()
             and path.joinpath("names_list.npy").is_file()
             and path.joinpath("scores_list.npy").is_file()
         ):
-            training_data = np.load(str(path / "training_data.npy"), allow_pickle=True)
+            training_data = np.load(
+                str(path / "training_data_ML_aggregated.npy"), allow_pickle=True
+            )
             names_list = list(np.load(str(path / "names_list.npy"), allow_pickle=True))
             scores_list = list(
                 np.load(str(path / "scores_list.npy"), allow_pickle=True)

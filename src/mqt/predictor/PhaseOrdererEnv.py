@@ -6,12 +6,13 @@ from pathlib import Path
 import numpy as np
 from gym import Env
 from gym.spaces import Box, Discrete
-from mqt.predictor import utils, RL_utils
 from multiprocess.connection import wait
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
+
+from mqt.predictor import RL_utils, utils
 
 
 class PhaseOrdererEnv(Env):

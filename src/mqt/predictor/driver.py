@@ -8,7 +8,8 @@ from time import time
 import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed, load
-#from mqt.bench.utils import qiskit_helper, tket_helper
+
+# from mqt.bench.utils import qiskit_helper, tket_helper
 from multiprocess.connection import wait
 from pytket import OpType, architecture
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
@@ -61,12 +62,14 @@ class Predictor:
         """
         if source_path is None:
             source_path = str(
-                resources.files("mqt.predictor").joinpath("training_samples")
+                resources.files("mqt.predictor").joinpath("training_circuits_ML")
             )
 
         if target_path is None:
             target_path = str(
-                resources.files("mqt.predictor").joinpath("training_samples_compiled")
+                resources.files("mqt.predictor").joinpath(
+                    "training_circuits_ML_compiled"
+                )
             )
 
         print("compile_all_circuits_for_qc:", filename)
@@ -160,12 +163,14 @@ class Predictor:
         """
         if source_path is None:
             source_path = str(
-                resources.files("mqt.predictor").joinpath("training_samples")
+                resources.files("mqt.predictor").joinpath("training_circuits_ML")
             )
 
         if target_path is None:
             target_path = str(
-                resources.files("mqt.predictor").joinpath("training_samples_compiled")
+                resources.files("mqt.predictor").joinpath(
+                    "training_circuits_ML_compiled"
+                )
             )
 
         global TIMEOUT
@@ -209,18 +214,20 @@ class Predictor:
         target_directory -- path to directory for compiled circuit
 
         Return values:
-        training_data -- training data
+        training_data_ML_aggregated -- training data
         name_list -- names of all training samples
         scores -- evaluation scores for all compilation options
         """
         if source_path is None:
             source_path = str(
-                resources.files("mqt.predictor").joinpath("training_samples")
+                resources.files("mqt.predictor").joinpath("training_circuits_ML")
             )
 
         if target_path is None:
             target_path = str(
-                resources.files("mqt.predictor").joinpath("training_samples_compiled")
+                resources.files("mqt.predictor").joinpath(
+                    "training_circuits_ML_compiled"
+                )
             )
 
         if utils.init_all_config_files():
@@ -271,12 +278,14 @@ class Predictor:
         """
         if source_path is None:
             source_path = str(
-                resources.files("mqt.predictor").joinpath("training_samples")
+                resources.files("mqt.predictor").joinpath("training_circuits_ML")
             )
 
         if target_path is None:
             target_path = str(
-                resources.files("mqt.predictor").joinpath("training_samples_compiled")
+                resources.files("mqt.predictor").joinpath(
+                    "training_circuits_ML_compiled"
+                )
             )
         if ".qasm" not in file:
             return False
@@ -385,7 +394,7 @@ class Predictor:
 
         if save_non_zero_indices:
             data = np.asarray(non_zero_indices)
-            np.save("non_zero_indices.npy", data)
+            np.save("./trained_model_ML/non_zero_indices.npy", data)
 
         (
             X_train,
@@ -531,7 +540,11 @@ class Predictor:
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
 
         if self.clf is None:
-            path = resources.files("mqt.predictor") / "trained_clf.joblib"
+            path = (
+                resources.files("mqt.predictor")
+                / "trained_model_ML"
+                / "trained_clf.joblib"
+            )
             if path.is_file():
                 self.clf = load(str(path))
             else:
@@ -543,7 +556,11 @@ class Predictor:
             return None
         feature_vector = list(feature_dict.values())
 
-        path = resources.files("mqt.predictor") / "non_zero_indices.npy"
+        path = (
+            resources.files("mqt.predictor")
+            / "trained_model_ML"
+            / "non_zero_indices.npy"
+        )
         non_zero_indices = np.load(str(path), allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
@@ -636,14 +653,14 @@ class Predictor:
                 gamma=0.98,
             )
             model.learn(total_timesteps=timestep, progress_bar=True)
-            model.save("model_" + rew)
+            model.save("./trained_model_RL/model_" + rew)
 
     def evaluate_sample_circuit_using_RL(self, file):
         print(file)
 
         reward_functions = ["parallelism", "fidelity", "critical_depth"]
         for rew in reward_functions:
-            model = MaskablePPO.load("model_" + rew)
+            model = MaskablePPO.load("./trained_model_RL/model_" + rew)
 
             env = PhaseOrdererEnv(rew)
             obs, _ = env.reset(file)
@@ -807,13 +824,14 @@ class Predictor:
 
         results = Parallel(n_jobs=-1, verbose=3, backend="threading")(
             delayed(self.evaluate_sample_circuit)(file)
-            for file in list(Path("./sample_circuits").glob("*.qasm"))
+            for file in list(
+                Path("./src/mqt/predictor/training_circuits_RL/").glob("*.qasm")
+            )
         )
         for res in results:
             res_csv.append(res)
         # print(results)
         np.savetxt("res.csv", res_csv, delimiter=",", fmt="%s")
-
 
     def evaluate_sample_circuit(self, file):
         print(file)
@@ -838,12 +856,16 @@ class Predictor:
                             utils.reward_expected_fidelity(env.state, env.device), 2
                         )
                         RL_fid_time = np.round(duration, 2)
-                        RL_fid_crit_depth = np.round(utils.reward_crit_depth(env.state), 2)
+                        RL_fid_crit_depth = np.round(
+                            utils.reward_crit_depth(env.state), 2
+                        )
                         RL_fid_parallelism = np.round(
                             utils.reward_parallelism(env.state), 2
                         )
                     elif rew == "parallelism":
-                        RL_parallelism = np.round(utils.reward_parallelism(env.state), 2)
+                        RL_parallelism = np.round(
+                            utils.reward_parallelism(env.state), 2
+                        )
                         RL_parallelism_time = np.round(duration, 2)
                         RL_parallelism_fid = np.round(
                             utils.reward_expected_fidelity(env.state, env.device), 2
@@ -879,7 +901,9 @@ class Predictor:
         qiskit_o3_time = np.round(duration, 2)
 
         tket_qc = qiskit_to_tk(qc)
-        arch = architecture.Architecture(utils.get_cmap_from_devicename("ibm_washington"))
+        arch = architecture.Architecture(
+            utils.get_cmap_from_devicename("ibm_washington")
+        )
         ibm_rebase = auto_rebase_pass(
             {OpType.Rz, OpType.SX, OpType.X, OpType.CX, OpType.Measure}
         )
@@ -962,18 +986,25 @@ class Predictor:
     def instantiate_RL_model(self, fid, dep, par):
 
         utils.init_all_config_files()
-        self.train_all_RL_models(timestep=1000, tensorboard_log="./training", verbose=2, fid=fid, dep=dep, par=par)
+        self.train_all_RL_models(
+            timestep=1000,
+            tensorboard_log="./training",
+            verbose=2,
+            fid=fid,
+            dep=dep,
+            par=par,
+        )
         self.eval_all_sample_circuits_using_RL()
+
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="MQT Predictor")
-    #parser.add_argument("--timeout", type=int, default=120)
-   #args = parser.parse_args()
+    # parser.add_argument("--timeout", type=int, default=120)
+    # args = parser.parse_args()
 
     predictor = Predictor()
     predictor.instantiate_RL_model(True, True, True)
-
 
     # Old RL driver
 

@@ -1,5 +1,3 @@
-from mqt.predictor import utils
-
 from pathlib import Path
 
 import numpy as np
@@ -269,7 +267,7 @@ def get_actions_devices():
 
 
 def get_random_state_sample():
-    file_list = list(Path("./sample_circuits").glob("*.qasm"))
+    file_list = list(Path("./src/mqt/predictor/training_circuits_RL/").glob("*.qasm"))
     random_index = np.random.randint(len(file_list))
     try:
         qc = QuantumCircuit.from_qasm_file(str(file_list[random_index]))
@@ -297,7 +295,6 @@ def get_ionq_native_gates():
 def get_oqc_native_gates():
     oqc_gates = ["rz", "sx", "x", "ecr", "measure"]
     return oqc_gates
-
 
 
 def get_rigetti_aspen_m2_map():
@@ -344,6 +341,7 @@ def get_ionq11_c_map():
                 ionq11_c_map.append([i, j])
     return ionq11_c_map
 
+
 def get_cmap_oqc_lucy():
     """Returns the coupling map of the OQC Lucy quantum computer."""
     # source: https://github.com/aws/amazon-braket-examples/blob/main/examples/braket_features/Verbatim_Compilation.ipynb
@@ -352,6 +350,7 @@ def get_cmap_oqc_lucy():
     c_map_oqc_lucy = [[0, 1], [0, 7], [1, 2], [2, 3], [7, 6], [6, 5], [4, 3], [4, 5]]
 
     return c_map_oqc_lucy
+
 
 def get_cmap_from_devicename(device: str):
     if device == "ibm_washington":
