@@ -36,7 +36,9 @@ def test_get_actions_devices():
     assert len(RL_utils.get_actions_devices()) == 5
 
 
-@pytest.mark.skipif(os.getenv("skip_optional_tests"), reason="QASM files are not provided.")
+@pytest.mark.skipif(
+    os.getenv("skip_optional_tests"), reason="QASM files are not provided."
+)
 def test_get_random_state_sample():
     sample = RL_utils.get_random_state_sample()
     assert sample and isinstance(sample, QuantumCircuit)
