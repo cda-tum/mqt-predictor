@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -38,15 +39,12 @@ from qiskit.transpiler.passes import (
     TrivialLayout,
 )
 
+from mqt.predictor import utils
 
-def execute_TKET_FullPeephole(tket_qc, conn_write):
-    FullPeepholeOptimise().apply(tket_qc)
-    conn_write.send("success")
-
-
-def execute_TKET_pass(tket_qc, tket_pass, conn_write):
-    tket_pass.apply(tket_qc)
-    conn_write.send("success")
+if sys.version_info < (3, 10, 0):
+    import importlib_resources as resources
+else:
+    from importlib import resources
 
 
 def get_actions_opt():
@@ -103,7 +101,7 @@ def get_actions_opt():
         },
         {
             "name": "FullPeepholeOptimiseCX",
-            "transpile_pass": [FullPeepholeOptimise(target_2qb_gate=OpType.CX)],
+            "transpile_pass": [FullPeepholeOptimise(target_2qb_gate=OpType.TK2)],
             "origin": "tket",
         },
         {
@@ -363,3 +361,30 @@ def get_cmap_from_devicename(device: str):
         return get_cmap_oqc_lucy()
     elif device == "ionq11":
         return get_ionq11_c_map()
+
+
+def create_feature_dict_RL(qc):
+    feature_dict = {"num_qubits": qc.num_qubits, "depth": qc.depth()}
+
+    (
+        program_communication,
+        critical_depth,
+        entanglement_ratio,
+        parallelism,
+        liveness,
+    ) = utils.calc_supermarq_features(qc)
+    feature_dict["program_communication"] = int(program_communication * 100)
+    feature_dict["critical_depth"] = int(critical_depth * 100)
+    feature_dict["entanglement_ratio"] = int(entanglement_ratio * 100)
+    feature_dict["parallelism"] = int(parallelism * 100)
+    feature_dict["liveness"] = int(liveness * 100)
+
+    return feature_dict
+
+
+def get_path_trained_model_RL():
+    return resources.files("mqt.predictor") / "trained_model_RL"
+
+
+def get_path_training_circuits_RL():
+    return resources.files("mqt.predictor") / "training_circuits_RL"
