@@ -15,15 +15,19 @@ from mqt.predictor import utils
 
 
 def get_path_trained_model_ML():
-    return resources.files("mqt.predictor") / "trained_model_ML"
+    return resources.files("mqt.predictor") / "training_data" / "trained_model_ML"
 
 
 def get_path_training_circuits_ML():
-    return resources.files("mqt.predictor") / "training_circuits_ML"
+    return resources.files("mqt.predictor") / "training_data" / "training_circuits_ML"
 
 
 def get_path_training_circuits_ML_compiled():
-    return resources.files("mqt.predictor") / "training_circuits_ML_compiled"
+    return (
+        resources.files("mqt.predictor")
+        / "training_data"
+        / "training_circuits_ML_compiled"
+    )
 
 
 def get_width_penalty():
@@ -136,15 +140,15 @@ def dict_to_featurevector(gate_dict):
     return res_dct
 
 
-def create_feature_dict(qasm_str_or_path: str):
-
-    if len(qasm_str_or_path) < 260 and Path(qasm_str_or_path).exists():
-        qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
-    elif "OPENQASM" in qasm_str_or_path:
-        qc = QuantumCircuit.from_qasm_str(qasm_str_or_path)
-    else:
-        print("Neither a qasm file path nor a qasm str has been provided.")
-        return False
+def create_feature_dict(qc: str):
+    if not isinstance(qc, QuantumCircuit):
+        if len(qc) < 260 and Path(qc).exists():
+            qc = QuantumCircuit.from_qasm_file(qc)
+        elif "OPENQASM" in qc:
+            qc = QuantumCircuit.from_qasm_str(qc)
+        else:
+            print("Neither a qasm file path nor a qasm str has been provided.")
+            return False
 
     ops_list = qc.count_ops()
     feature_dict = dict_to_featurevector(ops_list)
@@ -169,14 +173,16 @@ def create_feature_dict(qasm_str_or_path: str):
 
 
 def save_classifier(clf):
-    dump(clf, "./src/mqt/predictor/trained_model_ML/trained_clf.joblib")
+    dump(clf, "./src/mqt/predictor/training_data/trained_model_ML/trained_clf.joblib")
 
 
 def save_training_data(res):
     training_data, names_list, scores_list = res
 
     with resources.as_file(
-        resources.files("mqt.predictor") / "training_data_ML_aggregated"
+        resources.files("mqt.predictor")
+        / "training_data"
+        / "training_data_ML_aggregated"
     ) as path:
         data = np.asarray(training_data)
         np.save(str(path / "training_data.npy"), data)
@@ -188,7 +194,9 @@ def save_training_data(res):
 
 def load_training_data():
     with resources.as_file(
-        resources.files("mqt.predictor") / "training_data_ML_aggregated"
+        resources.files("mqt.predictor")
+        / "training_data"
+        / "training_data_ML_aggregated"
     ) as path:
         if (
             path.joinpath("training_data.npy").is_file()

@@ -1,4 +1,5 @@
-from time import time
+import time
+from pathlib import Path
 
 import numpy as np
 from joblib import Parallel, delayed
@@ -11,7 +12,7 @@ from pytket.passes import (
     auto_rebase_pass,
 )
 from pytket.placement import GraphPlacement
-from qiskit import transpile
+from qiskit import QuantumCircuit, transpile
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 from sb3_contrib.common.maskable.utils import get_action_masks
@@ -21,9 +22,15 @@ from mqt.predictor.PhaseOrdererEnv import PhaseOrdererEnv
 
 
 class RL_Predictor:
-    def predict(self, qc, opt_objective="fidelity"):
+    def compile(self, qc, opt_objective="fidelity"):
+        if not isinstance(qc, QuantumCircuit):
+            if len(qc) < 260 and Path(qc).exists():
+                qc = QuantumCircuit.from_qasm_file(qc)
+            elif "OPENQASM" in qc:
+                qc = QuantumCircuit.from_qasm_str(qc)
+
         model = MaskablePPO.load(
-            RL_utils.get_path_trained_model_RL() / "model_" + opt_objective
+            RL_utils.get_path_trained_model_RL() / ("model_" + opt_objective)
         )
         env = PhaseOrdererEnv(opt_objective)
         obs, _ = env.reset(qc)
@@ -33,7 +40,7 @@ class RL_Predictor:
             action = int(action)
             action_item = env.action_set.get(action)
             if action_item in RL_utils.get_actions_devices():
-                device = RL_utils.get_actions_devices().get(action_item)["device"]
+                device = action_item["name"]
             obs, reward, done, trunc, info = env.step(action)
             if done:
                 return env.state, device
@@ -44,7 +51,7 @@ class RL_Predictor:
         reward_functions = ["parallelism", "fidelity", "critical_depth"]
         for rew in reward_functions:
             model = MaskablePPO.load(
-                RL_utils.get_path_trained_model_RL() / "model_" + rew
+                RL_utils.get_path_trained_model_RL() / ("model_" + rew)
             )
 
             env = PhaseOrdererEnv(rew)
@@ -94,8 +101,8 @@ class RL_Predictor:
         start_time = time.time()
         transpiled_qc_qiskit = transpile(
             qc,
-            basis_gates=utils.get_ibm_native_gates(),
-            coupling_map=utils.get_cmap_from_devicename("ibm_washington"),
+            basis_gates=RL_utils.get_ibm_native_gates(),
+            coupling_map=RL_utils.get_cmap_from_devicename("ibm_washington"),
             optimization_level=3,
             seed_transpiler=1,
         )
@@ -109,7 +116,7 @@ class RL_Predictor:
 
         tket_qc = qiskit_to_tk(qc)
         arch = architecture.Architecture(
-            utils.get_cmap_from_devicename("ibm_washington")
+            RL_utils.get_cmap_from_devicename("ibm_washington")
         )
         ibm_rebase = auto_rebase_pass(
             {OpType.Rz, OpType.SX, OpType.X, OpType.CX, OpType.Measure}
@@ -195,7 +202,7 @@ class RL_Predictor:
         # print(results)
         np.savetxt("res.csv", res_csv, delimiter=",", fmt="%s")
 
-    def instantiate_RL_models(self, timesteps, fid, dep, par):
+    def instantiate_RL_models(self, timesteps, fid, dep, par, model_name="training"):
 
         utils.init_all_config_files()
         self.train_all_RL_models(
@@ -204,8 +211,8 @@ class RL_Predictor:
             fid=fid,
             dep=dep,
             par=par,
+            model_name=model_name,
         )
-        self.eval_all_sample_circuits_using_RL()
 
     def train_all_RL_models(
         self,
@@ -214,6 +221,7 @@ class RL_Predictor:
         fid=False,
         dep=False,
         par=False,
+        model_name="model",
     ):
         reward_functions = []  # ["fidelity", "depth", "two_qubit_count"]
         if fid:
@@ -234,8 +242,8 @@ class RL_Predictor:
                 MaskableActorCriticPolicy,
                 env,
                 verbose=verbose,
-                tensorboard_log="./training_" + rew,
+                tensorboard_log="./" + model_name + "_" + rew,
                 gamma=0.98,
             )
             model.learn(total_timesteps=timestep, progress_bar=True)
-            model.save(RL_utils.get_path_trained_model_RL() / "model_" + rew)
+            model.save(RL_utils.get_path_trained_model_RL() / (model_name + "_" + rew))

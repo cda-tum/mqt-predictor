@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed, load
 from mqt.bench.utils import qiskit_helper, tket_helper
-from pytket.qasm import circuit_to_qasm_str
+from pytket.extensions.qiskit import tk_to_qiskit
 from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
@@ -514,10 +514,8 @@ class ML_Predictor:
 
         return self.clf.predict([feature_vector])[0]
 
-    def compile_predicted_compilation_path(
-        self, qasm_str_or_path: str, prediction: int
-    ):
-        """Returns the compiled quantum circuit as a qasm string when the original qasm circuit is provided as either
+    def compile_predicted_compilation_path(self, qc: str, prediction: int):
+        """Returns the compiled quantum circuit when the original qasm circuit is provided as either
         a string or a file path and the prediction index is given."""
 
         LUT = ML_utils.get_index_to_comppath_LUT()
@@ -525,15 +523,16 @@ class ML_Predictor:
             print("Provided prediction is faulty.")
             return None
 
-        if Path(qasm_str_or_path).exists():
-            print("Reading from .qasm path: ", qasm_str_or_path)
-            qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
-        elif QuantumCircuit.from_qasm_str(qasm_str_or_path):
-            print("Reading from .qasm str")
-            qc = QuantumCircuit.from_qasm_str(qasm_str_or_path)
-        else:
-            print("Neither a qasm file path nor a qasm str has been provided.")
-            return False
+        if not isinstance(qc, QuantumCircuit):
+            if Path(qc).exists():
+                print("Reading from .qasm path: ", qc)
+                qc = QuantumCircuit.from_qasm_file(qc)
+            elif QuantumCircuit.from_qasm_str(qc):
+                print("Reading from .qasm str")
+                qc = QuantumCircuit.from_qasm_str(qc)
+            else:
+                print("Neither a qasm file path nor a qasm str has been provided.")
+                return False
 
         prediction_information = LUT.get(prediction)
         gate_set_name = prediction_information[0]
@@ -546,7 +545,7 @@ class ML_Predictor:
             compiled_qc = qiskit_helper.get_mapped_level(
                 qc, gate_set_name, qc.num_qubits, device, compiler_settings, False, True
             )
-            return compiled_qc.qasm()
+            return compiled_qc
         elif compiler == "tket":
             compiled_qc = tket_helper.get_mapped_level(
                 qc,
@@ -557,7 +556,7 @@ class ML_Predictor:
                 False,
                 True,
             )
-            return circuit_to_qasm_str(compiled_qc)
+            return tk_to_qiskit(compiled_qc)
         else:
             print("Error: Compiler not found.")
             return False

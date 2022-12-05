@@ -1,10 +1,11 @@
 import argparse
 
 from mqt.predictor import ML_utils
-from mqt.predictor.RL_Predictor import ML_Predictor, RL_Predictor
+from mqt.predictor.ML_Predictor import ML_Predictor
+from mqt.predictor.RL_Predictor import RL_Predictor
 
 
-def compile(qc, model="ML"):
+def compile(qc, model="ML", opt_objective="fidelity"):
     if model == "ML":
         ML_predictor = ML_Predictor()
         prediction = ML_predictor.predict(qc)
@@ -15,7 +16,7 @@ def compile(qc, model="ML"):
         return qc_compiled, device
     elif model == "RL":
         RL_predictor = RL_Predictor()
-        qc_compiled, device = RL_predictor.predict(qc)
+        qc_compiled, device = RL_predictor.compile(qc, opt_objective=opt_objective)
         return qc_compiled, device
 
     else:
@@ -23,7 +24,4 @@ def compile(qc, model="ML"):
 
 
 if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description="MQT Predictor")
-    # parser.add_argument("--timeout", type=int, default=120)
-    # args = parser.parse_args()
+    #Placeholder

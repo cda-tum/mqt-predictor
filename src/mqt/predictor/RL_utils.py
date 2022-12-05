@@ -1,5 +1,4 @@
 import sys
-from pathlib import Path
 
 import numpy as np
 from pytket import architecture
@@ -265,7 +264,7 @@ def get_actions_devices():
 
 
 def get_random_state_sample():
-    file_list = list(Path("./src/mqt/predictor/training_circuits_RL/").glob("*.qasm"))
+    file_list = list(get_path_training_circuits_RL().glob("*.qasm"))
     random_index = np.random.randint(len(file_list))
     try:
         qc = QuantumCircuit.from_qasm_file(str(file_list[random_index]))
@@ -383,8 +382,8 @@ def create_feature_dict_RL(qc):
 
 
 def get_path_trained_model_RL():
-    return resources.files("mqt.predictor") / "trained_model_RL"
+    return resources.files("mqt.predictor") / "training_data" / "trained_model_RL"
 
 
 def get_path_training_circuits_RL():
-    return resources.files("mqt.predictor") / "training_circuits_RL"
+    return resources.files("mqt.predictor") / "training_data" / "training_circuits_RL"
