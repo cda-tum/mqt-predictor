@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -6,10 +7,6 @@ from qiskit import QuantumCircuit
 
 from mqt.predictor import RL_utils
 from mqt.predictor.RL_Predictor import RL_Predictor
-
-# def test_instantiate_RL_models():
-#   predictor = RL_Predictor()
-#  predictor.instantiate_RL_models(timesteps=100, fid=True, dep=True, par=True)
 
 
 @pytest.mark.parametrize(
@@ -32,7 +29,9 @@ def test_evaluate_sample_circuit_using_RL():
     assert len(res) == 22
 
 
-@pytest.mark.skip(reason="takes tooooooo loooooong")
+@pytest.mark.skipif(
+    os.getenv("skip_optional_tests"), reason="Takes too long on GitHub Runner."
+)
 def test_instantiate_RL_models():
     predictor = RL_Predictor()
     model_name = "test"
