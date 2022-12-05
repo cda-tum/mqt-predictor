@@ -19,14 +19,18 @@ requires-python = ">=3.8"
 dynamic = ["version"]
 
 dependencies = [
-    "qiskit~=0.35",
-    "pytket~=1.1",
-    "numpy>=1.21.5,<1.24.0",
-    "mqt.bench~=0.1.4",
-    "pytket-qiskit>=0.24,<0.28",
-    "matplotlib~=3.5.1",
-    "scikit-learn>=1.0.2,<1.2.0",
-    "natsort~=8.1.0",
+    "qiskit[all]~=0.39.2",
+    "pytket~=1.9.0",
+    "gym>=0.26.0",
+    "stable-baselines3[extra] @ git+https://github.com/carlosluis/stable-baselines3@fix_tests",
+    "sb3-contrib>=1.7.0a0",
+    "z3-solver>=4.11.0",
+    "importlib_resources>=5.0; python_version < '3.10'",
+    "numpy>=1.21.5",
+    "mqt.bench @ git+https://github.com/cda-tum/MQTBench@dev",
+    "matplotlib>=3.5.0",
+    "scikit-learn>=1.0.0",
+    "natsort>=8.1.0",
     "importlib_resources>=5.9; python_version < '3.10'",
 ]
 
