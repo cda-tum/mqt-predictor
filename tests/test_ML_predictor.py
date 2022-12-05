@@ -63,7 +63,7 @@ def test_compile_all_circuits_for_qc():
 def test_train_random_forest_classifier(mock_pyplot):
     predictor = ML_Predictor()
     assert predictor.clf is None
-    predictor.train_random_forest_classifier(visualize_results=True)
+    predictor.train_random_forest_classifier(visualize_results=False)
     if Path("non_zero_indices.npy").exists():
         Path("non_zero_indices.npy").unlink()
 
