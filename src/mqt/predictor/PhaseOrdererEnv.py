@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from multiprocessing import Pipe, Process
 from pathlib import Path
 
 import numpy as np
 from gym import Env
 from gym.spaces import Box, Discrete
-from multiprocess.connection import wait
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
@@ -78,7 +76,7 @@ class PhaseOrdererEnv(Env):
     def step(self, action):
         altered_qc = self.apply_action(action)
         if not altered_qc:
-            observation = utils.create_feature_dict_RL(self.state).values()
+            observation = RL_utils.create_feature_dict_RL(self.state).values()
             return (
                 np.array(list(observation), dtype=np.uint8),
                 0,
@@ -92,7 +90,7 @@ class PhaseOrdererEnv(Env):
 
         self.valid_actions = self.determine_valid_actions_for_state()
         if len(self.valid_actions) == 0:
-            observation = utils.create_feature_dict_RL(self.state).values()
+            observation = RL_utils.create_feature_dict_RL(self.state).values()
             return (
                 np.array(list(observation), dtype=np.uint8),
                 0,
@@ -114,24 +112,25 @@ class PhaseOrdererEnv(Env):
             reward = 0
             done = False
 
-        observation = utils.create_feature_dict_RL(self.state).values()
+        observation = RL_utils.create_feature_dict_RL(self.state).values()
         self.state = self.state.decompose(gates_to_decompose="unitary")
         return np.array(list(observation), dtype=np.uint8), reward, done, False, {}
 
     def render(self, mode="human"):
         print(self.state.draw())
 
-    def reset(self, qc_filepath: Path | str = None):
-        if qc_filepath:
-            self.state = QuantumCircuit.from_qasm_file(str(qc_filepath))
+    def reset(self, qc: Path | str | QuantumCircuit = None):
+        if isinstance(qc, QuantumCircuit):
+            self.state = qc
         else:
-            self.state = RL_utils.get_random_state_sample()
-        if not self.state:
-            self.reset()
+            if qc:
+                self.state = QuantumCircuit.from_qasm_file(str(qc))
+            else:
+                self.state = RL_utils.get_random_state_sample()
 
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
-        observation = utils.create_feature_dict_RL(self.state).values()
+        observation = RL_utils.create_feature_dict_RL(self.state).values()
         info = {}
 
         self.native_gateset_name = None
@@ -191,31 +190,7 @@ class PhaseOrdererEnv(Env):
                 try:
                     tket_qc = qiskit_to_tk(self.state)
                     for elem in transpile_pass:
-                        conn_read, conn_write = Pipe(duplex=False)
-                        p = Process(
-                            target=RL_utils.execute_TKET_pass,
-                            args=(
-                                tket_qc,
-                                elem,
-                                conn_write,
-                            ),
-                        )
-                        p.start()
-
-                        success = False
-                        while p.is_alive():
-                            wait(
-                                [p.sentinel, conn_read]
-                            )  # block-wait until something gets ready
-                            if conn_read.poll():  # check if something can be received
-                                msg = conn_read.recv()
-                                success = msg == "success"
-                        p.join()
-                        if not success:
-                            print("Fail in execute_TKET_pass: ", action)
-                            return False
-                        else:
-                            elem.apply(tket_qc)
+                        elem.apply(tket_qc)
                     altered_qc = tk_to_qiskit(tket_qc)
                 except Exception as e:
                     print("Error in executing TKET transpile pass: ", action_index)
