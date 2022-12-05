@@ -3,11 +3,11 @@ from pathlib import Path
 from mqt.bench import benchmark_generator
 from mqt.bench.utils import qiskit_helper
 
-from mqt.predictor import utils
+from mqt.predictor import ML_utils, utils
 
 
 def test_get_width_penalty():
-    assert utils.get_width_penalty() < 0
+    assert ML_utils.get_width_penalty() < 0
 
 
 def test_get_index_to_comppath_LUT():
@@ -43,7 +43,7 @@ def test_get_index_to_comppath_LUT():
         28: ("oqc", "oqc_lucy", "tket", False),
         29: ("oqc", "oqc_lucy", "tket", True),
     }
-    assert utils.get_index_to_comppath_LUT() == expected
+    assert ML_utils.get_index_to_comppath_LUT() == expected
 
 
 def test_get_compilation_pipeline():
@@ -59,16 +59,16 @@ def test_get_compilation_pipeline():
             "tket": {"lineplacement": [False, True]},
         },
     }
-    assert utils.get_compilation_pipeline() == expected
+    assert ML_utils.get_compilation_pipeline() == expected
 
 
 def test_load_training_data():
-    assert utils.load_training_data() is not None
+    assert ML_utils.load_training_data() is not None
 
 
 def test_calc_eval_score_for_qc():
-    qc = benchmark_generator.get_one_benchmark("dj", 1, 3)
-    compilation_pipeline = utils.get_compilation_pipeline()
+    qc = benchmark_generator.get_benchmark("dj", 1, 3)
+    compilation_pipeline = ML_utils.get_compilation_pipeline()
 
     utils.init_all_config_files()
 
@@ -96,7 +96,7 @@ def test_calc_eval_score_for_qc():
                             assert (
                                 score >= 0
                                 and score <= 1
-                                or score == utils.get_width_penalty()
+                                or score == ML_utils.get_width_penalty()
                             )
 
     if Path(filename_qasm).is_file():
