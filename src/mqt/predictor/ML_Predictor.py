@@ -1,20 +1,19 @@
-
-from mqt.bench.utils import qiskit_helper, tket_helper
+import glob
+from pathlib import Path
 
 import matplotlib.pyplot as plt
-
-plt.rcParams["font.family"] = "Times New Roman"
 import numpy as np
 from joblib import Parallel, delayed, load
+from mqt.bench.utils import qiskit_helper, tket_helper
 from pytket.qasm import circuit_to_qasm_str
-from qiskit import QuantumCircuit, transpile
-from pathlib import Path
-import glob
-
+from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from mqt.predictor import utils, ML_utils
+from mqt.predictor import ML_utils, utils
+
+plt.rcParams["font.family"] = "Times New Roman"
+
 
 class ML_Predictor:
     def __init__(self):
@@ -562,7 +561,6 @@ class ML_Predictor:
         else:
             print("Error: Compiler not found.")
             return False
-
 
     def instantiate_supervised_ML_model(self, timeout):
         # Generate compiled circuits and save them as qasm files

@@ -1,23 +1,26 @@
+from time import time
+
+import numpy as np
+from joblib import Parallel, delayed
+from pytket import OpType, architecture
+from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
+from pytket.passes import (
+    FullPeepholeOptimise,
+    PlacementPass,
+    RoutingPass,
+    auto_rebase_pass,
+)
+from pytket.placement import GraphPlacement
+from qiskit import transpile
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 from sb3_contrib.common.maskable.utils import get_action_masks
 
-import numpy as np
-from joblib import Parallel, delayed
-from multiprocessing import Pipe, Process
-from multiprocess.connection import wait
-from pytket import OpType, architecture
-from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
-from pytket.passes import PlacementPass, RoutingPass, auto_rebase_pass, FullPeepholeOptimise
-from pytket.placement import GraphPlacement
-from qiskit import transpile
-from time import time
-
 from mqt.predictor import RL_utils, utils
 from mqt.predictor.PhaseOrdererEnv import PhaseOrdererEnv
 
-class RL_Predictor:
 
+class RL_Predictor:
     def predict(self, qc, opt_objective="fidelity"):
         model = MaskablePPO.load(
             RL_utils.get_path_trained_model_RL() / "model_" + opt_objective
@@ -34,7 +37,6 @@ class RL_Predictor:
             obs, reward, done, trunc, info = env.step(action)
             if done:
                 return env.state, device
-
 
     def evaluate_sample_circuit_using_RL(self, file):
         print(file)
@@ -204,7 +206,6 @@ class RL_Predictor:
             par=par,
         )
         self.eval_all_sample_circuits_using_RL()
-
 
     def train_all_RL_models(
         self,

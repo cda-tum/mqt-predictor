@@ -8,20 +8,23 @@ else:
 from pathlib import Path
 
 import numpy as np
+from joblib import dump
 from qiskit import QuantumCircuit
 
-from joblib import dump
 from mqt.predictor import utils
 
+
 def get_path_trained_model_ML():
-    return (resources.files("mqt.predictor") / "trained_model_ML")
+    return resources.files("mqt.predictor") / "trained_model_ML"
 
 
 def get_path_training_circuits_ML():
-    return (resources.files("mqt.predictor") / "training_circuits_ML")
+    return resources.files("mqt.predictor") / "training_circuits_ML"
+
 
 def get_path_training_circuits_ML_compiled():
-    return (resources.files("mqt.predictor") / "training_circuits_ML_compiled")
+    return resources.files("mqt.predictor") / "training_circuits_ML_compiled"
+
 
 def get_width_penalty():
     """Returns the penalty value if a quantum computer has not enough qubits."""
@@ -122,6 +125,7 @@ def get_openqasm_gates():
     ]
     return gate_list
 
+
 def dict_to_featurevector(gate_dict):
     """Calculates and returns the feature vector of a given quantum circuit gate dictionary."""
     res_dct = dict.fromkeys(get_openqasm_gates(), 0)
@@ -164,15 +168,15 @@ def create_feature_dict(qasm_str_or_path: str):
     return feature_dict
 
 
-
 def save_classifier(clf):
     dump(clf, "./src/mqt/predictor/trained_model_ML/trained_clf.joblib")
+
 
 def save_training_data(res):
     training_data, names_list, scores_list = res
 
     with resources.as_file(
-            resources.files("mqt.predictor") / "training_data_ML_aggregated"
+        resources.files("mqt.predictor") / "training_data_ML_aggregated"
     ) as path:
         data = np.asarray(training_data)
         np.save(str(path / "training_data.npy"), data)
@@ -180,7 +184,6 @@ def save_training_data(res):
         np.save(str(path / "names_list.npy"), data)
         data = np.asarray(scores_list)
         np.save(str(path / "scores_list.npy"), data)
-
 
 
 def load_training_data():
@@ -192,9 +195,7 @@ def load_training_data():
             and path.joinpath("names_list.npy").is_file()
             and path.joinpath("scores_list.npy").is_file()
         ):
-            training_data = np.load(
-                str(path / "training_data.npy"), allow_pickle=True
-            )
+            training_data = np.load(str(path / "training_data.npy"), allow_pickle=True)
             names_list = list(np.load(str(path / "names_list.npy"), allow_pickle=True))
             scores_list = list(
                 np.load(str(path / "scores_list.npy"), allow_pickle=True)
