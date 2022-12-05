@@ -1,7 +1,9 @@
-from mqt.predictor.driver import compile
 from mqt.bench import get_benchmark
-from qiskit import QuantumCircuit
 from pytket import Circuit
+from qiskit import QuantumCircuit
+
+from mqt.predictor.driver import compile
+
 
 def test_compile():
     qc = get_benchmark("ghz", 1, 5)

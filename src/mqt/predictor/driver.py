@@ -1,5 +1,3 @@
-import argparse
-
 from mqt.predictor import ML_utils
 from mqt.predictor.ML_Predictor import ML_Predictor
 from mqt.predictor.RL_Predictor import RL_Predictor
@@ -21,7 +19,3 @@ def compile(qc, model="ML", opt_objective="fidelity"):
 
     else:
         raise ValueError("Choose between 'ML' and 'RL' Model.")
-
-
-if __name__ == "__main__":
-    #Placeholder
