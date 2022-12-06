@@ -226,13 +226,10 @@ class RL_Predictor:
         reward_functions = []  # ["fidelity", "depth", "two_qubit_count"]
         if fid:
             reward_functions.append("fidelity")
-            print("fidelity added")
         if dep:
             reward_functions.append("critical_depth")
-            print("critical_depth added")
         if par:
             reward_functions.append("parallelism")
-            print("parallelism added")
 
         for rew in reward_functions:
             print("Start training for: ", rew)
