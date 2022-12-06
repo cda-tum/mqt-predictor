@@ -220,8 +220,8 @@ def calc_qubit_index(qargs, qregs, index):
         if qargs[index] not in reg:
             offset += reg.size
         else:
-            first_qubit = offset + reg.index(qargs[index])
-            return first_qubit
+            qubit_index = offset + reg.index(qargs[index])
+            return qubit_index
     raise ValueError("Qubit not found.")
 
 
@@ -437,18 +437,15 @@ def calc_supermarq_features(qc: QuantumCircuit):
     for _ in range(qc.num_qubits):
         connectivity.append([])
 
-    offset = 0
-    qubit_indices = []
-    for elem in qc.qregs:
-        for i in range(elem.size):
-            qubit_indices.append(offset + i)
-        offset += elem.size
-
-    for instruction, _, _ in qc.data:
+    for instruction, qargs, _ in qc.data:
         gate_type = instruction.name
-        liveness_A_matrix += len(qubit_indices)
         if gate_type != "barrier":
-            all_indices = set(qubit_indices)
+            liveness_A_matrix += len(qargs)
+            first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
+            all_indices = [first_qubit]
+            if len(qargs) == 2:
+                second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
+                all_indices.append(second_qubit)
             for qubit_index in all_indices:
                 to_be_added_entries = all_indices.copy()
                 to_be_added_entries.remove(int(qubit_index))
@@ -476,6 +473,12 @@ def calc_supermarq_features(qc: QuantumCircuit):
     parallelism = (num_gates / depth - 1) / (qc.num_qubits - 1)
 
     liveness = liveness_A_matrix / (depth * qc.num_qubits)
+
+    assert program_communication >= 0 and program_communication <= 1
+    assert critical_depth >= 0 and critical_depth <= 1
+    assert entanglement_ratio >= 0 and entanglement_ratio <= 1
+    assert parallelism >= 0 and parallelism <= 1
+    assert liveness >= 0 and liveness <= 1
 
     return (
         program_communication,
