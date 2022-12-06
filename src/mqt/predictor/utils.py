@@ -7,8 +7,6 @@ if sys.version_info < (3, 10, 0):
 else:
     from importlib import resources
 
-from pathlib import Path
-
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.providers.fake_provider import FakeMontreal, FakeWashington
@@ -84,18 +82,13 @@ def reward_expected_fidelity(qc_or_path: str, device: str):
 
         for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
-            qubit_indices = [elem.index for elem in qargs]
 
             assert gate_type in ["rz", "sx", "x", "cx", "measure", "barrier"]
 
             if gate_type != "barrier":
-                assert len(qubit_indices) in [1, 2]
-                qreg_1 = qargs[0].register
-                offset_1 = 0
-                for i in range(qc.qregs.index(qreg_1)):
-                    offset_1 += qc.qregs[i].size
-                first_qubit = int(qubit_indices[0]) + offset_1
-                if len(qubit_indices) == 1:
+                assert len(qargs) in [1, 2]
+                first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
+                if len(qargs) == 1:
                     try:
                         if gate_type == "measure":
                             specific_error = backend.readout_error(first_qubit)
@@ -113,11 +106,7 @@ def reward_expected_fidelity(qc_or_path: str, device: str):
                         )
                         return 0
                 else:
-                    qreg_2 = qargs[1].register
-                    offset_2 = 0
-                    for i in range(qc.qregs.index(qreg_2)):
-                        offset_2 += qc.qregs[i].size
-                    second_qubit = int(qubit_indices[1]) + offset_2
+                    second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     try:
                         specific_error = backend.gate_error(
                             gate_type, [first_qubit, second_qubit]
@@ -139,28 +128,19 @@ def reward_expected_fidelity(qc_or_path: str, device: str):
     elif "oqc_lucy" in device:
         for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
-            qubit_indices = [elem.index for elem in qargs]
 
             assert gate_type in ["rz", "sx", "x", "ecr", "measure", "barrier"]
             if gate_type != "barrier":
-                assert len(qubit_indices) in [1, 2]
-                qreg_1 = qargs[0].register
-                offset_1 = 0
-                for i in range(qc.qregs.index(qreg_1)):
-                    offset_1 += qc.qregs[i].size
-                first_qubit = int(qubit_indices[0]) + offset_1
-                if len(qubit_indices) == 1 and gate_type != "measure":
+                assert len(qargs) in [1, 2]
+                first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
+                if len(qargs) == 1 and gate_type != "measure":
                     specific_fidelity = oqc_lucy_calibration["fid_1Q"][str(first_qubit)]
-                elif len(qubit_indices) == 1 and gate_type == "measure":
+                elif len(qargs) == 1 and gate_type == "measure":
                     specific_fidelity = oqc_lucy_calibration["fid_1Q_readout"][
                         str(first_qubit)
                     ]
-                elif len(qubit_indices) == 2:
-                    qreg_2 = qargs[1].register
-                    offset_2 = 0
-                    for i in range(qc.qregs.index(qreg_2)):
-                        offset_2 += qc.qregs[i].size
-                    second_qubit = int(qubit_indices[1]) + offset_2
+                elif len(qargs) == 2:
+                    second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     tmp = str(first_qubit) + "-" + str(second_qubit)
                     if oqc_lucy_calibration["fid_2Q"].get(tmp) is None:
                         specific_fidelity = oqc_lucy_calibration["avg_2Q"]
@@ -172,15 +152,14 @@ def reward_expected_fidelity(qc_or_path: str, device: str):
     elif "ionq11" in device:
         for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
-            qubit_indices = [elem.index for elem in qargs]
 
             assert gate_type in ["rxx", "rz", "ry", "rx", "measure", "barrier"]
             if gate_type != "barrier":
-                assert len(qubit_indices) in [1, 2]
+                assert len(qargs) in [1, 2]
 
-                if len(qubit_indices) == 1:
+                if len(qargs) == 1:
                     specific_fidelity = ionq_calibration["avg_1Q"]
-                elif len(qubit_indices) == 2:
+                elif len(qargs) == 2:
                     specific_fidelity = ionq_calibration["avg_2Q"]
                 res *= specific_fidelity
     elif "rigetti_aspen_m2" in device:
@@ -188,17 +167,12 @@ def reward_expected_fidelity(qc_or_path: str, device: str):
         mapping = get_rigetti_qubit_dict()
         for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
-            qubit_indices = [elem.index for elem in qargs]
 
             assert gate_type in ["rx", "rz", "cz", "measure", "barrier"]
             if gate_type != "barrier":
-                assert len(qubit_indices) in [1, 2]
-                qreg_1 = qargs[0].register
-                offset_1 = 0
-                for i in range(qc.qregs.index(qreg_1)):
-                    offset_1 += qc.qregs[i].size
-                first_qubit = int(qubit_indices[0]) + offset_1
-                if len(qubit_indices) == 1:
+                assert len(qargs) in [1, 2]
+                first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
+                if len(qargs) == 1:
                     if gate_type == "measure":
                         specific_fidelity = rigetti_m2_calibration["fid_1Q_readout"][
                             mapping.get(str(first_qubit))
@@ -208,11 +182,7 @@ def reward_expected_fidelity(qc_or_path: str, device: str):
                             mapping.get(str(first_qubit))
                         ]
                 else:
-                    qreg_2 = qargs[1].register
-                    offset_2 = 0
-                    for i in range(qc.qregs.index(qreg_2)):
-                        offset_2 += qc.qregs[i].size
-                    second_qubit = int(qubit_indices[1]) + offset_2
+                    second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     tmp = (
                         str(
                             min(
@@ -242,6 +212,17 @@ def reward_expected_fidelity(qc_or_path: str, device: str):
         print("Error: No suitable backend found!")
 
     return res
+
+
+def calc_qubit_index(qargs, qregs, index):
+    offset = 0
+    for reg in qregs:
+        if qargs[index] not in reg:
+            offset += reg.size
+        else:
+            first_qubit = offset + reg.index(qargs[index])
+            return first_qubit
+    raise ValueError("Qubit not found.")
 
 
 def init_all_config_files():
@@ -503,54 +484,6 @@ def calc_supermarq_features(qc: QuantumCircuit):
         parallelism,
         liveness,
     )
-
-
-def postprocess_ocr_qasm_files(directory: str = None):
-    if directory is None:
-        directory = str(
-            resources.files("mqt.predictor").joinpath("training_samples_compiled")
-        )
-
-    for filename in Path(directory).iterdir():
-        filename = str(filename).split("/")[-1]
-        if "qasm" in filename:
-            comp_path_index = int(filename.split("_")[-1].split(".")[0])
-            filepath = str(Path(directory) / filename)
-            # checking if it is a file
-            if comp_path_index >= 24 and comp_path_index <= 27:
-                with open(filepath) as f:
-                    lines = f.readlines()
-                with open(filepath, "w") as f:
-                    for line in lines:
-                        if not (
-                            "gate rzx" in line.strip("\n")
-                            or "gate ecr" in line.strip("\n")
-                        ):
-                            f.write(line)
-                        if "gate ecr" in line.strip("\n"):
-                            f.write(
-                                "gate rzx(param0) q0,q1 { h q1; cx q0,q1; rz(param0) q1; cx q0,q1; h q1; }\n"
-                            )
-                            f.write(
-                                "gate ecr q0,q1 { rzx(pi/4) q0,q1; x q0; rzx(-pi/4) q0,q1; }\n"
-                            )
-
-                print("New qasm file for: ", filepath)
-
-            elif comp_path_index >= 28 and comp_path_index <= 29:
-                with open(filepath) as f:
-                    lines = f.readlines()
-                with open(filepath, "w") as f:
-                    for count, line in enumerate(lines):
-                        f.write(line)
-                        if count == 9:
-                            f.write(
-                                "gate rzx(param0) q0,q1 { h q1; cx q0,q1; rz(param0) q1; cx q0,q1; h q1; }\n"
-                            )
-                            f.write(
-                                "gate ecr q0,q1 { rzx(pi/4) q0,q1; x q0; rzx(-pi/4) q0,q1; }\n"
-                            )
-                print("New qasm file for: ", filepath)
 
 
 def get_mean_IBM_washington_cx_error():
