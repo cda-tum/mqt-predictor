@@ -298,7 +298,6 @@ class ML_Predictor:
         tree_param = [
             {
                 "n_estimators": [100, 200, 500],
-                "max_features": ["auto", "sqrt"],
                 "max_depth": list(range(8, 30, 6)),
                 "min_samples_split": list(range(2, 20, 6)),
                 "min_samples_leaf": list(range(2, 20, 6)),
