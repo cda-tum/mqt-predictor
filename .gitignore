@@ -1,6 +1,5 @@
 # manually added:
 .idea/*
-*.png
 *.csv
 *.qasm
 
