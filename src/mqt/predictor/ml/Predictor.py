@@ -10,7 +10,7 @@ from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from mqt.predictor import utils
+from mqt.predictor import reward, utils
 from mqt.predictor.ml import helper
 
 plt.rcParams["font.family"] = "Times New Roman"
@@ -191,7 +191,7 @@ class Predictor:
         if target_path is None:
             target_path = str(helper.get_path_training_circuits_compiled())
 
-        if utils.init_all_config_files():
+        if reward.init_all_config_files():
             print("Calibration files successfully initiated")
         else:
             print("Calibration files Initiation failed")
@@ -247,7 +247,7 @@ class Predictor:
             return False
 
         LUT = helper.get_index_to_comppath_LUT()
-        utils.init_all_config_files()
+        reward.init_all_config_files()
         print("Checking ", file)
         scores = []
         for _ in range(len(LUT)):
@@ -260,7 +260,7 @@ class Predictor:
                 comp_path_index = int(filename.split("_")[-1].split(".")[0])
                 device = LUT.get(comp_path_index)[1]
 
-                score = utils.reward_expected_fidelity(filename, device)
+                score = reward.expected_fidelity(filename, device)
                 scores[comp_path_index] = score
 
         num_not_empty_entries = 0

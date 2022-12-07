@@ -3,7 +3,7 @@ from pathlib import Path
 from mqt.bench import benchmark_generator
 from mqt.bench.utils import qiskit_helper
 
-from mqt.predictor import ml, utils
+from mqt.predictor import ml, reward
 
 
 def test_get_width_penalty():
@@ -70,7 +70,7 @@ def test_calc_eval_score_for_qc():
     qc = benchmark_generator.get_benchmark("dj", 1, 3)
     compilation_pipeline = ml.helper.get_compilation_pipeline()
 
-    utils.init_all_config_files()
+    reward.init_all_config_files()
 
     filename_qasm = "eval_test.qasm"
     for gate_set_name, devices in compilation_pipeline.get("devices").items():
@@ -90,7 +90,7 @@ def test_calc_eval_score_for_qc():
                                 ".",
                                 "eval_test",
                             )
-                            score = utils.reward_expected_fidelity(
+                            score = reward.expected_fidelity(
                                 filename_qasm, device=device_name
                             )
                             assert (
