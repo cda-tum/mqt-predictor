@@ -49,7 +49,6 @@ class Predictor:
             target_path = str(helper.get_path_training_circuits_ML_compiled())
 
         print("compile_all_circuits_for_qc:", filename)
-        print("source_path", source_path)
         qc = QuantumCircuit.from_qasm_file(Path(source_path) / filename)
 
         if not qc:
@@ -522,7 +521,6 @@ class Predictor:
         if prediction < 0 or prediction >= len(LUT):
             print("Provided prediction is faulty.")
             return None
-
         if not isinstance(qc, QuantumCircuit):
             if Path(qc).exists():
                 print("Reading from .qasm path: ", qc)
@@ -540,7 +538,6 @@ class Predictor:
         compiler = prediction_information[2]
         compiler_settings = prediction_information[3]
 
-        print("")
         if compiler == "qiskit":
             compiled_qc = qiskit_helper.get_mapped_level(
                 qc, gate_set_name, qc.num_qubits, device, compiler_settings, False, True
