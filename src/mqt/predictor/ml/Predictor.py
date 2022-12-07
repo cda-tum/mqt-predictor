@@ -10,8 +10,8 @@ from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from mqt.predictor.ml import helper
 from mqt.predictor import utils
+from mqt.predictor.ml import helper
 
 plt.rcParams["font.family"] = "Times New Roman"
 
