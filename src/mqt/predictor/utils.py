@@ -405,11 +405,11 @@ def parse_rigetti_calibration_config():
 
     fid_2Q_CZ = {}
     non_list = []
-    for elem in rigetti_m1_calibration["specs"]["2Q"]:
-        if rigetti_m1_calibration["specs"]["2Q"][elem].get("fCZ") is None:
+    for elem in rigetti_m2_calibration["specs"]["2Q"]:
+        if rigetti_m2_calibration["specs"]["2Q"][elem].get("fCZ") is None:
             non_list.append(elem)
         else:
-            fid_2Q_CZ[str(elem)] = rigetti_m1_calibration["specs"]["2Q"][elem].get(
+            fid_2Q_CZ[str(elem)] = rigetti_m2_calibration["specs"]["2Q"][elem].get(
                 "fCZ"
             )
 
@@ -420,7 +420,7 @@ def parse_rigetti_calibration_config():
         fid_2Q_CZ[elem] = cz_fid_avg
 
     rigetti_dict = {
-        "backend": "rigetti_aspen_m1",
+        "backend": "rigetti_aspen_m2",
         "avg_1Q": avg_1Q,
         "fid_1Q": fid_1Q,
         "fid_1Q_readout": fid_1Q_readout,
