@@ -553,7 +553,7 @@ class Predictor:
                 False,
                 True,
             )
-            return tk_to_qiskit(compiled_qc)
+            return tk_to_qiskit(compiled_qc), device
         else:
             print("Error: Compiler not found.")
             return False
