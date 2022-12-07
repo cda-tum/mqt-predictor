@@ -1,9 +1,15 @@
 from qiskit import QuantumCircuit
-
-from mqt.predictor.utils import calc_supermarq_features, calc_qubit_index, get_rigetti_qubit_dict, get_mean_IBM_washington_cx_error, parse_oqc_calibration_config, \
-    parse_rigetti_calibration_config, parse_ionq_calibration_config
 from qiskit.providers.fake_provider import FakeMontreal, FakeWashington
 
+from mqt.predictor.utils import (
+    calc_qubit_index,
+    calc_supermarq_features,
+    get_mean_IBM_washington_cx_error,
+    get_rigetti_qubit_dict,
+    parse_ionq_calibration_config,
+    parse_oqc_calibration_config,
+    parse_rigetti_calibration_config,
+)
 
 
 def crit_depth(qc):
