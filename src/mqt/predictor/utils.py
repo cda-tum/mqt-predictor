@@ -389,17 +389,17 @@ def parse_rigetti_calibration_config():
     ref = (
         resources.files("mqt.predictor")
         / "calibration_files"
-        / "rigetti_m1_calibration.json"
+        / "rigetti_m2_calibration.json"
     )
     with ref.open() as f:
-        rigetti_m1_calibration = json.load(f)
+        rigetti_m2_calibration = json.load(f)
     fid_1Q = {}
     fid_1Q_readout = {}
     missing_indices = []
-    for elem in rigetti_m1_calibration["specs"]["1Q"]:
+    for elem in rigetti_m2_calibration["specs"]["1Q"]:
 
-        fid_1Q[str(elem)] = rigetti_m1_calibration["specs"]["1Q"][elem].get("f1QRB")
-        fid_1Q_readout[str(elem)] = rigetti_m1_calibration["specs"]["1Q"][elem].get(
+        fid_1Q[str(elem)] = rigetti_m2_calibration["specs"]["1Q"][elem].get("f1QRB")
+        fid_1Q_readout[str(elem)] = rigetti_m2_calibration["specs"]["1Q"][elem].get(
             "fRO"
         )
 
