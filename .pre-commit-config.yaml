@@ -95,12 +95,11 @@ repos:
     rev: "v2.2.2"
     hooks:
       - id: codespell
-        args: ["-L", "wille,linz,fRO"]
+        args: ["-L", "wille,linz,fro"]
         exclude: >
           (?x)^(
               .*calibration\.json|
-              .*\.ipynb|
-              src/mqt/predictor/utils.py
+              .*\.ipynb
           )$
 
   # Format configuration files with prettier
