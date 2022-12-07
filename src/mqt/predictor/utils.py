@@ -227,6 +227,8 @@ def calc_qubit_index(qargs, qregs, index):
 
 def init_all_config_files():
     try:
+        global ibm_washington_cx_mean_error
+        ibm_washington_cx_mean_error = get_mean_IBM_washington_cx_error()
         global ibm_montreal_calibration
         ibm_montreal_calibration = FakeMontreal().properties()
         global ibm_washington_calibration
