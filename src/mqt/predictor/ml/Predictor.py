@@ -10,8 +10,7 @@ from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from mqt.predictor import reward, utils
-from mqt.predictor.ml import helper
+from mqt.predictor import Calibration, ml, reward, utils
 
 plt.rcParams["font.family"] = "Times New Roman"
 
@@ -43,10 +42,10 @@ class Predictor:
         False -- if not
         """
         if source_path is None:
-            source_path = str(helper.get_path_training_circuits())
+            source_path = str(ml.helper.get_path_training_circuits())
 
         if target_path is None:
-            target_path = str(helper.get_path_training_circuits_compiled())
+            target_path = str(ml.helper.get_path_training_circuits_compiled())
 
         print("compile_all_circuits_for_qc:", filename)
         qc = QuantumCircuit.from_qasm_file(Path(source_path) / filename)
@@ -54,7 +53,7 @@ class Predictor:
         if not qc:
             return False
 
-        compilation_pipeline = helper.get_compilation_pipeline()
+        compilation_pipeline = ml.helper.get_compilation_pipeline()
 
         results = []
         comp_path_id = 0
@@ -137,10 +136,10 @@ class Predictor:
 
         """
         if source_path is None:
-            source_path = str(helper.get_path_training_circuits())
+            source_path = str(ml.helper.get_path_training_circuits())
 
         if target_path is None:
-            target_path = str(helper.get_path_training_circuits_compiled())
+            target_path = str(ml.helper.get_path_training_circuits_compiled())
 
         global TIMEOUT
         TIMEOUT = timeout
@@ -186,12 +185,13 @@ class Predictor:
         scores -- evaluation scores for all compilation options
         """
         if source_path is None:
-            source_path = str(helper.get_path_training_circuits())
+            source_path = str(ml.helper.get_path_training_circuits())
 
         if target_path is None:
-            target_path = str(helper.get_path_training_circuits_compiled())
+            target_path = str(ml.helper.get_path_training_circuits_compiled())
 
-        if reward.init_all_config_files():
+        calibration = Calibration.Calibration()
+        if calibration is not None:
             print("Calibration files successfully initiated")
         else:
             print("Calibration files Initiation failed")
@@ -238,16 +238,15 @@ class Predictor:
         scores -- evaluation scores for all compilation options
         """
         if source_path is None:
-            source_path = str(helper.get_path_training_circuits())
+            source_path = str(ml.helper.get_path_training_circuits())
 
         if target_path is None:
-            target_path = str(helper.get_path_training_circuits_compiled())
+            target_path = str(ml.helper.get_path_training_circuits_compiled())
 
         if ".qasm" not in file:
             return False
 
-        LUT = helper.get_index_to_comppath_LUT()
-        reward.init_all_config_files()
+        LUT = ml.helper.get_index_to_comppath_LUT()
         print("Checking ", file)
         scores = []
         for _ in range(len(LUT)):
@@ -266,14 +265,14 @@ class Predictor:
         num_not_empty_entries = 0
         for i in range(len(LUT)):
             if not scores[i]:
-                scores[i] = helper.get_width_penalty()
+                scores[i] = ml.helper.get_width_penalty()
             else:
                 num_not_empty_entries += 1
 
         if num_not_empty_entries == 0:
             return False
 
-        feature_vec = helper.create_feature_dict(str(Path(source_path) / file))
+        feature_vec = ml.helper.create_feature_dict(str(Path(source_path) / file))
         training_sample = (list(feature_vec.values()), np.argmax(scores))
         circuit_name = file.split(".")[0]
 
@@ -324,13 +323,13 @@ class Predictor:
             )
 
         self.set_classifier(clf.best_estimator_)
-        helper.save_classifier(clf.best_estimator_)
+        ml.helper.save_classifier(clf.best_estimator_)
         print("Random Forest classifier is trained and saved.")
 
         return self.clf is not None
 
     def get_prepared_training_data(self, save_non_zero_indices=False):
-        training_data, names_list, scores_list = helper.load_training_data()
+        training_data, names_list, scores_list = ml.helper.load_training_data()
         X, y = zip(*training_data)
         X = list(X)
         y = list(y)
@@ -349,7 +348,7 @@ class Predictor:
 
         if save_non_zero_indices:
             data = np.asarray(non_zero_indices)
-            np.save(helper.get_path_trained_model() / "non_zero_indices.npy", data)
+            np.save(ml.helper.get_path_trained_model() / "non_zero_indices.npy", data)
 
         (
             X_train,
@@ -398,7 +397,7 @@ class Predictor:
 
         plt.figure(figsize=(10, 5))
 
-        num_of_comp_paths = len(helper.get_index_to_comppath_LUT())
+        num_of_comp_paths = len(ml.helper.get_index_to_comppath_LUT())
         plt.bar(
             list(range(0, num_of_comp_paths, 1)),
             height=[
@@ -495,19 +494,19 @@ class Predictor:
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
 
         if self.clf is None:
-            path = helper.get_path_trained_model() / "trained_clf.joblib"
+            path = ml.helper.get_path_trained_model() / "trained_clf.joblib"
             if path.is_file():
                 self.clf = load(str(path))
             else:
                 print("Fail: Classifier is neither trained nor saved!")
                 return None
 
-        feature_dict = helper.create_feature_dict(qasm_str_or_path)
+        feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)
         if not feature_dict:
             return None
         feature_vector = list(feature_dict.values())
 
-        path = helper.get_path_trained_model() / "non_zero_indices.npy"
+        path = ml.helper.get_path_trained_model() / "non_zero_indices.npy"
         non_zero_indices = np.load(str(path), allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
@@ -517,7 +516,7 @@ class Predictor:
         """Returns the compiled quantum circuit when the original qasm circuit is provided as either
         a string or a file path and the prediction index is given."""
 
-        LUT = helper.get_index_to_comppath_LUT()
+        LUT = ml.helper.get_index_to_comppath_LUT()
         if prediction < 0 or prediction >= len(LUT):
             print("Provided prediction is faulty.")
             return None
@@ -566,6 +565,6 @@ class Predictor:
         # Generate training data from qasm files
         res = self.generate_trainingdata_from_qasm_files()
         # Save those training data for faster re-processing
-        helper.save_training_data(res)
+        ml.helper.save_training_data(res)
         # Train the Random Forest Classifier on created training data
         self.train_random_forest_classifier()

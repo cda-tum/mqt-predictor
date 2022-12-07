@@ -1,9 +1,11 @@
 from qiskit import QuantumCircuit
 
-from mqt.predictor.utils import calc_supermarq_features, calc_qubit_index, get_rigetti_qubit_dict, get_mean_IBM_washington_cx_error, parse_oqc_calibration_config, \
-    parse_rigetti_calibration_config, parse_ionq_calibration_config
-from qiskit.providers.fake_provider import FakeMontreal, FakeWashington
-
+from mqt.predictor import Calibration
+from mqt.predictor.utils import (
+    calc_qubit_index,
+    calc_supermarq_features,
+    get_rigetti_qubit_dict,
+)
 
 
 def crit_depth(qc):
@@ -39,12 +41,14 @@ def expected_fidelity(qc_or_path: str, device: str):
             return 0
     res = 1
 
+    calibration = Calibration.Calibration()
+
     if "ibm_montreal" in device or "ibm_washington" in device:
 
         if "ibm_montreal" in device:
-            backend = ibm_montreal_calibration
+            backend = calibration.ibm_montreal_calibration
         else:
-            backend = ibm_washington_calibration
+            backend = calibration.ibm_washington_calibration
 
         for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
@@ -78,7 +82,7 @@ def expected_fidelity(qc_or_path: str, device: str):
                             gate_type, [first_qubit, second_qubit]
                         )
                         if specific_error == 1:
-                            specific_error = ibm_washington_cx_mean_error
+                            specific_error = calibration.ibm_washington_cx_mean_error
                     except Exception as e:
                         print(instruction, qargs)
                         print(
@@ -100,18 +104,22 @@ def expected_fidelity(qc_or_path: str, device: str):
                 assert len(qargs) in [1, 2]
                 first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
                 if len(qargs) == 1 and gate_type != "measure":
-                    specific_fidelity = oqc_lucy_calibration["fid_1Q"][str(first_qubit)]
-                elif len(qargs) == 1 and gate_type == "measure":
-                    specific_fidelity = oqc_lucy_calibration["fid_1Q_readout"][
+                    specific_fidelity = calibration.oqc_lucy_calibration["fid_1Q"][
                         str(first_qubit)
                     ]
+                elif len(qargs) == 1 and gate_type == "measure":
+                    specific_fidelity = calibration.oqc_lucy_calibration[
+                        "fid_1Q_readout"
+                    ][str(first_qubit)]
                 elif len(qargs) == 2:
                     second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     tmp = str(first_qubit) + "-" + str(second_qubit)
-                    if oqc_lucy_calibration["fid_2Q"].get(tmp) is None:
-                        specific_fidelity = oqc_lucy_calibration["avg_2Q"]
+                    if calibration.oqc_lucy_calibration["fid_2Q"].get(tmp) is None:
+                        specific_fidelity = calibration.oqc_lucy_calibration["avg_2Q"]
                     else:
-                        specific_fidelity = oqc_lucy_calibration["fid_2Q"][tmp]
+                        specific_fidelity = calibration.oqc_lucy_calibration["fid_2Q"][
+                            tmp
+                        ]
 
                 res *= specific_fidelity
 
@@ -124,9 +132,9 @@ def expected_fidelity(qc_or_path: str, device: str):
                 assert len(qargs) in [1, 2]
 
                 if len(qargs) == 1:
-                    specific_fidelity = ionq_calibration["avg_1Q"]
+                    specific_fidelity = calibration.ionq_calibration["avg_1Q"]
                 elif len(qargs) == 2:
-                    specific_fidelity = ionq_calibration["avg_2Q"]
+                    specific_fidelity = calibration.ionq_calibration["avg_2Q"]
                 res *= specific_fidelity
     elif "rigetti_aspen_m2" in device:
 
@@ -140,13 +148,13 @@ def expected_fidelity(qc_or_path: str, device: str):
                 first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
                 if len(qargs) == 1:
                     if gate_type == "measure":
-                        specific_fidelity = rigetti_m2_calibration["fid_1Q_readout"][
-                            mapping.get(str(first_qubit))
-                        ]
+                        specific_fidelity = calibration.rigetti_m2_calibration[
+                            "fid_1Q_readout"
+                        ][mapping.get(str(first_qubit))]
                     else:
-                        specific_fidelity = rigetti_m2_calibration["fid_1Q"][
-                            mapping.get(str(first_qubit))
-                        ]
+                        specific_fidelity = calibration.rigetti_m2_calibration[
+                            "fid_1Q"
+                        ][mapping.get(str(first_qubit))]
                 else:
                     second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     tmp = (
@@ -165,12 +173,14 @@ def expected_fidelity(qc_or_path: str, device: str):
                         )
                     )
                     if (
-                        rigetti_m2_calibration["fid_2Q_CZ"].get(tmp) is None
-                        or rigetti_m2_calibration["fid_2Q_CZ"][tmp] is None
+                        calibration.rigetti_m2_calibration["fid_2Q_CZ"].get(tmp) is None
+                        or calibration.rigetti_m2_calibration["fid_2Q_CZ"][tmp] is None
                     ):
-                        specific_fidelity = rigetti_m2_calibration["avg_2Q"]
+                        specific_fidelity = calibration.rigetti_m2_calibration["avg_2Q"]
                     else:
-                        specific_fidelity = rigetti_m2_calibration["fid_2Q_CZ"][tmp]
+                        specific_fidelity = calibration.rigetti_m2_calibration[
+                            "fid_2Q_CZ"
+                        ][tmp]
 
                 res *= specific_fidelity
 
@@ -178,25 +188,3 @@ def expected_fidelity(qc_or_path: str, device: str):
         print("Error: No suitable backend found!")
 
     return res
-
-
-def init_all_config_files():
-    try:
-        global ibm_washington_cx_mean_error
-        ibm_washington_cx_mean_error = get_mean_IBM_washington_cx_error()
-        global ibm_montreal_calibration
-        ibm_montreal_calibration = FakeMontreal().properties()
-        global ibm_washington_calibration
-        ibm_washington_calibration = FakeWashington().properties()
-        global oqc_lucy_calibration
-        oqc_lucy_calibration = parse_oqc_calibration_config()
-        global rigetti_m2_calibration
-        rigetti_m2_calibration = parse_rigetti_calibration_config()
-        global ionq_calibration
-        ionq_calibration = parse_ionq_calibration_config()
-
-    except Exception as e:
-        print("init_all_config_files() failed: ", e)
-        return False
-    else:
-        return True
