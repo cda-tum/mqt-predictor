@@ -43,10 +43,10 @@ class Predictor:
         False -- if not
         """
         if source_path is None:
-            source_path = str(helper.get_path_training_circuits_ML())
+            source_path = str(helper.get_path_training_circuits())
 
         if target_path is None:
-            target_path = str(helper.get_path_training_circuits_ML_compiled())
+            target_path = str(helper.get_path_training_circuits_compiled())
 
         print("compile_all_circuits_for_qc:", filename)
         qc = QuantumCircuit.from_qasm_file(Path(source_path) / filename)
@@ -137,10 +137,10 @@ class Predictor:
 
         """
         if source_path is None:
-            source_path = str(helper.get_path_training_circuits_ML())
+            source_path = str(helper.get_path_training_circuits())
 
         if target_path is None:
-            target_path = str(helper.get_path_training_circuits_ML_compiled())
+            target_path = str(helper.get_path_training_circuits_compiled())
 
         global TIMEOUT
         TIMEOUT = timeout
@@ -186,10 +186,10 @@ class Predictor:
         scores -- evaluation scores for all compilation options
         """
         if source_path is None:
-            source_path = str(helper.get_path_training_circuits_ML())
+            source_path = str(helper.get_path_training_circuits())
 
         if target_path is None:
-            target_path = str(helper.get_path_training_circuits_ML_compiled())
+            target_path = str(helper.get_path_training_circuits_compiled())
 
         if utils.init_all_config_files():
             print("Calibration files successfully initiated")
@@ -238,10 +238,10 @@ class Predictor:
         scores -- evaluation scores for all compilation options
         """
         if source_path is None:
-            source_path = str(helper.get_path_training_circuits_ML())
+            source_path = str(helper.get_path_training_circuits())
 
         if target_path is None:
-            target_path = str(helper.get_path_training_circuits_ML_compiled())
+            target_path = str(helper.get_path_training_circuits_compiled())
 
         if ".qasm" not in file:
             return False
@@ -349,7 +349,7 @@ class Predictor:
 
         if save_non_zero_indices:
             data = np.asarray(non_zero_indices)
-            np.save(helper.get_path_trained_model_ML() / "non_zero_indices.npy", data)
+            np.save(helper.get_path_trained_model() / "non_zero_indices.npy", data)
 
         (
             X_train,
@@ -495,7 +495,7 @@ class Predictor:
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
 
         if self.clf is None:
-            path = helper.get_path_trained_model_ML() / "trained_clf.joblib"
+            path = helper.get_path_trained_model() / "trained_clf.joblib"
             if path.is_file():
                 self.clf = load(str(path))
             else:
@@ -507,7 +507,7 @@ class Predictor:
             return None
         feature_vector = list(feature_dict.values())
 
-        path = helper.get_path_trained_model_ML() / "non_zero_indices.npy"
+        path = helper.get_path_trained_model() / "non_zero_indices.npy"
         non_zero_indices = np.load(str(path), allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
@@ -542,7 +542,7 @@ class Predictor:
             compiled_qc = qiskit_helper.get_mapped_level(
                 qc, gate_set_name, qc.num_qubits, device, compiler_settings, False, True
             )
-            return compiled_qc
+            return compiled_qc, device
         elif compiler == "tket":
             compiled_qc = tket_helper.get_mapped_level(
                 qc,

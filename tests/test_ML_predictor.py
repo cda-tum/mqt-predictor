@@ -10,7 +10,7 @@ from mqt.predictor.ml.Predictor import Predictor
 
 @patch("matplotlib.pyplot.show")
 def test_predict(mock_show):
-    path = helper.get_path_trained_model_ML() / "trained_clf.joblib"
+    path = helper.get_path_trained_model() / "trained_clf.joblib"
     assert path.is_file()
     filename = "test_qasm.qasm"
     qc = benchmark_generator.get_benchmark("dj", 1, 8)
@@ -35,13 +35,13 @@ def test_predict(mock_show):
 def test_compilation_paths(comp_path):
     predictor = Predictor()
     qc_qasm = benchmark_generator.get_benchmark("dj", 1, 2).qasm()
-    res = predictor.compile_predicted_compilation_path(qc_qasm, comp_path)
-    assert res
+    res, device = predictor.compile_predicted_compilation_path(qc_qasm, comp_path)
+    assert res and device
     qc = benchmark_generator.get_benchmark("dj", 1, 2)
     tmp_filename = "test.qasm"
     qc.qasm(filename=tmp_filename)
-    res = predictor.compile_predicted_compilation_path(tmp_filename, comp_path)
-    assert res
+    res, device = predictor.compile_predicted_compilation_path(tmp_filename, comp_path)
+    assert res and device
     if Path(tmp_filename).exists():
         Path(tmp_filename).unlink()
 
