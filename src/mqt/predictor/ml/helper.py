@@ -180,7 +180,7 @@ def save_training_data(res):
     training_data, names_list, scores_list = res
 
     with resources.as_file(
-            get_path_training_data() / "training_data_aggregated"
+        get_path_training_data() / "training_data_aggregated"
     ) as path:
         data = np.asarray(training_data)
         np.save(str(path / "training_data.npy"), data)
@@ -192,7 +192,7 @@ def save_training_data(res):
 
 def load_training_data():
     with resources.as_file(
-            get_path_training_data() / "training_data_aggregated"
+        get_path_training_data() / "training_data_aggregated"
     ) as path:
         if (
             path.joinpath("training_data.npy").is_file()
