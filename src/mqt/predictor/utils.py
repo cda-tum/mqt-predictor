@@ -7,10 +7,7 @@ if sys.version_info < (3, 10, 0):
 else:
     from importlib import resources
 
-from pathlib import Path
-
 import numpy as np
-from joblib import dump
 from qiskit import QuantumCircuit
 from qiskit.providers.fake_provider import FakeMontreal, FakeWashington
 
@@ -82,9 +79,9 @@ def reward_expected_fidelity(qc_or_path: str, device: str):
             backend = ibm_montreal_calibration
         else:
             backend = ibm_washington_calibration
+
         for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
-            qubit_indices = [elem.index for elem in qargs]
 
             assert gate_type in ["rz", "sx", "x", "cx", "measure", "barrier"]
 
@@ -211,20 +208,6 @@ def reward_expected_fidelity(qc_or_path: str, device: str):
 
                 res *= specific_fidelity
 
-    elif "ionq11" in device:
-        for instruction, qargs, _cargs in qc.data:
-            gate_type = instruction.name
-            qubit_indices = [elem.index for elem in qargs]
-
-            assert gate_type in ["rxx", "rz", "ry", "rx", "measure", "barrier"]
-            if gate_type != "barrier":
-                assert len(qubit_indices) in [1, 2]
-
-                if len(qubit_indices) == 1:
-                    specific_fidelity = ionq_calibration["avg_1Q"]
-                elif len(qubit_indices) == 2:
-                    specific_fidelity = ionq_calibration["avg_2Q"]
-                res *= specific_fidelity
     else:
         print("Error: No suitable backend found!")
 
@@ -250,8 +233,8 @@ def init_all_config_files():
         ibm_washington_calibration = FakeWashington().properties()
         global oqc_lucy_calibration
         oqc_lucy_calibration = parse_oqc_calibration_config()
-        global rigetti_m1_calibration
-        rigetti_m1_calibration = parse_rigetti_calibration_config()
+        global rigetti_m2_calibration
+        rigetti_m2_calibration = parse_rigetti_calibration_config()
         global ionq_calibration
         ionq_calibration = parse_ionq_calibration_config()
 
@@ -260,38 +243,6 @@ def init_all_config_files():
         return False
     else:
         return True
-
-
-def create_feature_dict(qasm_str_or_path: str):
-
-    if len(qasm_str_or_path) < 260 and Path(qasm_str_or_path).exists():
-        qc = QuantumCircuit.from_qasm_file(qasm_str_or_path)
-    elif "OPENQASM" in qasm_str_or_path:
-        qc = QuantumCircuit.from_qasm_str(qasm_str_or_path)
-    else:
-        print("Neither a qasm file path nor a qasm str has been provided.")
-        return False
-
-    ops_list = qc.count_ops()
-    feature_dict = dict_to_featurevector(ops_list)
-
-    feature_dict["num_qubits"] = qc.num_qubits
-    feature_dict["depth"] = qc.depth()
-
-    (
-        program_communication,
-        critical_depth,
-        entanglement_ratio,
-        parallelism,
-        liveness,
-    ) = calc_supermarq_features(qc)
-    feature_dict["program_communication"] = program_communication
-    feature_dict["critical_depth"] = critical_depth
-    feature_dict["entanglement_ratio"] = entanglement_ratio
-    feature_dict["parallelism"] = parallelism
-    feature_dict["liveness"] = liveness
-
-    return feature_dict
 
 
 def get_rigetti_qubit_dict():
@@ -532,84 +483,15 @@ def calc_supermarq_features(qc: QuantumCircuit):
     )
 
 
-def postprocess_ocr_qasm_files(directory: str = None):
-    if directory is None:
-        directory = str(
-            resources.files("mqt.predictor").joinpath("training_samples_compiled")
-        )
+def get_mean_IBM_washington_cx_error():
+    cmap = FakeWashington().configuration().coupling_map
+    backend = FakeWashington().properties()
+    somelist = [x for x in cmap if backend.gate_error("cx", x) < 1]
 
-    for filename in Path(directory).iterdir():
-        filename = str(filename).split("/")[-1]
-        if "qasm" in filename:
-            comp_path_index = int(filename.split("_")[-1].split(".")[0])
-            filepath = str(Path(directory) / filename)
-            # checking if it is a file
-            if comp_path_index >= 24 and comp_path_index <= 27:
-                with open(filepath) as f:
-                    lines = f.readlines()
-                with open(filepath, "w") as f:
-                    for line in lines:
-                        if not (
-                            "gate rzx" in line.strip("\n")
-                            or "gate ecr" in line.strip("\n")
-                        ):
-                            f.write(line)
-                        if "gate ecr" in line.strip("\n"):
-                            f.write(
-                                "gate rzx(param0) q0,q1 { h q1; cx q0,q1; rz(param0) q1; cx q0,q1; h q1; }\n"
-                            )
-                            f.write(
-                                "gate ecr q0,q1 { rzx(pi/4) q0,q1; x q0; rzx(-pi/4) q0,q1; }\n"
-                            )
+    res = []
+    for elem in somelist:
+        res.append(backend.gate_error("cx", elem))
+    import numpy as np
 
-                print("New qasm file for: ", filepath)
-
-            elif comp_path_index >= 28 and comp_path_index <= 29:
-                with open(filepath) as f:
-                    lines = f.readlines()
-                with open(filepath, "w") as f:
-                    for count, line in enumerate(lines):
-                        f.write(line)
-                        if count == 9:
-                            f.write(
-                                "gate rzx(param0) q0,q1 { h q1; cx q0,q1; rz(param0) q1; cx q0,q1; h q1; }\n"
-                            )
-                            f.write(
-                                "gate ecr q0,q1 { rzx(pi/4) q0,q1; x q0; rzx(-pi/4) q0,q1; }\n"
-                            )
-                print("New qasm file for: ", filepath)
-
-
-def save_classifier(clf):
-    dump(clf, "trained_clf.joblib")
-
-
-def save_training_data(res):
-    training_data, names_list, scores_list = res
-
-    with resources.as_file(resources.files("mqt.predictor") / "training_data") as path:
-        data = np.asarray(training_data)
-        np.save(str(path / "training_data.npy"), data)
-        data = np.asarray(names_list)
-        np.save(str(path / "names_list.npy"), data)
-        data = np.asarray(scores_list)
-        np.save(str(path / "scores_list.npy"), data)
-
-
-def load_training_data():
-    with resources.as_file(resources.files("mqt.predictor") / "training_data") as path:
-        if (
-            path.joinpath("training_data.npy").is_file()
-            and path.joinpath("names_list.npy").is_file()
-            and path.joinpath("scores_list.npy").is_file()
-        ):
-            training_data = np.load(str(path / "training_data.npy"), allow_pickle=True)
-            names_list = list(np.load(str(path / "names_list.npy"), allow_pickle=True))
-            scores_list = list(
-                np.load(str(path / "scores_list.npy"), allow_pickle=True)
-            )
-        else:
-            print("Training data loading failed.")
-            return
-
-        return training_data, names_list, scores_list
+    mean_cx_error = np.mean(res)
+    return mean_cx_error
