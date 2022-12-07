@@ -11,7 +11,6 @@ from qiskit.providers.fake_provider import FakeMontreal, FakeWashington
 
 
 class Calibration:
-
     def __init__(self):
         try:
             self.ibm_washington_cx_mean_error = get_mean_IBM_washington_cx_error()
