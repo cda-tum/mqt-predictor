@@ -3,8 +3,8 @@ from pathlib import Path
 from mqt.bench import benchmark_generator
 from mqt.bench.utils import qiskit_helper
 
-from mqt.predictor.ml import helper
 from mqt.predictor import utils
+from mqt.predictor.ml import helper
 
 
 def test_get_width_penalty():
