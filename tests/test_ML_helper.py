@@ -68,7 +68,7 @@ def test_load_training_data():
 
 
 def test_calc_eval_score_for_qc():
-    qc = benchmark_generator.get_one_benchmark("dj", 1, 3)
+    qc = benchmark_generator.get_benchmark("dj", 1, 3)
     compilation_pipeline = helper.get_compilation_pipeline()
 
     utils.init_all_config_files()
