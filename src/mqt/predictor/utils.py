@@ -89,39 +89,61 @@ def reward_expected_fidelity(qc_or_path: str, device: str):
             assert gate_type in ["rz", "sx", "x", "cx", "measure", "barrier"]
 
             if gate_type != "barrier":
-                assert len(qubit_indices) in [1, 2]
-
-                first_qubit = int(qubit_indices[0])
-                if len(qubit_indices) == 1 and gate_type != "measure":
-                    specific_error = backend.gate_error(gate_type, [first_qubit])
-                elif len(qubit_indices) == 1 and gate_type == "measure":
-                    specific_error = backend.readout_error(first_qubit)
-                elif len(qubit_indices) == 2:
-                    second_qubit = int(qubit_indices[1])
-                    specific_error = backend.gate_error(
-                        gate_type, [first_qubit, second_qubit]
-                    )
+                assert len(qargs) in [1, 2]
+                first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
+                if len(qargs) == 1:
+                    try:
+                        if gate_type == "measure":
+                            specific_error = backend.readout_error(first_qubit)
+                        else:
+                            specific_error = backend.gate_error(
+                                gate_type, [first_qubit]
+                            )
+                    except Exception as e:
+                        print(instruction, qargs)
+                        print(
+                            "Error in IBM backend.gate_error(): ",
+                            e,
+                            device,
+                            first_qubit,
+                        )
+                        return 0
+                else:
+                    second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
+                    try:
+                        specific_error = backend.gate_error(
+                            gate_type, [first_qubit, second_qubit]
+                        )
+                        if specific_error == 1:
+                            specific_error = ibm_washington_cx_mean_error
+                    except Exception as e:
+                        print(instruction, qargs)
+                        print(
+                            "Error in IBM backend.gate_error(): ",
+                            e,
+                            device,
+                            first_qubit,
+                            second_qubit,
+                        )
+                        return 0
 
                 res *= 1 - float(specific_error)
-
     elif "oqc_lucy" in device:
         for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
-            qubit_indices = [elem.index for elem in qargs]
 
             assert gate_type in ["rz", "sx", "x", "ecr", "measure", "barrier"]
             if gate_type != "barrier":
-                assert len(qubit_indices) in [1, 2]
-
-                first_qubit = int(qubit_indices[0])
-                if len(qubit_indices) == 1 and gate_type != "measure":
+                assert len(qargs) in [1, 2]
+                first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
+                if len(qargs) == 1 and gate_type != "measure":
                     specific_fidelity = oqc_lucy_calibration["fid_1Q"][str(first_qubit)]
-                elif len(qubit_indices) == 1 and gate_type == "measure":
+                elif len(qargs) == 1 and gate_type == "measure":
                     specific_fidelity = oqc_lucy_calibration["fid_1Q_readout"][
                         str(first_qubit)
                     ]
-                elif len(qubit_indices) == 2:
-                    second_qubit = int(qubit_indices[1])
+                elif len(qargs) == 2:
+                    second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     tmp = str(first_qubit) + "-" + str(second_qubit)
                     if oqc_lucy_calibration["fid_2Q"].get(tmp) is None:
                         specific_fidelity = oqc_lucy_calibration["avg_2Q"]
@@ -129,27 +151,41 @@ def reward_expected_fidelity(qc_or_path: str, device: str):
                         specific_fidelity = oqc_lucy_calibration["fid_2Q"][tmp]
 
                 res *= specific_fidelity
-    elif "rigetti_aspen_m1" in device:
+
+    elif "ionq11" in device:
+        for instruction, qargs, _cargs in qc.data:
+            gate_type = instruction.name
+
+            assert gate_type in ["rxx", "rz", "ry", "rx", "measure", "barrier"]
+            if gate_type != "barrier":
+                assert len(qargs) in [1, 2]
+
+                if len(qargs) == 1:
+                    specific_fidelity = ionq_calibration["avg_1Q"]
+                elif len(qargs) == 2:
+                    specific_fidelity = ionq_calibration["avg_2Q"]
+                res *= specific_fidelity
+    elif "rigetti_aspen_m2" in device:
+
         mapping = get_rigetti_qubit_dict()
         for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
-            qubit_indices = [elem.index for elem in qargs]
 
             assert gate_type in ["rx", "rz", "cz", "measure", "barrier"]
             if gate_type != "barrier":
-                assert len(qubit_indices) in [1, 2]
-
-                first_qubit = int(qubit_indices[0])
-                if len(qubit_indices) == 1 and gate_type in ["rx", "rz", "cz"]:
-                    specific_fidelity = rigetti_m1_calibration["fid_1Q"][
-                        mapping.get(str(first_qubit))
-                    ]
-                elif len(qubit_indices) == 1 and gate_type == "measure":
-                    specific_fidelity = rigetti_m1_calibration["fid_1Q_readout"][
-                        mapping.get(str(first_qubit))
-                    ]
-                elif len(qubit_indices) == 2:
-                    second_qubit = int(qubit_indices[1])
+                assert len(qargs) in [1, 2]
+                first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
+                if len(qargs) == 1:
+                    if gate_type == "measure":
+                        specific_fidelity = rigetti_m2_calibration["fid_1Q_readout"][
+                            mapping.get(str(first_qubit))
+                        ]
+                    else:
+                        specific_fidelity = rigetti_m2_calibration["fid_1Q"][
+                            mapping.get(str(first_qubit))
+                        ]
+                else:
+                    second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     tmp = (
                         str(
                             min(
@@ -166,12 +202,12 @@ def reward_expected_fidelity(qc_or_path: str, device: str):
                         )
                     )
                     if (
-                        rigetti_m1_calibration["fid_2Q_CZ"].get(tmp) is None
-                        or rigetti_m1_calibration["fid_2Q_CZ"][tmp] is None
+                        rigetti_m2_calibration["fid_2Q_CZ"].get(tmp) is None
+                        or rigetti_m2_calibration["fid_2Q_CZ"][tmp] is None
                     ):
-                        specific_fidelity = rigetti_m1_calibration["avg_2Q"]
+                        specific_fidelity = rigetti_m2_calibration["avg_2Q"]
                     else:
-                        specific_fidelity = rigetti_m1_calibration["fid_2Q_CZ"][tmp]
+                        specific_fidelity = rigetti_m2_calibration["fid_2Q_CZ"][tmp]
 
                 res *= specific_fidelity
 
@@ -193,6 +229,17 @@ def reward_expected_fidelity(qc_or_path: str, device: str):
         print("Error: No suitable backend found!")
 
     return res
+
+
+def calc_qubit_index(qargs, qregs, index):
+    offset = 0
+    for reg in qregs:
+        if qargs[index] not in reg:
+            offset += reg.size
+        else:
+            qubit_index = offset + reg.index(qargs[index])
+            return qubit_index
+    raise ValueError("Qubit not found.")
 
 
 def init_all_config_files():
