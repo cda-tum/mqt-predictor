@@ -43,12 +43,37 @@ def timeout_watcher(func, args, timeout):
     return res
 
 
-def calc_eval_score_for_qc(qc_path: str, device: str):
-    try:
-        qc = QuantumCircuit.from_qasm_file(qc_path)
-    except Exception as e:
-        print("Fail in calc_eval_score_for_qc: ", e)
-        return get_width_penalty()
+def reward_crit_depth(qc):
+    (
+        program_communication,
+        critical_depth,
+        entanglement_ratio,
+        parallelism,
+        liveness,
+    ) = calc_supermarq_features(qc)
+    return 1 - critical_depth
+
+
+def reward_parallelism(qc):
+    (
+        program_communication,
+        critical_depth,
+        entanglement_ratio,
+        parallelism,
+        liveness,
+    ) = calc_supermarq_features(qc)
+    return critical_depth
+
+
+def reward_expected_fidelity(qc_or_path: str, device: str):
+    if isinstance(qc_or_path, QuantumCircuit):
+        qc = qc_or_path
+    else:
+        try:
+            qc = QuantumCircuit.from_qasm_file(qc_or_path)
+        except Exception as e:
+            print("Fail in reward_expected_fidelity reading a the quantum circuit: ", e)
+            return 0
     res = 1
 
     if "ibm_montreal" in device or "ibm_washington" in device:
