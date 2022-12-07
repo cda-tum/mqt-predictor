@@ -13,11 +13,13 @@ from qiskit import QuantumCircuit
 
 from mqt.predictor import utils
 
+
 def get_path_training_data_ML():
-    return resources.files("mqt.predictor")/"ml" / "training_data"
+    return resources.files("mqt.predictor") / "ml" / "training_data"
+
 
 def get_path_trained_model_ML():
-    return get_path_training_data_ML() /  "trained_model"
+    return get_path_training_data_ML() / "trained_model"
 
 
 def get_path_training_circuits_ML():
@@ -25,8 +27,7 @@ def get_path_training_circuits_ML():
 
 
 def get_path_training_circuits_ML_compiled():
-    return get_path_training_data_ML() /  "training_circuits_compiled"
-
+    return get_path_training_data_ML() / "training_circuits_compiled"
 
 
 def get_width_penalty():
@@ -178,8 +179,8 @@ def save_classifier(clf):
 def save_training_data(res):
     training_data, names_list, scores_list = res
 
-    with resources.as_file(get_path_training_data_ML()
-        / "training_data_aggregated"
+    with resources.as_file(
+        get_path_training_data_ML() / "training_data_aggregated"
     ) as path:
         data = np.asarray(training_data)
         np.save(str(path / "training_data.npy"), data)
@@ -190,8 +191,8 @@ def save_training_data(res):
 
 
 def load_training_data():
-    with resources.as_file(get_path_training_data_ML()
-        / "training_data_aggregated"
+    with resources.as_file(
+        get_path_training_data_ML() / "training_data_aggregated"
     ) as path:
         if (
             path.joinpath("training_data.npy").is_file()
