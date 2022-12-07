@@ -21,9 +21,7 @@ dynamic = ["version"]
 dependencies = [
     "qiskit[all]~=0.39.2",
     "pytket~=1.9.0",
-    "gym~=0.26.0",
-    "stable-baselines3[extra] @ git+https://github.com/carlosluis/stable-baselines3@fix_tests",
-    "sb3-contrib~=1.7.0a0",
+    "pytket_qiskit>=0.31.0",
     "z3-solver~=4.11.0",
     "importlib_resources>=5.0; python_version < '3.10'",
     "numpy~=1.23.5",
