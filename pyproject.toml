@@ -22,7 +22,6 @@ dependencies = [
     "qiskit[all]~=0.39.2",
     "pytket~=1.9.0",
     "mqt.bench@ git+https://github.com/cda-tum/MQTbench@dev",
-    "stable-baselines3[extra] @ git+https://github.com/carlosluis/stable-baselines3@fix_tests",
     "sb3-contrib>=1.7.0a0",
     "scikit-learn>=1.0.2",
     "natsort>=8.1.0",
