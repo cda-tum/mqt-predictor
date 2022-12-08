@@ -380,8 +380,10 @@ def create_feature_dict(qc):
 
     return feature_dict
 
+
 def get_path_training_data():
     return resources.files("mqt.predictor") / "rl" / "training_data"
+
 
 def get_path_trained_model():
     return get_path_training_data() / "trained_model"
