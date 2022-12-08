@@ -42,7 +42,7 @@ Through distinct constraints and a unifying interface, the framework supports th
 from different compilers and optimization tools in a single compilation flow.
 The compilation process is modelled as a Markov Decision Process:
 
-<img src="img/mdp.png">
+![](https://raw.githubusercontent.com/cda-tum/mqtpredictor/add_RL_extension/img/mdp.png)
 
 In this implementation, compilation passes from both IBM's Qiskit and Quantinuum's TKET are utilized for the RL training
 of the optimized compiler.
