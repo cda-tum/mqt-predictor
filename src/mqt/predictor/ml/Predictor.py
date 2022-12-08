@@ -10,7 +10,7 @@ from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from mqt.predictor import Calibration, ml, reward, utils
+from mqt.predictor import ml, reward, utils
 
 plt.rcParams["font.family"] = "Times New Roman"
 
@@ -189,13 +189,6 @@ class Predictor:
 
         if target_path is None:
             target_path = str(ml.helper.get_path_training_circuits_compiled())
-
-        calibration = Calibration.Calibration()
-        if calibration is not None:
-            print("Calibration files successfully initiated")
-        else:
-            print("Calibration files Initiation failed")
-            return None
 
         # init resulting list (feature vector, name, scores)
         training_data = []
