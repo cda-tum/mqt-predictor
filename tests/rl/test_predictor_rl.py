@@ -35,7 +35,7 @@ def test_instantiate_models():
     predictor = rl.Predictor()
     model_name = "test"
     predictor.instantiate_models(
-        1, fid=True, dep=False, par=False, model_name=model_name
+        timesteps=100, fid=True, dep=False, par=False, model_name=model_name
     )
     path = rl.helper.get_path_trained_model() / (model_name + "_fidelity.zip")
     assert Path(path).is_file()
