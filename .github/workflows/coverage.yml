@@ -1,7 +1,7 @@
 name: CodeCov
 
 env:
-  skip_optional_tests: True
+  skip_optional_tests: true
 
 on:
   push:
