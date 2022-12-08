@@ -265,6 +265,18 @@ def get_actions_devices():
 
 def get_random_state_sample():
     file_list = list(get_path_training_circuits().glob("*.qasm"))
+
+    path_zip = get_path_training_circuits() / "mqtbench_sample_circuits.zip"
+    if len(file_list) == 0 and path_zip.exists():
+        path_zip = str(path_zip)
+        import zipfile
+
+        with zipfile.ZipFile(path_zip, "r") as zip_ref:
+            zip_ref.extractall(get_path_training_circuits())
+
+        file_list = list(get_path_training_circuits().glob("*.qasm"))
+        assert len(file_list) > 0
+
     random_index = np.random.randint(len(file_list))
     try:
         qc = QuantumCircuit.from_qasm_file(str(file_list[random_index]))
@@ -380,8 +392,10 @@ def create_feature_dict(qc):
 
     return feature_dict
 
+
 def get_path_training_data():
     return resources.files("mqt.predictor") / "rl" / "training_data"
+
 
 def get_path_trained_model():
     return get_path_training_data() / "trained_model"
