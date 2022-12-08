@@ -37,7 +37,7 @@ def test_get_actions_devices():
 
 
 @pytest.mark.skipif(
-    os.getenv("skip_optional_tests"), reason="QASM files are not provided."
+    os.getenv("skip_optional_tests") == "true", reason="QASM files are not provided."
 )
 def test_get_random_state_sample():
     sample = rl.helper.get_random_state_sample()
