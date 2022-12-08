@@ -1,5 +1,8 @@
 name: CodeCov
 
+env:
+  skip_optional_tests: True
+
 on:
   push:
     branches: [main, master]
