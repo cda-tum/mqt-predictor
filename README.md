@@ -7,7 +7,7 @@
 # MQT Predictor: Automatic Prediction of Good Compilation Paths
 
 MQT Predictor is a framework suggesting a compilation options to use for an arbitrary quantum circuit according to the user's needs.
-To this end, we provide two models prediction good compilation options and returning the accordingly compiled quantum circuit.
+To this end, we provide two models for predicting good compilation options and returning the accordingly compiled quantum circuit.
 
 ## Supervised Machine Learning Model (referred to as "ML")
 
@@ -57,7 +57,7 @@ First, the package must be installed:
 (venv) $ pip install mqt.predictor
 ```
 
-Now a prediction can be made for any Qiskit::QuantumCircuit object or qasm file:
+Now a prediction can be made for any `qiskit.QuantumCircuit` object or `qasm` file:
 
 ```python
 from mqt.predictor.driver import compile
@@ -72,7 +72,7 @@ In the RL model, the `opt_objective` options are `fidelity`, `critical_depth`, a
 
 # Examination of all seven trained classifiers of the ML model
 
-To play around with all the examined models, please use the `notebooks/mqt_predictor.ipynb` Jupyter notebook.
+To play around with all the examined models, please use the `notebooks/ml/evaluation.ipynb` Jupyter notebook.
 
 ## Adjustment of training data generation process
 
@@ -142,7 +142,7 @@ Additionally, the raw training data may be extracted and can be used for any mac
 │     └── ...
 ├── src/
 │ ├── mqt/
-│ └── predictor/
+│   └── predictor/
 │     ├── calibration_files/
 │     ├── ml/
 │     │ └── training_data/
@@ -154,9 +154,6 @@ Additionally, the raw training data may be extracted and can be used for any mac
 │          └── training_data/
 │              ├── trained_model
 │              └── training_circuits
-└── tests
-    ├── ml/
-    └── rl/
 ```
 
 # References
