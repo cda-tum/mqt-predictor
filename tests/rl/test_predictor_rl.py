@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import pytest
@@ -28,10 +27,6 @@ def test_evaluate_sample_circuit_using():
     assert len(res) == 22
 
 
-@pytest.mark.skipif(
-    os.getenv("skip_optional_tests") == "true",
-    reason="Takes too long on GitHub Runner.",
-)
 def test_instantiate_models():
     predictor = rl.Predictor()
     model_name = "test"
