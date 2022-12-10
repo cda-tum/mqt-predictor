@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import pytest
@@ -36,9 +35,6 @@ def test_get_actions_devices():
     assert len(rl.helper.get_actions_devices()) == 5
 
 
-@pytest.mark.skipif(
-    os.getenv("skip_optional_tests") == "true", reason="QASM files are not provided."
-)
 def test_get_random_state_sample():
     sample = rl.helper.get_random_state_sample()
     assert sample and isinstance(sample, QuantumCircuit)
@@ -56,7 +52,7 @@ def test_get_ionq_native_gates():
     assert rl.helper.get_ionq_native_gates() == ["rxx", "rz", "ry", "rx", "measure"]
 
 
-def get_oqc_native_gates():
+def test_get_oqc_native_gates():
     assert rl.helper.get_oqc_native_gates() == ["rz", "sx", "x", "ecr", "measure"]
 
 
@@ -76,7 +72,7 @@ def test_get_cmap_oqc_lucy():
     "device",
     ["ibm_washington", "ibm_montreal", "rigetti_aspen_m2", "oqc_lucy", "ionq11"],
 )
-def get_cmap_from_devicename(device: str):
+def test_get_cmap_from_devicename(device: str):
     assert rl.helper.get_cmap_from_devicename(device)
 
 
