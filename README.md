@@ -4,6 +4,13 @@
 [![Deploy to PyPI](https://github.com/cda-tum/MQTPredictor/actions/workflows/deploy.yml/badge.svg)](https://github.com/cda-tum/MQTPredictor/actions/workflows/deploy.yml)
 [![codecov](https://codecov.io/gh/cda-tum/MQTPredictor/branch/main/graph/badge.svg?token=ZL5js1wjrB)](https://codecov.io/gh/cda-tum/MQTPredictor)
 
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/img/mqt_light.png" width="60%">
+  <img src="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/img/mqt_dark.png" width="60%">
+</picture>
+</p>
+
 # MQT Predictor: Automatic Prediction of Good Compilation Paths
 
 MQT Predictor is a framework suggesting a compilation options to use for an arbitrary quantum circuit according to the user's needs.
