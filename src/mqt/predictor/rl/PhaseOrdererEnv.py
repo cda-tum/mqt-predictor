@@ -79,7 +79,6 @@ class PhaseOrdererEnv(Env):
                 np.array(list(observation), dtype=np.uint8),
                 0,
                 True,
-                False,
                 {},
             )
         else:
@@ -93,7 +92,6 @@ class PhaseOrdererEnv(Env):
                 np.array(list(observation), dtype=np.uint8),
                 0,
                 True,
-                False,
                 {},
             )
 
@@ -111,7 +109,7 @@ class PhaseOrdererEnv(Env):
 
         observation = rl.helper.create_feature_dict(self.state).values()
         self.state = self.state.decompose(gates_to_decompose="unitary")
-        return np.array(list(observation), dtype=np.uint8), reward_val, done, False, {}
+        return np.array(list(observation), dtype=np.uint8), reward_val, done, {}
 
     def render(self, mode="human"):
         print(self.state.draw())
@@ -128,7 +126,6 @@ class PhaseOrdererEnv(Env):
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
         observation = rl.helper.create_feature_dict(self.state).values()
-        info = {}
 
         self.native_gateset_name = None
         self.native_gates = None
@@ -137,7 +134,7 @@ class PhaseOrdererEnv(Env):
 
         self.valid_actions = self.get_platform_valid_actions_for_state()
 
-        return np.array(list(observation), dtype=np.uint8), info
+        return np.array(list(observation), dtype=np.uint8)
 
     def action_masks(self):
         action_validity = [

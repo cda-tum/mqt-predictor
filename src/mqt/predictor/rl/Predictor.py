@@ -32,7 +32,7 @@ class Predictor:
             rl.helper.get_path_trained_model() / ("model_" + opt_objective)
         )
         env = rl.PhaseOrdererEnv(opt_objective)
-        obs, _ = env.reset(qc)
+        obs = env.reset(qc)
         while True:
             action_masks = get_action_masks(env)
             action, _states = model.predict(obs, action_masks=action_masks)
@@ -40,7 +40,7 @@ class Predictor:
             action_item = env.action_set.get(action)
             if action_item in rl.helper.get_actions_devices():
                 device = action_item["name"]
-            obs, reward_val, done, trunc, info = env.step(action)
+            obs, reward_val, done, info = env.step(action)
             if done:
                 return env.state, device
 
@@ -54,14 +54,14 @@ class Predictor:
             )
 
             env = rl.PhaseOrdererEnv(rew)
-            obs, _ = env.reset(file)
+            obs = env.reset(file)
             qc = env.state
             start_time = time.time()
             while True:
                 action_masks = get_action_masks(env)
                 action, _states = model.predict(obs, action_masks=action_masks)
                 action = int(action)
-                obs, reward_val, done, trunc, info = env.step(action)
+                obs, reward_val, done, info = env.step(action)
                 if done:
                     duration = time.time() - start_time
                     if rew == "fidelity":
