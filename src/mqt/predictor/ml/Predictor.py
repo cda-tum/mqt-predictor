@@ -141,9 +141,6 @@ class Predictor:
         if target_path is None:
             target_path = str(ml.helper.get_path_training_circuits_compiled())
 
-        global TIMEOUT
-        TIMEOUT = timeout
-
         source_circuits_list = []
 
         for file in Path(source_path).iterdir():

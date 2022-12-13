@@ -102,6 +102,10 @@ class PhaseOrdererEnv(Env):
                 reward_val = reward.crit_depth(self.state)
             elif self.reward_function == "parallelism":
                 reward_val = reward.parallelism(self.state)
+            else:
+                raise ValueError(
+                    f"Reward function {self.reward_function} not supported."
+                )
             done = True
         else:
             reward_val = 0
@@ -190,7 +194,8 @@ class PhaseOrdererEnv(Env):
                     print("Error in executing TKET transpile pass: ", action_index)
                     print(e)
                     return False
-
+            else:
+                raise ValueError(f"Origin {action['origin']} not supported.")
         else:
             print("ERROR: Action not found. Original QC returned.")
             altered_qc = self.state

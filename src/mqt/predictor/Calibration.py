@@ -33,7 +33,6 @@ def get_mean_IBM_washington_cx_error():
     res = []
     for elem in somelist:
         res.append(backend.gate_error("cx", elem))
-    import numpy as np
 
     mean_cx_error = np.mean(res)
     return mean_cx_error
