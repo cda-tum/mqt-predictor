@@ -257,7 +257,7 @@ def get_actions_devices():
             "transpile_pass": [],
             "device": "ionq11",
             "full_connectivity": True,
-            "cmap": get_cmap_from_devicename("ionq"),
+            "cmap": get_cmap_from_devicename("ionq11"),
             "max_qubits": 11,
         },
     ]
@@ -372,6 +372,8 @@ def get_cmap_from_devicename(device: str):
         return get_cmap_oqc_lucy()
     elif device == "ionq11":
         return get_ionq11_c_map()
+    else:
+        raise ValueError("Unknown device name")
 
 
 def create_feature_dict(qc):
