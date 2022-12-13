@@ -205,7 +205,8 @@ def load_training_data():
                 np.load(str(path / "scores_list.npy"), allow_pickle=True)
             )
         else:
-            print("Training data loading failed.")
-            return
+            raise FileNotFoundError(
+                "Training data not found. Please run the training script first."
+            )
 
         return training_data, names_list, scores_list
