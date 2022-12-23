@@ -45,7 +45,7 @@ classifiers = [
 
 [project.optional-dependencies]
 test = ["pytest>=7"]
-coverage = ["mqt.predictor[test]", "coverage[toml]>=6.5,<7.1", "pytest-cov~=4.0.0"]
+coverage = ["mqt.predictor[test]", "pytest-cov[toml]"]
 dev = ["mqt.predictor[coverage]"]
 
 [project.urls]
