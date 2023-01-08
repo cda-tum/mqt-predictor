@@ -174,7 +174,6 @@ def calc_supermarq_features(qc: QuantumCircuit):
     liveness = liveness_A_matrix / (depth * qc.num_qubits)
 
     assert program_communication >= 0 and program_communication <= 1
-    # assert critical_depth >= 0 and critical_depth <= 1
     if not (critical_depth >= 0 and critical_depth <= 1):
         print("critical_depth value failed: ", critical_depth, qc.name, qc.num_qubits)
     assert entanglement_ratio >= 0 and entanglement_ratio <= 1
