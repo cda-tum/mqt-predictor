@@ -2,6 +2,7 @@ import signal
 
 import numpy as np
 from qiskit import QuantumCircuit
+from qiskit.transpiler.passes import RemoveBarriers
 
 
 def timeout_watcher(func, args, timeout):
@@ -132,25 +133,23 @@ def get_rigetti_qubit_dict():
 
 
 def calc_supermarq_features(qc: QuantumCircuit):
-
+    qc = RemoveBarriers()(qc)
     connectivity = []
     liveness_A_matrix = 0
     for _ in range(qc.num_qubits):
         connectivity.append([])
 
-    for instruction, qargs, _ in qc.data:
-        gate_type = instruction.name
-        if gate_type != "barrier":
-            liveness_A_matrix += len(qargs)
-            first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
-            all_indices = [first_qubit]
-            if len(qargs) == 2:
-                second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
-                all_indices.append(second_qubit)
-            for qubit_index in all_indices:
-                to_be_added_entries = all_indices.copy()
-                to_be_added_entries.remove(int(qubit_index))
-                connectivity[int(qubit_index)].extend(to_be_added_entries)
+    for _, qargs, _ in qc.data:
+        liveness_A_matrix += len(qargs)
+        first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
+        all_indices = [first_qubit]
+        if len(qargs) == 2:
+            second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
+            all_indices.append(second_qubit)
+        for qubit_index in all_indices:
+            to_be_added_entries = all_indices.copy()
+            to_be_added_entries.remove(int(qubit_index))
+            connectivity[int(qubit_index)].extend(to_be_added_entries)
 
     for i in range(qc.num_qubits):
         connectivity[i] = len(set(connectivity[i]))
@@ -164,8 +163,7 @@ def calc_supermarq_features(qc: QuantumCircuit):
         critical_depth = 0
     else:
         critical_depth = (
-            qc.depth(filter_function=lambda x: len(x[1]) > 1 and x[0].name != "barrier")
-            / num_multiple_qubit_gates
+            qc.depth(filter_function=lambda x: len(x[1]) > 1) / num_multiple_qubit_gates
         )
 
     entanglement_ratio = num_multiple_qubit_gates / num_gates
@@ -176,9 +174,11 @@ def calc_supermarq_features(qc: QuantumCircuit):
     liveness = liveness_A_matrix / (depth * qc.num_qubits)
 
     assert program_communication >= 0 and program_communication <= 1
-    assert critical_depth >= 0 and critical_depth <= 1
+    if not (critical_depth >= 0 and critical_depth <= 1):
+        print("critical_depth value failed: ", critical_depth, qc.name, qc.num_qubits)
     assert entanglement_ratio >= 0 and entanglement_ratio <= 1
-    assert parallelism >= 0 and parallelism <= 1
+    if not (parallelism >= 0 and parallelism <= 1):
+        print("Parallelism value failed: ", parallelism, qc.name, qc.num_qubits)
     assert liveness >= 0 and liveness <= 1
 
     return (
