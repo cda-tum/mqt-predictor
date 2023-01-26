@@ -167,25 +167,27 @@ class Predictor:
 
     def generate_trainingdata_from_qasm_files(
         self,
-        source_path: str = None,
-        target_path: str = None,
+        path_uncompiled_circuits: str = None,
+        path_compiled_circuits: str = None,
     ):
         """Handles to create training data from all generated training samples
 
         Keyword arguments:
-        source_path -- path to file
-        target_path -- path to directory for compiled circuit
+        path_uncompiled_circuits -- path to file
+        path_compiled_circuits -- path to directory for compiled circuit
 
         Return values:
         training_data_ML_aggregated -- training data
         name_list -- names of all training samples
         scores -- evaluation scores for all compilation options
         """
-        if source_path is None:
-            source_path = str(ml.helper.get_path_training_circuits())
+        if path_uncompiled_circuits is None:
+            path_uncompiled_circuits = str(ml.helper.get_path_training_circuits())
 
-        if target_path is None:
-            target_path = str(ml.helper.get_path_training_circuits_compiled())
+        if path_compiled_circuits is None:
+            path_compiled_circuits = str(
+                ml.helper.get_path_training_circuits_compiled()
+            )
 
         # init resulting list (feature vector, name, scores)
         training_data = []
@@ -194,9 +196,9 @@ class Predictor:
 
         results = Parallel(n_jobs=-1, verbose=100)(
             delayed(self.generate_training_sample)(
-                str(filename.name), source_path, target_path
+                str(filename.stem), path_uncompiled_circuits, path_compiled_circuits
             )
-            for filename in Path(source_path).iterdir()
+            for filename in Path(path_uncompiled_circuits).iterdir()
         )
         for sample in results:
             if not sample:
@@ -212,26 +214,29 @@ class Predictor:
     def generate_training_sample(
         self,
         file: str,
-        source_path: str = None,
-        target_path: str = None,
+        path_uncompiled_circuit: str = None,
+        path_compiled_circuits: str = None,
     ):
         """Handles to create training data from a single generated training sample
 
         Keyword arguments:
         file -- filename for the training sample
-        source_path -- path to file
-        target_path -- path to directory for compiled circuit
+        path_uncompiled_circuit -- path to file
+        path_compiled_circuits -- path to directory for compiled circuit
 
         Return values:
         training_sample -- training data sample
         circuit_name -- names of the training sample circuit
         scores -- evaluation scores for all compilation options
         """
-        if source_path is None:
-            source_path = str(ml.helper.get_path_training_circuits())
 
-        if target_path is None:
-            target_path = str(ml.helper.get_path_training_circuits_compiled())
+        if path_uncompiled_circuit is None:
+            path_uncompiled_circuit = str(ml.helper.get_path_training_circuits())
+
+        if path_compiled_circuits is None:
+            path_compiled_circuits = str(
+                ml.helper.get_path_training_circuits_compiled()
+            )
 
         if ".qasm" not in file:
             return False
