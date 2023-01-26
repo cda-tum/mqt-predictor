@@ -267,7 +267,9 @@ class Predictor:
         if num_not_empty_entries == 0:
             return False
 
-        feature_vec = ml.helper.create_feature_dict(str(Path(source_path) / file))
+        feature_vec = ml.helper.create_feature_dict(
+            str(Path(path_uncompiled_circuit) / (file + ".qasm"))
+        )
         training_sample = (list(feature_vec.values()), np.argmax(scores))
         circuit_name = file.split(".")[0]
 
