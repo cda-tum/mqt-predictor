@@ -142,7 +142,7 @@ class Predictor:
             target_path = str(ml.helper.get_path_training_circuits_compiled())
 
         path_zip = Path(source_path) / "mqtbench_training_samples.zip"
-        if len(list(Path(source_path).glob("*.qasm"))) == 0 and path_zip.exists():
+        if not any(file.suffix == ".qasm" for file in Path(source_path).iterdir()) and path_zip.exists():
             path_zip = str(path_zip)
             import zipfile
 
