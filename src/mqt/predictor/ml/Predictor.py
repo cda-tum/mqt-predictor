@@ -155,11 +155,7 @@ class Predictor:
      # ensure that the target_path exists
      Path(target_path).mkdir(exist_ok=True)
 
-        source_circuits_list = []
-
-        for file in Path(source_path).iterdir():
-            if ".qasm" in str(file):
-                source_circuits_list.append(str(file.name))
+        source_circuits_list = [file.name for file in Path(source_path).iterdir() if file.suffix == ".qasm"]
 
         Parallel(n_jobs=-1, verbose=100)(
             delayed(self.compile_all_circuits_for_qc)(
