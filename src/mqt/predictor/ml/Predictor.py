@@ -155,6 +155,9 @@ class Predictor:
             with zipfile.ZipFile(path_zip, "r") as zip_ref:
                 zip_ref.extractall(source_path)
 
+        if not Path(target_path).is_dir():
+            Path(target_path).mkdir()
+
         if not Path(source_path).is_dir():
             Path(source_path).mkdir()
 
