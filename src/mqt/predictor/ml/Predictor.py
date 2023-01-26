@@ -306,9 +306,8 @@ class Predictor:
 
         if visualize_results:
             y_pred = np.array(list(clf.predict(X_test)))
-            res = self.plot_eval_histogram(
-                scores_filtered, y_pred, y_test, filename="RandomForestClassifier"
-            )
+            res, _ = self.calc_performance_measures(scores_filtered, y_pred, y_test)
+            self.plot_eval_histogram(res, filename="RandomForestClassifier")
 
             print("Best Accuracy: ", clf.best_score_)
             top3 = (res.count(1) + res.count(2) + res.count(3)) / len(res)
