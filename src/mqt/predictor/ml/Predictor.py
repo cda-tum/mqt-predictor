@@ -196,7 +196,7 @@ class Predictor:
 
         results = Parallel(n_jobs=-1, verbose=100)(
             delayed(self.generate_training_sample)(
-                str(filename.stem), path_uncompiled_circuits, path_compiled_circuits
+                str(filename.name), path_uncompiled_circuits, path_compiled_circuits
             )
             for filename in Path(path_uncompiled_circuits).iterdir()
         )
@@ -268,7 +268,7 @@ class Predictor:
             return False
 
         feature_vec = ml.helper.create_feature_dict(
-            str(Path(path_uncompiled_circuit) / (file + ".qasm"))
+            str(Path(path_uncompiled_circuit) / file)
         )
         training_sample = (list(feature_vec.values()), np.argmax(scores))
         circuit_name = file.split(".")[0]
