@@ -194,7 +194,7 @@ class Predictor:
 
         results = Parallel(n_jobs=-1, verbose=100)(
             delayed(self.generate_training_sample)(
-                str(filename), source_path, target_path
+                str(filename.name), source_path, target_path
             )
             for filename in Path(source_path).iterdir()
         )
