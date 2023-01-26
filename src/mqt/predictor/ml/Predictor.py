@@ -176,7 +176,7 @@ class Predictor:
 
         Keyword arguments:
         source_path -- path to file
-        target_directory -- path to directory for compiled circuit
+        target_path -- path to directory for compiled circuit
 
         Return values:
         training_data_ML_aggregated -- training data
