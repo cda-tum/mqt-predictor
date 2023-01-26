@@ -141,14 +141,10 @@ class Predictor:
         if target_path is None:
             target_path = str(ml.helper.get_path_training_circuits_compiled())
 
-        source_circuits_list = []
 
-        for file in Path(source_path).iterdir():
-            if "qasm" in str(file):
-                source_circuits_list.append(str(file))
 
         path_zip = Path(source_path) / "mqtbench_training_samples.zip"
-        if len(source_circuits_list) == 0 and path_zip.exists():
+        if len(list(Path(source_path).glob("*.qasm"))) == 0 and path_zip.exists():
             path_zip = str(path_zip)
             import zipfile
 
@@ -158,8 +154,11 @@ class Predictor:
         if not Path(target_path).is_dir():
             Path(target_path).mkdir()
 
-        if not Path(source_path).is_dir():
-            Path(source_path).mkdir()
+        source_circuits_list = []
+
+        for file in Path(source_path).iterdir():
+            if ".qasm" in str(file):
+                source_circuits_list.append(str(file.name))
 
         Parallel(n_jobs=-1, verbose=100)(
             delayed(self.compile_all_circuits_for_qc)(
