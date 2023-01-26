@@ -367,30 +367,44 @@ class Predictor:
             scores_list,
         )
 
-    def plot_eval_histogram(
-        self, scores_filtered, y_pred, y_test, filename="histogram"
-    ):
-        """Method to generate the histogram of the resulting ranks
+    def calc_performance_measures(self, scores_filtered, y_pred, y_test):
+        """Method to generate the performance measures for a trained classifier
 
         Keyword arguments:
-        scores_filtered -- all scores filtered for the respectively predicted indices of all training data
-        y_pred -- predicted labels
-        y_test -- actual labels
-        filename -- name of the saved figure
+        scores_filtered -- ground truth of all combinations of compilation options
+        y_pred -- predicted combination of compilation options
+        y_test -- best combination of compilation options
 
         Return values:
-        training_sample -- training data sample
-        circuit_name -- names of the training sample circuit
-        scores -- all achieved ranks
+        res -- list of all ranks
+        relative_scores -- performance difference to best score
+
         """
+
         res = []
+        relative_scores = []
         for i in range(len(y_pred)):
             assert np.argmax(scores_filtered[i]) == y_test[i]
             predicted_score = scores_filtered[i][y_pred[i]]
+            if predicted_score == ml.helper.get_width_penalty():
+                tmp_predicted_score = 0
+            else:
+                tmp_predicted_score = predicted_score
+            relative_scores.append(tmp_predicted_score - np.max(scores_filtered[i]))
             score = list(np.sort(scores_filtered[i])[::-1]).index(predicted_score)
             res.append(score + 1)
 
         assert len(res) == len(y_pred)
+
+        return res, relative_scores
+
+    def plot_eval_histogram(self, res, filename="histogram"):
+        """Method to generate the histogram of the resulting ranks
+
+        Keyword arguments:
+        res -- all ranks as a list
+        filename -- name of the file to save the histogram
+        """
 
         plt.figure(figsize=(10, 5))
 
@@ -420,7 +434,7 @@ class Predictor:
         plt.savefig(result_path / (filename + ".pdf"))
         plt.show()
 
-        return res
+        return
 
     def plot_eval_all_detailed_compact_normed(
         self, names_list, scores_filtered, y_pred, y_test
