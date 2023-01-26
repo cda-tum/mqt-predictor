@@ -108,3 +108,9 @@ repos:
     hooks:
       - id: prettier
         types_or: [yaml, markdown, html, css, javascript, json]
+
+  # Clean jupyter notebooks
+  - repo: https://github.com/srstevenson/nb-clean
+    rev: "2.4.0"
+    hooks:
+      - id: nb-clean
