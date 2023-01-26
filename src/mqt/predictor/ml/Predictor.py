@@ -246,7 +246,7 @@ class Predictor:
         scores = []
         for _ in range(len(LUT)):
             scores.append([])
-        all_relevant_paths = Path(target_path) / (file.split(".")[0] + "*")
+        all_relevant_paths = Path(path_compiled_circuits) / (file.split(".")[0] + "*")
         all_relevant_files = glob.glob(str(all_relevant_paths))
 
         for filename in all_relevant_files:
