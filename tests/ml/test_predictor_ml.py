@@ -81,6 +81,7 @@ def test_generate_compiled_circuits():
     qasm_path = Path("compiled_test.qasm")
     qc.qasm(filename=str(qasm_path))
     predictor.generate_compiled_circuits(source_path, str(target_path))
+    assert len(list(target_path.glob("*.qasm"))) > 0
 
     training_sample, circuit_name, scores = predictor.generate_training_sample(
         str(qasm_path), source_path, target_path
