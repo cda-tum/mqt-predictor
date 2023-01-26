@@ -34,13 +34,13 @@ def test_predict(mock_show):
 def test_compilation_paths(comp_path):
     predictor = ml.Predictor()
     qc_qasm = benchmark_generator.get_benchmark("dj", 1, 2).qasm()
-    res, device = predictor.compile_predicted_compilation_path(qc_qasm, comp_path)
-    assert res and device
+    res = predictor.compile_predicted_compilation_path(qc_qasm, comp_path)
+    assert res
     qc = benchmark_generator.get_benchmark("dj", 1, 2)
     tmp_filename = "test.qasm"
     qc.qasm(filename=tmp_filename)
-    res, device = predictor.compile_predicted_compilation_path(tmp_filename, comp_path)
-    assert res and device
+    res = predictor.compile_predicted_compilation_path(tmp_filename, comp_path)
+    assert res
     if Path(tmp_filename).exists():
         Path(tmp_filename).unlink()
 
