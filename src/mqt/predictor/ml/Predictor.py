@@ -145,7 +145,7 @@ class Predictor:
 
         for file in Path(source_path).iterdir():
             if "qasm" in str(file):
-                source_circuits_list.append(str(file))
+                source_circuits_list.append(str(file.name))
 
         path_zip = Path(source_path) / "mqtbench_training_samples.zip"
         if len(source_circuits_list) == 0 and path_zip.exists():
