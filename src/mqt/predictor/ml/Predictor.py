@@ -433,8 +433,6 @@ class Predictor:
         plt.savefig(result_path / (filename + ".pdf"))
         plt.show()
 
-        return
-
     def plot_eval_all_detailed_compact_normed(
         self, names_list, scores_filtered, y_pred, y_test
     ):
@@ -497,8 +495,6 @@ class Predictor:
         if not result_path.is_dir():
             result_path.mkdir()
         plt.savefig(result_path / "y_pred_eval_normed.pdf")
-
-        return
 
     def predict(self, qasm_str_or_path: str):
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
