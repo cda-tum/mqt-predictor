@@ -11,7 +11,16 @@ import numpy as np
 from joblib import dump
 from qiskit import QuantumCircuit
 
-from mqt.predictor import utils
+from mqt.predictor import ml, utils
+
+
+def compile_prediction(qc: QuantumCircuit):
+    """Returns the compiled quantum circuit with the used combination of compilation options when the original
+    qasm circuit is provided as either a string or a file path."""
+
+    predictor = ml.Predictor()
+    prediction = predictor.predict(qc)
+    return predictor.compile_predicted_compilation_path(qc, prediction)
 
 
 def get_path_training_data():

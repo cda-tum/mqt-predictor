@@ -38,12 +38,22 @@ from qiskit.transpiler.passes import (
     TrivialLayout,
 )
 
-from mqt.predictor import utils
+from mqt.predictor import rl, utils
 
 if sys.version_info < (3, 10, 0):
     import importlib_resources as resources
 else:
     from importlib import resources
+
+
+def compile_prediction(qc: QuantumCircuit, opt_objective="fidelity"):
+    """Returns the compiled quantum circuit with the used combination of compilation options when the original
+    qasm circuit is provided as either a string or a file path.
+    The set opt_objective is used for the compilation.
+    """
+
+    predictor = rl.Predictor()
+    return predictor.compile_prediction(qc, opt_objective=opt_objective)
 
 
 def get_actions_opt():

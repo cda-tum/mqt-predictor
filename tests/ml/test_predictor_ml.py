@@ -32,15 +32,18 @@ def test_predict(mock_show):
     "comp_path", list(range(len(ml.helper.get_index_to_comppath_LUT())))
 )
 def test_compilation_paths(comp_path):
-    predictor = ml.Predictor()
     qc_qasm = benchmark_generator.get_benchmark("dj", 1, 2).qasm()
-    res = predictor.compile_predicted_compilation_path(qc_qasm, comp_path)
+    res, compile_info = ml.compile_prediction(qc_qasm)
     assert res
+    assert compile_info
+
     qc = benchmark_generator.get_benchmark("dj", 1, 2)
     tmp_filename = "test.qasm"
     qc.qasm(filename=tmp_filename)
-    res = predictor.compile_predicted_compilation_path(tmp_filename, comp_path)
+    res, compile_info = ml.compile_prediction(tmp_filename)
     assert res
+    assert compile_info
+
     if Path(tmp_filename).exists():
         Path(tmp_filename).unlink()
 

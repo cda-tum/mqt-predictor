@@ -547,7 +547,7 @@ class Predictor:
             compiled_qc = qiskit_helper.get_mapped_level(
                 qc, gate_set_name, qc.num_qubits, device, compiler_settings, False, True
             )
-            return compiled_qc
+            return compiled_qc, ml.helper.get_index_to_comppath_LUT()[prediction]
         elif compiler == "tket":
             compiled_qc = tket_helper.get_mapped_level(
                 qc,
@@ -558,7 +558,10 @@ class Predictor:
                 False,
                 True,
             )
-            return tk_to_qiskit(compiled_qc)
+            return (
+                tk_to_qiskit(compiled_qc),
+                ml.helper.get_index_to_comppath_LUT()[prediction],
+            )
         else:
             print("Error: Compiler not found.")
             return False

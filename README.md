@@ -66,10 +66,12 @@ First, the package must be installed:
 Now a prediction can be made for any `qiskit.QuantumCircuit` object or `qasm` file:
 
 ```python
-from mqt.predictor.driver import compile
+from mqt.predictor import ml, rl
 
-compiled_qc_ML, compilation_info_ML = compile("qasm_file_path", model="ML")
-compiled_qc_RL, compilation_info_RL = compile(
+compiled_qc_ML, compilation_info_ML = ml.compile_prediction(
+    "qasm_file_path", model="ML"
+)
+compiled_qc_RL, compilation_info_RL = rl.compile_prediction(
     "qasm_file_path", model="RL", opt_objective="fidelity"
 )
 ```
