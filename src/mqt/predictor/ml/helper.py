@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 
 if sys.version_info < (3, 10, 0):
@@ -14,9 +16,14 @@ from qiskit import QuantumCircuit
 from mqt.predictor import ml, utils
 
 
-def compile_prediction(qc: QuantumCircuit):
-    """Returns the compiled quantum circuit with the used combination of compilation options when the original
-    qasm circuit is provided as either a string or a file path."""
+def compile_prediction(qc: QuantumCircuit | str) -> QuantumCircuit:
+    """Returns the compiled quantum circuit which is compiled with the predicted combination of compilation options.
+
+    Keyword arguments:
+    qc -- to be compiled quantum circuit or path to a qasm file
+
+    Returns: compiled quantum circuit as Qiskit QuantumCircuit object
+    """
 
     predictor = ml.Predictor()
     prediction = predictor.predict(qc)

@@ -46,10 +46,16 @@ else:
     from importlib import resources
 
 
-def compile_prediction(qc: QuantumCircuit, opt_objective="fidelity"):
-    """Returns the compiled quantum circuit with the used combination of compilation options when the original
-    qasm circuit is provided as either a string or a file path.
-    The set opt_objective is used for the compilation.
+def compile_prediction(
+    qc: QuantumCircuit | str, opt_objective="fidelity"
+) -> QuantumCircuit:
+    """Returns the compiled quantum circuit which is compiled following an objective function.
+
+    Keyword arguments:
+    qc -- to be compiled quantum circuit or path to a qasm file
+    opt_objective -- objective function used for the compilation
+
+    Returns: compiled quantum circuit as Qiskit QuantumCircuit object
     """
 
     predictor = rl.Predictor()
