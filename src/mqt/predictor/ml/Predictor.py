@@ -167,25 +167,27 @@ class Predictor:
 
     def generate_trainingdata_from_qasm_files(
         self,
-        source_path: str = None,
-        target_path: str = None,
+        path_uncompiled_circuits: str = None,
+        path_compiled_circuits: str = None,
     ):
         """Handles to create training data from all generated training samples
 
         Keyword arguments:
-        source_path -- path to file
-        target_path -- path to directory for compiled circuit
+        path_uncompiled_circuits -- path to file
+        path_compiled_circuits -- path to directory for compiled circuit
 
         Return values:
         training_data_ML_aggregated -- training data
         name_list -- names of all training samples
         scores -- evaluation scores for all compilation options
         """
-        if source_path is None:
-            source_path = str(ml.helper.get_path_training_circuits())
+        if path_uncompiled_circuits is None:
+            path_uncompiled_circuits = str(ml.helper.get_path_training_circuits())
 
-        if target_path is None:
-            target_path = str(ml.helper.get_path_training_circuits_compiled())
+        if path_compiled_circuits is None:
+            path_compiled_circuits = str(
+                ml.helper.get_path_training_circuits_compiled()
+            )
 
         # init resulting list (feature vector, name, scores)
         training_data = []
@@ -194,9 +196,9 @@ class Predictor:
 
         results = Parallel(n_jobs=-1, verbose=100)(
             delayed(self.generate_training_sample)(
-                str(filename.name), source_path, target_path
+                str(filename.name), path_uncompiled_circuits, path_compiled_circuits
             )
-            for filename in Path(source_path).iterdir()
+            for filename in Path(path_uncompiled_circuits).iterdir()
         )
         for sample in results:
             if not sample:
@@ -212,26 +214,29 @@ class Predictor:
     def generate_training_sample(
         self,
         file: str,
-        source_path: str = None,
-        target_path: str = None,
+        path_uncompiled_circuit: str = None,
+        path_compiled_circuits: str = None,
     ):
         """Handles to create training data from a single generated training sample
 
         Keyword arguments:
         file -- filename for the training sample
-        source_path -- path to file
-        target_path -- path to directory for compiled circuit
+        path_uncompiled_circuit -- path to file
+        path_compiled_circuits -- path to directory for compiled circuit
 
         Return values:
         training_sample -- training data sample
         circuit_name -- names of the training sample circuit
         scores -- evaluation scores for all compilation options
         """
-        if source_path is None:
-            source_path = str(ml.helper.get_path_training_circuits())
 
-        if target_path is None:
-            target_path = str(ml.helper.get_path_training_circuits_compiled())
+        if path_uncompiled_circuit is None:
+            path_uncompiled_circuit = str(ml.helper.get_path_training_circuits())
+
+        if path_compiled_circuits is None:
+            path_compiled_circuits = str(
+                ml.helper.get_path_training_circuits_compiled()
+            )
 
         if ".qasm" not in file:
             return False
@@ -241,7 +246,7 @@ class Predictor:
         scores = []
         for _ in range(len(LUT)):
             scores.append([])
-        all_relevant_paths = Path(target_path) / (file.split(".")[0] + "*")
+        all_relevant_paths = Path(path_compiled_circuits) / (file.split(".")[0] + "*")
         all_relevant_files = glob.glob(str(all_relevant_paths))
 
         for filename in all_relevant_files:
@@ -262,7 +267,9 @@ class Predictor:
         if num_not_empty_entries == 0:
             return False
 
-        feature_vec = ml.helper.create_feature_dict(str(Path(source_path) / file))
+        feature_vec = ml.helper.create_feature_dict(
+            str(Path(path_uncompiled_circuit) / file)
+        )
         training_sample = (list(feature_vec.values()), np.argmax(scores))
         circuit_name = file.split(".")[0]
 
@@ -299,9 +306,8 @@ class Predictor:
 
         if visualize_results:
             y_pred = np.array(list(clf.predict(X_test)))
-            res = self.plot_eval_histogram(
-                scores_filtered, y_pred, y_test, filename="RandomForestClassifier"
-            )
+            res, _ = self.calc_performance_measures(scores_filtered, y_pred, y_test)
+            self.plot_eval_histogram(res, filename="RandomForestClassifier")
 
             print("Best Accuracy: ", clf.best_score_)
             top3 = (res.count(1) + res.count(2) + res.count(3)) / len(res)
@@ -360,30 +366,44 @@ class Predictor:
             scores_list,
         )
 
-    def plot_eval_histogram(
-        self, scores_filtered, y_pred, y_test, filename="histogram"
-    ):
-        """Method to generate the histogram of the resulting ranks
+    def calc_performance_measures(self, scores_filtered, y_pred, y_test):
+        """Method to generate the performance measures for a trained classifier
 
         Keyword arguments:
-        scores_filtered -- all scores filtered for the respectively predicted indices of all training data
-        y_pred -- predicted labels
-        y_test -- actual labels
-        filename -- name of the saved figure
+        scores_filtered -- ground truth of all combinations of compilation options
+        y_pred -- predicted combination of compilation options
+        y_test -- best combination of compilation options
 
         Return values:
-        training_sample -- training data sample
-        circuit_name -- names of the training sample circuit
-        scores -- all achieved ranks
+        res -- list of all ranks
+        relative_scores -- performance difference to best score
+
         """
+
         res = []
+        relative_scores = []
         for i in range(len(y_pred)):
             assert np.argmax(scores_filtered[i]) == y_test[i]
             predicted_score = scores_filtered[i][y_pred[i]]
+            if predicted_score == ml.helper.get_width_penalty():
+                tmp_predicted_score = 0
+            else:
+                tmp_predicted_score = predicted_score
+            relative_scores.append(tmp_predicted_score - np.max(scores_filtered[i]))
             score = list(np.sort(scores_filtered[i])[::-1]).index(predicted_score)
             res.append(score + 1)
 
         assert len(res) == len(y_pred)
+
+        return res, relative_scores
+
+    def plot_eval_histogram(self, res, filename="histogram"):
+        """Method to generate the histogram of the resulting ranks
+
+        Keyword arguments:
+        res -- all ranks as a list
+        filename -- name of the file to save the histogram
+        """
 
         plt.figure(figsize=(10, 5))
 
@@ -412,8 +432,6 @@ class Predictor:
             result_path.mkdir()
         plt.savefig(result_path / (filename + ".pdf"))
         plt.show()
-
-        return res
 
     def plot_eval_all_detailed_compact_normed(
         self, names_list, scores_filtered, y_pred, y_test
@@ -478,8 +496,6 @@ class Predictor:
             result_path.mkdir()
         plt.savefig(result_path / "y_pred_eval_normed.pdf")
 
-        return
-
     def predict(self, qasm_str_or_path: str):
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
 
@@ -502,7 +518,7 @@ class Predictor:
 
         return self.clf.predict([feature_vector])[0]
 
-    def compile_predicted_compilation_path(self, qc: str, prediction: int):
+    def compile_as_predicted(self, qc: str, prediction: int):
         """Returns the compiled quantum circuit when the original qasm circuit is provided as either
         a string or a file path and the prediction index is given."""
 
@@ -531,7 +547,7 @@ class Predictor:
             compiled_qc = qiskit_helper.get_mapped_level(
                 qc, gate_set_name, qc.num_qubits, device, compiler_settings, False, True
             )
-            return compiled_qc, device
+            return compiled_qc, ml.helper.get_index_to_comppath_LUT()[prediction]
         elif compiler == "tket":
             compiled_qc = tket_helper.get_mapped_level(
                 qc,
@@ -542,7 +558,10 @@ class Predictor:
                 False,
                 True,
             )
-            return tk_to_qiskit(compiled_qc), device
+            return (
+                tk_to_qiskit(compiled_qc),
+                ml.helper.get_index_to_comppath_LUT()[prediction],
+            )
         else:
             print("Error: Compiler not found.")
             return False

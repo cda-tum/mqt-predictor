@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 from pathlib import Path
 
@@ -21,7 +23,9 @@ from mqt.predictor import reward, rl
 
 
 class Predictor:
-    def compile(self, qc, opt_objective="fidelity"):
+    def compile_as_predicted(
+        self, qc: QuantumCircuit | str, opt_objective: str = "fidelity"
+    ):
         if not isinstance(qc, QuantumCircuit):
             if len(qc) < 260 and Path(qc).exists():
                 qc = QuantumCircuit.from_qasm_file(qc)

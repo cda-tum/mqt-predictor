@@ -32,15 +32,18 @@ def test_predict(mock_show):
     "comp_path", list(range(len(ml.helper.get_index_to_comppath_LUT())))
 )
 def test_compilation_paths(comp_path):
-    predictor = ml.Predictor()
     qc_qasm = benchmark_generator.get_benchmark("dj", 1, 2).qasm()
-    res, device = predictor.compile_predicted_compilation_path(qc_qasm, comp_path)
-    assert res and device
+    res, compile_info = ml.qcompile(qc_qasm)
+    assert res
+    assert compile_info
+
     qc = benchmark_generator.get_benchmark("dj", 1, 2)
     tmp_filename = "test.qasm"
     qc.qasm(filename=tmp_filename)
-    res, device = predictor.compile_predicted_compilation_path(tmp_filename, comp_path)
-    assert res and device
+    res, compile_info = ml.qcompile(tmp_filename)
+    assert res
+    assert compile_info
+
     if Path(tmp_filename).exists():
         Path(tmp_filename).unlink()
 
@@ -84,7 +87,9 @@ def test_generate_compiled_circuits():
     assert any(file.suffix == ".qasm" for file in target_path.iterdir())
 
     training_sample, circuit_name, scores = predictor.generate_training_sample(
-        str(qasm_path), source_path, target_path
+        str(qasm_path),
+        path_uncompiled_circuit=source_path,
+        path_compiled_circuits=str(target_path),
     )
     assert training_sample
     assert circuit_name

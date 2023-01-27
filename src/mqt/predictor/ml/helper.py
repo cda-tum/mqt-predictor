@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 
 if sys.version_info < (3, 10, 0):
@@ -11,7 +13,21 @@ import numpy as np
 from joblib import dump
 from qiskit import QuantumCircuit
 
-from mqt.predictor import utils
+from mqt.predictor import ml, utils
+
+
+def qcompile(qc: QuantumCircuit | str) -> QuantumCircuit:
+    """Returns the compiled quantum circuit which is compiled with the predicted combination of compilation options.
+
+    Keyword arguments:
+    qc -- to be compiled quantum circuit or path to a qasm file
+
+    Returns: compiled quantum circuit as Qiskit QuantumCircuit object
+    """
+
+    predictor = ml.Predictor()
+    prediction = predictor.predict(qc)
+    return predictor.compile_as_predicted(qc, prediction)
 
 
 def get_path_training_data():

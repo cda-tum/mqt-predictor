@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 
 import numpy as np
@@ -38,12 +40,26 @@ from qiskit.transpiler.passes import (
     TrivialLayout,
 )
 
-from mqt.predictor import utils
+from mqt.predictor import rl, utils
 
 if sys.version_info < (3, 10, 0):
     import importlib_resources as resources
 else:
     from importlib import resources
+
+
+def qcompile(qc: QuantumCircuit | str, opt_objective="fidelity") -> QuantumCircuit:
+    """Returns the compiled quantum circuit which is compiled following an objective function.
+
+    Keyword arguments:
+    qc -- to be compiled quantum circuit or path to a qasm file
+    opt_objective -- objective function used for the compilation
+
+    Returns: compiled quantum circuit as Qiskit QuantumCircuit object
+    """
+
+    predictor = rl.Predictor()
+    return predictor.compile_as_predicted(qc, opt_objective=opt_objective)
 
 
 def get_actions_opt():
