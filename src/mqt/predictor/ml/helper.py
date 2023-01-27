@@ -16,7 +16,7 @@ from qiskit import QuantumCircuit
 from mqt.predictor import ml, utils
 
 
-def compile_prediction(qc: QuantumCircuit | str) -> QuantumCircuit:
+def qcompile(qc: QuantumCircuit | str) -> QuantumCircuit:
     """Returns the compiled quantum circuit which is compiled with the predicted combination of compilation options.
 
     Keyword arguments:
@@ -27,7 +27,7 @@ def compile_prediction(qc: QuantumCircuit | str) -> QuantumCircuit:
 
     predictor = ml.Predictor()
     prediction = predictor.predict(qc)
-    return predictor.compile_predicted_compilation_path(qc, prediction)
+    return predictor.compile_as_predicted(qc, prediction)
 
 
 def get_path_training_data():

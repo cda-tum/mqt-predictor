@@ -518,7 +518,7 @@ class Predictor:
 
         return self.clf.predict([feature_vector])[0]
 
-    def compile_predicted_compilation_path(self, qc: str, prediction: int):
+    def compile_as_predicted(self, qc: str, prediction: int):
         """Returns the compiled quantum circuit when the original qasm circuit is provided as either
         a string or a file path and the prediction index is given."""
 

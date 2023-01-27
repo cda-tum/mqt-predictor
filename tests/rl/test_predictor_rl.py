@@ -12,9 +12,8 @@ from mqt.predictor import rl
     ["fidelity", "critical_depth", "parallelism"],
 )
 def test_compile(opt_objective):
-    predictor = rl.Predictor()
     qc = get_benchmark("ghz", 1, 5)
-    qc_compiled, device = predictor.compile_prediction(qc, opt_objective=opt_objective)
+    qc_compiled, device = rl.qcompile(qc, opt_objective=opt_objective)
     assert isinstance(qc_compiled, QuantumCircuit)
     assert device is not None and isinstance(device, str)
 

@@ -33,14 +33,14 @@ def test_predict(mock_show):
 )
 def test_compilation_paths(comp_path):
     qc_qasm = benchmark_generator.get_benchmark("dj", 1, 2).qasm()
-    res, compile_info = ml.compile_prediction(qc_qasm)
+    res, compile_info = ml.qcompile(qc_qasm)
     assert res
     assert compile_info
 
     qc = benchmark_generator.get_benchmark("dj", 1, 2)
     tmp_filename = "test.qasm"
     qc.qasm(filename=tmp_filename)
-    res, compile_info = ml.compile_prediction(tmp_filename)
+    res, compile_info = ml.qcompile(tmp_filename)
     assert res
     assert compile_info
 

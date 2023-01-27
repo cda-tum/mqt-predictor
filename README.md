@@ -68,10 +68,8 @@ Now a prediction can be made for any `qiskit.QuantumCircuit` object or `qasm` fi
 ```python
 from mqt.predictor import ml, rl
 
-compiled_qc_ML, compilation_info_ML = ml.compile_prediction(
-    "qasm_file_path", model="ML"
-)
-compiled_qc_RL, compilation_info_RL = rl.compile_prediction(
+compiled_qc_ML, compilation_info_ML = ml.qcompile("qasm_file_path", model="ML")
+compiled_qc_RL, compilation_info_RL = rl.qcompile(
     "qasm_file_path", model="RL", opt_objective="fidelity"
 )
 ```

@@ -21,7 +21,7 @@ from mqt.predictor import reward, rl
 
 
 class Predictor:
-    def compile_prediction(self, qc, opt_objective="fidelity"):
+    def compile_as_predicted(self, qc, opt_objective="fidelity"):
         if not isinstance(qc, QuantumCircuit):
             if len(qc) < 260 and Path(qc).exists():
                 qc = QuantumCircuit.from_qasm_file(qc)

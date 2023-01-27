@@ -46,9 +46,7 @@ else:
     from importlib import resources
 
 
-def compile_prediction(
-    qc: QuantumCircuit | str, opt_objective="fidelity"
-) -> QuantumCircuit:
+def qcompile(qc: QuantumCircuit | str, opt_objective="fidelity") -> QuantumCircuit:
     """Returns the compiled quantum circuit which is compiled following an objective function.
 
     Keyword arguments:
@@ -59,7 +57,7 @@ def compile_prediction(
     """
 
     predictor = rl.Predictor()
-    return predictor.compile_prediction(qc, opt_objective=opt_objective)
+    return predictor.compile_as_predicted(qc, opt_objective=opt_objective)
 
 
 def get_actions_opt():
