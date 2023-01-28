@@ -1,3 +1,4 @@
+import numpy as np
 from qiskit import QuantumCircuit
 
 from mqt.predictor import Calibration
@@ -16,7 +17,7 @@ def crit_depth(qc):
         parallelism,
         liveness,
     ) = calc_supermarq_features(qc)
-    return 1 - critical_depth
+    return np.round(1 - critical_depth, 5)
 
 
 def parallelism(qc):
@@ -27,7 +28,15 @@ def parallelism(qc):
         parallelism,
         liveness,
     ) = calc_supermarq_features(qc)
-    return critical_depth
+    return np.round(1 - parallelism, 5)
+
+
+def gate_ratio(qc):
+    return np.round(1 - qc.num_nonlocal_gates() / qc.size(), 5)
+
+
+def mix(qc, device):
+    return expected_fidelity(qc, device) * 0.5 + crit_depth(qc) * 0.5
 
 
 def expected_fidelity(qc_or_path: str, device: str):
@@ -187,4 +196,4 @@ def expected_fidelity(qc_or_path: str, device: str):
     else:
         print("Error: No suitable backend found!")
 
-    return res
+    return np.round(res, 5)
