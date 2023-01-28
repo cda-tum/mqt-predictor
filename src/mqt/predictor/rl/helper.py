@@ -275,7 +275,7 @@ def get_actions_devices():
     ]
 
 
-def get_random_state_sample():
+def get_state_sample():
     file_list = list(get_path_training_circuits().glob("*.qasm"))
 
     path_zip = get_path_training_circuits() / "mqtbench_sample_circuits.zip"
