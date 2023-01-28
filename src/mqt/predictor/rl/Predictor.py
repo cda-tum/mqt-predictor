@@ -32,9 +32,7 @@ class Predictor:
             elif "OPENQASM" in qc:
                 qc = QuantumCircuit.from_qasm_str(qc)
 
-        model = MaskablePPO.load(
-            rl.helper.get_path_trained_model() / ("model_" + opt_objective)
-        )
+        model = rl.helper.load_model("model_" + opt_objective)
         env = rl.PredictorEnv(opt_objective)
         obs = env.reset(qc)
 
@@ -54,9 +52,7 @@ class Predictor:
 
         reward_functions = ["fidelity", "critical_depth", "gates", "mix"]
         for rew in reward_functions:
-            model = MaskablePPO.load(
-                rl.helper.get_path_trained_model() / ("model_" + rew)
-            )
+            model = rl.helper.load_model("model_" + rew)
             env = rl.PredictorEnv(rew)
             obs = env.reset(file)
 
