@@ -7,7 +7,6 @@ from pytket import architecture
 from pytket.circuit import OpType
 from pytket.passes import (
     CliffordSimp,
-    DecomposeMultiQubitsCX,
     FullPeepholeOptimise,
     PeepholeOptimise2Q,
     RemoveRedundancies,
@@ -50,11 +49,9 @@ else:
 
 def qcompile(qc: QuantumCircuit | str, opt_objective="fidelity") -> QuantumCircuit:
     """Returns the compiled quantum circuit which is compiled following an objective function.
-
     Keyword arguments:
     qc -- to be compiled quantum circuit or path to a qasm file
     opt_objective -- objective function used for the compilation
-
     Returns: compiled quantum circuit as Qiskit QuantumCircuit object
     """
 
@@ -173,7 +170,6 @@ def get_actions_routing():
             "name": "RoutingPass",
             "transpile_pass": lambda c: [
                 RoutingPass(architecture.Architecture(c)),
-                DecomposeMultiQubitsCX(),
             ],
             "origin": "tket",
         },
