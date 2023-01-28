@@ -9,30 +9,35 @@ from mqt.predictor import rl
 
 @pytest.mark.parametrize(
     "opt_objective",
-    ["fidelity", "critical_depth", "parallelism"],
+    ["fidelity", "critical_depth", "gates", "mix"],
 )
-def test_compile(opt_objective):
+def test_qcompile(opt_objective):
     qc = get_benchmark("ghz", 1, 5)
-    qc_compiled, device = rl.qcompile(qc, opt_objective=opt_objective)
+    qc_compiled, compilation_information = rl.qcompile(qc, opt_objective=opt_objective)
     assert isinstance(qc_compiled, QuantumCircuit)
-    assert device is not None and isinstance(device, str)
+    assert compilation_information is not None
 
 
-def test_evaluate_sample_circuit_using():
+def test_evaluate_sample_circuit():
     qc = get_benchmark("ghz", 1, 5)
     qc.qasm(filename="test.qasm")
     predictor = rl.Predictor()
-    res = predictor.evaluate_sample_circuit_using("test.qasm")
-    assert len(res) == 22
+    res = predictor.evaluate_sample_circuit("test.qasm")
+    assert len(res) == 25
 
 
 def test_instantiate_models():
     predictor = rl.Predictor()
-    model_name = "test"
-    predictor.instantiate_models(
-        timesteps=100, fid=True, dep=False, par=False, model_name=model_name
+    predictor.train_all_models(
+        timesteps=100, fid=True, dep=True, gates=True, mix=True, model_name="test"
     )
-    path = rl.helper.get_path_trained_model() / (model_name + "_fidelity.zip")
-    assert Path(path).is_file()
-    if Path(path).is_file():
-        Path(path).unlink()
+    path_fid = rl.helper.get_path_trained_model() / "test_fidelity.zip"
+    path_dep = rl.helper.get_path_trained_model() / "test_critical_depth.zip"
+    path_gates = rl.helper.get_path_trained_model() / "test_gates.zip"
+    path_mix = rl.helper.get_path_trained_model() / "test_mix.zip"
+
+    paths = [path_fid, path_dep, path_gates, path_mix]
+    for path in paths:
+        assert Path(path).is_file()
+        if Path(path).is_file():
+            Path(path).unlink()
