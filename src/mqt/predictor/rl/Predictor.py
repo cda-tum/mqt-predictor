@@ -35,7 +35,7 @@ class Predictor:
         model = MaskablePPO.load(
             rl.helper.get_path_trained_model() / ("model_" + opt_objective)
         )
-        env = rl.PhaseOrdererEnv(opt_objective)
+        env = rl.PredictorEnv(opt_objective)
         obs = env.reset(qc)
         while True:
             action_masks = get_action_masks(env)
@@ -56,8 +56,7 @@ class Predictor:
             model = MaskablePPO.load(
                 rl.helper.get_path_trained_model() / ("model_" + rew)
             )
-
-            env = rl.PhaseOrdererEnv(rew)
+            env = rl.PredictorEnv(rew)
             obs = env.reset(file)
             qc = env.state
             start_time = time.time()
