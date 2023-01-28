@@ -147,7 +147,7 @@ def get_actions_layout():
             "origin": "qiskit",
         },
         {
-            "name": "SabreLayout_IBM_washington",
+            "name": "SabreLayout",
             "transpile_pass": lambda c: [
                 SabreLayout(coupling_map=CouplingMap(c)),
                 FullAncillaAllocation(coupling_map=CouplingMap(c)),
