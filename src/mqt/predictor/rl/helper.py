@@ -389,7 +389,10 @@ def get_cmap_from_devicename(device: str):
 
 
 def create_feature_dict(qc):
-    feature_dict = {"num_qubits": qc.num_qubits, "depth": qc.depth()}
+    feature_dict = {
+        "num_qubits": np.array([qc.num_qubits], dtype=int),
+        "depth": np.array([qc.depth()], dtype=int),
+    }
 
     (
         program_communication,
@@ -398,11 +401,16 @@ def create_feature_dict(qc):
         parallelism,
         liveness,
     ) = utils.calc_supermarq_features(qc)
-    feature_dict["program_communication"] = int(program_communication * 100)
-    feature_dict["critical_depth"] = int(critical_depth * 100)
-    feature_dict["entanglement_ratio"] = int(entanglement_ratio * 100)
-    feature_dict["parallelism"] = int(parallelism * 100)
-    feature_dict["liveness"] = int(liveness * 100)
+    # for all dict values, put them in a list each
+    feature_dict["program_communication"] = np.array(
+        [program_communication], dtype=np.float32
+    )
+    feature_dict["critical_depth"] = np.array([critical_depth], dtype=np.float32)
+    feature_dict["entanglement_ratio"] = np.array(
+        [entanglement_ratio], dtype=np.float32
+    )
+    feature_dict["parallelism"] = np.array([parallelism], dtype=np.float32)
+    feature_dict["liveness"] = np.array([liveness], dtype=np.float32)
 
     return feature_dict
 
