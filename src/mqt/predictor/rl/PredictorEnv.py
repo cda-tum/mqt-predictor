@@ -214,8 +214,7 @@ class PredictorEnv(Env):
             else:
                 raise ValueError(f"Origin {action['origin']} not supported.")
         else:
-            self.logger.error("Action not found. Original QC returned.")
-            altered_qc = self.state
+            raise RuntimeError(f"Action {action_index} not supported.")
 
         return altered_qc
 
