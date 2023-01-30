@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class Result:
-    '''
+    """
     Class to store the result of a compiler for a given benchmark.
 
     Attributes
@@ -14,7 +15,7 @@ class Result:
     gate_ratio: float - gate ratio reward of the compiled circuit
     mix: float - mix reward of the compiled circuit
 
-    '''
+    """
 
     benchmark: str
     used_setup: str
@@ -35,7 +36,7 @@ class Result:
         mix,
     ):
         self.benchmark = benchmark
-        self.used_setup =  used_setup
+        self.used_setup = used_setup
         self.time = time
         self.fidelity = fidelity
         self.depth = depth
@@ -58,11 +59,11 @@ class Result:
 
     def get_result(self):
         return {
-        self.used_setup + "_" + "time":self.time,
-        self.used_setup + "_" + "fidelity":self.fidelity,
-        self.used_setup + "_" + "depth":self.depth,
-        self.used_setup + "_" + "gate_ratio":self.gate_ratio,
-        self.used_setup + "_" + "mix":self.mix
+            self.used_setup + "_" + "time": self.time,
+            self.used_setup + "_" + "fidelity": self.fidelity,
+            self.used_setup + "_" + "depth": self.depth,
+            self.used_setup + "_" + "gate_ratio": self.gate_ratio,
+            self.used_setup + "_" + "mix": self.mix,
         }
 
     def __eq__(self, other):
@@ -73,4 +74,5 @@ class Result:
             and self.fidelity == other.fidelity
             and self.depth == other.depth
             and self.gate_ratio == other.gate_ratio
-            and self.mix == other.mix)
+            and self.mix == other.mix
+        )
