@@ -1,5 +1,4 @@
 import json
-import logging
 import sys
 
 if sys.version_info < (3, 10, 0):
@@ -9,8 +8,6 @@ else:
 
 import numpy as np
 from qiskit.providers.fake_provider import FakeMontreal, FakeWashington
-
-logger = logging.getLogger("mqtpredictor")
 
 
 class Calibration:
@@ -24,8 +21,7 @@ class Calibration:
             self.ionq_calibration = parse_ionq_calibration_config()
 
         except Exception as e:
-            logger.error("Calibration init failed: ", e)
-            return None
+            raise RuntimeError("Error in Calibration initialization): " + str(e)) from e
 
 
 def get_mean_IBM_washington_cx_error():
