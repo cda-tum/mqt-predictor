@@ -442,11 +442,10 @@ def load_model(model_name: str):
     print("Model does not exist. Try to retrieve suitable Model from GitHub...")
     try:
         mqtpredictor_module_version = metadata.version("mqt.predictor")
-    except Exception:
-        print(
-            "'mqt.predictor' is most likely not installed. Please run 'pip install . or pip install mqt.predictor'."
-        )
-        return False
+    except ModuleNotFoundError:
+        raise RuntimeError(
+            "Could not retrieve version of mqt.predictor. Please run 'pip install . or pip install mqt.predictor'."
+        ) from ModuleNotFoundError
 
     version_found = False
     response = requests.get("https://api.github.com/repos/cda-tum/mqtpredictor/tags")
@@ -468,7 +467,6 @@ def load_model(model_name: str):
                     "Suitable trained models cannot be downloaded since the GitHub API failed. "
                     "One reasons could be that the limit of 60 API calls per hour and IP address is exceeded."
                 )
-
 
             response_json = response.json()
             if "assets" in response_json:
