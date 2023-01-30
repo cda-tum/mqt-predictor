@@ -166,8 +166,7 @@ def create_feature_dict(qc: str):
         elif "OPENQASM" in qc:
             qc = QuantumCircuit.from_qasm_str(qc)
         else:
-            logger.error("Neither a qasm file path nor a qasm str has been provided.")
-            return False
+            raise ValueError("Invalid input for 'qc' parameter.") from None
 
     ops_list = qc.count_ops()
     feature_dict = dict_to_featurevector(ops_list)

@@ -6,7 +6,6 @@ from pathlib import Path
 
 import numpy as np
 import requests
-from packaging import version
 from pytket import architecture
 from pytket.circuit import OpType
 from pytket.passes import (
@@ -46,6 +45,7 @@ from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
 from mqt.predictor import rl, utils
+from packaging import version
 
 if sys.version_info < (3, 10, 0):
     import importlib_metadata as metadata
@@ -303,8 +303,10 @@ def get_state_sample():
     try:
         qc = QuantumCircuit.from_qasm_file(str(file_list[random_index]))
     except Exception:
-        logger.error("ERROR: ", file_list[random_index])
-        return False
+        raise RuntimeError(
+            "Could not read QuantumCircuit from: " + str(file_list[random_index])
+        ) from None
+
     return qc
 
 
@@ -449,7 +451,7 @@ def load_model(model_name: str):
     except ModuleNotFoundError:
         raise RuntimeError(
             "Could not retrieve version of mqt.predictor. Please run 'pip install . or pip install mqt.predictor'."
-        ) from ModuleNotFoundError
+        ) from None
 
     version_found = False
     response = requests.get("https://api.github.com/repos/cda-tum/mqtpredictor/tags")
@@ -493,7 +495,7 @@ def load_model(model_name: str):
     if not version_found:
         raise RuntimeError(
             "No suitable model found on GitHub. Please update your mqt.predictort package using 'pip install -U mqt.predictor'."
-        )
+        ) from None
 
     return MaskablePPO.load(path / model_name)
 
