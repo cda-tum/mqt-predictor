@@ -23,7 +23,7 @@ def test_evaluate_sample_circuit():
     qc.qasm(filename="test.qasm")
     predictor = rl.Predictor()
     res = predictor.evaluate_sample_circuit("test.qasm")
-    assert len(res) == 25
+    assert len(res) == 32
 
 
 def test_instantiate_models():
