@@ -20,9 +20,9 @@ def test_qcompile(opt_objective):
 
 def test_evaluate_sample_circuit():
     qc = get_benchmark("ghz", 1, 5)
-    qc.qasm(filename="test.qasm")
+    qc.qasm(filename="test_5.qasm")
     predictor = rl.Predictor()
-    res = predictor.evaluate_sample_circuit("test.qasm")
+    res = predictor.evaluate_sample_circuit("test_5.qasm")
     assert len(res) == 32
 
 
