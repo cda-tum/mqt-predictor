@@ -19,8 +19,8 @@ def test_predict(mock_show):
     assert prediction >= 0 and prediction < len(ml.helper.get_index_to_comppath_LUT())
     prediction = predictor.predict(qc.qasm())
     assert prediction >= 0 and prediction < len(ml.helper.get_index_to_comppath_LUT())
-    prediction = predictor.predict("fail test")
-    assert not prediction
+    with pytest.raises(ValueError):
+        predictor.predict("fail test")
 
     predictor.clf = None
     prediction = predictor.predict(filename)
