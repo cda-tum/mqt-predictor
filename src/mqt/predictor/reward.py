@@ -51,11 +51,11 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
     else:
         try:
             qc = QuantumCircuit.from_qasm_file(qc_or_path)
-        except Exception as e:
-            logger.error(
-                "Fail in reward_expected_fidelity reading a the quantum circuit: " + e
-            )
-            return 0
+        except Exception:
+            raise RuntimeError(
+                "Could not read QuantumCircuit from: " + qc_or_path
+            ) from None
+
     res = 1
 
     calibration = Calibration.Calibration()
@@ -215,6 +215,6 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                 res *= specific_fidelity
 
     else:
-        logger.error("Error: No suitable backend found!")
+        raise ValueError("Device not supported")
 
     return np.round(res, precision)
