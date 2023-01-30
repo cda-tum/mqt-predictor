@@ -100,10 +100,10 @@ class Predictor:
 
     def train_all_models(
         self,
-        timesteps=1000,
-        reward_functions=None,
-        model_name="model",
-        verbose=2,
+        timesteps: int = 1000,
+        reward_functions: Reward = None,
+        model_name: str = "model",
+        verbose: int = 2,
     ):
         if reward_functions is None:
             reward_functions = ["fidelity"]
