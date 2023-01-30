@@ -72,16 +72,8 @@ class Predictor:
         results.append(computeRewards(file, "tket"))
 
         combined_res = {
-            "benchmark": str(file)
-            .split("/")[-1]
-            .split(".")[0]
-            .replace("_", " ")
-            .split(" ")[0],
-            "num_qubits": str(file)
-            .split("/")[-1]
-            .split(".")[0]
-            .replace("_", " ")
-            .split(" ")[-1],
+            "benchmark": str(Path(file).stem).replace("_", " ").split(" ")[0],
+            "num_qubits": str(Path(file).stem).replace("_", " ").split(" ")[-1],
         }
         for res in results:
             combined_res.update(res.get_dict())
