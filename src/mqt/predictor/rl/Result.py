@@ -25,39 +25,7 @@ class Result:
     gate_ratio: float
     mix: float
 
-    def __init__(
-        self,
-        benchmark,
-        used_setup,
-        time,
-        fidelity,
-        depth,
-        gate_ratio,
-        mix,
-    ):
-        self.benchmark = benchmark
-        self.used_setup = used_setup
-        self.time = time
-        self.fidelity = fidelity
-        self.depth = depth
-        self.gate_ratio = gate_ratio
-        self.mix = mix
-
-    def __str__(self):
-        return (
-            f"Result(benchmark={self.benchmark}, used_setup={self.used_setup}, time={self.time}, "
-            f"fidelity={self.fidelity}, depth={self.depth}, gate_ratio={self.gate_ratio}, "
-            f"mix={self.mix})"
-        )
-
-    def __repr__(self):
-        return (
-            f"Result(benchmark={self.benchmark}, used_setup={self.used_setup}, time={self.time}, "
-            f"fidelity={self.fidelity}, depth={self.depth}, gate_ratio={self.gate_ratio}, "
-            f"mix={self.mix})"
-        )
-
-    def get_result(self):
+    def get_dict(self):
         return {
             self.used_setup + "_" + "time": self.time,
             self.used_setup + "_" + "fidelity": self.fidelity,
@@ -65,14 +33,3 @@ class Result:
             self.used_setup + "_" + "gate_ratio": self.gate_ratio,
             self.used_setup + "_" + "mix": self.mix,
         }
-
-    def __eq__(self, other):
-        return (
-            self.benchmark == other.benchmark
-            and self.reward == other.reward
-            and self.time == other.time
-            and self.fidelity == other.fidelity
-            and self.depth == other.depth
-            and self.gate_ratio == other.gate_ratio
-            and self.mix == other.mix
-        )

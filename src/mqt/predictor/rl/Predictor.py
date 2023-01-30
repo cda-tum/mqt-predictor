@@ -84,7 +84,7 @@ class Predictor:
             .split(" ")[-1],
         }
         for res in results:
-            combined_res.update(res.get_result())
+            combined_res.update(res.get_dict())
         return combined_res
 
     def evaluate_all_sample_circuits(self):
