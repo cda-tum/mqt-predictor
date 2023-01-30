@@ -464,11 +464,11 @@ def load_model(model_name: str):
             )
             response = requests.get(url)
             if not response:
-                print(
+                raise RuntimeError(
                     "Suitable trained models cannot be downloaded since the GitHub API failed. "
                     "One reasons could be that the limit of 60 API calls per hour and IP address is exceeded."
                 )
-                return False
+
 
             response_json = response.json()
             if "assets" in response_json:
@@ -481,18 +481,18 @@ def load_model(model_name: str):
             for asset in assets:
                 if model_name in asset["name"]:
                     version_found = True
-
-                if version_found:
                     download_url = asset["browser_download_url"]
                     print("Downloading model from: " + download_url)
                     handle_downloading_model(download_url, model_name)
                     break
+
         if version_found:
             break
 
     if not version_found:
-        print("No suitable model found.")
-        return False
+        raise RuntimeError(
+            "No suitable model found on GitHub. Please update your mqt.predictort package using 'pip install -U mqt.predictor'."
+        )
 
     return MaskablePPO.load(path / model_name)
 
