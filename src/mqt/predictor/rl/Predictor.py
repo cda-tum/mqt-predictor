@@ -21,7 +21,7 @@ from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 from sb3_contrib.common.maskable.utils import get_action_masks
 
-from mqt.predictor import reward, rl
+from mqt.predictor import rl
 
 
 class Predictor:
@@ -61,7 +61,7 @@ class Predictor:
         return env.state, used_compilation_passes
 
     def evaluate_sample_circuit(self, file):
-        self.logger.info("Evaluate file:" + str(file))
+        self.logger.info("Evaluate file: " + str(file))
 
         reward_functions = ["fidelity", "critical_depth", "gate_ratio", "mix"]
         results = []
@@ -75,6 +75,7 @@ class Predictor:
             "benchmark": str(Path(file).stem).replace("_", " ").split(" ")[0],
             "num_qubits": str(Path(file).stem).replace("_", " ").split(" ")[-1],
         }
+
         for res in results:
             combined_res.update(res.get_dict())
         return combined_res
@@ -146,22 +147,16 @@ def computeRewards(
             obs, reward_val, done, info = env.step(action)
 
         duration = time.time() - start_time
-        rew_fid = reward.expected_fidelity(env.state, env.device)
-        rew_crit_depth = reward.crit_depth(env.state)
-        rew_gate_ratio = reward.gate_ratio(env.state)
-        rew_mix = reward.mix(env.state, env.device)
 
         return rl.Result(
-            benchmark=benchmark,
-            used_setup="RL_" + reward_function,
-            time=duration,
-            fidelity=rew_fid,
-            depth=rew_crit_depth,
-            gate_ratio=rew_gate_ratio,
-            mix=rew_mix,
+            benchmark,
+            used_setup + "_" + reward_function,
+            duration,
+            env.state,
+            env.device,
         )
 
-    elif used_setup == "qiskit_o3":
+    if used_setup == "qiskit_o3":
         qc = QuantumCircuit.from_qasm_file(benchmark)
         start_time = time.time()
         transpiled_qc_qiskit = transpile(
@@ -172,22 +167,12 @@ def computeRewards(
             seed_transpiler=1,
         )
         duration = time.time() - start_time
-        rew_fid = reward.expected_fidelity(transpiled_qc_qiskit, "ibm_washington")
-        rew_crit_depth = reward.crit_depth(transpiled_qc_qiskit)
-        rew_gate_ratio = reward.gate_ratio(transpiled_qc_qiskit)
-        rew_mix = reward.mix(transpiled_qc_qiskit, "ibm_washington")
 
         return rl.Result(
-            benchmark=benchmark,
-            used_setup=used_setup,
-            time=duration,
-            fidelity=rew_fid,
-            depth=rew_crit_depth,
-            gate_ratio=rew_gate_ratio,
-            mix=rew_mix,
+            benchmark, used_setup, duration, transpiled_qc_qiskit, "ibm_washington"
         )
 
-    elif used_setup == "tket":
+    if used_setup == "tket":
         qc = QuantumCircuit.from_qasm_file(benchmark)
         tket_qc = qiskit_to_tk(qc)
         arch = architecture.Architecture(
@@ -204,23 +189,10 @@ def computeRewards(
         RoutingPass(arch).apply(tket_qc)
         ibm_rebase.apply(tket_qc)
         duration = time.time() - start_time
-
         transpiled_qc_tket = tk_to_qiskit(tket_qc)
 
-        rew_fid = reward.expected_fidelity(transpiled_qc_tket, "ibm_washington")
-        rew_crit_depth = reward.crit_depth(transpiled_qc_tket)
-        rew_gate_ratio = reward.gate_ratio(transpiled_qc_tket)
-        rew_mix = reward.mix(transpiled_qc_tket, "ibm_washington")
-
         return rl.Result(
-            benchmark=benchmark,
-            used_setup=used_setup,
-            time=duration,
-            fidelity=rew_fid,
-            depth=rew_crit_depth,
-            gate_ratio=rew_gate_ratio,
-            mix=rew_mix,
+            benchmark, used_setup, duration, transpiled_qc_tket, "ibm_washington"
         )
 
-    else:
-        raise ValueError("Unknown setup. Use either 'RL', 'qiskit_o3' or 'tket'.")
+    raise ValueError("Unknown setup. Use either 'RL', 'qiskit_o3' or 'tket'.")
