@@ -184,7 +184,7 @@ class PredictorEnv(Env):
                 try:
                     altered_qc = pm.run(self.state)
                 except Exception as e:
-                    self.logger.error(
+                    raise RuntimeError(
                         "Error in executing Qiskit transpile pass: "
                         + ", "
                         + action["name"]
@@ -192,8 +192,7 @@ class PredictorEnv(Env):
                         + self.state.name
                         + ", "
                         + e
-                    )
-                    return False
+                    ) from e
             elif action["origin"] == "tket":
                 try:
                     tket_qc = qiskit_to_tk(self.state)
@@ -201,7 +200,7 @@ class PredictorEnv(Env):
                         elem.apply(tket_qc)
                     altered_qc = tk_to_qiskit(tket_qc)
                 except Exception as e:
-                    self.logger.error(
+                    raise RuntimeError(
                         "Error in executing TKET transpile pass: "
                         + ", "
                         + action["name"]
@@ -209,8 +208,7 @@ class PredictorEnv(Env):
                         + self.state.name
                         + ", "
                         + e,
-                    )
-                    return False
+                    ) from e
             else:
                 raise ValueError(f"Origin {action['origin']} not supported.")
         else:
