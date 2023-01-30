@@ -84,10 +84,10 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                                 gate_type, [first_qubit]
                             )
                     except Exception as e:
-                        logger.error(
+                        raise RuntimeError(
                             "Error in IBM backend.gate_error(): "
                             + ", "
-                            + e
+                            + str(e)
                             + ", "
                             + device
                             + ", "
@@ -96,8 +96,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                             + instruction
                             + ", "
                             + qargs
-                        )
-                        return 0
+                        ) from e
                 else:
                     second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     try:
@@ -107,10 +106,10 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                         if specific_error == 1:
                             specific_error = calibration.ibm_washington_cx_mean_error
                     except Exception as e:
-                        logger.error(
+                        raise RuntimeError(
                             "Error in IBM backend.gate_error(): "
                             + ", "
-                            + e
+                            + str(e)
                             + ", "
                             + device
                             + ", "
@@ -121,8 +120,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                             + instruction
                             + ", "
                             + qargs
-                        )
-                        return 0
+                        ) from e
 
                 res *= 1 - float(specific_error)
     elif "oqc_lucy" in device:
