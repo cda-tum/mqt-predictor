@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import time
 from pathlib import Path
 from typing import Literal
@@ -24,6 +25,16 @@ from mqt.predictor import reward, rl
 
 
 class Predictor:
+    def __init__(self, verbose=0):
+        self.logger = logging.getLogger("mqtpredictor")
+        self.verbose = verbose
+        if verbose == 1:
+            self.logger.setLevel(logging.DEBUG)
+        elif verbose == 2:
+            self.logger.setLevel(logging.INFO)
+        else:
+            self.logger.setLevel(logging.WARNING)
+
     def compile_as_predicted(
         self, qc: QuantumCircuit | str, opt_objective: str = "fidelity"
     ):
@@ -50,7 +61,7 @@ class Predictor:
         return env.state, used_compilation_passes
 
     def evaluate_sample_circuit(self, file):
-        print("Evaluate file:", file)
+        self.logger.info("Evaluate file:" + str(file))
 
         reward_functions = ["fidelity", "critical_depth", "gates", "mix"]
         results = []
@@ -112,7 +123,7 @@ class Predictor:
             progress_bar = True
 
         for rew in reward_functions:
-            print("Start training for: ", rew)
+            self.logger.debug("Start training for: " + rew)
             env = rl.PredictorEnv(reward_function=rew)
 
             model = MaskablePPO(

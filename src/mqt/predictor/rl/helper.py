@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import sys
 from pathlib import Path
 
@@ -51,6 +52,9 @@ if sys.version_info < (3, 10, 0):
     import importlib_resources as resources
 else:
     from importlib import metadata, resources
+
+
+logger = logging.getLogger("mqtpredictor")
 
 
 def qcompile(qc: QuantumCircuit | str, opt_objective="fidelity") -> QuantumCircuit:
@@ -299,7 +303,7 @@ def get_state_sample():
     try:
         qc = QuantumCircuit.from_qasm_file(str(file_list[random_index]))
     except Exception:
-        print("ERROR: ", file_list[random_index])
+        logger.error("ERROR: ", file_list[random_index])
         return False
     return qc
 
@@ -439,7 +443,7 @@ def load_model(model_name: str):
     if Path(path / (model_name + ".zip")).exists():
         return MaskablePPO.load(path / (model_name + ".zip"))
 
-    print("Model does not exist. Try to retrieve suitable Model from GitHub...")
+    logger.info("Model does not exist. Try to retrieve suitable Model from GitHub...")
     try:
         mqtpredictor_module_version = metadata.version("mqt.predictor")
     except ModuleNotFoundError:
@@ -452,7 +456,6 @@ def load_model(model_name: str):
     available_versions = []
     for elem in response.json():
         available_versions.append(elem["name"])
-    print(available_versions, version.parse(mqtpredictor_module_version))
     for possible_version in available_versions:
         if version.parse(mqtpredictor_module_version) >= version.parse(
             possible_version
@@ -480,7 +483,7 @@ def load_model(model_name: str):
                 if model_name in asset["name"]:
                     version_found = True
                     download_url = asset["browser_download_url"]
-                    print("Downloading model from: " + download_url)
+                    logger.info("Downloading model from: " + download_url)
                     handle_downloading_model(download_url, model_name)
                     break
 
@@ -496,7 +499,7 @@ def load_model(model_name: str):
 
 
 def handle_downloading_model(download_url: str, model_name: str):
-    print("Start downloading model...")
+    logger.info("Start downloading model...")
 
     r = requests.get(download_url)
     total_length = int(r.headers.get("content-length"))
@@ -512,4 +515,4 @@ def handle_downloading_model(download_url: str, model_name: str):
         for data in r.iter_content(chunk_size=1024):
             size = f.write(data)
             bar.update(size)
-    print(f"Download completed to {fname}. ")
+    logger.info(f"Download completed to {fname}. ")

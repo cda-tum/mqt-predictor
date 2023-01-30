@@ -1,4 +1,5 @@
 import glob
+import logging
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -16,7 +17,17 @@ plt.rcParams["font.family"] = "Times New Roman"
 
 
 class Predictor:
-    def __init__(self):
+    def __init__(self, verbose=0):
+        self.verbose = verbose
+
+        self.logger = logging.getLogger("mqtpredictor")
+        if verbose == 1:
+            self.logger.setLevel(logging.DEBUG)
+        elif verbose == 2:
+            self.logger.setLevel(logging.INFO)
+        else:
+            self.logger.setLevel(logging.WARNING)
+
         self.clf = None
 
     def set_classifier(self, clf):
@@ -47,7 +58,7 @@ class Predictor:
         if target_path is None:
             target_path = str(ml.helper.get_path_training_circuits_compiled())
 
-        print("compile_all_circuits_for_qc:", filename)
+        self.logger.info("compile_all_circuits_for_qc:" + filename)
         qc = QuantumCircuit.from_qasm_file(Path(source_path) / filename)
 
         if not qc:
@@ -113,12 +124,12 @@ class Predictor:
                                         continue
 
             if all(x is False for x in results):
-                print("No compilation succeeded for this quantum circuit.")
+                self.logger.debug("No compilation succeeded for this quantum circuit.")
                 return False
             return True
 
         except Exception as e:
-            print("fail: ", e)
+            self.logger.error("Error in compile_all_circuits_for_qc", e)
             return False
 
     def generate_compiled_circuits(
@@ -242,7 +253,7 @@ class Predictor:
             return False
 
         LUT = ml.helper.get_index_to_comppath_LUT()
-        print("Checking ", file)
+        self.logger.debug("Checking " + file)
         scores = []
         for _ in range(len(LUT)):
             scores.append([])
@@ -309,10 +320,12 @@ class Predictor:
             res, _ = self.calc_performance_measures(scores_filtered, y_pred, y_test)
             self.plot_eval_histogram(res, filename="RandomForestClassifier")
 
-            print("Best Accuracy: ", clf.best_score_)
+            self.logger.info("Best Accuracy: " + clf.best_score_)
             top3 = (res.count(1) + res.count(2) + res.count(3)) / len(res)
-            print("Top 3: ", top3)
-            print("Feature Importance: ", clf.best_estimator_.feature_importances_)
+            self.logger.info("Top 3: " + top3)
+            self.logger.info(
+                "Feature Importance: " + clf.best_estimator_.feature_importances_
+            )
 
             self.plot_eval_all_detailed_compact_normed(
                 names_filtered, scores_filtered, y_pred, y_test
@@ -320,7 +333,7 @@ class Predictor:
 
         self.set_classifier(clf.best_estimator_)
         ml.helper.save_classifier(clf.best_estimator_)
-        print("Random Forest classifier is trained and saved.")
+        self.logger.info("Random Forest classifier is trained and saved.")
 
         return self.clf is not None
 
@@ -504,7 +517,7 @@ class Predictor:
             if path.is_file():
                 self.clf = load(str(path))
             else:
-                print("Fail: Classifier is neither trained nor saved!")
+                self.logger.error("Fail: Classifier is neither trained nor saved!")
                 return None
 
         feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)
@@ -524,17 +537,19 @@ class Predictor:
 
         LUT = ml.helper.get_index_to_comppath_LUT()
         if prediction < 0 or prediction >= len(LUT):
-            print("Provided prediction is faulty.")
+            self.logger.error("Provided prediction is faulty.")
             return None
         if not isinstance(qc, QuantumCircuit):
             if Path(qc).exists():
-                print("Reading from .qasm path: ", qc)
+                self.logger.info("Reading from .qasm path: " + qc)
                 qc = QuantumCircuit.from_qasm_file(qc)
             elif QuantumCircuit.from_qasm_str(qc):
-                print("Reading from .qasm str")
+                self.logger.info("Reading from .qasm str")
                 qc = QuantumCircuit.from_qasm_str(qc)
             else:
-                print("Neither a qasm file path nor a qasm str has been provided.")
+                self.logger.error(
+                    "Neither a qasm file path nor a qasm str has been provided."
+                )
                 return False
 
         prediction_information = LUT.get(prediction)
@@ -563,7 +578,7 @@ class Predictor:
                 ml.helper.get_index_to_comppath_LUT()[prediction],
             )
         else:
-            print("Error: Compiler not found.")
+            self.logger.error("Compiler not found.")
             return False
 
     def instantiate_supervised_ML_model(self, timeout):

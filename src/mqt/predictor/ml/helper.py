@@ -7,6 +7,7 @@ if sys.version_info < (3, 10, 0):
 else:
     from importlib import resources
 
+import logging
 from pathlib import Path
 
 import numpy as np
@@ -14,6 +15,8 @@ from joblib import dump
 from qiskit import QuantumCircuit
 
 from mqt.predictor import ml, utils
+
+logger = logging.getLogger("mqtpredictor")
 
 
 def qcompile(qc: QuantumCircuit | str) -> QuantumCircuit:
@@ -163,7 +166,7 @@ def create_feature_dict(qc: str):
         elif "OPENQASM" in qc:
             qc = QuantumCircuit.from_qasm_str(qc)
         else:
-            print("Neither a qasm file path nor a qasm str has been provided.")
+            logger.error("Neither a qasm file path nor a qasm str has been provided.")
             return False
 
     ops_list = qc.count_ops()

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import numpy as np
@@ -12,10 +13,12 @@ from qiskit.transpiler.passes import CheckMap, GatesInBasis
 
 from mqt.predictor import reward, rl
 
+logger = logging.getLogger("mqtpredictor")
+
 
 class PredictorEnv(Env):
     def __init__(self, reward_function="fidelity"):
-        print("Init env: ", reward_function)
+        logger.info("Init env: " + reward_function)
         self.state = None
         self.action_set = {}
         self.actions_platform = []
@@ -110,7 +113,7 @@ class PredictorEnv(Env):
             reward_val = reward.crit_depth(self.state)
         elif self.reward_function == "mix":
             reward_val = reward.mix(self.state, self.device)
-        elif self.reward_function == "gates":
+        elif self.reward_function == "gate_ratio":
             reward_val = reward.gate_ratio(self.state)
         else:
             raise ValueError(f"Reward function {self.reward_function} not supported.")
@@ -181,12 +184,15 @@ class PredictorEnv(Env):
                 try:
                     altered_qc = pm.run(self.state)
                 except Exception as e:
-                    print(
-                        "Error in executing Qiskit transpile pass: ",
-                        action["name"],
-                        self.state.name,
+                    self.logger.error(
+                        "Error in executing Qiskit transpile pass: "
+                        + ", "
+                        + action["name"]
+                        + ", "
+                        + self.state.name
+                        + ", "
+                        + e
                     )
-                    print(e)
                     return False
             elif action["origin"] == "tket":
                 try:
@@ -195,17 +201,20 @@ class PredictorEnv(Env):
                         elem.apply(tket_qc)
                     altered_qc = tk_to_qiskit(tket_qc)
                 except Exception as e:
-                    print(
-                        "Error in executing TKET transpile pass: ",
-                        action["name"],
-                        self.state.name,
+                    self.logger.error(
+                        "Error in executing TKET transpile pass: "
+                        + ", "
+                        + action["name"]
+                        + ", "
+                        + self.state.name
+                        + ", "
+                        + e,
                     )
-                    print(e)
                     return False
             else:
                 raise ValueError(f"Origin {action['origin']} not supported.")
         else:
-            print("ERROR: Action not found. Original QC returned.")
+            self.logger.error("Action not found. Original QC returned.")
             altered_qc = self.state
 
         return altered_qc

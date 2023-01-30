@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 from qiskit import QuantumCircuit
 
@@ -7,6 +9,8 @@ from mqt.predictor.utils import (
     calc_supermarq_features,
     get_rigetti_qubit_dict,
 )
+
+logger = logging.getLogger("mqtpredictor")
 
 
 def crit_depth(qc: QuantumCircuit, precision: int = 10):
@@ -48,7 +52,9 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
         try:
             qc = QuantumCircuit.from_qasm_file(qc_or_path)
         except Exception as e:
-            print("Fail in reward_expected_fidelity reading a the quantum circuit: ", e)
+            logger.error(
+                "Fail in reward_expected_fidelity reading a the quantum circuit: " + e
+            )
             return 0
     res = 1
 
@@ -78,12 +84,18 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                                 gate_type, [first_qubit]
                             )
                     except Exception as e:
-                        print(instruction, qargs)
-                        print(
-                            "Error in IBM backend.gate_error(): ",
-                            e,
-                            device,
-                            first_qubit,
+                        logger.error(
+                            "Error in IBM backend.gate_error(): "
+                            + ", "
+                            + e
+                            + ", "
+                            + device
+                            + ", "
+                            + first_qubit
+                            + ", "
+                            + instruction
+                            + ", "
+                            + qargs
                         )
                         return 0
                 else:
@@ -95,13 +107,20 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                         if specific_error == 1:
                             specific_error = calibration.ibm_washington_cx_mean_error
                     except Exception as e:
-                        print(instruction, qargs)
-                        print(
-                            "Error in IBM backend.gate_error(): ",
-                            e,
-                            device,
-                            first_qubit,
-                            second_qubit,
+                        logger.error(
+                            "Error in IBM backend.gate_error(): "
+                            + ", "
+                            + e
+                            + ", "
+                            + device
+                            + ", "
+                            + first_qubit
+                            + ", "
+                            + second_qubit
+                            + ", "
+                            + instruction
+                            + ", "
+                            + qargs
                         )
                         return 0
 
@@ -196,6 +215,6 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                 res *= specific_fidelity
 
     else:
-        print("Error: No suitable backend found!")
+        logger.error("Error: No suitable backend found!")
 
     return np.round(res, precision)
