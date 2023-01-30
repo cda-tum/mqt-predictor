@@ -38,15 +38,16 @@ class Predictor:
         obs = env.reset(qc)
 
         used_compilation_passes = []
-        while True:
+        done = False
+        while not done:
             action_masks = get_action_masks(env)
             action, _states = model.predict(obs, action_masks=action_masks)
             action = int(action)
             action_item = env.action_set.get(action)
             used_compilation_passes.append(action_item["name"])
             obs, reward_val, done, info = env.step(action)
-            if done:
-                return env.state, used_compilation_passes
+
+        return env.state, used_compilation_passes
 
     def evaluate_sample_circuit(self, file):
         print("Evaluate file:", file)
@@ -134,28 +135,28 @@ def computeRewards(
         env = rl.PredictorEnv(reward_function)
         obs = env.reset(benchmark)
         start_time = time.time()
-        while True:
+        done = False
+        while not done:
             action_masks = get_action_masks(env)
             action, _states = model.predict(obs, action_masks=action_masks)
             action = int(action)
             obs, reward_val, done, info = env.step(action)
 
-            if done:
-                duration = time.time() - start_time
-                rew_fid = reward.expected_fidelity(env.state, env.device)
-                rew_crit_depth = reward.crit_depth(env.state)
-                rew_gate_ratio = reward.gate_ratio(env.state)
-                rew_mix = reward.mix(env.state, env.device)
+        duration = time.time() - start_time
+        rew_fid = reward.expected_fidelity(env.state, env.device)
+        rew_crit_depth = reward.crit_depth(env.state)
+        rew_gate_ratio = reward.gate_ratio(env.state)
+        rew_mix = reward.mix(env.state, env.device)
 
-                return rl.Result(
-                    benchmark=benchmark,
-                    used_setup="RL_" + reward_function,
-                    time=duration,
-                    fidelity=rew_fid,
-                    depth=rew_crit_depth,
-                    gate_ratio=rew_gate_ratio,
-                    mix=rew_mix,
-                )
+        return rl.Result(
+            benchmark=benchmark,
+            used_setup="RL_" + reward_function,
+            time=duration,
+            fidelity=rew_fid,
+            depth=rew_crit_depth,
+            gate_ratio=rew_gate_ratio,
+            mix=rew_mix,
+        )
 
     elif used_setup == "qiskit_o3":
         qc = QuantumCircuit.from_qasm_file(benchmark)
