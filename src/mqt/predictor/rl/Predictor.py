@@ -29,9 +29,9 @@ class Predictor:
         self.logger = logging.getLogger("mqtpredictor")
         self.verbose = verbose
         if verbose == 1:
-            self.logger.setLevel(logging.DEBUG)
-        elif verbose == 2:
             self.logger.setLevel(logging.INFO)
+        elif verbose == 2:
+            self.logger.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.WARNING)
 
