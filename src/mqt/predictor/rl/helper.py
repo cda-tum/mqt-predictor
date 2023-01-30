@@ -494,8 +494,7 @@ def load_model(model_name: str):
         print("No suitable model found.")
         return False
 
-    model = MaskablePPO.load(path / model_name)
-    return model
+    return MaskablePPO.load(path / model_name)
 
 
 def handle_downloading_model(download_url: str, model_name: str):
