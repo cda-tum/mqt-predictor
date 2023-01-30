@@ -79,9 +79,8 @@ class PredictorEnv(Env):
     def step(self, action):
         altered_qc = self.apply_action(action)
         if not altered_qc:
-            observation = rl.helper.create_feature_dict(self.state)
             return (
-                observation,
+                rl.helper.create_feature_dict(self.state),
                 0,
                 True,
                 {},
@@ -92,13 +91,7 @@ class PredictorEnv(Env):
 
         self.valid_actions = self.determine_valid_actions_for_state()
         if len(self.valid_actions) == 0:
-            observation = rl.helper.create_feature_dict(self.state)
-            return (
-                observation,
-                0,
-                True,
-                {},
-            )
+            return rl.helper.create_feature_dict(self.state), 0, True, {}
 
         if action == self.action_terminate_index:
             if self.reward_function == "fidelity":
@@ -118,9 +111,8 @@ class PredictorEnv(Env):
             reward_val = 0
             done = False
 
-        observation = rl.helper.create_feature_dict(self.state)
         self.state = self.state.decompose(gates_to_decompose="unitary")
-        return observation, reward_val, done, {}
+        return rl.helper.create_feature_dict(self.state), reward_val, done, {}
 
     def render(self, mode="human"):
         print(self.state.draw())
@@ -136,7 +128,6 @@ class PredictorEnv(Env):
 
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
-        observation = rl.helper.create_feature_dict(self.state)
 
         self.native_gateset_name = None
         self.native_gates = None
@@ -145,7 +136,7 @@ class PredictorEnv(Env):
 
         self.valid_actions = self.get_platform_valid_actions_for_state()
 
-        return observation
+        return rl.helper.create_feature_dict(self.state)
 
     def action_masks(self):
         action_validity = [
