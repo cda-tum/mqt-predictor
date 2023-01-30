@@ -41,7 +41,7 @@ def mix(qc: QuantumCircuit, device: str, precision: int = 10):
     )
 
 
-def expected_fidelity(qc_or_path: str, device: str):
+def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
     if isinstance(qc_or_path, QuantumCircuit):
         qc = qc_or_path
     else:
@@ -198,4 +198,4 @@ def expected_fidelity(qc_or_path: str, device: str):
     else:
         print("Error: No suitable backend found!")
 
-    return np.round(res, 5)
+    return np.round(res, precision)
