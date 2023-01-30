@@ -6,7 +6,6 @@ from pathlib import Path
 
 import numpy as np
 import requests
-from packaging import version
 from pytket import architecture
 from pytket.circuit import OpType
 from pytket.passes import (
@@ -46,6 +45,7 @@ from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
 from mqt.predictor import rl, utils
+from packaging import version
 
 if sys.version_info < (3, 10, 0):
     import importlib_metadata as metadata
