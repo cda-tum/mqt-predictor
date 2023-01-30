@@ -9,7 +9,7 @@ from mqt.predictor.utils import (
 )
 
 
-def crit_depth(qc):
+def crit_depth(qc: QuantumCircuit, precision: int = 10):
     (
         program_communication,
         critical_depth,
@@ -17,10 +17,10 @@ def crit_depth(qc):
         parallelism,
         liveness,
     ) = calc_supermarq_features(qc)
-    return np.round(1 - critical_depth, 5)
+    return np.round(1 - critical_depth, precision)
 
 
-def parallelism(qc):
+def parallelism(qc: QuantumCircuit, precision: int = 10):
     (
         program_communication,
         critical_depth,
@@ -28,15 +28,17 @@ def parallelism(qc):
         parallelism,
         liveness,
     ) = calc_supermarq_features(qc)
-    return np.round(1 - parallelism, 5)
+    return np.round(1 - parallelism, precision)
 
 
-def gate_ratio(qc):
-    return np.round(1 - qc.num_nonlocal_gates() / qc.size(), 5)
+def gate_ratio(qc: QuantumCircuit, precision: int = 10):
+    return np.round(1 - qc.num_nonlocal_gates() / qc.size(), precision)
 
 
-def mix(qc, device):
-    return expected_fidelity(qc, device) * 0.5 + crit_depth(qc) * 0.5
+def mix(qc: QuantumCircuit, device: str, precision: int = 10):
+    return (
+        expected_fidelity(qc, device, precision) * 0.5 + crit_depth(qc, precision) * 0.5
+    )
 
 
 def expected_fidelity(qc_or_path: str, device: str):
