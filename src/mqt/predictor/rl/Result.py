@@ -61,7 +61,7 @@ class Result:
         return {
             self.used_setup + "_" + "time": self.time,
             self.used_setup + "_" + "fidelity": self.fidelity,
-            self.used_setup + "_" + "depth": self.depth,
+            self.used_setup + "_" + "critical_depth": self.depth,
             self.used_setup + "_" + "gate_ratio": self.gate_ratio,
             self.used_setup + "_" + "mix": self.mix,
         }

@@ -63,7 +63,7 @@ class Predictor:
     def evaluate_sample_circuit(self, file):
         self.logger.info("Evaluate file:" + str(file))
 
-        reward_functions = ["fidelity", "critical_depth", "gates", "mix"]
+        reward_functions = ["fidelity", "critical_depth", "gate_ratio", "mix"]
         results = []
         for rew in reward_functions:
             results.append(computeRewards(file, "RL", rew))
@@ -104,7 +104,7 @@ class Predictor:
             fmt="%s",
         )
 
-    Reward = Literal["fidelity", "critical_depth", "mix", "gates"]
+    Reward = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
 
     def train_all_models(
         self,

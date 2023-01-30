@@ -9,7 +9,7 @@ from mqt.predictor import rl
 
 @pytest.mark.parametrize(
     "opt_objective",
-    ["fidelity", "critical_depth", "gates", "mix"],
+    ["fidelity", "critical_depth", "gate_ratio", "mix"],
 )
 def test_qcompile(opt_objective):
     qc = get_benchmark("ghz", 1, 5)
@@ -30,12 +30,12 @@ def test_instantiate_models():
     predictor = rl.Predictor()
     predictor.train_all_models(
         timesteps=100,
-        reward_functions=["fidelity", "critical_depth", "mix", "gates"],
+        reward_functions=["fidelity", "critical_depth", "mix", "gate_ratio"],
         model_name="test",
     )
     path_fid = rl.helper.get_path_trained_model() / "test_fidelity.zip"
     path_dep = rl.helper.get_path_trained_model() / "test_critical_depth.zip"
-    path_gates = rl.helper.get_path_trained_model() / "test_gates.zip"
+    path_gates = rl.helper.get_path_trained_model() / "test_gate_ratio.zip"
     path_mix = rl.helper.get_path_trained_model() / "test_mix.zip"
 
     paths = [path_fid, path_dep, path_gates, path_mix]
