@@ -94,18 +94,7 @@ class PredictorEnv(Env):
             return rl.helper.create_feature_dict(self.state), 0, True, {}
 
         if action == self.action_terminate_index:
-            if self.reward_function == "fidelity":
-                reward_val = reward.expected_fidelity(self.state, self.device)
-            elif self.reward_function == "critical_depth":
-                reward_val = reward.crit_depth(self.state)
-            elif self.reward_function == "mix":
-                reward_val = reward.mix(self.state, self.device)
-            elif self.reward_function == "gates":
-                reward_val = reward.gate_ratio(self.state)
-            else:
-                raise ValueError(
-                    f"Reward function {self.reward_function} not supported."
-                )
+            reward_val = self.calculate_reward()
             done = True
         else:
             reward_val = 0
@@ -113,6 +102,19 @@ class PredictorEnv(Env):
 
         self.state = self.state.decompose(gates_to_decompose="unitary")
         return rl.helper.create_feature_dict(self.state), reward_val, done, {}
+
+    def calculate_reward(self):
+        if self.reward_function == "fidelity":
+            reward_val = reward.expected_fidelity(self.state, self.device)
+        elif self.reward_function == "critical_depth":
+            reward_val = reward.crit_depth(self.state)
+        elif self.reward_function == "mix":
+            reward_val = reward.mix(self.state, self.device)
+        elif self.reward_function == "gates":
+            reward_val = reward.gate_ratio(self.state)
+        else:
+            raise ValueError(f"Reward function {self.reward_function} not supported.")
+        return reward_val
 
     def render(self, mode="human"):
         print(self.state.draw())
