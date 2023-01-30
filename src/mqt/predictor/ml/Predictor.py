@@ -548,7 +548,7 @@ class Predictor:
                 self.logger.info("Reading from .qasm str")
                 qc = QuantumCircuit.from_qasm_str(qc)
             else:
-                raise RuntimeError("Error: Invalid qasm file path or string.")
+                raise RuntimeError("Error: Invalid 'qc' parameter value.")
 
         prediction_information = LUT.get(prediction)
         gate_set_name = prediction_information[0]
