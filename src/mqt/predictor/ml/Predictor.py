@@ -58,7 +58,7 @@ class Predictor:
         if target_path is None:
             target_path = str(ml.helper.get_path_training_circuits_compiled())
 
-        self.logger.info("compile_all_circuits_for_qc:" + filename)
+        self.logger.info("Processing: " + filename)
         qc = QuantumCircuit.from_qasm_file(Path(source_path) / filename)
 
         if not qc:
@@ -124,13 +124,14 @@ class Predictor:
                                         continue
 
             if all(x is False for x in results):
-                self.logger.debug("No compilation succeeded for this quantum circuit.")
+                self.logger.debug(
+                    "No compilation succeeded for this quantum circuit: " + filename
+                )
                 return False
             return True
 
         except Exception as e:
-            self.logger.error("Error in compile_all_circuits_for_qc", e)
-            return False
+            raise RuntimeError("Error during compilation: " + str(e)) from e
 
     def generate_compiled_circuits(
         self,
@@ -517,8 +518,9 @@ class Predictor:
             if path.is_file():
                 self.clf = load(str(path))
             else:
-                self.logger.error("Fail: Classifier is neither trained nor saved!")
-                return None
+                raise FileNotFoundError(
+                    "Fail: Classifier is neither trained nor saved!"
+                )
 
         feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)
         if not feature_dict:
@@ -537,8 +539,7 @@ class Predictor:
 
         LUT = ml.helper.get_index_to_comppath_LUT()
         if prediction < 0 or prediction >= len(LUT):
-            self.logger.error("Provided prediction is faulty.")
-            return None
+            raise RuntimeError("Error: Prediction index is out of range.")
         if not isinstance(qc, QuantumCircuit):
             if Path(qc).exists():
                 self.logger.info("Reading from .qasm path: " + qc)
@@ -547,10 +548,7 @@ class Predictor:
                 self.logger.info("Reading from .qasm str")
                 qc = QuantumCircuit.from_qasm_str(qc)
             else:
-                self.logger.error(
-                    "Neither a qasm file path nor a qasm str has been provided."
-                )
-                return False
+                raise RuntimeError("Error: Invalid qasm file path or string.")
 
         prediction_information = LUT.get(prediction)
         gate_set_name = prediction_information[0]
@@ -578,8 +576,7 @@ class Predictor:
                 ml.helper.get_index_to_comppath_LUT()[prediction],
             )
         else:
-            self.logger.error("Compiler not found.")
-            return False
+            raise RuntimeError("Error: Invalid compiler name.")
 
     def instantiate_supervised_ML_model(self, timeout):
         # Generate compiled circuits and save them as qasm files
