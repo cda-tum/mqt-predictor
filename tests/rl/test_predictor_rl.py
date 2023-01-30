@@ -29,7 +29,9 @@ def test_evaluate_sample_circuit():
 def test_instantiate_models():
     predictor = rl.Predictor()
     predictor.train_all_models(
-        timesteps=100, fid=True, dep=True, gates=True, mix=True, model_name="test"
+        timesteps=100,
+        reward_functions=["fidelity", "critical_depth", "mix", "gates"],
+        model_name="test",
     )
     path_fid = rl.helper.get_path_trained_model() / "test_fidelity.zip"
     path_dep = rl.helper.get_path_trained_model() / "test_critical_depth.zip"

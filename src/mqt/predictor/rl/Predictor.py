@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 from joblib import Parallel, delayed
@@ -202,26 +203,17 @@ class Predictor:
             fmt="%s",
         )
 
+    Reward = Literal["fidelity", "critical_depth", "mix", "gates"]
+
     def train_all_models(
         self,
         timesteps=1000,
-        verbose=2,
-        fid=False,
-        dep=False,
-        mix=False,
-        gates=False,
+        reward_functions=None,
         model_name="model",
+        verbose=2,
     ):
-        reward_functions = []  # ["fidelity", "depth", "two_qubit_count"]
-        if fid:
-            reward_functions.append("fidelity")
-        if dep:
-            reward_functions.append("critical_depth")
-        if mix:
-            reward_functions.append("mix")
-        if gates:
-            reward_functions.append("gates")
-
+        if reward_functions is None:
+            reward_functions = ["fidelity"]
         if "test" in model_name:
             n_steps = 100
             progress_bar = False
