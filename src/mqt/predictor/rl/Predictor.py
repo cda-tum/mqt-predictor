@@ -66,10 +66,10 @@ class Predictor:
         reward_functions = ["fidelity", "critical_depth", "gate_ratio", "mix"]
         results = []
         for rew in reward_functions:
-            results.append(computeRewards(file, "RL", rew))
+            results.append(self.computeRewards(file, "RL", rew))
 
-        results.append(computeRewards(file, "qiskit_o3"))
-        results.append(computeRewards(file, "tket"))
+        results.append(self.computeRewards(file, "qiskit_o3"))
+        results.append(self.computeRewards(file, "tket"))
 
         combined_res = {
             "benchmark": str(Path(file).stem).replace("_", " ").split(" ")[0],
@@ -130,69 +130,68 @@ class Predictor:
             model.learn(total_timesteps=timesteps, progress_bar=progress_bar)
             model.save(rl.helper.get_path_trained_model() / (model_name + "_" + rew))
 
+    def computeRewards(
+        self, benchmark: str, used_setup: str, reward_function: Reward = "fidelity"
+    ) -> rl.Result:
+        if used_setup == "RL":
+            model = rl.helper.load_model("model_" + reward_function)
+            env = rl.PredictorEnv(reward_function)
+            obs = env.reset(benchmark)
+            start_time = time.time()
+            done = False
+            while not done:
+                action_masks = get_action_masks(env)
+                action, _states = model.predict(obs, action_masks=action_masks)
+                action = int(action)
+                obs, reward_val, done, info = env.step(action)
 
-def computeRewards(
-    benchmark: str, used_setup: str, reward_function: str = "fidelity"
-) -> rl.Result:
-    if used_setup == "RL":
-        model = rl.helper.load_model("model_" + reward_function)
-        env = rl.PredictorEnv(reward_function)
-        obs = env.reset(benchmark)
-        start_time = time.time()
-        done = False
-        while not done:
-            action_masks = get_action_masks(env)
-            action, _states = model.predict(obs, action_masks=action_masks)
-            action = int(action)
-            obs, reward_val, done, info = env.step(action)
+            duration = time.time() - start_time
 
-        duration = time.time() - start_time
+            return rl.Result(
+                benchmark,
+                used_setup + "_" + reward_function,
+                duration,
+                env.state,
+                env.device,
+            )
 
-        return rl.Result(
-            benchmark,
-            used_setup + "_" + reward_function,
-            duration,
-            env.state,
-            env.device,
-        )
+        if used_setup == "qiskit_o3":
+            qc = QuantumCircuit.from_qasm_file(benchmark)
+            start_time = time.time()
+            transpiled_qc_qiskit = transpile(
+                qc,
+                basis_gates=rl.helper.get_ibm_native_gates(),
+                coupling_map=rl.helper.get_cmap_from_devicename("ibm_washington"),
+                optimization_level=3,
+                seed_transpiler=1,
+            )
+            duration = time.time() - start_time
 
-    if used_setup == "qiskit_o3":
-        qc = QuantumCircuit.from_qasm_file(benchmark)
-        start_time = time.time()
-        transpiled_qc_qiskit = transpile(
-            qc,
-            basis_gates=rl.helper.get_ibm_native_gates(),
-            coupling_map=rl.helper.get_cmap_from_devicename("ibm_washington"),
-            optimization_level=3,
-            seed_transpiler=1,
-        )
-        duration = time.time() - start_time
+            return rl.Result(
+                benchmark, used_setup, duration, transpiled_qc_qiskit, "ibm_washington"
+            )
 
-        return rl.Result(
-            benchmark, used_setup, duration, transpiled_qc_qiskit, "ibm_washington"
-        )
+        if used_setup == "tket":
+            qc = QuantumCircuit.from_qasm_file(benchmark)
+            tket_qc = qiskit_to_tk(qc)
+            arch = architecture.Architecture(
+                rl.helper.get_cmap_from_devicename("ibm_washington")
+            )
+            ibm_rebase = auto_rebase_pass(
+                {OpType.Rz, OpType.SX, OpType.X, OpType.CX, OpType.Measure}
+            )
 
-    if used_setup == "tket":
-        qc = QuantumCircuit.from_qasm_file(benchmark)
-        tket_qc = qiskit_to_tk(qc)
-        arch = architecture.Architecture(
-            rl.helper.get_cmap_from_devicename("ibm_washington")
-        )
-        ibm_rebase = auto_rebase_pass(
-            {OpType.Rz, OpType.SX, OpType.X, OpType.CX, OpType.Measure}
-        )
+            start_time = time.time()
+            ibm_rebase.apply(tket_qc)
+            FullPeepholeOptimise(target_2qb_gate=OpType.TK2).apply(tket_qc)
+            PlacementPass(GraphPlacement(arch)).apply(tket_qc)
+            RoutingPass(arch).apply(tket_qc)
+            ibm_rebase.apply(tket_qc)
+            duration = time.time() - start_time
+            transpiled_qc_tket = tk_to_qiskit(tket_qc)
 
-        start_time = time.time()
-        ibm_rebase.apply(tket_qc)
-        FullPeepholeOptimise(target_2qb_gate=OpType.TK2).apply(tket_qc)
-        PlacementPass(GraphPlacement(arch)).apply(tket_qc)
-        RoutingPass(arch).apply(tket_qc)
-        ibm_rebase.apply(tket_qc)
-        duration = time.time() - start_time
-        transpiled_qc_tket = tk_to_qiskit(tket_qc)
+            return rl.Result(
+                benchmark, used_setup, duration, transpiled_qc_tket, "ibm_washington"
+            )
 
-        return rl.Result(
-            benchmark, used_setup, duration, transpiled_qc_tket, "ibm_washington"
-        )
-
-    raise ValueError("Unknown setup. Use either 'RL', 'qiskit_o3' or 'tket'.")
+        raise ValueError("Unknown setup. Use either 'RL', 'qiskit_o3' or 'tket'.")
