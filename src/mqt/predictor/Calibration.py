@@ -21,7 +21,7 @@ class Calibration:
             self.ionq_calibration = parse_ionq_calibration_config()
 
         except Exception as e:
-            raise RuntimeError("Error in Calibration initialization): " + str(e)) from e
+            raise RuntimeError("Error in Calibration initialization: " + str(e)) from e
 
 
 def get_mean_IBM_washington_cx_error():
