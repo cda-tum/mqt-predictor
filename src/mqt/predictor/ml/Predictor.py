@@ -518,9 +518,7 @@ class Predictor:
             if path.is_file():
                 self.clf = load(str(path))
             else:
-                raise FileNotFoundError(
-                    "Classifier is neither trained nor saved."
-                )
+                raise FileNotFoundError("Classifier is neither trained nor saved.")
 
         feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)
         if not feature_dict:
