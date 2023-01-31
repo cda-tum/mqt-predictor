@@ -519,7 +519,7 @@ class Predictor:
                 self.clf = load(str(path))
             else:
                 raise FileNotFoundError(
-                    "Fail: Classifier is neither trained nor saved!"
+                    "Classifier is neither trained nor saved."
                 )
 
         feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)
@@ -539,7 +539,7 @@ class Predictor:
 
         LUT = ml.helper.get_index_to_comppath_LUT()
         if prediction < 0 or prediction >= len(LUT):
-            raise RuntimeError("Error: Prediction index is out of range.")
+            raise IndexError("Prediction index is out of range.")
         if not isinstance(qc, QuantumCircuit):
             if Path(qc).exists():
                 self.logger.info("Reading from .qasm path: " + qc)
@@ -548,7 +548,7 @@ class Predictor:
                 self.logger.info("Reading from .qasm str")
                 qc = QuantumCircuit.from_qasm_str(qc)
             else:
-                raise RuntimeError("Invalid 'qc' parameter value.")
+                raise ValueError("Invalid 'qc' parameter value.")
 
         prediction_information = LUT.get(prediction)
         gate_set_name = prediction_information[0]
@@ -576,7 +576,7 @@ class Predictor:
                 ml.helper.get_index_to_comppath_LUT()[prediction],
             )
         else:
-            raise RuntimeError("Error: Invalid compiler name.")
+            raise ValueError("Invalid compiler name.")
 
     def instantiate_supervised_ML_model(self, timeout):
         # Generate compiled circuits and save them as qasm files
