@@ -96,7 +96,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                             + instruction
                             + ", "
                             + qargs
-                        ) from e
+                        ) from None
                 else:
                     second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     try:
@@ -120,7 +120,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                             + instruction
                             + ", "
                             + qargs
-                        ) from e
+                        ) from None
 
                 res *= 1 - float(specific_error)
     elif "oqc_lucy" in device:
