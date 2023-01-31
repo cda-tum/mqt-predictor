@@ -191,8 +191,8 @@ class PredictorEnv(Env):
                         + ", "
                         + self.state.name
                         + ", "
-                        + e
-                    ) from e
+                        + str(e)
+                    ) from None
             elif action["origin"] == "tket":
                 try:
                     tket_qc = qiskit_to_tk(self.state)
@@ -207,12 +207,12 @@ class PredictorEnv(Env):
                         + ", "
                         + self.state.name
                         + ", "
-                        + e,
-                    ) from e
+                        + str(e),
+                    ) from None
             else:
                 raise ValueError(f"Origin {action['origin']} not supported.")
         else:
-            raise RuntimeError(f"Action {action_index} not supported.")
+            raise ValueError(f"Action {action_index} not supported.")
 
         return altered_qc
 
