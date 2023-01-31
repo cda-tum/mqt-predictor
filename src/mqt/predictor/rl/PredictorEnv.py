@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import numpy as np
 from gym import Env
-from gym.spaces import Box, Discrete
+from gym.spaces import Box, Dict, Discrete
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
@@ -12,14 +13,13 @@ from qiskit.transpiler.passes import CheckMap, GatesInBasis
 
 from mqt.predictor import reward, rl
 
+logger = logging.getLogger("mqtpredictor")
 
-class PhaseOrdererEnv(Env):
-    def __init__(self, reward_function, qc_filepath: Path | str = None):
-        if qc_filepath:
-            self.state = QuantumCircuit.from_qasm_file(str(qc_filepath))
-        else:
-            self.state = rl.helper.get_random_state_sample()
 
+class PredictorEnv(Env):
+    def __init__(self, reward_function="fidelity"):
+        logger.info("Init env: " + reward_function)
+        self.state = None
         self.action_set = {}
         self.actions_platform = []
         self.actions_synthesis_indices = []
@@ -63,9 +63,17 @@ class PhaseOrdererEnv(Env):
         self.reward_function = reward_function
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
-        self.observation_space = Box(low=0, high=1000, shape=(7,), dtype=np.uint8)
-        self.valid_actions = self.get_platform_valid_actions_for_state()
 
+        spaces = {
+            "num_qubits": Discrete(128),
+            "depth": Discrete(100000),
+            "program_communication": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            "critical_depth": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            "entanglement_ratio": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            "parallelism": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            "liveness": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+        }
+        self.observation_space = Dict(spaces)
         self.native_gateset_name = None
         self.native_gates = None
         self.device = None
@@ -74,9 +82,8 @@ class PhaseOrdererEnv(Env):
     def step(self, action):
         altered_qc = self.apply_action(action)
         if not altered_qc:
-            observation = rl.helper.create_feature_dict(self.state).values()
             return (
-                np.array(list(observation), dtype=np.uint8),
+                rl.helper.create_feature_dict(self.state),
                 0,
                 True,
                 {},
@@ -87,33 +94,30 @@ class PhaseOrdererEnv(Env):
 
         self.valid_actions = self.determine_valid_actions_for_state()
         if len(self.valid_actions) == 0:
-            observation = rl.helper.create_feature_dict(self.state).values()
-            return (
-                np.array(list(observation), dtype=np.uint8),
-                0,
-                True,
-                {},
-            )
+            return rl.helper.create_feature_dict(self.state), 0, True, {}
 
         if action == self.action_terminate_index:
-            if self.reward_function == "fidelity":
-                reward_val = reward.expected_fidelity(self.state, self.device)
-            elif self.reward_function == "critical_depth":
-                reward_val = reward.crit_depth(self.state)
-            elif self.reward_function == "parallelism":
-                reward_val = reward.parallelism(self.state)
-            else:
-                raise ValueError(
-                    f"Reward function {self.reward_function} not supported."
-                )
+            reward_val = self.calculate_reward()
             done = True
         else:
             reward_val = 0
             done = False
 
-        observation = rl.helper.create_feature_dict(self.state).values()
         self.state = self.state.decompose(gates_to_decompose="unitary")
-        return np.array(list(observation), dtype=np.uint8), reward_val, done, {}
+        return rl.helper.create_feature_dict(self.state), reward_val, done, {}
+
+    def calculate_reward(self):
+        if self.reward_function == "fidelity":
+            reward_val = reward.expected_fidelity(self.state, self.device)
+        elif self.reward_function == "critical_depth":
+            reward_val = reward.crit_depth(self.state)
+        elif self.reward_function == "mix":
+            reward_val = reward.mix(self.state, self.device)
+        elif self.reward_function == "gate_ratio":
+            reward_val = reward.gate_ratio(self.state)
+        else:
+            raise ValueError(f"Reward function {self.reward_function} not supported.")
+        return reward_val
 
     def render(self, mode="human"):
         print(self.state.draw())
@@ -125,11 +129,10 @@ class PhaseOrdererEnv(Env):
             if qc:
                 self.state = QuantumCircuit.from_qasm_file(str(qc))
             else:
-                self.state = rl.helper.get_random_state_sample()
+                self.state = rl.helper.get_state_sample()
 
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
-        observation = rl.helper.create_feature_dict(self.state).values()
 
         self.native_gateset_name = None
         self.native_gates = None
@@ -138,7 +141,7 @@ class PhaseOrdererEnv(Env):
 
         self.valid_actions = self.get_platform_valid_actions_for_state()
 
-        return np.array(list(observation), dtype=np.uint8)
+        return rl.helper.create_feature_dict(self.state)
 
     def action_masks(self):
         action_validity = [
@@ -181,9 +184,15 @@ class PhaseOrdererEnv(Env):
                 try:
                     altered_qc = pm.run(self.state)
                 except Exception as e:
-                    print("Error in executing Qiskit transpile pass: ", action_index)
-                    print(e)
-                    return False
+                    raise RuntimeError(
+                        "Error in executing Qiskit transpile pass: "
+                        + ", "
+                        + action["name"]
+                        + ", "
+                        + self.state.name
+                        + ", "
+                        + str(e)
+                    ) from None
             elif action["origin"] == "tket":
                 try:
                     tket_qc = qiskit_to_tk(self.state)
@@ -191,14 +200,19 @@ class PhaseOrdererEnv(Env):
                         elem.apply(tket_qc)
                     altered_qc = tk_to_qiskit(tket_qc)
                 except Exception as e:
-                    print("Error in executing TKET transpile pass: ", action_index)
-                    print(e)
-                    return False
+                    raise RuntimeError(
+                        "Error in executing TKET transpile pass: "
+                        + ", "
+                        + action["name"]
+                        + ", "
+                        + self.state.name
+                        + ", "
+                        + str(e),
+                    ) from None
             else:
                 raise ValueError(f"Origin {action['origin']} not supported.")
         else:
-            print("ERROR: Action not found. Original QC returned.")
-            altered_qc = self.state
+            raise ValueError(f"Action {action_index} not supported.")
 
         return altered_qc
 

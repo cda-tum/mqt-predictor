@@ -1,8 +1,11 @@
+import logging
 import signal
 
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.transpiler.passes import RemoveBarriers
+
+logger = logging.getLogger("mqtpredictor")
 
 
 def timeout_watcher(func, args, timeout):
@@ -21,10 +24,16 @@ def timeout_watcher(func, args, timeout):
     try:
         res = func(*args)
     except TimeoutException:
-        print("Calculation/Generation exceeded timeout limit for ", func, args[1:])
+        logger.debug(
+            "Calculation/Generation exceeded timeout limit for "
+            + ", "
+            + func
+            + ", "
+            + args[1:]
+        )
         return False
     except Exception as e:
-        print("Something else went wrong: ", e)
+        logger.error("Something else went wrong: " + ", " + e)
         return False
     else:
         # Reset the alarm

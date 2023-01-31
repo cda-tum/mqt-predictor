@@ -1,3 +1,6 @@
+import logging
+
+import numpy as np
 from qiskit import QuantumCircuit
 
 from mqt.predictor import Calibration
@@ -7,8 +10,10 @@ from mqt.predictor.utils import (
     get_rigetti_qubit_dict,
 )
 
+logger = logging.getLogger("mqtpredictor")
 
-def crit_depth(qc):
+
+def crit_depth(qc: QuantumCircuit, precision: int = 10):
     (
         program_communication,
         critical_depth,
@@ -16,10 +21,10 @@ def crit_depth(qc):
         parallelism,
         liveness,
     ) = calc_supermarq_features(qc)
-    return 1 - critical_depth
+    return np.round(1 - critical_depth, precision)
 
 
-def parallelism(qc):
+def parallelism(qc: QuantumCircuit, precision: int = 10):
     (
         program_communication,
         critical_depth,
@@ -27,18 +32,30 @@ def parallelism(qc):
         parallelism,
         liveness,
     ) = calc_supermarq_features(qc)
-    return critical_depth
+    return np.round(1 - parallelism, precision)
 
 
-def expected_fidelity(qc_or_path: str, device: str):
+def gate_ratio(qc: QuantumCircuit, precision: int = 10):
+    return np.round(1 - qc.num_nonlocal_gates() / qc.size(), precision)
+
+
+def mix(qc: QuantumCircuit, device: str, precision: int = 10):
+    return (
+        expected_fidelity(qc, device, precision) * 0.5 + crit_depth(qc, precision) * 0.5
+    )
+
+
+def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
     if isinstance(qc_or_path, QuantumCircuit):
         qc = qc_or_path
     else:
         try:
             qc = QuantumCircuit.from_qasm_file(qc_or_path)
-        except Exception as e:
-            print("Fail in reward_expected_fidelity reading a the quantum circuit: ", e)
-            return 0
+        except Exception:
+            raise RuntimeError(
+                "Could not read QuantumCircuit from: " + qc_or_path
+            ) from None
+
     res = 1
 
     calibration = Calibration.Calibration()
@@ -67,14 +84,19 @@ def expected_fidelity(qc_or_path: str, device: str):
                                 gate_type, [first_qubit]
                             )
                     except Exception as e:
-                        print(instruction, qargs)
-                        print(
-                            "Error in IBM backend.gate_error(): ",
-                            e,
-                            device,
-                            first_qubit,
-                        )
-                        return 0
+                        raise RuntimeError(
+                            "Error in IBM backend.gate_error(): "
+                            + ", "
+                            + str(e)
+                            + ", "
+                            + device
+                            + ", "
+                            + first_qubit
+                            + ", "
+                            + instruction
+                            + ", "
+                            + qargs
+                        ) from None
                 else:
                     second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     try:
@@ -84,15 +106,21 @@ def expected_fidelity(qc_or_path: str, device: str):
                         if specific_error == 1:
                             specific_error = calibration.ibm_washington_cx_mean_error
                     except Exception as e:
-                        print(instruction, qargs)
-                        print(
-                            "Error in IBM backend.gate_error(): ",
-                            e,
-                            device,
-                            first_qubit,
-                            second_qubit,
-                        )
-                        return 0
+                        raise RuntimeError(
+                            "Error in IBM backend.gate_error(): "
+                            + ", "
+                            + str(e)
+                            + ", "
+                            + device
+                            + ", "
+                            + first_qubit
+                            + ", "
+                            + second_qubit
+                            + ", "
+                            + instruction
+                            + ", "
+                            + qargs
+                        ) from None
 
                 res *= 1 - float(specific_error)
     elif "oqc_lucy" in device:
@@ -185,6 +213,6 @@ def expected_fidelity(qc_or_path: str, device: str):
                 res *= specific_fidelity
 
     else:
-        print("Error: No suitable backend found!")
+        raise ValueError("Device not supported")
 
-    return res
+    return np.round(res, precision)
