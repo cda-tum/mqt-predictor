@@ -102,7 +102,7 @@ class Predictor:
     def train_all_models(
         self,
         timesteps: int = 1000,
-        reward_functions: Reward = None,
+        reward_functions: [Reward] = None,
         model_name: str = "model",
         verbose: int = 2,
     ):
