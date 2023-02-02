@@ -15,18 +15,18 @@ from mqt.predictor import ml, reward, utils
 
 plt.rcParams["font.family"] = "Times New Roman"
 
+logger = logging.getLogger("mqtpredictor")
+
 
 class Predictor:
     def __init__(self, verbose=0):
-        self.verbose = verbose
-
-        self.logger = logging.getLogger("mqtpredictor")
         if verbose == 1:
-            self.logger.setLevel(logging.INFO)
+            lvl = logging.INFO
         elif verbose == 2:
-            self.logger.setLevel(logging.DEBUG)
+            lvl = logging.DEBUG
         else:
-            self.logger.setLevel(logging.WARNING)
+            lvl = logging.WARNING
+        logger.setLevel(lvl)
 
         self.clf = None
 
@@ -39,7 +39,9 @@ class Predictor:
         source_path: str = None,
         target_path: str = None,
         timeout: int = 10,
+        logger_level=logging.INFO,
     ):
+        logger.setLevel(logger_level)
         """Handles the creation of one training sample.
 
         Keyword arguments:
@@ -58,7 +60,7 @@ class Predictor:
         if target_path is None:
             target_path = str(ml.helper.get_path_training_circuits_compiled())
 
-        self.logger.info("Processing: " + filename)
+        logger.info("Processing: " + filename)
         qc = QuantumCircuit.from_qasm_file(Path(source_path) / filename)
 
         if not qc:
@@ -124,7 +126,7 @@ class Predictor:
                                         continue
 
             if all(x is False for x in results):
-                self.logger.debug(
+                logger.debug(
                     "No compilation succeeded for this quantum circuit: " + filename
                 )
                 return False
@@ -147,6 +149,7 @@ class Predictor:
         timeout -- timeout in seconds
 
         """
+
         if source_path is None:
             source_path = str(ml.helper.get_path_training_circuits())
 
@@ -172,7 +175,7 @@ class Predictor:
 
         Parallel(n_jobs=-1, verbose=100)(
             delayed(self.compile_all_circuits_for_qc)(
-                filename, source_path, target_path, timeout
+                filename, source_path, target_path, timeout, logger.level
             )
             for filename in source_circuits_list
         )
@@ -208,7 +211,10 @@ class Predictor:
 
         results = Parallel(n_jobs=-1, verbose=100)(
             delayed(self.generate_training_sample)(
-                str(filename.name), path_uncompiled_circuits, path_compiled_circuits
+                str(filename.name),
+                path_uncompiled_circuits,
+                path_compiled_circuits,
+                logger.level,
             )
             for filename in Path(path_uncompiled_circuits).iterdir()
         )
@@ -228,6 +234,7 @@ class Predictor:
         file: str,
         path_uncompiled_circuit: str = None,
         path_compiled_circuits: str = None,
+        logger_level: int = 30,
     ):
         """Handles to create training data from a single generated training sample
 
@@ -241,7 +248,7 @@ class Predictor:
         circuit_name -- names of the training sample circuit
         scores -- evaluation scores for all compilation options
         """
-
+        logger.setLevel(logger_level)
         if path_uncompiled_circuit is None:
             path_uncompiled_circuit = str(ml.helper.get_path_training_circuits())
 
@@ -254,7 +261,7 @@ class Predictor:
             return False
 
         LUT = ml.helper.get_index_to_comppath_LUT()
-        self.logger.debug("Checking " + file)
+        logger.debug("Checking " + file)
         scores = []
         for _ in range(len(LUT)):
             scores.append([])
@@ -321,10 +328,10 @@ class Predictor:
             res, _ = self.calc_performance_measures(scores_filtered, y_pred, y_test)
             self.plot_eval_histogram(res, filename="RandomForestClassifier")
 
-            self.logger.info("Best Accuracy: " + clf.best_score_)
+            logger.info("Best Accuracy: " + clf.best_score_)
             top3 = (res.count(1) + res.count(2) + res.count(3)) / len(res)
-            self.logger.info("Top 3: " + top3)
-            self.logger.info(
+            logger.info("Top 3: " + top3)
+            logger.info(
                 "Feature Importance: " + clf.best_estimator_.feature_importances_
             )
 
@@ -334,7 +341,7 @@ class Predictor:
 
         self.set_classifier(clf.best_estimator_)
         ml.helper.save_classifier(clf.best_estimator_)
-        self.logger.info("Random Forest classifier is trained and saved.")
+        logger.info("Random Forest classifier is trained and saved.")
 
         return self.clf is not None
 
@@ -540,10 +547,10 @@ class Predictor:
             raise IndexError("Prediction index is out of range.")
         if not isinstance(qc, QuantumCircuit):
             if Path(qc).exists():
-                self.logger.info("Reading from .qasm path: " + qc)
+                logger.info("Reading from .qasm path: " + qc)
                 qc = QuantumCircuit.from_qasm_file(qc)
             elif QuantumCircuit.from_qasm_str(qc):
-                self.logger.info("Reading from .qasm str")
+                logger.info("Reading from .qasm str")
                 qc = QuantumCircuit.from_qasm_str(qc)
             else:
                 raise ValueError("Invalid 'qc' parameter value.")
