@@ -2,9 +2,8 @@ from pathlib import Path
 
 import pytest
 from mqt.bench import get_benchmark
-from qiskit import QuantumCircuit
-
 from mqt.predictor import rl
+from qiskit import QuantumCircuit
 
 
 @pytest.mark.parametrize(
@@ -17,13 +16,13 @@ def test_qcompile(opt_objective):
     assert isinstance(qc_compiled, QuantumCircuit)
     assert compilation_information is not None
 
-
+NUM_EVALUATION_FEATURES  = 32
 def test_evaluate_sample_circuit():
     qc = get_benchmark("ghz", 1, 5)
     qc.qasm(filename="test_5.qasm")
     predictor = rl.Predictor()
     res = predictor.evaluate_sample_circuit("test_5.qasm")
-    assert len(res) == 32
+    assert len(res) == NUM_EVALUATION_FEATURES
 
 
 def test_instantiate_models():

@@ -1,14 +1,13 @@
 import logging
 
 import numpy as np
-from qiskit import QuantumCircuit
-
 from mqt.predictor import Calibration
 from mqt.predictor.utils import (
     calc_qubit_index,
     calc_supermarq_features,
     get_rigetti_qubit_dict,
 )
+from qiskit import QuantumCircuit
 
 logger = logging.getLogger("mqtpredictor")
 
@@ -56,7 +55,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                 "Could not read QuantumCircuit from: " + qc_or_path
             ) from None
 
-    res = 1
+    res = 1.0
 
     calibration = Calibration.Calibration()
 
@@ -86,7 +85,6 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                     except Exception as e:
                         raise RuntimeError(
                             "Error in IBM backend.gate_error(): "
-                            + ", "
                             + str(e)
                             + ", "
                             + device
@@ -108,7 +106,6 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                     except Exception as e:
                         raise RuntimeError(
                             "Error in IBM backend.gate_error(): "
-                            + ", "
                             + str(e)
                             + ", "
                             + device
@@ -139,7 +136,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                     specific_fidelity = calibration.oqc_lucy_calibration[
                         "fid_1Q_readout"
                     ][str(first_qubit)]
-                elif len(qargs) == 2:
+                elif len(qargs) == 2:# noqa: PLR2004
                     second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     tmp = str(first_qubit) + "-" + str(second_qubit)
                     if calibration.oqc_lucy_calibration["fid_2Q"].get(tmp) is None:
@@ -161,7 +158,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
 
                 if len(qargs) == 1:
                     specific_fidelity = calibration.ionq_calibration["avg_1Q"]
-                elif len(qargs) == 2:
+                elif len(qargs) == 2:# noqa: PLR2004
                     specific_fidelity = calibration.ionq_calibration["avg_2Q"]
                 res *= specific_fidelity
     elif "rigetti_aspen_m2" in device:
@@ -213,6 +210,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                 res *= specific_fidelity
 
     else:
-        raise ValueError("Device not supported")
+        error_msg = "Device not supported"
+        raise ValueError(error_msg)
 
     return np.round(res, precision)

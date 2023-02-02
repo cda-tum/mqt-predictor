@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 import numpy as np
 from gym import Env
 from gym.spaces import Box, Dict, Discrete
+from mqt.predictor import reward, rl
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
-
-from mqt.predictor import reward, rl
 
 logger = logging.getLogger("mqtpredictor")
 
@@ -88,9 +90,9 @@ class PredictorEnv(Env):
                 True,
                 {},
             )
-        else:
-            self.state = altered_qc
-            self.num_steps += 1
+
+        self.state = altered_qc
+        self.num_steps += 1
 
         self.valid_actions = self.determine_valid_actions_for_state()
         if len(self.valid_actions) == 0:
@@ -116,10 +118,11 @@ class PredictorEnv(Env):
         elif self.reward_function == "gate_ratio":
             reward_val = reward.gate_ratio(self.state)
         else:
-            raise ValueError(f"Reward function {self.reward_function} not supported.")
+            error_msg =f"Reward function {self.reward_function} not supported."
+            raise ValueError(error_msg)
         return reward_val
 
-    def render(self, mode="human"):
+    def render(self):
         print(self.state.draw())
 
     def reset(self, qc: Path | str | QuantumCircuit = None):
@@ -144,10 +147,9 @@ class PredictorEnv(Env):
         return rl.helper.create_feature_dict(self.state)
 
     def action_masks(self):
-        action_validity = [
-            action in self.valid_actions for action in self.action_set.keys()
+        return [
+            action in self.valid_actions for action in self.action_set
         ]
-        return action_validity
 
     def apply_action(self, action_index):
         if action_index in self.actions_platform:
@@ -186,7 +188,6 @@ class PredictorEnv(Env):
                 except Exception as e:
                     raise RuntimeError(
                         "Error in executing Qiskit transpile pass: "
-                        + ", "
                         + action["name"]
                         + ", "
                         + self.state.name
@@ -202,7 +203,6 @@ class PredictorEnv(Env):
                 except Exception as e:
                     raise RuntimeError(
                         "Error in executing TKET transpile pass: "
-                        + ", "
                         + action["name"]
                         + ", "
                         + self.state.name
@@ -210,9 +210,11 @@ class PredictorEnv(Env):
                         + str(e),
                     ) from None
             else:
-                raise ValueError(f"Origin {action['origin']} not supported.")
+                error_msg  =f"Origin {action['origin']} not supported."
+                raise ValueError(error_msg)
         else:
-            raise ValueError(f"Action {action_index} not supported.")
+            error_msg = f"Action {action_index} not supported."
+            raise ValueError(error_msg)
 
         return altered_qc
 
@@ -237,7 +239,7 @@ class PredictorEnv(Env):
         mapped = check_mapping.property_set["is_swap_mapped"]
 
         if only_nat_gates and mapped:
-            return [self.action_terminate_index] + self.actions_opt_indices
+            return [self.action_terminate_index, *self.actions_opt_indices]
 
             # No layout applied yet
         if only_nat_gates and not mapped:
@@ -245,16 +247,18 @@ class PredictorEnv(Env):
                 return self.actions_routing_indices + self.actions_opt_indices
             return self.actions_layout_indices + self.actions_opt_indices
 
+        return []
+
     def get_device_action_indices_for_nat_gates(self):
         nat_gate_index = None
-        for key in self.action_set.keys():
+        for key in self.action_set:
             if self.action_set.get(key)["name"] == self.native_gateset_name:
                 nat_gate_index = key
                 break
         potential_devices_names = self.action_set.get(nat_gate_index)["devices"]
         potential_devices_indices = []
         for dev in potential_devices_names:
-            for key in self.action_set.keys():
+            for key in self.action_set:
                 if (
                     self.action_set.get(key)["name"] == dev
                     and self.state.num_qubits <= self.action_set.get(key)["max_qubits"]

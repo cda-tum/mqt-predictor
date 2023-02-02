@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import requests
+from mqt.predictor import rl, utils
 from packaging import version
 from pytket import architecture
 from pytket.circuit import OpType
@@ -44,8 +45,6 @@ from qiskit.transpiler.passes import (
 )
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
-
-from mqt.predictor import rl, utils
 
 if sys.version_info < (3, 10, 0):
     import importlib_metadata as metadata
@@ -225,7 +224,7 @@ def get_actions_platform_selection():
     ]
 
 
-def get_actions_synthesis():
+def get_actions_synthesis() -> list[dict]:
     return [
         {
             "name": "BasisTranslator",
@@ -285,7 +284,7 @@ def get_actions_devices():
     ]
 
 
-def get_state_sample():
+def get_state_sample() -> QuantumCircuit:
     file_list = list(get_path_training_circuits().glob("*.qasm"))
 
     path_zip = get_path_training_circuits() / "mqtbench_sample_circuits.zip"
@@ -310,24 +309,21 @@ def get_state_sample():
     return qc
 
 
-def get_ibm_native_gates():
-    ibm_gates = ["rz", "sx", "x", "cx", "measure"]
-    return ibm_gates
+def get_ibm_native_gates() -> list[str]:
+    return ["rz", "sx", "x", "cx", "measure"]
 
 
-def get_rigetti_native_gates():
-    rigetti_gates = ["rx", "rz", "cz", "measure"]
-    return rigetti_gates
+
+def get_rigetti_native_gates() -> list[str]:
+    return ["rx", "rz", "cz", "measure"]
 
 
-def get_ionq_native_gates():
-    ionq_gates = ["rxx", "rz", "ry", "rx", "measure"]
-    return ionq_gates
+def get_ionq_native_gates() -> list[str]:
+    return ["rxx", "rz", "ry", "rx", "measure"]
 
 
-def get_oqc_native_gates():
-    oqc_gates = ["rz", "sx", "x", "ecr", "measure"]
-    return oqc_gates
+def get_oqc_native_gates() -> list[str]:
+    return ["rz", "sx", "x", "ecr", "measure"]
 
 
 def get_rigetti_aspen_m2_map():
@@ -337,7 +333,7 @@ def get_rigetti_aspen_m2_map():
         for i in range(0, 7):
             c_map_rigetti.append([i + j * 8, i + 1 + j * 8])
 
-            if i == 6:
+            if i == 6: # noqa: PLR2004
                 c_map_rigetti.append([0 + j * 8, 7 + j * 8])
 
         if j != 0:
@@ -349,7 +345,7 @@ def get_rigetti_aspen_m2_map():
         for i in range(0, 7):
             c_map_rigetti.append([i + m, i + 1 + m])
 
-            if i == 6:
+            if i == 6: # noqa: PLR2004
                 c_map_rigetti.append([0 + m, 7 + m])
 
         if j != 0:
@@ -361,9 +357,8 @@ def get_rigetti_aspen_m2_map():
         c_map_rigetti.append([n * 8 + 4, n * 8 + 7 + 5 * 8])
 
     inverted = [[item[1], item[0]] for item in c_map_rigetti]
-    c_map_rigetti = c_map_rigetti + inverted
 
-    return c_map_rigetti
+    return c_map_rigetti + inverted
 
 
 def get_ionq11_c_map():
@@ -380,27 +375,26 @@ def get_cmap_oqc_lucy():
     # source: https://github.com/aws/amazon-braket-examples/blob/main/examples/braket_features/Verbatim_Compilation.ipynb
 
     # Connections are NOT bidirectional, this is not an accident
-    c_map_oqc_lucy = [[0, 1], [0, 7], [1, 2], [2, 3], [7, 6], [6, 5], [4, 3], [4, 5]]
+    return [[0, 1], [0, 7], [1, 2], [2, 3], [7, 6], [6, 5], [4, 3], [4, 5]]
 
-    return c_map_oqc_lucy
 
 
 def get_cmap_from_devicename(device: str):
     if device == "ibm_washington":
         return FakeWashington().configuration().coupling_map
-    elif device == "ibm_montreal":
+    if device == "ibm_montreal":
         return FakeMontreal().configuration().coupling_map
-    elif device == "rigetti_aspen_m2":
+    if device == "rigetti_aspen_m2":
         return get_rigetti_aspen_m2_map()
-    elif device == "oqc_lucy":
+    if device == "oqc_lucy":
         return get_cmap_oqc_lucy()
-    elif device == "ionq11":
+    if device == "ionq11":
         return get_ionq11_c_map()
-    else:
-        raise ValueError("Unknown device name")
+    error_msg = "Unknown device name"
+    raise ValueError(error_msg)
 
 
-def create_feature_dict(qc):
+def create_feature_dict(qc) -> dict:
     feature_dict = {
         "num_qubits": np.array([qc.num_qubits], dtype=int),
         "depth": np.array([qc.depth()], dtype=int),
@@ -427,19 +421,19 @@ def create_feature_dict(qc):
     return feature_dict
 
 
-def get_path_training_data():
+def get_path_training_data() -> Path:
     return resources.files("mqt.predictor") / "rl" / "training_data"
 
 
-def get_path_trained_model():
+def get_path_trained_model() -> Path:
     return get_path_training_data() / "trained_model"
 
 
-def get_path_training_circuits():
+def get_path_training_circuits() -> Path:
     return get_path_training_data() / "training_circuits"
 
 
-def load_model(model_name: str):
+def load_model(model_name: str) -> MaskablePPO:
     path = get_path_trained_model()
 
     if Path(path / (model_name + ".zip")).exists():
@@ -449,8 +443,9 @@ def load_model(model_name: str):
     try:
         mqtpredictor_module_version = metadata.version("mqt.predictor")
     except ModuleNotFoundError:
+        error_msg = "Could not retrieve version of mqt.predictor. Please run 'pip install . or pip install mqt.predictor'."
         raise RuntimeError(
-            "Could not retrieve version of mqt.predictor. Please run 'pip install . or pip install mqt.predictor'."
+            error_msg
         ) from None
 
     version_found = False
@@ -468,9 +463,9 @@ def load_model(model_name: str):
             )
             response = requests.get(url)
             if not response:
+                error_msg = "Suitable trained models cannot be downloaded since the GitHub API failed. One reasons could be that the limit of 60 API calls per hour and IP address is exceeded."
                 raise RuntimeError(
-                    "Suitable trained models cannot be downloaded since the GitHub API failed. "
-                    "One reasons could be that the limit of 60 API calls per hour and IP address is exceeded."
+                    error_msg
                 )
 
             response_json = response.json()
@@ -493,21 +488,22 @@ def load_model(model_name: str):
             break
 
     if not version_found:
+        error_msg = "No suitable model found on GitHub. Please update your mqt.predictort package using 'pip install -U mqt.predictor'."
         raise RuntimeError(
-            "No suitable model found on GitHub. Please update your mqt.predictort package using 'pip install -U mqt.predictor'."
+            error_msg
         ) from None
 
     return MaskablePPO.load(path / model_name)
 
 
-def handle_downloading_model(download_url: str, model_name: str):
+def handle_downloading_model(download_url: str, model_name: str) -> None:
     logger.info("Start downloading model...")
 
     r = requests.get(download_url)
     total_length = int(r.headers.get("content-length"))
     fname = str(get_path_trained_model() / (model_name + ".zip"))
 
-    with open(fname, "wb") as f, tqdm(
+    with Path(fname).open(mode="wb") as f, tqdm(
         desc=fname,
         total=total_length,
         unit="iB",

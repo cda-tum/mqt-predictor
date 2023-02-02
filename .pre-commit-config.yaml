@@ -36,25 +36,12 @@ repos:
       - id: fix-ligatures
       - id: fix-smartquotes
 
-  # Sort includes
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-        args: ["--profile", "black", "--filter-files"]
-
   # Upgrade old Python syntax
   - repo: https://github.com/asottile/pyupgrade
     rev: "v3.3.1"
     hooks:
       - id: pyupgrade
         args: ["--py37-plus"]
-
-  # Run code formatting with Black
-  - repo: https://github.com/psf/black
-    rev: "22.12.0" # Keep in sync with blacken-docs
-    hooks:
-      - id: black
 
   # Also run Black on examples in the documentation
   - repo: https://github.com/asottile/blacken-docs
@@ -76,19 +63,6 @@ repos:
       - id: rst-backticks
       - id: rst-directive-colons
       - id: rst-inline-touching-normal
-
-  # Run Flake8 checks
-  - repo: https://github.com/PyCQA/flake8
-    rev: "6.0.0"
-    hooks:
-      - id: flake8
-        additional_dependencies:
-          - flake8-bugbear
-          - flake8-comprehensions
-          - flake8-future-annotations
-          - flake8-new-union-types
-          - flake8-simplify
-          - flake8-2020
 
   # Check for spelling
   - repo: https://github.com/codespell-project/codespell
@@ -114,3 +88,14 @@ repos:
     rev: "2.4.0"
     hooks:
       - id: nb-clean
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: "v0.991" # Use the sha / tag you want to point at
+    hooks:
+      - id: mypy
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.237
+    hooks:
+      - id: ruff
+        args: ["--fix"]

@@ -12,9 +12,8 @@ from pathlib import Path
 
 import numpy as np
 from joblib import dump
-from qiskit import QuantumCircuit
-
 from mqt.predictor import ml, utils
+from qiskit import QuantumCircuit
 
 logger = logging.getLogger("mqtpredictor")
 
@@ -33,30 +32,29 @@ def qcompile(qc: QuantumCircuit | str) -> QuantumCircuit:
     return predictor.compile_as_predicted(qc, prediction)
 
 
-def get_path_training_data():
+def get_path_training_data() -> Path:
     return resources.files("mqt.predictor") / "ml" / "training_data"
 
 
-def get_path_trained_model():
+def get_path_trained_model() -> Path:
     return get_path_training_data() / "trained_model"
 
 
-def get_path_training_circuits():
+def get_path_training_circuits() -> Path:
     return get_path_training_data() / "training_circuits"
 
 
-def get_path_training_circuits_compiled():
+def get_path_training_circuits_compiled() -> Path:
     return get_path_training_data() / "training_circuits_compiled"
 
 
-def get_width_penalty():
+def get_width_penalty() -> int:
     """Returns the penalty value if a quantum computer has not enough qubits."""
-    width_penalty = -10000
-    return width_penalty
+    return -10000
 
 
 def get_compilation_pipeline():
-    compilation_pipeline = {
+    return {
         "devices": {
             "ibm": [("ibm_washington", 127), ("ibm_montreal", 27)],
             "rigetti": [("rigetti_aspen_m2", 80)],
@@ -68,7 +66,6 @@ def get_compilation_pipeline():
             "tket": {"lineplacement": [False, True]},
         },
     }
-    return compilation_pipeline
 
 
 def get_index_to_comppath_LUT():
@@ -102,7 +99,7 @@ def get_index_to_comppath_LUT():
 def get_openqasm_gates():
     """Returns a list of all quantum gates within the openQASM 2.0 standard header."""
     # according to https://github.com/Qiskit/qiskit-terra/blob/main/qiskit/qasm/libs/qelib1.inc
-    gate_list = [
+    return [
         "u3",
         "u2",
         "u1",
@@ -146,10 +143,10 @@ def get_openqasm_gates():
         "c3sqrtx",
         "c4x",
     ]
-    return gate_list
 
 
-def dict_to_featurevector(gate_dict):
+
+def dict_to_featurevector(gate_dict) -> dict:
     """Calculates and returns the feature vector of a given quantum circuit gate dictionary."""
     res_dct = dict.fromkeys(get_openqasm_gates(), 0)
     for key, val in dict(gate_dict).items():
@@ -158,15 +155,16 @@ def dict_to_featurevector(gate_dict):
 
     return res_dct
 
-
+PATH_LENGTH = 260
 def create_feature_dict(qc: str):
     if not isinstance(qc, QuantumCircuit):
-        if len(qc) < 260 and Path(qc).exists():
+        if len(qc) < PATH_LENGTH and Path(qc).exists():
             qc = QuantumCircuit.from_qasm_file(qc)
         elif "OPENQASM" in qc:
             qc = QuantumCircuit.from_qasm_str(qc)
         else:
-            raise ValueError("Invalid input for 'qc' parameter.") from None
+            error_msg = "Invalid input for 'qc' parameter."
+            raise ValueError(error_msg) from None
 
     ops_list = qc.count_ops()
     feature_dict = dict_to_featurevector(ops_list)
@@ -223,8 +221,9 @@ def load_training_data():
                 np.load(str(path / "scores_list.npy"), allow_pickle=True)
             )
         else:
+            error_msg = "Training data not found. Please run the training script first."
             raise FileNotFoundError(
-                "Training data not found. Please run the training script first."
+                error_msg
             )
 
         return training_data, names_list, scores_list

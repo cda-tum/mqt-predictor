@@ -6,24 +6,23 @@ import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed, load
 from mqt.bench.utils import qiskit_helper, tket_helper
+from mqt.predictor import ml, reward, utils
 from pytket.extensions.qiskit import tk_to_qiskit
 from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from mqt.predictor import ml, reward, utils
-
 plt.rcParams["font.family"] = "Times New Roman"
 
 
 class Predictor:
-    def __init__(self, verbose=0):
+    def __init__(self, verbose:int=0):
         self.verbose = verbose
 
         self.logger = logging.getLogger("mqtpredictor")
         if verbose == 1:
             self.logger.setLevel(logging.INFO)
-        elif verbose == 2:
+        elif verbose == 2:# noqa: PLR2004
             self.logger.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.WARNING)
@@ -36,8 +35,8 @@ class Predictor:
     def compile_all_circuits_for_qc(
         self,
         filename: str,
-        source_path: str = None,
-        target_path: str = None,
+        source_path: str = "",
+        target_path: str = "",
         timeout: int = 10,
     ):
         """Handles the creation of one training sample.
@@ -52,10 +51,10 @@ class Predictor:
         True -- at least one compilation option succeeded
         False -- if not
         """
-        if source_path is None:
+        if not source_path:
             source_path = str(ml.helper.get_path_training_circuits())
 
-        if target_path is None:
+        if not target_path:
             target_path = str(ml.helper.get_path_training_circuits_compiled())
 
         self.logger.info("Processing: " + filename)
@@ -135,8 +134,8 @@ class Predictor:
 
     def generate_compiled_circuits(
         self,
-        source_path: str = None,
-        target_path: str = None,
+        source_path: str = "",
+        target_path: str = "",
         timeout: int = 10,
     ):
         """Handles the creation of all training samples.
@@ -147,10 +146,10 @@ class Predictor:
         timeout -- timeout in seconds
 
         """
-        if source_path is None:
+        if not source_path:
             source_path = str(ml.helper.get_path_training_circuits())
 
-        if target_path is None:
+        if not target_path:
             target_path = str(ml.helper.get_path_training_circuits_compiled())
 
         path_zip = Path(source_path) / "mqtbench_training_samples.zip"
@@ -158,10 +157,9 @@ class Predictor:
             not any(file.suffix == ".qasm" for file in Path(source_path).iterdir())
             and path_zip.exists()
         ):
-            path_zip = str(path_zip)
             import zipfile
 
-            with zipfile.ZipFile(path_zip, "r") as zip_ref:
+            with zipfile.ZipFile(str(path_zip), "r") as zip_ref:
                 zip_ref.extractall(source_path)
 
         Path(target_path).mkdir(exist_ok=True)
@@ -179,8 +177,8 @@ class Predictor:
 
     def generate_trainingdata_from_qasm_files(
         self,
-        path_uncompiled_circuits: str = None,
-        path_compiled_circuits: str = None,
+        path_uncompiled_circuits: str = "",
+        path_compiled_circuits: str = "",
     ):
         """Handles to create training data from all generated training samples
 
@@ -193,10 +191,10 @@ class Predictor:
         name_list -- names of all training samples
         scores -- evaluation scores for all compilation options
         """
-        if path_uncompiled_circuits is None:
+        if not path_uncompiled_circuits:
             path_uncompiled_circuits = str(ml.helper.get_path_training_circuits())
 
-        if path_compiled_circuits is None:
+        if not path_compiled_circuits:
             path_compiled_circuits = str(
                 ml.helper.get_path_training_circuits_compiled()
             )
@@ -226,9 +224,9 @@ class Predictor:
     def generate_training_sample(
         self,
         file: str,
-        path_uncompiled_circuit: str = None,
-        path_compiled_circuits: str = None,
-    ):
+        path_uncompiled_circuit: str = "",
+        path_compiled_circuits: str = "",
+    ) -> tuple:
         """Handles to create training data from a single generated training sample
 
         Keyword arguments:
@@ -242,10 +240,10 @@ class Predictor:
         scores -- evaluation scores for all compilation options
         """
 
-        if path_uncompiled_circuit is None:
+        if not path_uncompiled_circuit:
             path_uncompiled_circuit = str(ml.helper.get_path_training_circuits())
 
-        if path_compiled_circuits is None:
+        if not path_compiled_circuits:
             path_compiled_circuits = str(
                 ml.helper.get_path_training_circuits_compiled()
             )
@@ -255,7 +253,7 @@ class Predictor:
 
         LUT = ml.helper.get_index_to_comppath_LUT()
         self.logger.debug("Checking " + file)
-        scores = []
+        scores: list[list[float]] = []
         for _ in range(len(LUT)):
             scores.append([])
         all_relevant_paths = Path(path_compiled_circuits) / (file.split(".")[0] + "*")
@@ -287,7 +285,9 @@ class Predictor:
 
         return (training_sample, circuit_name, scores)
 
-    def train_random_forest_classifier(self, visualize_results=False):
+    def train_random_forest_classifier(
+        self, visualize_results=False
+    ) -> RandomForestClassifier:
 
         (
             X_train,
@@ -338,7 +338,7 @@ class Predictor:
 
         return self.clf is not None
 
-    def get_prepared_training_data(self, save_non_zero_indices=False):
+    def get_prepared_training_data(self, save_non_zero_indices=False) -> tuple:
         training_data, names_list, scores_list = ml.helper.load_training_data()
         X, y = zip(*training_data)
         X = list(X)
@@ -380,7 +380,9 @@ class Predictor:
             scores_list,
         )
 
-    def calc_performance_measures(self, scores_filtered, y_pred, y_test):
+    def calc_performance_measures(
+        self, scores_filtered, y_pred, y_test
+    ) -> (list, list):
         """Method to generate the performance measures for a trained classifier
 
         Keyword arguments:
@@ -399,10 +401,7 @@ class Predictor:
         for i in range(len(y_pred)):
             assert np.argmax(scores_filtered[i]) == y_test[i]
             predicted_score = scores_filtered[i][y_pred[i]]
-            if predicted_score == ml.helper.get_width_penalty():
-                tmp_predicted_score = 0
-            else:
-                tmp_predicted_score = predicted_score
+            tmp_predicted_score = 0 if predicted_score == ml.helper.get_width_penalty() else predicted_score
             relative_scores.append(tmp_predicted_score - np.max(scores_filtered[i]))
             score = list(np.sort(scores_filtered[i])[::-1]).index(predicted_score)
             res.append(score + 1)
@@ -411,7 +410,7 @@ class Predictor:
 
         return res, relative_scores
 
-    def plot_eval_histogram(self, res, filename="histogram"):
+    def plot_eval_histogram(self, res, filename="histogram") -> None:
         """Method to generate the histogram of the resulting ranks
 
         Keyword arguments:
@@ -449,7 +448,7 @@ class Predictor:
 
     def plot_eval_all_detailed_compact_normed(
         self, names_list, scores_filtered, y_pred, y_test
-    ):
+    ) -> None:
         """Method to generate the detailed graph to examine the differences in evaluation scores
 
         Keyword arguments:
@@ -518,7 +517,8 @@ class Predictor:
             if path.is_file():
                 self.clf = load(str(path))
             else:
-                raise FileNotFoundError("Classifier is neither trained nor saved.")
+                error_msg = "Classifier is neither trained nor saved."
+                raise FileNotFoundError(error_msg)
 
         feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)
         if not feature_dict:
@@ -537,7 +537,8 @@ class Predictor:
 
         LUT = ml.helper.get_index_to_comppath_LUT()
         if prediction < 0 or prediction >= len(LUT):
-            raise IndexError("Prediction index is out of range.")
+            error_msg = "Prediction index is out of range."
+            raise IndexError(error_msg)
         if not isinstance(qc, QuantumCircuit):
             if Path(qc).exists():
                 self.logger.info("Reading from .qasm path: " + qc)
@@ -546,7 +547,8 @@ class Predictor:
                 self.logger.info("Reading from .qasm str")
                 qc = QuantumCircuit.from_qasm_str(qc)
             else:
-                raise ValueError("Invalid 'qc' parameter value.")
+                error_msg = "Invalid 'qc' parameter value."
+                raise ValueError(error_msg)
 
         prediction_information = LUT.get(prediction)
         gate_set_name = prediction_information[0]
@@ -559,7 +561,7 @@ class Predictor:
                 qc, gate_set_name, qc.num_qubits, device, compiler_settings, False, True
             )
             return compiled_qc, ml.helper.get_index_to_comppath_LUT()[prediction]
-        elif compiler == "tket":
+        if compiler == "tket":
             compiled_qc = tket_helper.get_mapped_level(
                 qc,
                 gate_set_name,
@@ -573,8 +575,8 @@ class Predictor:
                 tk_to_qiskit(compiled_qc),
                 ml.helper.get_index_to_comppath_LUT()[prediction],
             )
-        else:
-            raise ValueError("Invalid compiler name.")
+        error_msg = "Invalid compiler name."
+        raise ValueError(error_msg)
 
     def instantiate_supervised_ML_model(self, timeout):
         # Generate compiled circuits and save them as qasm files

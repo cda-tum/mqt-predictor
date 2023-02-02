@@ -24,7 +24,7 @@ class Calibration:
             raise RuntimeError("Error in Calibration initialization: " + str(e)) from e
 
 
-def get_mean_IBM_washington_cx_error():
+def get_mean_IBM_washington_cx_error() -> float:
     cmap = FakeWashington().configuration().coupling_map
     backend = FakeWashington().properties()
     somelist = [x for x in cmap if backend.gate_error("cx", x) < 1]
@@ -33,25 +33,23 @@ def get_mean_IBM_washington_cx_error():
     for elem in somelist:
         res.append(backend.gate_error("cx", elem))
 
-    mean_cx_error = np.mean(res)
-    return mean_cx_error
+    return np.mean(res)
 
 
-def parse_ionq_calibration_config():
+def parse_ionq_calibration_config() -> dict:
     ref = (
         resources.files("mqt.predictor") / "calibration_files" / "ionq_calibration.json"
     )
     with ref.open() as f:
         ionq_calibration = json.load(f)
-    ionq_dict = {
+    return {
         "backend": "ionq",
         "avg_1Q": ionq_calibration["fidelity"]["1Q"].get("mean"),
         "avg_2Q": ionq_calibration["fidelity"]["2Q"].get("mean"),
     }
-    return ionq_dict
 
 
-def parse_oqc_calibration_config():
+def parse_oqc_calibration_config() -> dict:
     ref = (
         resources.files("mqt.predictor")
         / "calibration_files"
@@ -76,7 +74,7 @@ def parse_oqc_calibration_config():
 
     avg_1Q = np.average(list(fid_1Q.values()))
     avg_2Q = np.average(list(fid_2Q.values()))
-    oqc_dict = {
+    return {
         "backend": "oqc_lucy",
         "avg_1Q": avg_1Q,
         "fid_1Q": fid_1Q,
@@ -84,10 +82,9 @@ def parse_oqc_calibration_config():
         "avg_2Q": avg_2Q,
         "fid_2Q": fid_2Q,
     }
-    return oqc_dict
 
 
-def parse_rigetti_calibration_config():
+def parse_rigetti_calibration_config() -> dict:
     ref = (
         resources.files("mqt.predictor")
         / "calibration_files"
@@ -121,7 +118,7 @@ def parse_rigetti_calibration_config():
     for elem in missing_indices:
         fid_2Q_CZ[elem] = cz_fid_avg
 
-    rigetti_dict = {
+    return {
         "backend": "rigetti_aspen_m2",
         "avg_1Q": avg_1Q,
         "fid_1Q": fid_1Q,
@@ -129,4 +126,3 @@ def parse_rigetti_calibration_config():
         "avg_2Q": cz_fid_avg,
         "fid_2Q_CZ": fid_2Q_CZ,
     }
-    return rigetti_dict

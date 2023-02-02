@@ -1,6 +1,9 @@
-from qiskit import QuantumCircuit
+from typing import TYPE_CHECKING
 
 from mqt.predictor import reward
+
+if TYPE_CHECKING:
+    from qiskit import QuantumCircuit
 
 
 class Result:

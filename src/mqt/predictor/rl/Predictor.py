@@ -7,6 +7,7 @@ from typing import Literal
 
 import numpy as np
 from joblib import Parallel, delayed
+from mqt.predictor import rl
 from pytket import OpType, architecture
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from pytket.passes import (
@@ -21,16 +22,14 @@ from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 from sb3_contrib.common.maskable.utils import get_action_masks
 
-from mqt.predictor import rl
-
-
+PATH_LENGTH = 260
 class Predictor:
     def __init__(self, verbose=0):
         self.logger = logging.getLogger("mqtpredictor")
         self.verbose = verbose
         if verbose == 1:
             self.logger.setLevel(logging.INFO)
-        elif verbose == 2:
+        elif verbose == 2:# noqa: PLR2004
             self.logger.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.WARNING)
@@ -39,7 +38,7 @@ class Predictor:
         self, qc: QuantumCircuit | str, opt_objective: str = "fidelity"
     ):
         if not isinstance(qc, QuantumCircuit):
-            if len(qc) < 260 and Path(qc).exists():
+            if len(qc) < PATH_LENGTH and Path(qc).exists():
                 qc = QuantumCircuit.from_qasm_file(qc)
             elif "OPENQASM" in qc:
                 qc = QuantumCircuit.from_qasm_str(qc)
@@ -102,12 +101,11 @@ class Predictor:
     def train_all_models(
         self,
         timesteps: int = 1000,
-        reward_functions: [Reward] = None,
+        reward_functions: Reward = "fidelity",
         model_name: str = "model",
         verbose: int = 2,
     ):
-        if reward_functions is None:
-            reward_functions = ["fidelity"]
+
         if "test" in model_name:
             n_steps = 100
             progress_bar = False
@@ -194,4 +192,5 @@ class Predictor:
                 benchmark, used_setup, duration, transpiled_qc_tket, "ibm_washington"
             )
 
-        raise ValueError("Unknown setup. Use either 'RL', 'qiskit_o3' or 'tket'.")
+        error_msg = "Unknown setup. Use either 'RL', 'qiskit_o3' or 'tket'."
+        raise ValueError(error_msg)
