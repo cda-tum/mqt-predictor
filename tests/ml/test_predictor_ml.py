@@ -84,11 +84,13 @@ def test_generate_compiled_circuits() -> None:
     predictor.generate_compiled_circuits(source_path, str(target_path))
     assert any(file.suffix == ".qasm" for file in target_path.iterdir())
 
-    training_sample, circuit_name, scores = predictor.generate_training_sample(
+    res = predictor.generate_training_sample(
         str(qasm_path),
         path_uncompiled_circuit=source_path,
         path_compiled_circuits=str(target_path),
     )
+    assert not isinstance(res, bool)
+    training_sample, circuit_name, scores = res
     assert training_sample
     assert circuit_name
     assert scores

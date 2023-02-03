@@ -10,7 +10,7 @@ from qiskit import QuantumCircuit
     "opt_objective",
     ["fidelity", "critical_depth", "gate_ratio", "mix"],
 )
-def test_qcompile(opt_objective: str) -> None:
+def test_qcompile(opt_objective: rl.helper.reward_functions) -> None:
     qc = get_benchmark("ghz", 1, 5)
     qc_compiled, compilation_information = rl.qcompile(qc, opt_objective=opt_objective)
     assert isinstance(qc_compiled, QuantumCircuit)

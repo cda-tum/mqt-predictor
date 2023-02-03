@@ -413,15 +413,15 @@ def create_feature_dict(qc: QuantumCircuit) -> dict[str, Any]:
 
 
 def get_path_training_data() -> Path:
-    return Path(resources.files("mqt.predictor") / "rl" / "training_data")
+    return Path(str(resources.files("mqt.predictor"))) / "rl" / "training_data"
 
 
 def get_path_trained_model() -> Path:
-    return Path(get_path_training_data() / "trained_model")
+    return get_path_training_data() / "trained_model"
 
 
 def get_path_training_circuits() -> Path:
-    return Path(get_path_training_data() / "training_circuits")
+    return get_path_training_data() / "training_circuits"
 
 
 def load_model(model_name: str) -> MaskablePPO:

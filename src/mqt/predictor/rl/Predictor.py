@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args
 
 import numpy as np
 from joblib import Parallel, delayed
@@ -37,7 +37,7 @@ class Predictor:
         logger.setLevel(lvl)
 
     def compile_as_predicted(
-        self, qc: QuantumCircuit | str, opt_objective: str = "fidelity"
+        self, qc: QuantumCircuit | str, opt_objective: rl.helper.reward_functions = "fidelity"
     ) -> tuple[QuantumCircuit, list[str]]:
         if not isinstance(qc, QuantumCircuit):
             if len(qc) < PATH_LENGTH and Path(qc).exists():
@@ -55,7 +55,7 @@ class Predictor:
             action_masks = get_action_masks(env)
             action, _states = model.predict(obs, action_masks=action_masks)
             action = int(action)
-            action_item = env.action_set.get(action)
+            action_item = env.action_set[action]
             used_compilation_passes.append(action_item["name"])
             obs, reward_val, done, info = env.step(action)
 
@@ -64,7 +64,8 @@ class Predictor:
     def evaluate_sample_circuit(self, file: str) -> dict[str, Any]:
         logger.info("Evaluate file: " + file)
 
-        reward_functions = ["fidelity", "critical_depth", "gate_ratio", "mix"]
+        # reward_functions = ["fidelity", "critical_depth", "gate_ratio", "mix"]
+        reward_functions = get_args(rl.helper.reward_functions)
         results = []
         for rew in reward_functions:
             results.append(self.computeRewards(file, "RL", rew))
@@ -72,7 +73,7 @@ class Predictor:
         results.append(self.computeRewards(file, "qiskit_o3"))
         results.append(self.computeRewards(file, "tket"))
 
-        combined_res = {
+        combined_res: dict[str, Any] = {
             "benchmark": str(Path(file).stem).replace("_", " ").split(" ")[0],
             "num_qubits": str(Path(file).stem).replace("_", " ").split(" ")[-1],
         }
@@ -101,11 +102,12 @@ class Predictor:
     def train_all_models(
         self,
         timesteps: int = 1000,
-        reward_functions: rl.utils.Reward = "fidelity",
+        reward_functions: list[rl.helper.reward_functions] | None = None,
         model_name: str = "model",
         verbose: int = 2,
     ) -> None:
-
+        if reward_functions is None:
+            reward_functions = ["fidelity"]
         if "test" in model_name:
             n_steps = 100
             progress_bar = False

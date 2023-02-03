@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from sklearn.ensemble import RandomForestClassifier
 
 
-def qcompile(qc: QuantumCircuit | str) -> QuantumCircuit:
+def qcompile(qc: QuantumCircuit | str) -> tuple[QuantumCircuit, int]:
     """Returns the compiled quantum circuit which is compiled with the predicted combination of compilation options.
 
     Keyword arguments:
@@ -35,19 +35,19 @@ def qcompile(qc: QuantumCircuit | str) -> QuantumCircuit:
 
 
 def get_path_training_data() -> Path:
-    return Path(resources.files("mqt.predictor") / "ml" / "training_data")
+    return Path(str(resources.files("mqt.predictor"))) / "ml" / "training_data"
 
 
 def get_path_trained_model() -> Path:
-    return Path(get_path_training_data() / "trained_model")
+    return get_path_training_data() / "trained_model"
 
 
 def get_path_training_circuits() -> Path:
-    return Path(get_path_training_data() / "training_circuits")
+    return get_path_training_data() / "training_circuits"
 
 
 def get_path_training_circuits_compiled() -> Path:
-    return Path(get_path_training_data() / "training_circuits_compiled")
+    return get_path_training_data() / "training_circuits_compiled"
 
 
 def get_width_penalty() -> int:
@@ -70,7 +70,7 @@ def get_compilation_pipeline() -> dict[str, dict[str, Any]]:
     }
 
 
-def get_index_to_comppath_LUT() -> dict[int, tuple[str, str, str, bool | int]]:
+def get_index_to_comppath_LUT() -> dict[int, Any]:
     compilation_pipeline = get_compilation_pipeline()
     index = 0
     index_to_comppath_LUT = {}
@@ -171,10 +171,14 @@ def create_feature_dict(qc: str) -> dict[str, Any]:
             raise ValueError(error_msg) from None
 
     ops_list = qc.count_ops()
-    feature_dict = dict_to_featurevector(ops_list)
+    ops_list_dict = dict_to_featurevector(ops_list)
 
-    feature_dict["num_qubits"] = qc.num_qubits
-    feature_dict["depth"] = qc.depth()
+    feature_dict = {}
+    for key in ops_list_dict:
+        feature_dict[key] = float(ops_list_dict[key])
+
+    feature_dict["num_qubits"] = float(qc.num_qubits)
+    feature_dict["depth"] = float(qc.depth())
 
     (
         program_communication,

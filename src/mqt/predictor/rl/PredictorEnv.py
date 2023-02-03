@@ -76,12 +76,12 @@ class PredictorEnv(Env):  # type: ignore[misc]
             "liveness": Box(low=0, high=1, shape=(1,), dtype=np.float32),
         }
         self.observation_space = Dict(spaces)
-        self.native_gateset_name = None
+        self.native_gateset_name = ""
         self.native_gates = None
-        self.device = None
+        self.device = ""
         self.cmap = None
 
-    def step(self, action: int) -> dict[str, Any] | tuple[dict[str, Any], float, bool, dict[Any, Any]]:
+    def step(self, action: int) -> tuple[dict[str, Any], float, bool, dict[Any, Any]]:
         altered_qc = self.apply_action(action)
         if not altered_qc:
             return (
@@ -110,17 +110,15 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
     def calculate_reward(self) -> Any:
         if self.reward_function == "fidelity":
-            reward_val = reward.expected_fidelity(self.state, self.device)
-        elif self.reward_function == "critical_depth":
-            reward_val = reward.crit_depth(self.state)
-        elif self.reward_function == "mix":
-            reward_val = reward.mix(self.state, self.device)
-        elif self.reward_function == "gate_ratio":
-            reward_val = reward.gate_ratio(self.state)
-        else:
-            error_msg = f"Reward function {self.reward_function} not supported."
-            raise ValueError(error_msg)
-        return reward_val
+            return reward.expected_fidelity(self.state, self.device)
+        if self.reward_function == "critical_depth":
+            return reward.crit_depth(self.state)
+        if self.reward_function == "mix":
+            return reward.mix(self.state, self.device)
+        if self.reward_function == "gate_ratio":
+            return reward.gate_ratio(self.state)
+        error_msg = f"Reward function {self.reward_function} not supported."  # type: ignore[unreachable]
+        raise ValueError(error_msg)
 
     def render(self) -> None:
         print(self.state.draw())
@@ -137,9 +135,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
 
-        self.native_gateset_name = None
+        self.native_gateset_name = ""
         self.native_gates = None
-        self.device = None
+        self.device = ""
         self.cmap = None
 
         self.valid_actions = self.get_platform_valid_actions_for_state()
@@ -217,7 +215,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         if self.native_gates is None:
             return self.get_platform_valid_actions_for_state() + self.actions_opt_indices
 
-        if self.device is None:  # type: ignore[unreachable]
+        if not self.device:  # type: ignore[unreachable]
             return self.get_device_action_indices_for_nat_gates()
 
         check_nat_gates = GatesInBasis(basis_gates=self.native_gates)

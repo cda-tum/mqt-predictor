@@ -161,24 +161,24 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10) -> Any:
                 if len(qargs) == 1:
                     if gate_type == "measure":
                         specific_fidelity = calibration.rigetti_m2_calibration["fid_1Q_readout"][
-                            mapping.get(str(first_qubit))
+                            mapping[str(first_qubit)]
                         ]
                     else:
-                        specific_fidelity = calibration.rigetti_m2_calibration["fid_1Q"][mapping.get(str(first_qubit))]
+                        specific_fidelity = calibration.rigetti_m2_calibration["fid_1Q"][mapping[str(first_qubit)]]
                 else:
                     second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     tmp = (
                         str(
                             min(
-                                int(mapping.get(str(first_qubit))),
-                                int(mapping.get(str(second_qubit))),
+                                int(mapping[str(first_qubit)]),
+                                int(mapping[str(second_qubit)]),
                             )
                         )
                         + "-"
                         + str(
                             max(
-                                int(mapping.get(str(first_qubit))),
-                                int(mapping.get(str(second_qubit))),
+                                int(mapping[str(first_qubit)]),
+                                int(mapping[str(second_qubit)]),
                             )
                         )
                     )

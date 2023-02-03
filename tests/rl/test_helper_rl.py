@@ -117,11 +117,11 @@ def test_create_feature_dict() -> None:
 
 def test_get_path_trained_model() -> None:
     path = rl.helper.get_path_trained_model()
-    assert path
+    assert path.exists()
     assert isinstance(path, Path)
 
 
 def test_get_path_training_circuits() -> None:
     path = rl.helper.get_path_training_circuits()
-    assert path
+    assert path.exists()
     assert isinstance(path, Path)

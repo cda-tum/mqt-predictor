@@ -74,7 +74,7 @@ class Predictor:
         results = []
         comp_path_id = 0
         try:
-            for gate_set_name, devices in compilation_pipeline.get("devices").items():
+            for gate_set_name, devices in compilation_pipeline["devices"].items():
                 for device_name, max_qubits in devices:
                     for compiler, settings in compilation_pipeline["compiler"].items():
                         if "qiskit" in compiler:
@@ -221,7 +221,7 @@ class Predictor:
         path_uncompiled_circuit: str = "",
         path_compiled_circuits: str = "",
         logger_level: int = logging.WARNING,
-    ) -> tuple[tuple[list[Any], Any], str, list[list[float]]] | bool:
+    ) -> tuple[tuple[list[Any], Any], str, list[float]] | bool:
 
         """Handles to create training data from a single generated training sample
 
@@ -247,25 +247,23 @@ class Predictor:
 
         LUT = ml.helper.get_index_to_comppath_LUT()
         logger.debug("Checking " + file)
-        scores: list[list[float]] = []
+        scores: list[float] = []
         for _ in range(len(LUT)):
-            scores.append([])
+            scores.append(ml.helper.get_width_penalty())
         all_relevant_paths = Path(path_compiled_circuits) / (file.split(".")[0] + "*")
         all_relevant_files = glob.glob(str(all_relevant_paths))
 
         for filename in all_relevant_files:
             if (file.split(".")[0] + "_") in filename and filename.endswith(".qasm"):
                 comp_path_index = int(filename.split("_")[-1].split(".")[0])
-                device = LUT.get(comp_path_index)[1]
+                device = LUT[comp_path_index][1]
 
                 score = reward.expected_fidelity(filename, device)
                 scores[comp_path_index] = score
 
         num_not_empty_entries = 0
         for i in range(len(LUT)):
-            if not scores[i]:
-                scores[i] = ml.helper.get_width_penalty()
-            else:
+            if scores[i] != ml.helper.get_width_penalty():
                 num_not_empty_entries += 1
 
         if num_not_empty_entries == 0:
@@ -497,7 +495,7 @@ class Predictor:
             result_path.mkdir()
         plt.savefig(result_path / "y_pred_eval_normed.pdf")
 
-    def predict(self, qasm_str_or_path: str) -> Any | None:
+    def predict(self, qasm_str_or_path: str) -> Any:
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
 
         if self.clf is None:
@@ -509,8 +507,6 @@ class Predictor:
                 raise FileNotFoundError(error_msg)
 
         feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)
-        if not feature_dict:
-            return None
         feature_vector = list(feature_dict.values())
 
         path = ml.helper.get_path_trained_model() / "non_zero_indices.npy"
@@ -538,7 +534,7 @@ class Predictor:
                 error_msg = "Invalid 'qc' parameter value."
                 raise ValueError(error_msg)
 
-        prediction_information = LUT.get(prediction)
+        prediction_information = LUT[prediction]
         gate_set_name = prediction_information[0]
         device = prediction_information[1]
         compiler = prediction_information[2]

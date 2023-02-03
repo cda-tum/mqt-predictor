@@ -39,7 +39,7 @@ def get_mean_IBM_washington_cx_error() -> Any:
     return np.mean(res)
 
 
-def parse_ionq_calibration_config() -> dict[str, str | float | dict[str, Any]]:
+def parse_ionq_calibration_config() -> dict[str, Any]:
     ref = resources.files("mqt.predictor") / "calibration_files" / "ionq_calibration.json"
     with ref.open() as f:
         ionq_calibration = json.load(f)
@@ -50,7 +50,7 @@ def parse_ionq_calibration_config() -> dict[str, str | float | dict[str, Any]]:
     }
 
 
-def parse_oqc_calibration_config() -> dict[str, str | float | dict[str, Any]]:
+def parse_oqc_calibration_config() -> dict[str, Any]:
     ref = resources.files("mqt.predictor") / "calibration_files" / "oqc_lucy_calibration.json"
     with ref.open() as f:
         oqc_lucy_calibration = json.load(f)
@@ -77,7 +77,7 @@ def parse_oqc_calibration_config() -> dict[str, str | float | dict[str, Any]]:
     }
 
 
-def parse_rigetti_calibration_config() -> dict[str, str | float | dict[str, Any]]:
+def parse_rigetti_calibration_config() -> dict[str, Any]:
     ref = resources.files("mqt.predictor") / "calibration_files" / "rigetti_m2_calibration.json"
     with ref.open() as f:
         rigetti_m2_calibration = json.load(f)

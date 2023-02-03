@@ -70,7 +70,7 @@ def test_calc_eval_score_for_qc() -> None:
     compilation_pipeline = ml.helper.get_compilation_pipeline()
 
     filename_qasm = "eval_test.qasm"
-    for gate_set_name, devices in compilation_pipeline.get("devices").items():
+    for gate_set_name, devices in compilation_pipeline["devices"].items():
         for device_name, max_qubits in devices:
             for compiler, settings in compilation_pipeline["compiler"].items():
                 if "qiskit" in compiler:
