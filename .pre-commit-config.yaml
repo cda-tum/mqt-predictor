@@ -87,7 +87,9 @@ repos:
         args: []
         additional_dependencies:
           - importlib_resources
+          - importlib_metadata
           - numpy
           - pytest
           - types-setuptools
           - types-requests
+          - types-tqdm
