@@ -81,16 +81,15 @@ repos:
         args: ["--fix"]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v0.991" # Use the sha / tag you want to point at
+    rev: v0.991
     hooks:
       - id: mypy
         files: ^(src|tests|setup.py)
         args: []
         additional_dependencies:
           - importlib_resources
-          - importlib_metadata
-          - numpy
           - pytest
           - types-setuptools
           - types-requests
           - types-tqdm
+          - pytket-qiskit
