@@ -39,7 +39,7 @@ def get_mean_IBM_washington_cx_error() -> Any:
     return np.mean(res)
 
 
-def parse_ionq_calibration_config()  -> dict[str, str|float|dict[str, Any]]:
+def parse_ionq_calibration_config() -> dict[str, str | float | dict[str, Any]]:
     ref = (
         resources.files("mqt.predictor") / "calibration_files" / "ionq_calibration.json"
     )
@@ -52,7 +52,7 @@ def parse_ionq_calibration_config()  -> dict[str, str|float|dict[str, Any]]:
     }
 
 
-def parse_oqc_calibration_config() ->  dict[str, str|float|dict[str, Any]]:
+def parse_oqc_calibration_config() -> dict[str, str | float | dict[str, Any]]:
     ref = (
         resources.files("mqt.predictor")
         / "calibration_files"
@@ -87,7 +87,7 @@ def parse_oqc_calibration_config() ->  dict[str, str|float|dict[str, Any]]:
     }
 
 
-def parse_rigetti_calibration_config() -> dict[str, str|float|dict[str, Any]]:
+def parse_rigetti_calibration_config() -> dict[str, str | float | dict[str, Any]]:
     ref = (
         resources.files("mqt.predictor")
         / "calibration_files"
@@ -97,7 +97,7 @@ def parse_rigetti_calibration_config() -> dict[str, str|float|dict[str, Any]]:
         rigetti_m2_calibration = json.load(f)
     fid_1Q = {}
     fid_1Q_readout = {}
-    missing_indices:list[int] = []
+    missing_indices: list[int] = []
     for elem in rigetti_m2_calibration["specs"]["1Q"]:
 
         fid_1Q[str(elem)] = rigetti_m2_calibration["specs"]["1Q"][elem].get("f1QRB")

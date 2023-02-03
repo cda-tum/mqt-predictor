@@ -10,13 +10,16 @@ from qiskit import QuantumCircuit
     "opt_objective",
     ["fidelity", "critical_depth", "gate_ratio", "mix"],
 )
-def test_qcompile(opt_objective:str) -> None:
+def test_qcompile(opt_objective: str) -> None:
     qc = get_benchmark("ghz", 1, 5)
     qc_compiled, compilation_information = rl.qcompile(qc, opt_objective=opt_objective)
     assert isinstance(qc_compiled, QuantumCircuit)
     assert compilation_information is not None
 
-NUM_EVALUATION_FEATURES  = 32
+
+NUM_EVALUATION_FEATURES = 32
+
+
 def test_evaluate_sample_circuit() -> None:
     qc = get_benchmark("ghz", 1, 5)
     qc.qasm(filename="test_5.qasm")

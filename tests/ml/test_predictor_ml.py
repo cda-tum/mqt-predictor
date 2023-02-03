@@ -8,7 +8,7 @@ from mqt.predictor import ml
 
 
 @patch("matplotlib.pyplot.show")
-def test_predict(mock_show:Any) -> None: # noqa: ARG001
+def test_predict(mock_show: Any) -> None:  # noqa: ARG001
     path = ml.helper.get_path_trained_model() / "trained_clf.joblib"
     assert path.is_file()
     filename = "test_qasm.qasm"
@@ -25,13 +25,13 @@ def test_predict(mock_show:Any) -> None: # noqa: ARG001
     predictor.clf = None
     prediction = predictor.predict(filename)
     Path(filename).unlink()
-    assert  0 <= prediction < len(ml.helper.get_index_to_comppath_LUT())
+    assert 0 <= prediction < len(ml.helper.get_index_to_comppath_LUT())
 
 
 @pytest.mark.parametrize(
     "comp_path", list(range(len(ml.helper.get_index_to_comppath_LUT())))
 )
-def test_compilation_paths(comp_path:int) -> None: # noqa: ARG001
+def test_compilation_paths(comp_path: int) -> None:  # noqa: ARG001
     qc_qasm = benchmark_generator.get_benchmark("dj", 1, 2).qasm()
     res, compile_info = ml.qcompile(qc_qasm)
     assert res
@@ -62,7 +62,7 @@ def test_compile_all_circuits_for_qc() -> None:
 
 
 @patch("matplotlib.pyplot.show")
-def test_train_random_forest_classifier(mock_pyplot:Any) -> None:# noqa: ARG001
+def test_train_random_forest_classifier(mock_pyplot: Any) -> None:  # noqa: ARG001
     predictor = ml.Predictor()
     assert predictor.clf is None
     predictor.train_random_forest_classifier(visualize_results=False)

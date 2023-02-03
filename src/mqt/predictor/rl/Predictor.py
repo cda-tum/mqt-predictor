@@ -24,11 +24,13 @@ from sb3_contrib.common.maskable.utils import get_action_masks
 
 logger = logging.getLogger("mqtpredictor")
 PATH_LENGTH = 260
+
+
 class Predictor:
-    def __init__(self, verbose:int=0):
+    def __init__(self, verbose: int = 0):
         if verbose == 1:
             lvl = logging.INFO
-        elif verbose == 2: # noqa: PLR2004
+        elif verbose == 2:  # noqa: PLR2004
             lvl = logging.DEBUG
         else:
             lvl = logging.WARNING
@@ -36,7 +38,7 @@ class Predictor:
 
     def compile_as_predicted(
         self, qc: QuantumCircuit | str, opt_objective: str = "fidelity"
-    ) ->tuple[QuantumCircuit, list[str]]:
+    ) -> tuple[QuantumCircuit, list[str]]:
         if not isinstance(qc, QuantumCircuit):
             if len(qc) < PATH_LENGTH and Path(qc).exists():
                 qc = QuantumCircuit.from_qasm_file(qc)
@@ -59,7 +61,7 @@ class Predictor:
 
         return env.state, used_compilation_passes
 
-    def evaluate_sample_circuit(self, file:str) -> dict[str, Any]:
+    def evaluate_sample_circuit(self, file: str) -> dict[str, Any]:
         logger.info("Evaluate file: " + file)
 
         reward_functions = ["fidelity", "critical_depth", "gate_ratio", "mix"]
@@ -79,7 +81,7 @@ class Predictor:
             combined_res.update(res.get_dict())
         return combined_res
 
-    def evaluate_all_sample_circuits(self)->None:
+    def evaluate_all_sample_circuits(self) -> None:
         res_csv = []
 
         results = Parallel(n_jobs=-1, verbose=3, backend="threading")(
@@ -127,7 +129,10 @@ class Predictor:
             model.save(rl.helper.get_path_trained_model() / (model_name + "_" + rew))
 
     def computeRewards(
-        self, benchmark: str, used_setup: str, reward_function: rl.helper.reward_functions = "fidelity"
+        self,
+        benchmark: str,
+        used_setup: str,
+        reward_function: rl.helper.reward_functions = "fidelity",
     ) -> rl.Result:
         if used_setup == "RL":
             model = rl.helper.load_model("model_" + reward_function)

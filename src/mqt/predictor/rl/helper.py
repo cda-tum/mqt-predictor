@@ -59,7 +59,9 @@ reward_functions = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
 logger = logging.getLogger("mqtpredictor")
 
 
-def qcompile(qc: QuantumCircuit | str, opt_objective:reward_functions= "fidelity") -> QuantumCircuit:
+def qcompile(
+    qc: QuantumCircuit | str, opt_objective: reward_functions = "fidelity"
+) -> QuantumCircuit:
     """Returns the compiled quantum circuit which is compiled following an objective function.
     Keyword arguments:
     qc -- to be compiled quantum circuit or path to a qasm file
@@ -71,7 +73,7 @@ def qcompile(qc: QuantumCircuit | str, opt_objective:reward_functions= "fidelity
     return predictor.compile_as_predicted(qc, opt_objective=opt_objective)
 
 
-def get_actions_opt()-> list[dict[str,Any]]:
+def get_actions_opt() -> list[dict[str, Any]]:
     return [
         {
             "name": "Optimize1qGatesDecomposition",
@@ -136,7 +138,7 @@ def get_actions_opt()-> list[dict[str,Any]]:
     ]
 
 
-def get_actions_layout()-> list[dict[str,Any]]:
+def get_actions_layout() -> list[dict[str, Any]]:
     return [
         {
             "name": "TrivialLayout",
@@ -171,7 +173,7 @@ def get_actions_layout()-> list[dict[str,Any]]:
     ]
 
 
-def get_actions_routing()-> list[dict[str,Any]]:
+def get_actions_routing() -> list[dict[str, Any]]:
     return [
         {
             "name": "BasicSwap",
@@ -198,7 +200,7 @@ def get_actions_routing()-> list[dict[str,Any]]:
     ]
 
 
-def get_actions_platform_selection()-> list[dict[str,Any]]:
+def get_actions_platform_selection() -> list[dict[str, Any]]:
     return [
         {
             "name": "IBM",
@@ -227,7 +229,7 @@ def get_actions_platform_selection()-> list[dict[str,Any]]:
     ]
 
 
-def get_actions_synthesis() -> list[dict[str,Any]]:
+def get_actions_synthesis() -> list[dict[str, Any]]:
     return [
         {
             "name": "BasisTranslator",
@@ -239,11 +241,11 @@ def get_actions_synthesis() -> list[dict[str,Any]]:
     ]
 
 
-def get_action_terminate()->  dict[str,Any]:
+def get_action_terminate() -> dict[str, Any]:
     return {"name": "terminate"}
 
 
-def get_actions_devices()-> list[dict[str,Any]]:
+def get_actions_devices() -> list[dict[str, Any]]:
     return [
         {
             "name": "ibm_washington",
@@ -315,7 +317,6 @@ def get_ibm_native_gates() -> list[str]:
     return ["rz", "sx", "x", "cx", "measure"]
 
 
-
 def get_rigetti_native_gates() -> list[str]:
     return ["rx", "rz", "cz", "measure"]
 
@@ -335,7 +336,7 @@ def get_rigetti_aspen_m2_map() -> list[list[int]]:
         for i in range(0, 7):
             c_map_rigetti.append([i + j * 8, i + 1 + j * 8])
 
-            if i == 6: # noqa: PLR2004
+            if i == 6:  # noqa: PLR2004
                 c_map_rigetti.append([0 + j * 8, 7 + j * 8])
 
         if j != 0:
@@ -347,7 +348,7 @@ def get_rigetti_aspen_m2_map() -> list[list[int]]:
         for i in range(0, 7):
             c_map_rigetti.append([i + m, i + 1 + m])
 
-            if i == 6: # noqa: PLR2004
+            if i == 6:  # noqa: PLR2004
                 c_map_rigetti.append([0 + m, 7 + m])
 
         if j != 0:
@@ -380,7 +381,6 @@ def get_cmap_oqc_lucy() -> list[list[int]]:
     return [[0, 1], [0, 7], [1, 2], [2, 3], [7, 6], [6, 5], [4, 3], [4, 5]]
 
 
-
 def get_cmap_from_devicename(device: str) -> Any:
     if device == "ibm_washington":
         return FakeWashington().configuration().coupling_map
@@ -396,7 +396,7 @@ def get_cmap_from_devicename(device: str) -> Any:
     raise ValueError(error_msg)
 
 
-def create_feature_dict(qc:QuantumCircuit) -> dict[str, Any]:
+def create_feature_dict(qc: QuantumCircuit) -> dict[str, Any]:
     feature_dict = {
         "num_qubits": np.array([qc.num_qubits], dtype=int),
         "depth": np.array([qc.depth()], dtype=int),
@@ -446,9 +446,7 @@ def load_model(model_name: str) -> MaskablePPO:
         mqtpredictor_module_version = metadata.version("mqt.predictor")
     except ModuleNotFoundError:
         error_msg = "Could not retrieve version of mqt.predictor. Please run 'pip install . or pip install mqt.predictor'."
-        raise RuntimeError(
-            error_msg
-        ) from None
+        raise RuntimeError(error_msg) from None
 
     version_found = False
     response = requests.get("https://api.github.com/repos/cda-tum/mqtpredictor/tags")
@@ -466,9 +464,7 @@ def load_model(model_name: str) -> MaskablePPO:
             response = requests.get(url)
             if not response:
                 error_msg = "Suitable trained models cannot be downloaded since the GitHub API failed. One reasons could be that the limit of 60 API calls per hour and IP address is exceeded."
-                raise RuntimeError(
-                    error_msg
-                )
+                raise RuntimeError(error_msg)
 
             response_json = response.json()
             if "assets" in response_json:
@@ -491,9 +487,7 @@ def load_model(model_name: str) -> MaskablePPO:
 
     if not version_found:
         error_msg = "No suitable model found on GitHub. Please update your mqt.predictort package using 'pip install -U mqt.predictor'."
-        raise RuntimeError(
-            error_msg
-        ) from None
+        raise RuntimeError(error_msg) from None
 
     return MaskablePPO.load(path / model_name)
 
@@ -502,7 +496,7 @@ def handle_downloading_model(download_url: str, model_name: str) -> None:
     logger.info("Start downloading model...")
 
     r = requests.get(download_url)
-    total_length = int(r.headers.get("content-length")) # type: ignore[arg-type]
+    total_length = int(r.headers.get("content-length"))  # type: ignore[arg-type]
     fname = str(get_path_trained_model() / (model_name + ".zip"))
 
     with Path(fname).open(mode="wb") as f, tqdm(

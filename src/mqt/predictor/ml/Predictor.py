@@ -18,11 +18,13 @@ from sklearn.model_selection import GridSearchCV, train_test_split
 plt.rcParams["font.family"] = "Times New Roman"
 
 logger = logging.getLogger("mqtpredictor")
+
+
 class Predictor:
-    def __init__(self, verbose:int=0) -> None:
+    def __init__(self, verbose: int = 0) -> None:
         if verbose == 1:
             lvl = logging.INFO
-        elif verbose == 2: # noqa: PLR2004
+        elif verbose == 2:  # noqa: PLR2004
             lvl = logging.DEBUG
         else:
             lvl = logging.WARNING
@@ -30,7 +32,7 @@ class Predictor:
 
         self.clf = None
 
-    def set_classifier(self, clf:RandomForestClassifier) -> None:
+    def set_classifier(self, clf: RandomForestClassifier) -> None:
         self.clf = clf
 
     def compile_all_circuits_for_qc(
@@ -39,7 +41,7 @@ class Predictor:
         source_path: str = "",
         target_path: str = "",
         timeout: int = 10,
-        logger_level:int=logging.INFO,
+        logger_level: int = logging.INFO,
     ) -> bool:
         """Handles the creation of one training sample.
 
@@ -234,7 +236,7 @@ class Predictor:
         path_uncompiled_circuit: str = "",
         path_compiled_circuits: str = "",
         logger_level: int = logging.WARNING,
-    ) -> tuple[tuple[list[Any], Any], str, list[list[float]]]|bool:
+    ) -> tuple[tuple[list[Any], Any], str, list[list[float]]] | bool:
 
         """Handles to create training data from a single generated training sample
 
@@ -294,9 +296,7 @@ class Predictor:
 
         return (training_sample, circuit_name, scores)
 
-    def train_random_forest_classifier(
-        self, visualize_results:bool=False
-    ) -> bool:
+    def train_random_forest_classifier(self, visualize_results: bool = False) -> bool:
 
         (
             X_train,
@@ -346,7 +346,9 @@ class Predictor:
 
         return self.clf is not None
 
-    def get_prepared_training_data(self, save_non_zero_indices:bool=False) -> tuple[Any,Any,Any,Any,Any,Any, Any, Any]:
+    def get_prepared_training_data(
+        self, save_non_zero_indices: bool = False
+    ) -> tuple[Any, Any, Any, Any, Any, Any, Any, Any]:
         training_data, names_list, scores_list = ml.helper.load_training_data()
         X, y = zip(*training_data)
         X = list(X)
@@ -389,7 +391,10 @@ class Predictor:
         )
 
     def calc_performance_measures(
-        self, scores_filtered:list[list[float]], y_pred:np.ndarray[Any, np.dtype[np.float64]], y_test:np.ndarray[Any, np.dtype[np.float64]]
+        self,
+        scores_filtered: list[list[float]],
+        y_pred: np.ndarray[Any, np.dtype[np.float64]],
+        y_test: np.ndarray[Any, np.dtype[np.float64]],
     ) -> tuple[list[int], list[float]]:
         """Method to generate the performance measures for a trained classifier
 
@@ -409,7 +414,11 @@ class Predictor:
         for i in range(len(y_pred)):
             assert np.argmax(scores_filtered[i]) == y_test[i]
             predicted_score = scores_filtered[i][y_pred[i]]
-            tmp_predicted_score = 0 if predicted_score == ml.helper.get_width_penalty() else predicted_score
+            tmp_predicted_score = (
+                0
+                if predicted_score == ml.helper.get_width_penalty()
+                else predicted_score
+            )
             relative_scores.append(tmp_predicted_score - np.max(scores_filtered[i]))
             score = list(np.sort(scores_filtered[i])[::-1]).index(predicted_score)
             res.append(score + 1)
@@ -418,7 +427,7 @@ class Predictor:
 
         return res, relative_scores
 
-    def plot_eval_histogram(self, res:list[int], filename:str="histogram") -> None:
+    def plot_eval_histogram(self, res: list[int], filename: str = "histogram") -> None:
         """Method to generate the histogram of the resulting ranks
 
         Keyword arguments:
@@ -455,7 +464,11 @@ class Predictor:
         plt.show()
 
     def plot_eval_all_detailed_compact_normed(
-        self, names_list:list[Any], scores_filtered:list[Any], y_pred:np.ndarray[Any, np.dtype[np.float64]], y_test:np.ndarray[Any, np.dtype[np.float64]]
+        self,
+        names_list: list[Any],
+        scores_filtered: list[Any],
+        y_pred: np.ndarray[Any, np.dtype[np.float64]],
+        y_test: np.ndarray[Any, np.dtype[np.float64]],
     ) -> None:
         """Method to generate the detailed graph to examine the differences in evaluation scores
 
@@ -517,7 +530,7 @@ class Predictor:
             result_path.mkdir()
         plt.savefig(result_path / "y_pred_eval_normed.pdf")
 
-    def predict(self, qasm_str_or_path: str) -> Any|None:
+    def predict(self, qasm_str_or_path: str) -> Any | None:
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
 
         if self.clf is None:
@@ -537,9 +550,11 @@ class Predictor:
         non_zero_indices = np.load(str(path), allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
-        return self.clf.predict([feature_vector])[0] # type: ignore[attr-defined]
+        return self.clf.predict([feature_vector])[0]  # type: ignore[attr-defined]
 
-    def compile_as_predicted(self, qc: str, prediction: int) -> tuple[QuantumCircuit, int]:
+    def compile_as_predicted(
+        self, qc: str, prediction: int
+    ) -> tuple[QuantumCircuit, int]:
         """Returns the compiled quantum circuit when the original qasm circuit is provided as either
         a string or a file path and the prediction index is given."""
 
@@ -586,7 +601,7 @@ class Predictor:
         error_msg = "Invalid compiler name."
         raise ValueError(error_msg)
 
-    def instantiate_supervised_ML_model(self, timeout:int) -> None:
+    def instantiate_supervised_ML_model(self, timeout: int) -> None:
         # Generate compiled circuits and save them as qasm files
         self.generate_compiled_circuits(
             timeout=timeout,

@@ -18,8 +18,8 @@ from qiskit.transpiler.passes import CheckMap, GatesInBasis
 logger = logging.getLogger("mqtpredictor")
 
 
-class PredictorEnv(Env): # type: ignore[misc]
-    def __init__(self, reward_function:rl.helper.reward_functions="fidelity"):
+class PredictorEnv(Env):  # type: ignore[misc]
+    def __init__(self, reward_function: rl.helper.reward_functions = "fidelity"):
         logger.info("Init env: " + reward_function)
 
         self.action_set = {}
@@ -81,7 +81,9 @@ class PredictorEnv(Env): # type: ignore[misc]
         self.device = None
         self.cmap = None
 
-    def step(self, action:int) -> dict[str, Any] | tuple[dict[str, Any], float, bool, dict[Any, Any]]:
+    def step(
+        self, action: int
+    ) -> dict[str, Any] | tuple[dict[str, Any], float, bool, dict[Any, Any]]:
         altered_qc = self.apply_action(action)
         if not altered_qc:
             return (
@@ -91,7 +93,7 @@ class PredictorEnv(Env): # type: ignore[misc]
                 {},
             )
 
-        self.state:QuantumCircuit = altered_qc
+        self.state: QuantumCircuit = altered_qc
         self.num_steps += 1
 
         self.valid_actions = self.determine_valid_actions_for_state()
@@ -118,7 +120,7 @@ class PredictorEnv(Env): # type: ignore[misc]
         elif self.reward_function == "gate_ratio":
             reward_val = reward.gate_ratio(self.state)
         else:
-            error_msg =f"Reward function {self.reward_function} not supported."
+            error_msg = f"Reward function {self.reward_function} not supported."
             raise ValueError(error_msg)
         return reward_val
 
@@ -147,11 +149,9 @@ class PredictorEnv(Env): # type: ignore[misc]
         return rl.helper.create_feature_dict(self.state)
 
     def action_masks(self) -> list[bool]:
-        return [
-            action in self.valid_actions for action in self.action_set
-        ]
+        return [action in self.valid_actions for action in self.action_set]
 
-    def apply_action(self, action_index:int) -> QuantumCircuit:
+    def apply_action(self, action_index: int) -> QuantumCircuit:
         if action_index in self.actions_platform:
             self.native_gateset_name = self.action_set[action_index]["name"]
             self.native_gates = self.action_set[action_index]["gates"]
@@ -210,7 +210,7 @@ class PredictorEnv(Env): # type: ignore[misc]
                         + str(e),
                     ) from None
             else:
-                error_msg  =f"Origin {action['origin']} not supported."
+                error_msg = f"Origin {action['origin']} not supported."
                 raise ValueError(error_msg)
         else:
             error_msg = f"Action {action_index} not supported."
@@ -224,7 +224,7 @@ class PredictorEnv(Env): # type: ignore[misc]
                 self.get_platform_valid_actions_for_state() + self.actions_opt_indices
             )
 
-        if self.device is None: # type: ignore[unreachable]
+        if self.device is None:  # type: ignore[unreachable]
             return self.get_device_action_indices_for_nat_gates()
 
         check_nat_gates = GatesInBasis(basis_gates=self.native_gates)

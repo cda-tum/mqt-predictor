@@ -55,7 +55,7 @@ def get_width_penalty() -> int:
     return -10000
 
 
-def get_compilation_pipeline() -> dict[str, dict[str,Any]]:
+def get_compilation_pipeline() -> dict[str, dict[str, Any]]:
     return {
         "devices": {
             "ibm": [("ibm_washington", 127), ("ibm_montreal", 27)],
@@ -70,7 +70,7 @@ def get_compilation_pipeline() -> dict[str, dict[str,Any]]:
     }
 
 
-def get_index_to_comppath_LUT() -> dict[ int, tuple[str, str, str, bool|int]]:
+def get_index_to_comppath_LUT() -> dict[int, tuple[str, str, str, bool | int]]:
     compilation_pipeline = get_compilation_pipeline()
     index = 0
     index_to_comppath_LUT = {}
@@ -147,8 +147,7 @@ def get_openqasm_gates() -> list[str]:
     ]
 
 
-
-def dict_to_featurevector(gate_dict:dict[str, int]) -> dict[str, int]:
+def dict_to_featurevector(gate_dict: dict[str, int]) -> dict[str, int]:
     """Calculates and returns the feature vector of a given quantum circuit gate dictionary."""
     res_dct = dict.fromkeys(get_openqasm_gates(), 0)
     for key, val in dict(gate_dict).items():
@@ -157,7 +156,10 @@ def dict_to_featurevector(gate_dict:dict[str, int]) -> dict[str, int]:
 
     return res_dct
 
+
 PATH_LENGTH = 260
+
+
 def create_feature_dict(qc: str) -> dict[str, Any]:
     if not isinstance(qc, QuantumCircuit):
         if len(qc) < PATH_LENGTH and Path(qc).exists():
@@ -169,7 +171,7 @@ def create_feature_dict(qc: str) -> dict[str, Any]:
             raise ValueError(error_msg) from None
 
     ops_list = qc.count_ops()
-    feature_dict= dict_to_featurevector(ops_list)
+    feature_dict = dict_to_featurevector(ops_list)
 
     feature_dict["num_qubits"] = qc.num_qubits
     feature_dict["depth"] = qc.depth()
@@ -189,11 +191,11 @@ def create_feature_dict(qc: str) -> dict[str, Any]:
     return feature_dict
 
 
-def save_classifier(clf:RandomForestClassifier) -> None:
+def save_classifier(clf: RandomForestClassifier) -> None:
     dump(clf, str(get_path_trained_model() / "trained_clf.joblib"))
 
 
-def save_training_data(res:tuple[list[Any], list[Any], list[Any]]) -> None:
+def save_training_data(res: tuple[list[Any], list[Any], list[Any]]) -> None:
     training_data, names_list, scores_list = res
 
     with resources.as_file(
@@ -223,8 +225,6 @@ def load_training_data() -> tuple[list[Any], list[str], list[Any]]:
             )
         else:
             error_msg = "Training data not found. Please run the training script first."
-            raise FileNotFoundError(
-                error_msg
-            )
+            raise FileNotFoundError(error_msg)
 
         return training_data, names_list, scores_list

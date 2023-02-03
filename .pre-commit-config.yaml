@@ -43,6 +43,12 @@ repos:
       - id: pyupgrade
         args: ["--py37-plus"]
 
+  # Run code formatting with Black
+  - repo: https://github.com/psf/black
+    rev: "22.12.0" # Keep in sync with blacken-docs
+    hooks:
+      - id: black
+
   # Also run Black on examples in the documentation
   - repo: https://github.com/asottile/blacken-docs
     rev: "1.13.0"

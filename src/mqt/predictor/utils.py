@@ -13,13 +13,13 @@ from qiskit.transpiler.passes import RemoveBarriers
 logger = logging.getLogger("mqtpredictor")
 
 
-def timeout_watcher(func:Any, args:list[Any], timeout:int) -> Any:
+def timeout_watcher(func: Any, args: list[Any], timeout: int) -> Any:
     """Method that stops a function call after a given timeout limit."""
 
     class TimeoutException(Exception):  # Custom exception class
         pass
 
-    def timeout_handler(signum:Any, frame:Any) -> None:  # Custom signal handler # noqa: ARG001
+    def timeout_handler(_signum: Any, _frame: Any) -> None:  # Custom signal handler
         raise TimeoutException
 
     # Change the behavior of SIGALRM
@@ -46,7 +46,7 @@ def timeout_watcher(func:Any, args:list[Any], timeout:int) -> Any:
     return res
 
 
-def calc_qubit_index(qargs:list[Any], qregs:list[QuantumRegister], index:int) -> Any:
+def calc_qubit_index(qargs: list[Any], qregs: list[QuantumRegister], index: int) -> Any:
     offset = 0
     for reg in qregs:
         if qargs[index] not in reg:
@@ -57,7 +57,10 @@ def calc_qubit_index(qargs:list[Any], qregs:list[QuantumRegister], index:int) ->
     error_msg = "Qubit not found."
     raise ValueError(error_msg)
 
+
 NUM_QUBIT_INDICES_RIGETTI = 80
+
+
 def get_rigetti_qubit_dict() -> dict[str, str]:
     mapping = {
         "32": "4",
@@ -146,7 +149,9 @@ def get_rigetti_qubit_dict() -> dict[str, str]:
     return mapping
 
 
-def calc_supermarq_features(qc: QuantumCircuit) -> tuple[float, float, float, float, float]:
+def calc_supermarq_features(
+    qc: QuantumCircuit,
+) -> tuple[float, float, float, float, float]:
     qc = RemoveBarriers()(qc)
     connectivity_collection: list[list[int]] = []
     liveness_A_matrix = 0
@@ -157,7 +162,7 @@ def calc_supermarq_features(qc: QuantumCircuit) -> tuple[float, float, float, fl
         liveness_A_matrix += len(qargs)
         first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
         all_indices = [first_qubit]
-        if len(qargs) == 2: # noqa: PLR2004
+        if len(qargs) == 2:  # noqa: PLR2004
             second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
             all_indices.append(second_qubit)
         for qubit_index in all_indices:

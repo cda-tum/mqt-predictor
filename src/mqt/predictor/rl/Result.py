@@ -36,13 +36,13 @@ class Result:
         rew_gate_ratio = reward.gate_ratio(qc)
         rew_mix = reward.mix(qc, device)
 
-        self.benchmark:str = benchmark
-        self.used_setup:str = used_setup
-        self.time:float = duration
-        self.fidelity:float = rew_fid
-        self.critical_depth:float = rew_crit_depth
-        self.gate_ratio:float = rew_gate_ratio
-        self.mix:float = rew_mix
+        self.benchmark: str = benchmark
+        self.used_setup: str = used_setup
+        self.time: float = duration
+        self.fidelity: float = rew_fid
+        self.critical_depth: float = rew_crit_depth
+        self.gate_ratio: float = rew_gate_ratio
+        self.mix: float = rew_mix
 
     def get_dict(self) -> dict[str, float]:
         return {
