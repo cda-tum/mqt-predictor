@@ -78,6 +78,14 @@ implicit_reexport = true
 module = ["qiskit.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["joblib.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["matplotlib.*"]
+ignore_missing_imports = true
+
 # todo: remove once mqt.bench is typed
 [[tool.mypy.overrides]]
 module = ["mqt.bench.*"]
