@@ -174,7 +174,7 @@ class Predictor:
 
         Parallel(n_jobs=-1, verbose=100)(
             delayed(self.compile_all_circuits_for_qc)(
-                filename, source_path, target_path, timeout
+                filename, source_path, target_path, timeout, logger.level
             )
             for filename in source_circuits_list
         )
@@ -210,7 +210,10 @@ class Predictor:
 
         results = Parallel(n_jobs=-1, verbose=100)(
             delayed(self.generate_training_sample)(
-                str(filename.name), path_uncompiled_circuits, path_compiled_circuits
+                str(filename.name),
+                path_uncompiled_circuits,
+                path_compiled_circuits,
+                logger.level,
             )
             for filename in Path(path_uncompiled_circuits).iterdir()
         )
@@ -232,6 +235,7 @@ class Predictor:
         path_compiled_circuits: str = "",
         logger_level: int = logging.WARNING,
     ) -> tuple[tuple[list[Any], Any], str, list[list[float]]]|bool:
+
         """Handles to create training data from a single generated training sample
 
         Keyword arguments:
