@@ -8,7 +8,6 @@ if sys.version_info < (3, 10, 0):
 else:
     from importlib import resources  # type: ignore[no-redef]
 
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -19,8 +18,6 @@ from qiskit import QuantumCircuit
 
 if TYPE_CHECKING:
     from sklearn.ensemble import RandomForestClassifier
-
-logger = logging.getLogger("mqtpredictor")
 
 
 def qcompile(qc: QuantumCircuit | str) -> QuantumCircuit:

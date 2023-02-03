@@ -17,18 +17,16 @@ from sklearn.model_selection import GridSearchCV, train_test_split
 
 plt.rcParams["font.family"] = "Times New Roman"
 
-
+logger = logging.getLogger("mqtpredictor")
 class Predictor:
     def __init__(self, verbose:int=0) -> None:
-        self.verbose = verbose
-
-        self.logger = logging.getLogger("mqtpredictor")
         if verbose == 1:
-            self.logger.setLevel(logging.INFO)
+            lvl = logging.INFO
         elif verbose == 2: # noqa: PLR2004
-            self.logger.setLevel(logging.DEBUG)
+            lvl = logging.DEBUG
         else:
-            self.logger.setLevel(logging.WARNING)
+            lvl = logging.WARNING
+        logger.setLevel(lvl)
 
         self.clf = None
 
@@ -41,6 +39,7 @@ class Predictor:
         source_path: str = "",
         target_path: str = "",
         timeout: int = 10,
+        logger_level:int=logging.INFO,
     ) -> bool:
         """Handles the creation of one training sample.
 
@@ -54,13 +53,15 @@ class Predictor:
         True -- at least one compilation option succeeded
         False -- if not
         """
+
+        logger.setLevel(logger_level)
         if not source_path:
             source_path = str(ml.helper.get_path_training_circuits())
 
         if not target_path:
             target_path = str(ml.helper.get_path_training_circuits_compiled())
 
-        self.logger.info("Processing: " + filename)
+        logger.info("Processing: " + filename)
         qc = QuantumCircuit.from_qasm_file(Path(source_path) / filename)
 
         if not qc:
@@ -126,7 +127,7 @@ class Predictor:
                                         continue
 
             if all(x is False for x in results):
-                self.logger.debug(
+                logger.debug(
                     "No compilation succeeded for this quantum circuit: " + filename
                 )
                 return False
@@ -229,6 +230,7 @@ class Predictor:
         file: str,
         path_uncompiled_circuit: str = "",
         path_compiled_circuits: str = "",
+        logger_level: int = logging.WARNING,
     ) -> tuple[tuple[list[Any], Any], str, list[list[float]]]|bool:
         """Handles to create training data from a single generated training sample
 
@@ -242,7 +244,7 @@ class Predictor:
         circuit_name -- names of the training sample circuit
         scores -- evaluation scores for all compilation options
         """
-
+        logger.setLevel(logger_level)
         if not path_uncompiled_circuit:
             path_uncompiled_circuit = str(ml.helper.get_path_training_circuits())
 
@@ -255,7 +257,7 @@ class Predictor:
             return False
 
         LUT = ml.helper.get_index_to_comppath_LUT()
-        self.logger.debug("Checking " + file)
+        logger.debug("Checking " + file)
         scores: list[list[float]] = []
         for _ in range(len(LUT)):
             scores.append([])
@@ -324,10 +326,10 @@ class Predictor:
             res, _ = self.calc_performance_measures(scores_filtered, y_pred, y_test)
             self.plot_eval_histogram(res, filename="RandomForestClassifier")
 
-            self.logger.info("Best Accuracy: " + str(clf.best_score_))
+            logger.info("Best Accuracy: " + str(clf.best_score_))
             top3 = (res.count(1) + res.count(2) + res.count(3)) / len(res)
-            self.logger.info("Top 3: " + str(top3))
-            self.logger.info(
+            logger.info("Top 3: " + str(top3))
+            logger.info(
                 "Feature Importance: " + str(clf.best_estimator_.feature_importances_)
             )
             self.plot_eval_all_detailed_compact_normed(
@@ -336,7 +338,7 @@ class Predictor:
 
         self.set_classifier(clf.best_estimator_)
         ml.helper.save_classifier(clf.best_estimator_)
-        self.logger.info("Random Forest classifier is trained and saved.")
+        logger.info("Random Forest classifier is trained and saved.")
 
         return self.clf is not None
 
@@ -543,10 +545,10 @@ class Predictor:
             raise IndexError(error_msg)
         if not isinstance(qc, QuantumCircuit):
             if Path(qc).exists():
-                self.logger.info("Reading from .qasm path: " + qc)
+                logger.info("Reading from .qasm path: " + str(qc))
                 qc = QuantumCircuit.from_qasm_file(qc)
             elif QuantumCircuit.from_qasm_str(qc):
-                self.logger.info("Reading from .qasm str")
+                logger.info("Reading from .qasm str")
                 qc = QuantumCircuit.from_qasm_str(qc)
             else:
                 error_msg = "Invalid 'qc' parameter value."

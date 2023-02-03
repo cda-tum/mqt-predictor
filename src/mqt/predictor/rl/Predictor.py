@@ -22,17 +22,17 @@ from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 from sb3_contrib.common.maskable.utils import get_action_masks
 
+logger = logging.getLogger("mqtpredictor")
 PATH_LENGTH = 260
 class Predictor:
     def __init__(self, verbose:int=0):
-        self.logger = logging.getLogger("mqtpredictor")
-        self.verbose = verbose
         if verbose == 1:
-            self.logger.setLevel(logging.INFO)
-        elif verbose == 2:# noqa: PLR2004
-            self.logger.setLevel(logging.DEBUG)
+            lvl = logging.INFO
+        elif verbose == 2: # noqa: PLR2004
+            lvl = logging.DEBUG
         else:
-            self.logger.setLevel(logging.WARNING)
+            lvl = logging.WARNING
+        logger.setLevel(lvl)
 
     def compile_as_predicted(
         self, qc: QuantumCircuit | str, opt_objective: str = "fidelity"
@@ -60,7 +60,7 @@ class Predictor:
         return env.state, used_compilation_passes
 
     def evaluate_sample_circuit(self, file:str) -> dict[str, Any]:
-        self.logger.info("Evaluate file: " + file)
+        logger.info("Evaluate file: " + file)
 
         reward_functions = ["fidelity", "critical_depth", "gate_ratio", "mix"]
         results = []
@@ -112,7 +112,7 @@ class Predictor:
             progress_bar = True
 
         for rew in reward_functions:
-            self.logger.debug("Start training for: " + rew)
+            logger.debug("Start training for: " + rew)
             env = rl.PredictorEnv(reward_function=rew)
 
             model = MaskablePPO(

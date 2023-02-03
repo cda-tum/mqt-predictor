@@ -31,7 +31,7 @@ def timeout_watcher(func:Any, args:list[Any], timeout:int) -> Any:
     except TimeoutException:
         logger.debug(
             "Calculation/Generation exceeded timeout limit for "
-            + func.__name__
+            + func.__module__
             + ", "
             + str(args[1:])
         )
