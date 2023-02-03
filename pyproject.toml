@@ -72,6 +72,11 @@ pretty = true
 module = ["qiskit.*"]
 ignore_missing_imports = true
 
+# todo: remove once mqt.bench is typed
+[[tool.mypy.overrides]]
+module = ["mqt.bench.*"]
+ignore_missing_imports = true
+
 [tool.ruff]
 select = [
     "E", "F", "W", # flake8
