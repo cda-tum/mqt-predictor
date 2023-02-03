@@ -59,9 +59,7 @@ reward_functions = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
 logger = logging.getLogger("mqtpredictor")
 
 
-def qcompile(
-    qc: QuantumCircuit | str, opt_objective: reward_functions = "fidelity"
-) -> QuantumCircuit:
+def qcompile(qc: QuantumCircuit | str, opt_objective: reward_functions = "fidelity") -> QuantumCircuit:
     """Returns the compiled quantum circuit which is compiled following an objective function.
     Keyword arguments:
     qc -- to be compiled quantum circuit or path to a qasm file
@@ -233,9 +231,7 @@ def get_actions_synthesis() -> list[dict[str, Any]]:
     return [
         {
             "name": "BasisTranslator",
-            "transpile_pass": lambda g: [
-                BasisTranslator(StandardEquivalenceLibrary, target_basis=g)
-            ],
+            "transpile_pass": lambda g: [BasisTranslator(StandardEquivalenceLibrary, target_basis=g)],
             "origin": "qiskit",
         },
     ]
@@ -306,9 +302,7 @@ def get_state_sample() -> QuantumCircuit:
     try:
         qc = QuantumCircuit.from_qasm_file(str(file_list[random_index]))
     except Exception:
-        raise RuntimeError(
-            "Could not read QuantumCircuit from: " + str(file_list[random_index])
-        ) from None
+        raise RuntimeError("Could not read QuantumCircuit from: " + str(file_list[random_index])) from None
 
     return qc
 
@@ -410,13 +404,9 @@ def create_feature_dict(qc: QuantumCircuit) -> dict[str, Any]:
         liveness,
     ) = utils.calc_supermarq_features(qc)
     # for all dict values, put them in a list each
-    feature_dict["program_communication"] = np.array(
-        [program_communication], dtype=np.float32
-    )
+    feature_dict["program_communication"] = np.array([program_communication], dtype=np.float32)
     feature_dict["critical_depth"] = np.array([critical_depth], dtype=np.float32)
-    feature_dict["entanglement_ratio"] = np.array(
-        [entanglement_ratio], dtype=np.float32
-    )
+    feature_dict["entanglement_ratio"] = np.array([entanglement_ratio], dtype=np.float32)
     feature_dict["parallelism"] = np.array([parallelism], dtype=np.float32)
     feature_dict["liveness"] = np.array([liveness], dtype=np.float32)
 
@@ -445,7 +435,9 @@ def load_model(model_name: str) -> MaskablePPO:
     try:
         mqtpredictor_module_version = metadata.version("mqt.predictor")
     except ModuleNotFoundError:
-        error_msg = "Could not retrieve version of mqt.predictor. Please run 'pip install . or pip install mqt.predictor'."
+        error_msg = (
+            "Could not retrieve version of mqt.predictor. Please run 'pip install . or pip install mqt.predictor'."
+        )
         raise RuntimeError(error_msg) from None
 
     version_found = False
@@ -454,13 +446,8 @@ def load_model(model_name: str) -> MaskablePPO:
     for elem in response.json():
         available_versions.append(elem["name"])
     for possible_version in available_versions:
-        if version.parse(mqtpredictor_module_version) >= version.parse(
-            possible_version
-        ):
-            url = (
-                "https://api.github.com/repos/cda-tum/mqtpredictor/releases/tags/"
-                + possible_version
-            )
+        if version.parse(mqtpredictor_module_version) >= version.parse(possible_version):
+            url = "https://api.github.com/repos/cda-tum/mqtpredictor/releases/tags/" + possible_version
             response = requests.get(url)
             if not response:
                 error_msg = "Suitable trained models cannot be downloaded since the GitHub API failed. One reasons could be that the limit of 60 API calls per hour and IP address is exceeded."

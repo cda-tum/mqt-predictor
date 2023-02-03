@@ -55,6 +55,9 @@ Research = "https://www.cda.cit.tum.de/research/quantum/"
 
 [tool.setuptools_scm]
 
+[tool.black]
+line-length = 120
+
 [tool.mypy]
 files = ["mqt/predictor", "tests"]
 python_version = "3.9"

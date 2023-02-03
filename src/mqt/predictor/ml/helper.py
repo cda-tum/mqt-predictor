@@ -198,9 +198,7 @@ def save_classifier(clf: RandomForestClassifier) -> None:
 def save_training_data(res: tuple[list[Any], list[Any], list[Any]]) -> None:
     training_data, names_list, scores_list = res
 
-    with resources.as_file(
-        get_path_training_data() / "training_data_aggregated"
-    ) as path:
+    with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
         data = np.asarray(training_data)
         np.save(str(path / "training_data.npy"), data)
         data = np.asarray(names_list)
@@ -210,9 +208,7 @@ def save_training_data(res: tuple[list[Any], list[Any], list[Any]]) -> None:
 
 
 def load_training_data() -> tuple[list[Any], list[str], list[Any]]:
-    with resources.as_file(
-        get_path_training_data() / "training_data_aggregated"
-    ) as path:
+    with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
         if (
             path.joinpath("training_data.npy").is_file()
             and path.joinpath("names_list.npy").is_file()
@@ -220,9 +216,7 @@ def load_training_data() -> tuple[list[Any], list[str], list[Any]]:
         ):
             training_data = np.load(str(path / "training_data.npy"), allow_pickle=True)
             names_list = list(np.load(str(path / "names_list.npy"), allow_pickle=True))
-            scores_list = list(
-                np.load(str(path / "scores_list.npy"), allow_pickle=True)
-            )
+            scores_list = list(np.load(str(path / "scores_list.npy"), allow_pickle=True))
         else:
             error_msg = "Training data not found. Please run the training script first."
             raise FileNotFoundError(error_msg)

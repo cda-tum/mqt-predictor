@@ -81,9 +81,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.device = None
         self.cmap = None
 
-    def step(
-        self, action: int
-    ) -> dict[str, Any] | tuple[dict[str, Any], float, bool, dict[Any, Any]]:
+    def step(self, action: int) -> dict[str, Any] | tuple[dict[str, Any], float, bool, dict[Any, Any]]:
         altered_qc = self.apply_action(action)
         if not altered_qc:
             return (
@@ -172,10 +170,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 self.cmap = self.action_set[action_index]["cmap"]
                 return self.state
 
-            if (
-                action_index
-                in self.actions_layout_indices + self.actions_routing_indices
-            ):
+            if action_index in self.actions_layout_indices + self.actions_routing_indices:
                 transpile_pass = action["transpile_pass"](self.cmap)
             elif action_index in self.actions_synthesis_indices:
                 transpile_pass = action["transpile_pass"](self.native_gates)
@@ -220,9 +215,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
     def determine_valid_actions_for_state(self) -> list[int]:
         if self.native_gates is None:
-            return (
-                self.get_platform_valid_actions_for_state() + self.actions_opt_indices
-            )
+            return self.get_platform_valid_actions_for_state() + self.actions_opt_indices
 
         if self.device is None:  # type: ignore[unreachable]
             return self.get_device_action_indices_for_nat_gates()
@@ -259,19 +252,13 @@ class PredictorEnv(Env):  # type: ignore[misc]
         potential_devices_indices = []
         for dev in potential_devices_names:
             for key in self.action_set:
-                if (
-                    self.action_set[key]["name"] == dev
-                    and self.state.num_qubits <= self.action_set[key]["max_qubits"]
-                ):
+                if self.action_set[key]["name"] == dev and self.state.num_qubits <= self.action_set[key]["max_qubits"]:
                     potential_devices_indices.append(key)
         return potential_devices_indices
 
     def get_platform_valid_actions_for_state(self) -> list[int]:
         valid_platform_indices = []
         for platform_action in self.actions_platform:
-            if (
-                self.state.num_qubits
-                <= self.action_set[platform_action]["max_qubit_size"]
-            ):
+            if self.state.num_qubits <= self.action_set[platform_action]["max_qubit_size"]:
                 valid_platform_indices.append(platform_action)
         return valid_platform_indices

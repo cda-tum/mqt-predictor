@@ -87,14 +87,8 @@ def test_calc_eval_score_for_qc() -> None:
                                 ".",
                                 "eval_test",
                             )
-                            score = reward.expected_fidelity(
-                                filename_qasm, device=device_name
-                            )
-                            assert (
-                                score >= 0
-                                and score <= 1
-                                or score == ml.helper.get_width_penalty()
-                            )
+                            score = reward.expected_fidelity(filename_qasm, device=device_name)
+                            assert score >= 0 and score <= 1 or score == ml.helper.get_width_penalty()
 
     if Path(filename_qasm).is_file():
         Path(filename_qasm).unlink()

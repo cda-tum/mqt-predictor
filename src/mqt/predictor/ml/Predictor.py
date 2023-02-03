@@ -79,9 +79,7 @@ class Predictor:
                     for compiler, settings in compilation_pipeline["compiler"].items():
                         if "qiskit" in compiler:
                             for opt_level in settings["optimization_level"]:
-                                target_filename = (
-                                    filename.split(".qasm")[0] + "_" + str(comp_path_id)
-                                )
+                                target_filename = filename.split(".qasm")[0] + "_" + str(comp_path_id)
                                 comp_path_id += 1
                                 if max_qubits >= qc.num_qubits:
                                     tmp = utils.timeout_watcher(
@@ -104,9 +102,7 @@ class Predictor:
                                         continue
                         elif "tket" in compiler:
                             for lineplacement in settings["lineplacement"]:
-                                target_filename = (
-                                    filename.split(".qasm")[0] + "_" + str(comp_path_id)
-                                )
+                                target_filename = filename.split(".qasm")[0] + "_" + str(comp_path_id)
                                 comp_path_id += 1
                                 if max_qubits >= qc.num_qubits:
                                     tmp = utils.timeout_watcher(
@@ -129,9 +125,7 @@ class Predictor:
                                         continue
 
             if all(x is False for x in results):
-                logger.debug(
-                    "No compilation succeeded for this quantum circuit: " + filename
-                )
+                logger.debug("No compilation succeeded for this quantum circuit: " + filename)
                 return False
             return True
 
@@ -159,10 +153,7 @@ class Predictor:
             target_path = str(ml.helper.get_path_training_circuits_compiled())
 
         path_zip = Path(source_path) / "mqtbench_training_samples.zip"
-        if (
-            not any(file.suffix == ".qasm" for file in Path(source_path).iterdir())
-            and path_zip.exists()
-        ):
+        if not any(file.suffix == ".qasm" for file in Path(source_path).iterdir()) and path_zip.exists():
             import zipfile
 
             with zipfile.ZipFile(str(path_zip), "r") as zip_ref:
@@ -170,14 +161,10 @@ class Predictor:
 
         Path(target_path).mkdir(exist_ok=True)
 
-        source_circuits_list = [
-            file.name for file in Path(source_path).iterdir() if file.suffix == ".qasm"
-        ]
+        source_circuits_list = [file.name for file in Path(source_path).iterdir() if file.suffix == ".qasm"]
 
         Parallel(n_jobs=-1, verbose=100)(
-            delayed(self.compile_all_circuits_for_qc)(
-                filename, source_path, target_path, timeout, logger.level
-            )
+            delayed(self.compile_all_circuits_for_qc)(filename, source_path, target_path, timeout, logger.level)
             for filename in source_circuits_list
         )
 
@@ -201,9 +188,7 @@ class Predictor:
             path_uncompiled_circuits = str(ml.helper.get_path_training_circuits())
 
         if not path_compiled_circuits:
-            path_compiled_circuits = str(
-                ml.helper.get_path_training_circuits_compiled()
-            )
+            path_compiled_circuits = str(ml.helper.get_path_training_circuits_compiled())
 
         # init resulting list (feature vector, name, scores)
         training_data = []
@@ -255,9 +240,7 @@ class Predictor:
             path_uncompiled_circuit = str(ml.helper.get_path_training_circuits())
 
         if not path_compiled_circuits:
-            path_compiled_circuits = str(
-                ml.helper.get_path_training_circuits_compiled()
-            )
+            path_compiled_circuits = str(ml.helper.get_path_training_circuits_compiled())
 
         if ".qasm" not in file:
             return False
@@ -288,9 +271,7 @@ class Predictor:
         if num_not_empty_entries == 0:
             return False
 
-        feature_vec = ml.helper.create_feature_dict(
-            str(Path(path_uncompiled_circuit) / file)
-        )
+        feature_vec = ml.helper.create_feature_dict(str(Path(path_uncompiled_circuit) / file))
         training_sample = (list(feature_vec.values()), np.argmax(scores))
         circuit_name = file.split(".")[0]
 
@@ -333,12 +314,8 @@ class Predictor:
             logger.info("Best Accuracy: " + str(clf.best_score_))
             top3 = (res.count(1) + res.count(2) + res.count(3)) / len(res)
             logger.info("Top 3: " + str(top3))
-            logger.info(
-                "Feature Importance: " + str(clf.best_estimator_.feature_importances_)
-            )
-            self.plot_eval_all_detailed_compact_normed(
-                names_filtered, scores_filtered, y_pred, y_test
-            )
+            logger.info("Feature Importance: " + str(clf.best_estimator_.feature_importances_))
+            self.plot_eval_all_detailed_compact_normed(names_filtered, scores_filtered, y_pred, y_test)
 
         self.set_classifier(clf.best_estimator_)
         ml.helper.save_classifier(clf.best_estimator_)
@@ -414,11 +391,7 @@ class Predictor:
         for i in range(len(y_pred)):
             assert np.argmax(scores_filtered[i]) == y_test[i]
             predicted_score = scores_filtered[i][y_pred[i]]
-            tmp_predicted_score = (
-                0
-                if predicted_score == ml.helper.get_width_penalty()
-                else predicted_score
-            )
+            tmp_predicted_score = 0 if predicted_score == ml.helper.get_width_penalty() else predicted_score
             relative_scores.append(tmp_predicted_score - np.max(scores_filtered[i]))
             score = list(np.sort(scores_filtered[i])[::-1]).index(predicted_score)
             res.append(score + 1)
@@ -440,9 +413,7 @@ class Predictor:
         num_of_comp_paths = len(ml.helper.get_index_to_comppath_LUT())
         plt.bar(
             list(range(0, num_of_comp_paths, 1)),
-            height=[
-                res.count(i) / len(res) for i in range(1, num_of_comp_paths + 1, 1)
-            ],
+            height=[res.count(i) / len(res) for i in range(1, num_of_comp_paths + 1, 1)],
             width=1,
         )
         plt.xticks(
@@ -483,9 +454,7 @@ class Predictor:
         names_list_num_qubits = []
         for i in range(len(names_list)):
             assert np.argmax(scores_filtered[i]) == y_test[i]
-            names_list_num_qubits.append(
-                int(names_list[i].split("_")[-1].split(".")[0])
-            )
+            names_list_num_qubits.append(int(names_list[i].split("_")[-1].split(".")[0]))
 
         # Sort all other list (num_qubits, scores and y_pred) accordingly
         (
@@ -514,9 +483,7 @@ class Predictor:
             fontsize=18,
         )
         plt.yticks(fontsize=18)
-        plt.xlabel(
-            "Unseen test circuits (sorted along the number of qubits)", fontsize=18
-        )
+        plt.xlabel("Unseen test circuits (sorted along the number of qubits)", fontsize=18)
         plt.ylabel(
             "Evaluation scores of combinations of options \n (normalized per test circuit)",
             fontsize=18,
@@ -552,9 +519,7 @@ class Predictor:
 
         return self.clf.predict([feature_vector])[0]  # type: ignore[attr-defined]
 
-    def compile_as_predicted(
-        self, qc: str, prediction: int
-    ) -> tuple[QuantumCircuit, int]:
+    def compile_as_predicted(self, qc: str, prediction: int) -> tuple[QuantumCircuit, int]:
         """Returns the compiled quantum circuit when the original qasm circuit is provided as either
         a string or a file path and the prediction index is given."""
 

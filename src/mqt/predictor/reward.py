@@ -40,9 +40,7 @@ def gate_ratio(qc: QuantumCircuit, precision: int = 10) -> Any:
 
 
 def mix(qc: QuantumCircuit, device: str, precision: int = 10) -> Any:
-    return (
-        expected_fidelity(qc, device, precision) * 0.5 + crit_depth(qc, precision) * 0.5
-    )
+    return expected_fidelity(qc, device, precision) * 0.5 + crit_depth(qc, precision) * 0.5
 
 
 def expected_fidelity(qc_or_path: str, device: str, precision: int = 10) -> Any:
@@ -52,9 +50,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10) -> Any:
         try:
             qc = QuantumCircuit.from_qasm_file(qc_or_path)
         except Exception:
-            raise RuntimeError(
-                "Could not read QuantumCircuit from: " + qc_or_path
-            ) from None
+            raise RuntimeError("Could not read QuantumCircuit from: " + qc_or_path) from None
 
     res = 1.0
 
@@ -80,9 +76,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10) -> Any:
                         if gate_type == "measure":
                             specific_error = backend.readout_error(first_qubit)
                         else:
-                            specific_error = backend.gate_error(
-                                gate_type, [first_qubit]
-                            )
+                            specific_error = backend.gate_error(gate_type, [first_qubit])
                     except Exception as e:
                         raise RuntimeError(
                             "Error in IBM backend.gate_error(): "
@@ -99,9 +93,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10) -> Any:
                 else:
                     second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     try:
-                        specific_error = backend.gate_error(
-                            gate_type, [first_qubit, second_qubit]
-                        )
+                        specific_error = backend.gate_error(gate_type, [first_qubit, second_qubit])
                         if specific_error == 1:
                             specific_error = calibration.ibm_washington_cx_mean_error
                     except Exception as e:
@@ -130,22 +122,16 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10) -> Any:
                 assert len(qargs) in [1, 2]
                 first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
                 if len(qargs) == 1 and gate_type != "measure":
-                    specific_fidelity = calibration.oqc_lucy_calibration["fid_1Q"][
-                        str(first_qubit)
-                    ]
+                    specific_fidelity = calibration.oqc_lucy_calibration["fid_1Q"][str(first_qubit)]
                 elif len(qargs) == 1 and gate_type == "measure":
-                    specific_fidelity = calibration.oqc_lucy_calibration[
-                        "fid_1Q_readout"
-                    ][str(first_qubit)]
+                    specific_fidelity = calibration.oqc_lucy_calibration["fid_1Q_readout"][str(first_qubit)]
                 elif len(qargs) == 2:  # noqa: PLR2004
                     second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     tmp = str(first_qubit) + "-" + str(second_qubit)
                     if calibration.oqc_lucy_calibration["fid_2Q"].get(tmp) is None:
                         specific_fidelity = calibration.oqc_lucy_calibration["avg_2Q"]
                     else:
-                        specific_fidelity = calibration.oqc_lucy_calibration["fid_2Q"][
-                            tmp
-                        ]
+                        specific_fidelity = calibration.oqc_lucy_calibration["fid_2Q"][tmp]
 
                 res *= specific_fidelity
 
@@ -174,13 +160,11 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10) -> Any:
                 first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
                 if len(qargs) == 1:
                     if gate_type == "measure":
-                        specific_fidelity = calibration.rigetti_m2_calibration[
-                            "fid_1Q_readout"
-                        ][mapping.get(str(first_qubit))]
+                        specific_fidelity = calibration.rigetti_m2_calibration["fid_1Q_readout"][
+                            mapping.get(str(first_qubit))
+                        ]
                     else:
-                        specific_fidelity = calibration.rigetti_m2_calibration[
-                            "fid_1Q"
-                        ][mapping.get(str(first_qubit))]
+                        specific_fidelity = calibration.rigetti_m2_calibration["fid_1Q"][mapping.get(str(first_qubit))]
                 else:
                     second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     tmp = (
@@ -204,9 +188,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10) -> Any:
                     ):
                         specific_fidelity = calibration.rigetti_m2_calibration["avg_2Q"]
                     else:
-                        specific_fidelity = calibration.rigetti_m2_calibration[
-                            "fid_2Q_CZ"
-                        ][tmp]
+                        specific_fidelity = calibration.rigetti_m2_calibration["fid_2Q_CZ"][tmp]
 
                 res *= specific_fidelity
 

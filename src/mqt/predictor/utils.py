@@ -29,12 +29,7 @@ def timeout_watcher(func: Any, args: list[Any], timeout: int) -> Any:
     try:
         res = func(*args)
     except TimeoutException:
-        logger.debug(
-            "Calculation/Generation exceeded timeout limit for "
-            + func.__module__
-            + ", "
-            + str(args[1:])
-        )
+        logger.debug("Calculation/Generation exceeded timeout limit for " + func.__module__ + ", " + str(args[1:]))
         return False
     except Exception as e:
         logger.error("Something else went wrong: " + str(e))
@@ -183,9 +178,7 @@ def calc_supermarq_features(
     if num_multiple_qubit_gates == 0:
         critical_depth = 0.0
     else:
-        critical_depth = (
-            qc.depth(filter_function=lambda x: len(x[1]) > 1) / num_multiple_qubit_gates
-        )
+        critical_depth = qc.depth(filter_function=lambda x: len(x[1]) > 1) / num_multiple_qubit_gates
 
     entanglement_ratio = num_multiple_qubit_gates / num_gates
     assert num_multiple_qubit_gates <= num_gates

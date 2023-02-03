@@ -28,9 +28,7 @@ def test_predict(mock_show: Any) -> None:  # noqa: ARG001
     assert 0 <= prediction < len(ml.helper.get_index_to_comppath_LUT())
 
 
-@pytest.mark.parametrize(
-    "comp_path", list(range(len(ml.helper.get_index_to_comppath_LUT())))
-)
+@pytest.mark.parametrize("comp_path", list(range(len(ml.helper.get_index_to_comppath_LUT()))))
 def test_compilation_paths(comp_path: int) -> None:  # noqa: ARG001
     qc_qasm = benchmark_generator.get_benchmark("dj", 1, 2).qasm()
     res, compile_info = ml.qcompile(qc_qasm)

@@ -168,19 +168,13 @@ class Predictor:
             )
             duration = time.time() - start_time
 
-            return rl.Result(
-                benchmark, used_setup, duration, transpiled_qc_qiskit, "ibm_washington"
-            )
+            return rl.Result(benchmark, used_setup, duration, transpiled_qc_qiskit, "ibm_washington")
 
         if used_setup == "tket":
             qc = QuantumCircuit.from_qasm_file(benchmark)
             tket_qc = qiskit_to_tk(qc)
-            arch = architecture.Architecture(
-                rl.helper.get_cmap_from_devicename("ibm_washington")
-            )
-            ibm_rebase = auto_rebase_pass(
-                {OpType.Rz, OpType.SX, OpType.X, OpType.CX, OpType.Measure}
-            )
+            arch = architecture.Architecture(rl.helper.get_cmap_from_devicename("ibm_washington"))
+            ibm_rebase = auto_rebase_pass({OpType.Rz, OpType.SX, OpType.X, OpType.CX, OpType.Measure})
 
             start_time = time.time()
             ibm_rebase.apply(tket_qc)
@@ -191,9 +185,7 @@ class Predictor:
             duration = time.time() - start_time
             transpiled_qc_tket = tk_to_qiskit(tket_qc)
 
-            return rl.Result(
-                benchmark, used_setup, duration, transpiled_qc_tket, "ibm_washington"
-            )
+            return rl.Result(benchmark, used_setup, duration, transpiled_qc_tket, "ibm_washington")
 
         error_msg = "Unknown setup. Use either 'RL', 'qiskit_o3' or 'tket'."
         raise ValueError(error_msg)

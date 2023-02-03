@@ -40,9 +40,7 @@ def get_mean_IBM_washington_cx_error() -> Any:
 
 
 def parse_ionq_calibration_config() -> dict[str, str | float | dict[str, Any]]:
-    ref = (
-        resources.files("mqt.predictor") / "calibration_files" / "ionq_calibration.json"
-    )
+    ref = resources.files("mqt.predictor") / "calibration_files" / "ionq_calibration.json"
     with ref.open() as f:
         ionq_calibration = json.load(f)
     return {
@@ -53,27 +51,19 @@ def parse_ionq_calibration_config() -> dict[str, str | float | dict[str, Any]]:
 
 
 def parse_oqc_calibration_config() -> dict[str, str | float | dict[str, Any]]:
-    ref = (
-        resources.files("mqt.predictor")
-        / "calibration_files"
-        / "oqc_lucy_calibration.json"
-    )
+    ref = resources.files("mqt.predictor") / "calibration_files" / "oqc_lucy_calibration.json"
     with ref.open() as f:
         oqc_lucy_calibration = json.load(f)
     fid_1Q = {}
     fid_1Q_readout = {}
     for elem in oqc_lucy_calibration["oneQubitProperties"]:
-        fid_1Q[str(elem)] = oqc_lucy_calibration["oneQubitProperties"][elem][
-            "oneQubitFidelity"
-        ][0].get("fidelity")
-        fid_1Q_readout[str(elem)] = oqc_lucy_calibration["oneQubitProperties"][elem][
-            "oneQubitFidelity"
-        ][1].get("fidelity")
+        fid_1Q[str(elem)] = oqc_lucy_calibration["oneQubitProperties"][elem]["oneQubitFidelity"][0].get("fidelity")
+        fid_1Q_readout[str(elem)] = oqc_lucy_calibration["oneQubitProperties"][elem]["oneQubitFidelity"][1].get(
+            "fidelity"
+        )
     fid_2Q = {}
     for elem in oqc_lucy_calibration["twoQubitProperties"]:
-        fid_2Q[str(elem)] = oqc_lucy_calibration["twoQubitProperties"][elem][
-            "twoQubitGateFidelity"
-        ][0].get("fidelity")
+        fid_2Q[str(elem)] = oqc_lucy_calibration["twoQubitProperties"][elem]["twoQubitGateFidelity"][0].get("fidelity")
 
     avg_1Q = np.average(list(fid_1Q.values()))
     avg_2Q = np.average(list(fid_2Q.values()))
@@ -88,11 +78,7 @@ def parse_oqc_calibration_config() -> dict[str, str | float | dict[str, Any]]:
 
 
 def parse_rigetti_calibration_config() -> dict[str, str | float | dict[str, Any]]:
-    ref = (
-        resources.files("mqt.predictor")
-        / "calibration_files"
-        / "rigetti_m2_calibration.json"
-    )
+    ref = resources.files("mqt.predictor") / "calibration_files" / "rigetti_m2_calibration.json"
     with ref.open() as f:
         rigetti_m2_calibration = json.load(f)
     fid_1Q = {}
@@ -101,9 +87,7 @@ def parse_rigetti_calibration_config() -> dict[str, str | float | dict[str, Any]
     for elem in rigetti_m2_calibration["specs"]["1Q"]:
 
         fid_1Q[str(elem)] = rigetti_m2_calibration["specs"]["1Q"][elem].get("f1QRB")
-        fid_1Q_readout[str(elem)] = rigetti_m2_calibration["specs"]["1Q"][elem].get(
-            "fRO"
-        )
+        fid_1Q_readout[str(elem)] = rigetti_m2_calibration["specs"]["1Q"][elem].get("fRO")
 
     fid_2Q_CZ = {}
     non_list = []
@@ -111,9 +95,7 @@ def parse_rigetti_calibration_config() -> dict[str, str | float | dict[str, Any]
         if rigetti_m2_calibration["specs"]["2Q"][elem].get("fCZ") is None:
             non_list.append(elem)
         else:
-            fid_2Q_CZ[str(elem)] = rigetti_m2_calibration["specs"]["2Q"][elem].get(
-                "fCZ"
-            )
+            fid_2Q_CZ[str(elem)] = rigetti_m2_calibration["specs"]["2Q"][elem].get("fCZ")
 
     cz_fid_avg = np.average(list(fid_2Q_CZ.values()))
 
