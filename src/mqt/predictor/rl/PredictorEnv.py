@@ -231,16 +231,13 @@ class PredictorEnv(Env):  # type: ignore[misc]
         check_mapping(self.state)
         mapped = check_mapping.property_set["is_swap_mapped"]
 
-        if only_nat_gates and mapped:
+        if mapped:
             return [self.action_terminate_index, *self.actions_opt_indices]
 
-            # No layout applied yet
-        if only_nat_gates and not mapped:
-            if self.state._layout is not None:
-                return self.actions_routing_indices + self.actions_opt_indices
-            return self.actions_layout_indices + self.actions_opt_indices
-
-        return []
+        # No layout applied yet
+        if self.state._layout is not None:
+            return self.actions_routing_indices + self.actions_opt_indices
+        return self.actions_layout_indices + self.actions_opt_indices
 
     def get_device_action_indices_for_nat_gates(self) -> list[int]:
         nat_gate_index = -1
