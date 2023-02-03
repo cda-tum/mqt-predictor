@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import requests
@@ -47,12 +47,11 @@ from qiskit.transpiler.passes import (
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
-if sys.version_info < (3, 10, 0):
+if TYPE_CHECKING or sys.version_info >= (3, 10, 0):
+    from importlib import metadata, resources
+else:
     import importlib_metadata as metadata
     import importlib_resources as resources
-else:
-    from importlib import metadata, resources  # type: ignore[no-redef]
-
 
 reward_functions = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
 
