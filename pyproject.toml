@@ -57,7 +57,7 @@ Research = "https://www.cda.cit.tum.de/research/quantum/"
 [tool.setuptools_scm]
 
 [tool.mypy]
-files = ["mqt/predictor", "test"]
+files = ["mqt/predictor", "tests"]
 python_version = "3.9"
 strict = true
 show_error_codes = true
@@ -100,6 +100,7 @@ target-version = "py39"
 
 # Exclude a variety of commonly ignored directories.
 exclude = [
+    "__init__.py",
     ".bzr",
     ".direnv",
     ".eggs",
