@@ -60,7 +60,8 @@ Research = "https://www.cda.cit.tum.de/research/quantum/"
 line-length = 120
 
 [tool.mypy]
-files = ["mqt/predictor", "tests", "setup.py"]
+mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
+files = ["src", "tests", "setup.py"]
 python_version = "3.9"
 strict = true
 show_error_codes = true
