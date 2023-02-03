@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
+from typing import Any, Literal
 
 import numpy as np
 import requests
@@ -50,13 +51,15 @@ if sys.version_info < (3, 10, 0):
     import importlib_metadata as metadata
     import importlib_resources as resources
 else:
-    from importlib import metadata, resources
+    from importlib import metadata, resources  # type: ignore[no-redef]
 
+
+reward_functions = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
 
 logger = logging.getLogger("mqtpredictor")
 
 
-def qcompile(qc: QuantumCircuit | str, opt_objective="fidelity") -> QuantumCircuit:
+def qcompile(qc: QuantumCircuit | str, opt_objective:reward_functions= "fidelity") -> QuantumCircuit:
     """Returns the compiled quantum circuit which is compiled following an objective function.
     Keyword arguments:
     qc -- to be compiled quantum circuit or path to a qasm file
@@ -68,7 +71,7 @@ def qcompile(qc: QuantumCircuit | str, opt_objective="fidelity") -> QuantumCircu
     return predictor.compile_as_predicted(qc, opt_objective=opt_objective)
 
 
-def get_actions_opt():
+def get_actions_opt()-> list[dict[str,Any]]:
     return [
         {
             "name": "Optimize1qGatesDecomposition",
@@ -133,7 +136,7 @@ def get_actions_opt():
     ]
 
 
-def get_actions_layout():
+def get_actions_layout()-> list[dict[str,Any]]:
     return [
         {
             "name": "TrivialLayout",
@@ -168,7 +171,7 @@ def get_actions_layout():
     ]
 
 
-def get_actions_routing():
+def get_actions_routing()-> list[dict[str,Any]]:
     return [
         {
             "name": "BasicSwap",
@@ -195,7 +198,7 @@ def get_actions_routing():
     ]
 
 
-def get_actions_platform_selection():
+def get_actions_platform_selection()-> list[dict[str,Any]]:
     return [
         {
             "name": "IBM",
@@ -224,7 +227,7 @@ def get_actions_platform_selection():
     ]
 
 
-def get_actions_synthesis() -> list[dict]:
+def get_actions_synthesis() -> list[dict[str,Any]]:
     return [
         {
             "name": "BasisTranslator",
@@ -236,11 +239,11 @@ def get_actions_synthesis() -> list[dict]:
     ]
 
 
-def get_action_terminate():
+def get_action_terminate()->  dict[str,Any]:
     return {"name": "terminate"}
 
 
-def get_actions_devices():
+def get_actions_devices()-> list[dict[str,Any]]:
     return [
         {
             "name": "ibm_washington",
@@ -289,10 +292,9 @@ def get_state_sample() -> QuantumCircuit:
 
     path_zip = get_path_training_circuits() / "mqtbench_sample_circuits.zip"
     if len(file_list) == 0 and path_zip.exists():
-        path_zip = str(path_zip)
         import zipfile
 
-        with zipfile.ZipFile(path_zip, "r") as zip_ref:
+        with zipfile.ZipFile(str(path_zip), "r") as zip_ref:
             zip_ref.extractall(get_path_training_circuits())
 
         file_list = list(get_path_training_circuits().glob("*.qasm"))
@@ -326,7 +328,7 @@ def get_oqc_native_gates() -> list[str]:
     return ["rz", "sx", "x", "ecr", "measure"]
 
 
-def get_rigetti_aspen_m2_map():
+def get_rigetti_aspen_m2_map() -> list[list[int]]:
     """Returns a coupling map of Rigetti Aspen M2 chip."""
     c_map_rigetti = []
     for j in range(5):
@@ -361,7 +363,7 @@ def get_rigetti_aspen_m2_map():
     return c_map_rigetti + inverted
 
 
-def get_ionq11_c_map():
+def get_ionq11_c_map() -> list[list[int]]:
     ionq11_c_map = []
     for i in range(0, 11):
         for j in range(0, 11):
@@ -370,7 +372,7 @@ def get_ionq11_c_map():
     return ionq11_c_map
 
 
-def get_cmap_oqc_lucy():
+def get_cmap_oqc_lucy() -> list[list[int]]:
     """Returns the coupling map of the OQC Lucy quantum computer."""
     # source: https://github.com/aws/amazon-braket-examples/blob/main/examples/braket_features/Verbatim_Compilation.ipynb
 
@@ -379,7 +381,7 @@ def get_cmap_oqc_lucy():
 
 
 
-def get_cmap_from_devicename(device: str):
+def get_cmap_from_devicename(device: str) -> Any:
     if device == "ibm_washington":
         return FakeWashington().configuration().coupling_map
     if device == "ibm_montreal":
@@ -394,7 +396,7 @@ def get_cmap_from_devicename(device: str):
     raise ValueError(error_msg)
 
 
-def create_feature_dict(qc) -> dict:
+def create_feature_dict(qc:QuantumCircuit) -> dict[str, Any]:
     feature_dict = {
         "num_qubits": np.array([qc.num_qubits], dtype=int),
         "depth": np.array([qc.depth()], dtype=int),
@@ -422,15 +424,15 @@ def create_feature_dict(qc) -> dict:
 
 
 def get_path_training_data() -> Path:
-    return resources.files("mqt.predictor") / "rl" / "training_data"
+    return Path(resources.files("mqt.predictor") / "rl" / "training_data")
 
 
 def get_path_trained_model() -> Path:
-    return get_path_training_data() / "trained_model"
+    return Path(get_path_training_data() / "trained_model")
 
 
 def get_path_training_circuits() -> Path:
-    return get_path_training_data() / "training_circuits"
+    return Path(get_path_training_data() / "training_circuits")
 
 
 def load_model(model_name: str) -> MaskablePPO:
@@ -500,7 +502,7 @@ def handle_downloading_model(download_url: str, model_name: str) -> None:
     logger.info("Start downloading model...")
 
     r = requests.get(download_url)
-    total_length = int(r.headers.get("content-length"))
+    total_length = int(r.headers.get("content-length")) # type: ignore[arg-type]
     fname = str(get_path_trained_model() / (model_name + ".zip"))
 
     with Path(fname).open(mode="wb") as f, tqdm(

@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import time
 from pathlib import Path
-from typing import Literal
+from typing import Any
 
 import numpy as np
 from joblib import Parallel, delayed
@@ -24,7 +24,7 @@ from sb3_contrib.common.maskable.utils import get_action_masks
 
 PATH_LENGTH = 260
 class Predictor:
-    def __init__(self, verbose=0):
+    def __init__(self, verbose:int=0):
         self.logger = logging.getLogger("mqtpredictor")
         self.verbose = verbose
         if verbose == 1:
@@ -36,7 +36,7 @@ class Predictor:
 
     def compile_as_predicted(
         self, qc: QuantumCircuit | str, opt_objective: str = "fidelity"
-    ):
+    ) ->tuple[QuantumCircuit, list[str]]:
         if not isinstance(qc, QuantumCircuit):
             if len(qc) < PATH_LENGTH and Path(qc).exists():
                 qc = QuantumCircuit.from_qasm_file(qc)
@@ -59,8 +59,8 @@ class Predictor:
 
         return env.state, used_compilation_passes
 
-    def evaluate_sample_circuit(self, file):
-        self.logger.info("Evaluate file: " + str(file))
+    def evaluate_sample_circuit(self, file:str) -> dict[str, Any]:
+        self.logger.info("Evaluate file: " + file)
 
         reward_functions = ["fidelity", "critical_depth", "gate_ratio", "mix"]
         results = []
@@ -79,7 +79,7 @@ class Predictor:
             combined_res.update(res.get_dict())
         return combined_res
 
-    def evaluate_all_sample_circuits(self):
+    def evaluate_all_sample_circuits(self)->None:
         res_csv = []
 
         results = Parallel(n_jobs=-1, verbose=3, backend="threading")(
@@ -96,15 +96,13 @@ class Predictor:
             fmt="%s",
         )
 
-    Reward = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
-
     def train_all_models(
         self,
         timesteps: int = 1000,
-        reward_functions: Reward = "fidelity",
+        reward_functions: rl.utils.Reward = "fidelity",
         model_name: str = "model",
         verbose: int = 2,
-    ):
+    ) -> None:
 
         if "test" in model_name:
             n_steps = 100
@@ -129,7 +127,7 @@ class Predictor:
             model.save(rl.helper.get_path_trained_model() / (model_name + "_" + rew))
 
     def computeRewards(
-        self, benchmark: str, used_setup: str, reward_function: Reward = "fidelity"
+        self, benchmark: str, used_setup: str, reward_function: rl.helper.reward_functions = "fidelity"
     ) -> rl.Result:
         if used_setup == "RL":
             model = rl.helper.load_model("model_" + reward_function)

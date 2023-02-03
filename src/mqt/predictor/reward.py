@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 import numpy as np
 from mqt.predictor import Calibration
@@ -12,7 +13,7 @@ from qiskit import QuantumCircuit
 logger = logging.getLogger("mqtpredictor")
 
 
-def crit_depth(qc: QuantumCircuit, precision: int = 10):
+def crit_depth(qc: QuantumCircuit, precision: int = 10) -> Any:
     (
         program_communication,
         critical_depth,
@@ -23,7 +24,7 @@ def crit_depth(qc: QuantumCircuit, precision: int = 10):
     return np.round(1 - critical_depth, precision)
 
 
-def parallelism(qc: QuantumCircuit, precision: int = 10):
+def parallelism(qc: QuantumCircuit, precision: int = 10) -> Any:
     (
         program_communication,
         critical_depth,
@@ -34,17 +35,17 @@ def parallelism(qc: QuantumCircuit, precision: int = 10):
     return np.round(1 - parallelism, precision)
 
 
-def gate_ratio(qc: QuantumCircuit, precision: int = 10):
+def gate_ratio(qc: QuantumCircuit, precision: int = 10) -> Any:
     return np.round(1 - qc.num_nonlocal_gates() / qc.size(), precision)
 
 
-def mix(qc: QuantumCircuit, device: str, precision: int = 10):
+def mix(qc: QuantumCircuit, device: str, precision: int = 10) -> Any:
     return (
         expected_fidelity(qc, device, precision) * 0.5 + crit_depth(qc, precision) * 0.5
     )
 
 
-def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
+def expected_fidelity(qc_or_path: str, device: str, precision: int = 10) -> Any:
     if isinstance(qc_or_path, QuantumCircuit):
         qc = qc_or_path
     else:

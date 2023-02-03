@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from mqt.predictor import reward
@@ -28,21 +30,21 @@ class Result:
         duration: float,
         qc: QuantumCircuit,
         device: str,
-    ):
+    ) -> None:
         rew_fid = reward.expected_fidelity(qc, device)
         rew_crit_depth = reward.crit_depth(qc)
         rew_gate_ratio = reward.gate_ratio(qc)
         rew_mix = reward.mix(qc, device)
 
-        self.benchmark = benchmark
-        self.used_setup = used_setup
-        self.time = duration
-        self.fidelity = rew_fid
-        self.critical_depth = rew_crit_depth
-        self.gate_ratio = rew_gate_ratio
-        self.mix = rew_mix
+        self.benchmark:str = benchmark
+        self.used_setup:str = used_setup
+        self.time:float = duration
+        self.fidelity:float = rew_fid
+        self.critical_depth:float = rew_crit_depth
+        self.gate_ratio:float = rew_gate_ratio
+        self.mix:float = rew_mix
 
-    def get_dict(self):
+    def get_dict(self) -> dict[str, float]:
         return {
             self.used_setup + "_" + "time": self.time,
             self.used_setup + "_" + "fidelity": self.fidelity,

@@ -93,6 +93,14 @@ repos:
     rev: "v0.991" # Use the sha / tag you want to point at
     hooks:
       - id: mypy
+        files: ^(src|tests|setup.py)
+        # args: ["--enable-incomplete-feature=Unpack"]
+        additional_dependencies:
+          - importlib_resources
+          - numpy
+          - pytest
+          - types-setuptools
+          - types-requests
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.0.237

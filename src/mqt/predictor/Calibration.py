@@ -1,17 +1,20 @@
+from __future__ import annotations
+
 import json
 import sys
 
 if sys.version_info < (3, 10, 0):
     import importlib_resources as resources
 else:
-    from importlib import resources
+    from importlib import resources  # type: ignore[no-redef]
+from typing import Any
 
 import numpy as np
 from qiskit.providers.fake_provider import FakeMontreal, FakeWashington
 
 
 class Calibration:
-    def __init__(self):
+    def __init__(self) -> None:
         try:
             self.ibm_washington_cx_mean_error = get_mean_IBM_washington_cx_error()
             self.ibm_montreal_calibration = FakeMontreal().properties()
@@ -24,7 +27,7 @@ class Calibration:
             raise RuntimeError("Error in Calibration initialization: " + str(e)) from e
 
 
-def get_mean_IBM_washington_cx_error() -> float:
+def get_mean_IBM_washington_cx_error() -> Any:
     cmap = FakeWashington().configuration().coupling_map
     backend = FakeWashington().properties()
     somelist = [x for x in cmap if backend.gate_error("cx", x) < 1]
@@ -36,7 +39,7 @@ def get_mean_IBM_washington_cx_error() -> float:
     return np.mean(res)
 
 
-def parse_ionq_calibration_config() -> dict:
+def parse_ionq_calibration_config()  -> dict[str, str|float|dict[str, Any]]:
     ref = (
         resources.files("mqt.predictor") / "calibration_files" / "ionq_calibration.json"
     )
@@ -49,7 +52,7 @@ def parse_ionq_calibration_config() -> dict:
     }
 
 
-def parse_oqc_calibration_config() -> dict:
+def parse_oqc_calibration_config() ->  dict[str, str|float|dict[str, Any]]:
     ref = (
         resources.files("mqt.predictor")
         / "calibration_files"
@@ -84,7 +87,7 @@ def parse_oqc_calibration_config() -> dict:
     }
 
 
-def parse_rigetti_calibration_config() -> dict:
+def parse_rigetti_calibration_config() -> dict[str, str|float|dict[str, Any]]:
     ref = (
         resources.files("mqt.predictor")
         / "calibration_files"
@@ -94,7 +97,7 @@ def parse_rigetti_calibration_config() -> dict:
         rigetti_m2_calibration = json.load(f)
     fid_1Q = {}
     fid_1Q_readout = {}
-    missing_indices = []
+    missing_indices:list[int] = []
     for elem in rigetti_m2_calibration["specs"]["1Q"]:
 
         fid_1Q[str(elem)] = rigetti_m2_calibration["specs"]["1Q"][elem].get("f1QRB")

@@ -1,24 +1,25 @@
+from __future__ import annotations
+
 import logging
 import signal
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 if TYPE_CHECKING:
-    from qiskit import QuantumCircuit
-
+    from qiskit import QuantumCircuit, QuantumRegister
 from qiskit.transpiler.passes import RemoveBarriers
 
 logger = logging.getLogger("mqtpredictor")
 
 
-def timeout_watcher(func, args, timeout):
+def timeout_watcher(func:Any, args:list[Any], timeout:int) -> Any:
     """Method that stops a function call after a given timeout limit."""
 
     class TimeoutException(Exception):  # Custom exception class
         pass
 
-    def timeout_handler(signum, frame):  # Custom signal handler # noqa: ARG001
+    def timeout_handler(signum:Any, frame:Any) -> None:  # Custom signal handler # noqa: ARG001
         raise TimeoutException
 
     # Change the behavior of SIGALRM
@@ -32,7 +33,7 @@ def timeout_watcher(func, args, timeout):
             "Calculation/Generation exceeded timeout limit for "
             + func.__name__
             + ", "
-            + args[1:]
+            + str(args[1:])
         )
         return False
     except Exception as e:
@@ -45,7 +46,7 @@ def timeout_watcher(func, args, timeout):
     return res
 
 
-def calc_qubit_index(qargs, qregs, index) -> int:
+def calc_qubit_index(qargs:list[Any], qregs:list[QuantumRegister], index:int) -> Any:
     offset = 0
     for reg in qregs:
         if qargs[index] not in reg:
@@ -57,7 +58,7 @@ def calc_qubit_index(qargs, qregs, index) -> int:
     raise ValueError(error_msg)
 
 NUM_QUBIT_INDICES_RIGETTI = 80
-def get_rigetti_qubit_dict():
+def get_rigetti_qubit_dict() -> dict[str, str]:
     mapping = {
         "32": "4",
         "39": "3",
@@ -145,7 +146,7 @@ def get_rigetti_qubit_dict():
     return mapping
 
 
-def calc_supermarq_features(qc: QuantumCircuit) -> tuple[float]:
+def calc_supermarq_features(qc: QuantumCircuit) -> tuple[float, float, float, float, float]:
     qc = RemoveBarriers()(qc)
     connectivity_collection: list[list[int]] = []
     liveness_A_matrix = 0
@@ -164,7 +165,7 @@ def calc_supermarq_features(qc: QuantumCircuit) -> tuple[float]:
             to_be_added_entries.remove(int(qubit_index))
             connectivity_collection[int(qubit_index)].extend(to_be_added_entries)
 
-    connectivity: list[int] = []
+    connectivity: list[Any] = []
     for i in range(qc.num_qubits):
         connectivity.append([])
         connectivity[i] = len(set(connectivity_collection[i]))
@@ -175,7 +176,7 @@ def calc_supermarq_features(qc: QuantumCircuit) -> tuple[float]:
     program_communication = np.sum(connectivity) / (qc.num_qubits * (qc.num_qubits - 1))
 
     if num_multiple_qubit_gates == 0:
-        critical_depth = 0
+        critical_depth = 0.0
     else:
         critical_depth = (
             qc.depth(filter_function=lambda x: len(x[1]) > 1) / num_multiple_qubit_gates

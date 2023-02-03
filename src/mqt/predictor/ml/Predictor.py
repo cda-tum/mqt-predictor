@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import glob
 import logging
 from pathlib import Path
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,20 +19,20 @@ plt.rcParams["font.family"] = "Times New Roman"
 
 
 class Predictor:
-    def __init__(self, verbose:int=0):
+    def __init__(self, verbose:int=0) -> None:
         self.verbose = verbose
 
         self.logger = logging.getLogger("mqtpredictor")
         if verbose == 1:
             self.logger.setLevel(logging.INFO)
-        elif verbose == 2:# noqa: PLR2004
+        elif verbose == 2: # noqa: PLR2004
             self.logger.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.WARNING)
 
         self.clf = None
 
-    def set_classifier(self, clf):
+    def set_classifier(self, clf:RandomForestClassifier) -> None:
         self.clf = clf
 
     def compile_all_circuits_for_qc(
@@ -38,7 +41,7 @@ class Predictor:
         source_path: str = "",
         target_path: str = "",
         timeout: int = 10,
-    ):
+    ) -> bool:
         """Handles the creation of one training sample.
 
         Keyword arguments:
@@ -137,7 +140,7 @@ class Predictor:
         source_path: str = "",
         target_path: str = "",
         timeout: int = 10,
-    ):
+    ) -> None:
         """Handles the creation of all training samples.
 
         Keyword arguments:
@@ -179,7 +182,7 @@ class Predictor:
         self,
         path_uncompiled_circuits: str = "",
         path_compiled_circuits: str = "",
-    ):
+    ) -> tuple[list[Any], list[Any], list[Any]]:
         """Handles to create training data from all generated training samples
 
         Keyword arguments:
@@ -226,7 +229,7 @@ class Predictor:
         file: str,
         path_uncompiled_circuit: str = "",
         path_compiled_circuits: str = "",
-    ) -> tuple:
+    ) -> tuple[tuple[list[Any], Any], str, list[list[float]]]|bool:
         """Handles to create training data from a single generated training sample
 
         Keyword arguments:
@@ -286,8 +289,8 @@ class Predictor:
         return (training_sample, circuit_name, scores)
 
     def train_random_forest_classifier(
-        self, visualize_results=False
-    ) -> RandomForestClassifier:
+        self, visualize_results:bool=False
+    ) -> bool:
 
         (
             X_train,
@@ -321,13 +324,12 @@ class Predictor:
             res, _ = self.calc_performance_measures(scores_filtered, y_pred, y_test)
             self.plot_eval_histogram(res, filename="RandomForestClassifier")
 
-            self.logger.info("Best Accuracy: " + clf.best_score_)
+            self.logger.info("Best Accuracy: " + str(clf.best_score_))
             top3 = (res.count(1) + res.count(2) + res.count(3)) / len(res)
-            self.logger.info("Top 3: " + top3)
+            self.logger.info("Top 3: " + str(top3))
             self.logger.info(
-                "Feature Importance: " + clf.best_estimator_.feature_importances_
+                "Feature Importance: " + str(clf.best_estimator_.feature_importances_)
             )
-
             self.plot_eval_all_detailed_compact_normed(
                 names_filtered, scores_filtered, y_pred, y_test
             )
@@ -338,7 +340,7 @@ class Predictor:
 
         return self.clf is not None
 
-    def get_prepared_training_data(self, save_non_zero_indices=False) -> tuple:
+    def get_prepared_training_data(self, save_non_zero_indices:bool=False) -> tuple[Any,Any,Any,Any,Any,Any, Any, Any]:
         training_data, names_list, scores_list = ml.helper.load_training_data()
         X, y = zip(*training_data)
         X = list(X)
@@ -381,8 +383,8 @@ class Predictor:
         )
 
     def calc_performance_measures(
-        self, scores_filtered, y_pred, y_test
-    ) -> (list, list):
+        self, scores_filtered:list[list[float]], y_pred:np.ndarray[Any, np.dtype[np.float64]], y_test:np.ndarray[Any, np.dtype[np.float64]]
+    ) -> tuple[list[int], list[float]]:
         """Method to generate the performance measures for a trained classifier
 
         Keyword arguments:
@@ -410,7 +412,7 @@ class Predictor:
 
         return res, relative_scores
 
-    def plot_eval_histogram(self, res, filename="histogram") -> None:
+    def plot_eval_histogram(self, res:list[int], filename:str="histogram") -> None:
         """Method to generate the histogram of the resulting ranks
 
         Keyword arguments:
@@ -447,7 +449,7 @@ class Predictor:
         plt.show()
 
     def plot_eval_all_detailed_compact_normed(
-        self, names_list, scores_filtered, y_pred, y_test
+        self, names_list:list[Any], scores_filtered:list[Any], y_pred:np.ndarray[Any, np.dtype[np.float64]], y_test:np.ndarray[Any, np.dtype[np.float64]]
     ) -> None:
         """Method to generate the detailed graph to examine the differences in evaluation scores
 
@@ -509,7 +511,7 @@ class Predictor:
             result_path.mkdir()
         plt.savefig(result_path / "y_pred_eval_normed.pdf")
 
-    def predict(self, qasm_str_or_path: str):
+    def predict(self, qasm_str_or_path: str) -> Any|None:
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
 
         if self.clf is None:
@@ -529,9 +531,9 @@ class Predictor:
         non_zero_indices = np.load(str(path), allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
-        return self.clf.predict([feature_vector])[0]
+        return self.clf.predict([feature_vector])[0] # type: ignore[attr-defined]
 
-    def compile_as_predicted(self, qc: str, prediction: int):
+    def compile_as_predicted(self, qc: str, prediction: int) -> tuple[QuantumCircuit, int]:
         """Returns the compiled quantum circuit when the original qasm circuit is provided as either
         a string or a file path and the prediction index is given."""
 
@@ -578,7 +580,7 @@ class Predictor:
         error_msg = "Invalid compiler name."
         raise ValueError(error_msg)
 
-    def instantiate_supervised_ML_model(self, timeout):
+    def instantiate_supervised_ML_model(self, timeout:int) -> None:
         # Generate compiled circuits and save them as qasm files
         self.generate_compiled_circuits(
             timeout=timeout,
