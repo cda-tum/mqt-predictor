@@ -7,7 +7,7 @@ if sys.version_info < (3, 10, 0):
     import importlib_resources as resources
 else:
     from importlib import resources  # type: ignore[no-redef]
-from typing import Any
+from typing import TypedDict, cast
 
 import numpy as np
 from qiskit.providers.fake_provider import FakeMontreal, FakeWashington
@@ -27,19 +27,25 @@ class Calibration:
             raise RuntimeError("Error in Calibration initialization: " + str(e)) from e
 
 
-def get_mean_IBM_washington_cx_error() -> Any:
-    cmap = FakeWashington().configuration().coupling_map
+def get_mean_IBM_washington_cx_error() -> float:
+    cmap: list[list[int]] = FakeWashington().configuration().coupling_map
     backend = FakeWashington().properties()
     somelist = [x for x in cmap if backend.gate_error("cx", x) < 1]
 
-    res = []
+    res: list[float] = []
     for elem in somelist:
         res.append(backend.gate_error("cx", elem))
 
-    return np.mean(res)
+    return cast(float, np.mean(res))
 
 
-def parse_ionq_calibration_config() -> dict[str, Any]:
+class DeviceCalibration(TypedDict):
+    backend: str
+    avg_1Q: float
+    avg_2Q: float
+
+
+def parse_ionq_calibration_config() -> DeviceCalibration:
     ref = resources.files("mqt.predictor") / "calibration_files" / "ionq_calibration.json"
     with ref.open() as f:
         ionq_calibration = json.load(f)
@@ -50,7 +56,13 @@ def parse_ionq_calibration_config() -> dict[str, Any]:
     }
 
 
-def parse_oqc_calibration_config() -> dict[str, Any]:
+class OQCCalibration(DeviceCalibration):
+    fid_1Q: dict[str, float]
+    fid_1Q_readout: dict[str, float]
+    fid_2Q: dict[str, float]
+
+
+def parse_oqc_calibration_config() -> OQCCalibration:
     ref = resources.files("mqt.predictor") / "calibration_files" / "oqc_lucy_calibration.json"
     with ref.open() as f:
         oqc_lucy_calibration = json.load(f)
@@ -77,7 +89,13 @@ def parse_oqc_calibration_config() -> dict[str, Any]:
     }
 
 
-def parse_rigetti_calibration_config() -> dict[str, Any]:
+class RigettiCalibration(DeviceCalibration):
+    fid_1Q: dict[str, float]
+    fid_1Q_readout: dict[str, float]
+    fid_2Q_CZ: dict[str, float]
+
+
+def parse_rigetti_calibration_config() -> RigettiCalibration:
     ref = resources.files("mqt.predictor") / "calibration_files" / "rigetti_m2_calibration.json"
     with ref.open() as f:
         rigetti_m2_calibration = json.load(f)
