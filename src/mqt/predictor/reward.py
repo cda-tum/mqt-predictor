@@ -1,19 +1,21 @@
+from __future__ import annotations
+
 import logging
+from typing import cast
 
 import numpy as np
-from qiskit import QuantumCircuit
-
 from mqt.predictor import Calibration
 from mqt.predictor.utils import (
     calc_qubit_index,
     calc_supermarq_features,
     get_rigetti_qubit_dict,
 )
+from qiskit import QuantumCircuit
 
 logger = logging.getLogger("mqtpredictor")
 
 
-def crit_depth(qc: QuantumCircuit, precision: int = 10):
+def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
     (
         program_communication,
         critical_depth,
@@ -21,10 +23,10 @@ def crit_depth(qc: QuantumCircuit, precision: int = 10):
         parallelism,
         liveness,
     ) = calc_supermarq_features(qc)
-    return np.round(1 - critical_depth, precision)
+    return cast(float, np.round(1 - critical_depth, precision))
 
 
-def parallelism(qc: QuantumCircuit, precision: int = 10):
+def parallelism(qc: QuantumCircuit, precision: int = 10) -> float:
     (
         program_communication,
         critical_depth,
@@ -32,31 +34,27 @@ def parallelism(qc: QuantumCircuit, precision: int = 10):
         parallelism,
         liveness,
     ) = calc_supermarq_features(qc)
-    return np.round(1 - parallelism, precision)
+    return cast(float, np.round(1 - parallelism, precision))
 
 
-def gate_ratio(qc: QuantumCircuit, precision: int = 10):
-    return np.round(1 - qc.num_nonlocal_gates() / qc.size(), precision)
+def gate_ratio(qc: QuantumCircuit, precision: int = 10) -> float:
+    return cast(float, np.round(1 - qc.num_nonlocal_gates() / qc.size(), precision))
 
 
-def mix(qc: QuantumCircuit, device: str, precision: int = 10):
-    return (
-        expected_fidelity(qc, device, precision) * 0.5 + crit_depth(qc, precision) * 0.5
-    )
+def mix(qc: QuantumCircuit, device: str, precision: int = 10) -> float:
+    return expected_fidelity(qc, device, precision) * 0.5 + crit_depth(qc, precision) * 0.5
 
 
-def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
+def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: int = 10) -> float:
     if isinstance(qc_or_path, QuantumCircuit):
         qc = qc_or_path
     else:
         try:
             qc = QuantumCircuit.from_qasm_file(qc_or_path)
         except Exception:
-            raise RuntimeError(
-                "Could not read QuantumCircuit from: " + qc_or_path
-            ) from None
+            raise RuntimeError("Could not read QuantumCircuit from: " + qc_or_path) from None
 
-    res = 1
+    res = 1.0
 
     calibration = Calibration.Calibration()
 
@@ -78,15 +76,12 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                 if len(qargs) == 1:
                     try:
                         if gate_type == "measure":
-                            specific_error = backend.readout_error(first_qubit)
+                            specific_error: float = backend.readout_error(first_qubit)
                         else:
-                            specific_error = backend.gate_error(
-                                gate_type, [first_qubit]
-                            )
+                            specific_error = backend.gate_error(gate_type, [first_qubit])
                     except Exception as e:
                         raise RuntimeError(
                             "Error in IBM backend.gate_error(): "
-                            + ", "
                             + str(e)
                             + ", "
                             + device
@@ -100,15 +95,12 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                 else:
                     second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     try:
-                        specific_error = backend.gate_error(
-                            gate_type, [first_qubit, second_qubit]
-                        )
+                        specific_error = backend.gate_error(gate_type, [first_qubit, second_qubit])
                         if specific_error == 1:
                             specific_error = calibration.ibm_washington_cx_mean_error
                     except Exception as e:
                         raise RuntimeError(
                             "Error in IBM backend.gate_error(): "
-                            + ", "
                             + str(e)
                             + ", "
                             + device
@@ -122,7 +114,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                             + qargs
                         ) from None
 
-                res *= 1 - float(specific_error)
+                res *= 1 - specific_error
     elif "oqc_lucy" in device:
         for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
@@ -132,22 +124,16 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                 assert len(qargs) in [1, 2]
                 first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
                 if len(qargs) == 1 and gate_type != "measure":
-                    specific_fidelity = calibration.oqc_lucy_calibration["fid_1Q"][
-                        str(first_qubit)
-                    ]
+                    specific_fidelity = calibration.oqc_lucy_calibration["fid_1Q"][str(first_qubit)]
                 elif len(qargs) == 1 and gate_type == "measure":
-                    specific_fidelity = calibration.oqc_lucy_calibration[
-                        "fid_1Q_readout"
-                    ][str(first_qubit)]
-                elif len(qargs) == 2:
+                    specific_fidelity = calibration.oqc_lucy_calibration["fid_1Q_readout"][str(first_qubit)]
+                elif len(qargs) == 2:  # noqa: PLR2004
                     second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     tmp = str(first_qubit) + "-" + str(second_qubit)
                     if calibration.oqc_lucy_calibration["fid_2Q"].get(tmp) is None:
                         specific_fidelity = calibration.oqc_lucy_calibration["avg_2Q"]
                     else:
-                        specific_fidelity = calibration.oqc_lucy_calibration["fid_2Q"][
-                            tmp
-                        ]
+                        specific_fidelity = calibration.oqc_lucy_calibration["fid_2Q"][tmp]
 
                 res *= specific_fidelity
 
@@ -161,7 +147,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
 
                 if len(qargs) == 1:
                     specific_fidelity = calibration.ionq_calibration["avg_1Q"]
-                elif len(qargs) == 2:
+                elif len(qargs) == 2:  # noqa: PLR2004
                     specific_fidelity = calibration.ionq_calibration["avg_2Q"]
                 res *= specific_fidelity
     elif "rigetti_aspen_m2" in device:
@@ -176,27 +162,25 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                 first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
                 if len(qargs) == 1:
                     if gate_type == "measure":
-                        specific_fidelity = calibration.rigetti_m2_calibration[
-                            "fid_1Q_readout"
-                        ][mapping.get(str(first_qubit))]
+                        specific_fidelity = calibration.rigetti_m2_calibration["fid_1Q_readout"][
+                            mapping[str(first_qubit)]
+                        ]
                     else:
-                        specific_fidelity = calibration.rigetti_m2_calibration[
-                            "fid_1Q"
-                        ][mapping.get(str(first_qubit))]
+                        specific_fidelity = calibration.rigetti_m2_calibration["fid_1Q"][mapping[str(first_qubit)]]
                 else:
                     second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     tmp = (
                         str(
                             min(
-                                int(mapping.get(str(first_qubit))),
-                                int(mapping.get(str(second_qubit))),
+                                int(mapping[str(first_qubit)]),
+                                int(mapping[str(second_qubit)]),
                             )
                         )
                         + "-"
                         + str(
                             max(
-                                int(mapping.get(str(first_qubit))),
-                                int(mapping.get(str(second_qubit))),
+                                int(mapping[str(first_qubit)]),
+                                int(mapping[str(second_qubit)]),
                             )
                         )
                     )
@@ -206,13 +190,12 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10):
                     ):
                         specific_fidelity = calibration.rigetti_m2_calibration["avg_2Q"]
                     else:
-                        specific_fidelity = calibration.rigetti_m2_calibration[
-                            "fid_2Q_CZ"
-                        ][tmp]
+                        specific_fidelity = calibration.rigetti_m2_calibration["fid_2Q_CZ"][tmp]
 
                 res *= specific_fidelity
 
     else:
-        raise ValueError("Device not supported")
+        error_msg = "Device not supported"
+        raise ValueError(error_msg)
 
-    return np.round(res, precision)
+    return cast(float, np.round(res, precision))

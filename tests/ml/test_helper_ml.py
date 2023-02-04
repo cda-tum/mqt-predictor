@@ -2,15 +2,14 @@ from pathlib import Path
 
 from mqt.bench import benchmark_generator
 from mqt.bench.utils import qiskit_helper
-
 from mqt.predictor import ml, reward
 
 
-def test_get_width_penalty():
+def test_get_width_penalty() -> None:
     assert ml.helper.get_width_penalty() < 0
 
 
-def test_get_index_to_comppath_LUT():
+def test_get_index_to_comppath_LUT() -> None:
     expected = {
         0: ("ibm", "ibm_washington", "qiskit", 0),
         1: ("ibm", "ibm_washington", "qiskit", 1),
@@ -46,7 +45,7 @@ def test_get_index_to_comppath_LUT():
     assert ml.helper.get_index_to_comppath_LUT() == expected
 
 
-def test_get_compilation_pipeline():
+def test_get_compilation_pipeline() -> None:
     expected = {
         "devices": {
             "ibm": [("ibm_washington", 127), ("ibm_montreal", 27)],
@@ -62,16 +61,16 @@ def test_get_compilation_pipeline():
     assert ml.helper.get_compilation_pipeline() == expected
 
 
-def test_load_training_data():
+def test_load_training_data() -> None:
     assert ml.helper.load_training_data() is not None
 
 
-def test_calc_eval_score_for_qc():
+def test_calc_eval_score_for_qc() -> None:
     qc = benchmark_generator.get_benchmark("dj", 1, 3)
     compilation_pipeline = ml.helper.get_compilation_pipeline()
 
     filename_qasm = "eval_test.qasm"
-    for gate_set_name, devices in compilation_pipeline.get("devices").items():
+    for gate_set_name, devices in compilation_pipeline["devices"].items():
         for device_name, max_qubits in devices:
             for compiler, settings in compilation_pipeline["compiler"].items():
                 if "qiskit" in compiler:
@@ -88,14 +87,8 @@ def test_calc_eval_score_for_qc():
                                 ".",
                                 "eval_test",
                             )
-                            score = reward.expected_fidelity(
-                                filename_qasm, device=device_name
-                            )
-                            assert (
-                                score >= 0
-                                and score <= 1
-                                or score == ml.helper.get_width_penalty()
-                            )
+                            score = reward.expected_fidelity(filename_qasm, device=device_name)
+                            assert score >= 0 and score <= 1 or score == ml.helper.get_width_penalty()
 
     if Path(filename_qasm).is_file():
         Path(filename_qasm).unlink()

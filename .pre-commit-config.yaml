@@ -10,6 +10,7 @@
 ci:
   autoupdate_commit_msg: "⬆️🪝 update pre-commit hooks"
   autofix_commit_msg: "🎨 pre-commit fixes"
+  skip: [mypy]
 
 repos:
   # Standard hooks
@@ -20,14 +21,18 @@ repos:
       - id: check-case-conflict
       - id: check-docstring-first
       - id: check-merge-conflict
-      - id: check-symlinks
       - id: check-toml
       - id: check-yaml
       - id: debug-statements
       - id: end-of-file-fixer
       - id: mixed-line-ending
-      - id: requirements-txt-fixer
       - id: trailing-whitespace
+
+  # Clean jupyter notebooks
+  - repo: https://github.com/srstevenson/nb-clean
+    rev: "2.4.0"
+    hooks:
+      - id: nb-clean
 
   # Handling unwanted unicode characters
   - repo: https://github.com/sirosen/texthooks
@@ -35,20 +40,6 @@ repos:
     hooks:
       - id: fix-ligatures
       - id: fix-smartquotes
-
-  # Sort includes
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-        args: ["--profile", "black", "--filter-files"]
-
-  # Upgrade old Python syntax
-  - repo: https://github.com/asottile/pyupgrade
-    rev: "v3.3.1"
-    hooks:
-      - id: pyupgrade
-        args: ["--py37-plus"]
 
   # Run code formatting with Black
   - repo: https://github.com/psf/black
@@ -63,32 +54,6 @@ repos:
       - id: blacken-docs
         additional_dependencies:
           - black==22.12.0 # keep in sync with black hook
-
-  # Check for common mistakes
-  - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: "v1.10.0"
-    hooks:
-      - id: python-check-blanket-noqa
-      - id: python-check-blanket-type-ignore
-      - id: python-no-log-warn
-      - id: python-no-eval
-      - id: python-use-type-annotations
-      - id: rst-backticks
-      - id: rst-directive-colons
-      - id: rst-inline-touching-normal
-
-  # Run Flake8 checks
-  - repo: https://github.com/PyCQA/flake8
-    rev: "6.0.0"
-    hooks:
-      - id: flake8
-        additional_dependencies:
-          - flake8-bugbear
-          - flake8-comprehensions
-          - flake8-future-annotations
-          - flake8-new-union-types
-          - flake8-simplify
-          - flake8-2020
 
   # Check for spelling
   - repo: https://github.com/codespell-project/codespell
@@ -109,8 +74,22 @@ repos:
       - id: prettier
         types_or: [yaml, markdown, html, css, javascript, json]
 
-  # Clean jupyter notebooks
-  - repo: https://github.com/srstevenson/nb-clean
-    rev: "2.4.0"
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.237
     hooks:
-      - id: nb-clean
+      - id: ruff
+        args: ["--fix"]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.991
+    hooks:
+      - id: mypy
+        files: ^(src|tests|setup.py)
+        args: []
+        additional_dependencies:
+          - importlib_resources
+          - pytest
+          - types-setuptools
+          - types-requests
+          - types-tqdm
+          - pytket-qiskit

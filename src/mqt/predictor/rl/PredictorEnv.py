@@ -1,25 +1,27 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 import numpy as np
 from gym import Env
 from gym.spaces import Box, Dict, Discrete
+from mqt.predictor import reward, rl
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
 
-from mqt.predictor import reward, rl
-
 logger = logging.getLogger("mqtpredictor")
 
 
-class PredictorEnv(Env):
-    def __init__(self, reward_function="fidelity"):
+class PredictorEnv(Env):  # type: ignore[misc]
+    def __init__(self, reward_function: rl.helper.reward_functions = "fidelity"):
         logger.info("Init env: " + reward_function)
-        self.state = None
+
         self.action_set = {}
         self.actions_platform = []
         self.actions_synthesis_indices = []
@@ -74,12 +76,12 @@ class PredictorEnv(Env):
             "liveness": Box(low=0, high=1, shape=(1,), dtype=np.float32),
         }
         self.observation_space = Dict(spaces)
-        self.native_gateset_name = None
+        self.native_gateset_name = ""
         self.native_gates = None
-        self.device = None
+        self.device = ""
         self.cmap = None
 
-    def step(self, action):
+    def step(self, action: int) -> tuple[dict[str, Any], float, bool, dict[Any, Any]]:
         altered_qc = self.apply_action(action)
         if not altered_qc:
             return (
@@ -88,9 +90,9 @@ class PredictorEnv(Env):
                 True,
                 {},
             )
-        else:
-            self.state = altered_qc
-            self.num_steps += 1
+
+        self.state: QuantumCircuit = altered_qc
+        self.num_steps += 1
 
         self.valid_actions = self.determine_valid_actions_for_state()
         if len(self.valid_actions) == 0:
@@ -106,23 +108,22 @@ class PredictorEnv(Env):
         self.state = self.state.decompose(gates_to_decompose="unitary")
         return rl.helper.create_feature_dict(self.state), reward_val, done, {}
 
-    def calculate_reward(self):
+    def calculate_reward(self) -> Any:
         if self.reward_function == "fidelity":
-            reward_val = reward.expected_fidelity(self.state, self.device)
-        elif self.reward_function == "critical_depth":
-            reward_val = reward.crit_depth(self.state)
-        elif self.reward_function == "mix":
-            reward_val = reward.mix(self.state, self.device)
-        elif self.reward_function == "gate_ratio":
-            reward_val = reward.gate_ratio(self.state)
-        else:
-            raise ValueError(f"Reward function {self.reward_function} not supported.")
-        return reward_val
+            return reward.expected_fidelity(self.state, self.device)
+        if self.reward_function == "critical_depth":
+            return reward.crit_depth(self.state)
+        if self.reward_function == "mix":
+            return reward.mix(self.state, self.device)
+        if self.reward_function == "gate_ratio":
+            return reward.gate_ratio(self.state)
+        error_msg = f"Reward function {self.reward_function} not supported."  # type: ignore[unreachable]
+        raise ValueError(error_msg)
 
-    def render(self, mode="human"):
+    def render(self) -> None:
         print(self.state.draw())
 
-    def reset(self, qc: Path | str | QuantumCircuit = None):
+    def reset(self, qc: Path | str | QuantumCircuit = None) -> QuantumCircuit:
         if isinstance(qc, QuantumCircuit):
             self.state = qc
         else:
@@ -134,46 +135,40 @@ class PredictorEnv(Env):
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
 
-        self.native_gateset_name = None
+        self.native_gateset_name = ""
         self.native_gates = None
-        self.device = None
+        self.device = ""
         self.cmap = None
 
         self.valid_actions = self.get_platform_valid_actions_for_state()
 
         return rl.helper.create_feature_dict(self.state)
 
-    def action_masks(self):
-        action_validity = [
-            action in self.valid_actions for action in self.action_set.keys()
-        ]
-        return action_validity
+    def action_masks(self) -> list[bool]:
+        return [action in self.valid_actions for action in self.action_set]
 
-    def apply_action(self, action_index):
+    def apply_action(self, action_index: int) -> QuantumCircuit:
         if action_index in self.actions_platform:
-            self.native_gateset_name = self.action_set.get(action_index)["name"]
-            self.native_gates = self.action_set.get(action_index)["gates"]
+            self.native_gateset_name = self.action_set[action_index]["name"]
+            self.native_gates = self.action_set[action_index]["gates"]
         elif action_index in self.actions_devices_indices:
-            self.device = self.action_set.get(action_index)["name"]
-            self.cmap = self.action_set.get(action_index)["cmap"]
+            self.device = self.action_set[action_index]["name"]
+            self.cmap = self.action_set[action_index]["cmap"]
 
         if action_index in self.action_set:
-            action = self.action_set.get(action_index)
+            action = self.action_set[action_index]
             if action["name"] == "terminate":
                 return self.state
 
             if action_index in self.actions_platform:
-                self.native_gates = self.action_set.get(action_index)["gates"]
+                self.native_gates = self.action_set[action_index]["gates"]
                 return self.state
 
             if action_index in self.actions_devices_indices:
-                self.cmap = self.action_set.get(action_index)["cmap"]
+                self.cmap = self.action_set[action_index]["cmap"]
                 return self.state
 
-            if (
-                action_index
-                in self.actions_layout_indices + self.actions_routing_indices
-            ):
+            if action_index in self.actions_layout_indices + self.actions_routing_indices:
                 transpile_pass = action["transpile_pass"](self.cmap)
             elif action_index in self.actions_synthesis_indices:
                 transpile_pass = action["transpile_pass"](self.native_gates)
@@ -186,7 +181,6 @@ class PredictorEnv(Env):
                 except Exception as e:
                     raise RuntimeError(
                         "Error in executing Qiskit transpile pass: "
-                        + ", "
                         + action["name"]
                         + ", "
                         + self.state.name
@@ -202,7 +196,6 @@ class PredictorEnv(Env):
                 except Exception as e:
                     raise RuntimeError(
                         "Error in executing TKET transpile pass: "
-                        + ", "
                         + action["name"]
                         + ", "
                         + self.state.name
@@ -210,19 +203,19 @@ class PredictorEnv(Env):
                         + str(e),
                     ) from None
             else:
-                raise ValueError(f"Origin {action['origin']} not supported.")
+                error_msg = f"Origin {action['origin']} not supported."
+                raise ValueError(error_msg)
         else:
-            raise ValueError(f"Action {action_index} not supported.")
+            error_msg = f"Action {action_index} not supported."
+            raise ValueError(error_msg)
 
         return altered_qc
 
-    def determine_valid_actions_for_state(self):
+    def determine_valid_actions_for_state(self) -> list[int]:
         if self.native_gates is None:
-            return (
-                self.get_platform_valid_actions_for_state() + self.actions_opt_indices
-            )
+            return self.get_platform_valid_actions_for_state() + self.actions_opt_indices
 
-        if self.device is None:
+        if not self.device:  # type: ignore[unreachable]
             return self.get_device_action_indices_for_nat_gates()
 
         check_nat_gates = GatesInBasis(basis_gates=self.native_gates)
@@ -236,38 +229,31 @@ class PredictorEnv(Env):
         check_mapping(self.state)
         mapped = check_mapping.property_set["is_swap_mapped"]
 
-        if only_nat_gates and mapped:
-            return [self.action_terminate_index] + self.actions_opt_indices
+        if mapped:
+            return [self.action_terminate_index, *self.actions_opt_indices]
 
-            # No layout applied yet
-        if only_nat_gates and not mapped:
-            if self.state._layout is not None:
-                return self.actions_routing_indices + self.actions_opt_indices
-            return self.actions_layout_indices + self.actions_opt_indices
+        # No layout applied yet
+        if self.state._layout is not None:
+            return self.actions_routing_indices + self.actions_opt_indices
+        return self.actions_layout_indices + self.actions_opt_indices
 
-    def get_device_action_indices_for_nat_gates(self):
-        nat_gate_index = None
-        for key in self.action_set.keys():
-            if self.action_set.get(key)["name"] == self.native_gateset_name:
+    def get_device_action_indices_for_nat_gates(self) -> list[int]:
+        nat_gate_index = -1
+        for key in self.action_set:
+            if self.action_set[key]["name"] == self.native_gateset_name:
                 nat_gate_index = key
                 break
-        potential_devices_names = self.action_set.get(nat_gate_index)["devices"]
+        potential_devices_names = self.action_set[nat_gate_index]["devices"]
         potential_devices_indices = []
         for dev in potential_devices_names:
-            for key in self.action_set.keys():
-                if (
-                    self.action_set.get(key)["name"] == dev
-                    and self.state.num_qubits <= self.action_set.get(key)["max_qubits"]
-                ):
+            for key in self.action_set:
+                if self.action_set[key]["name"] == dev and self.state.num_qubits <= self.action_set[key]["max_qubits"]:
                     potential_devices_indices.append(key)
         return potential_devices_indices
 
-    def get_platform_valid_actions_for_state(self):
+    def get_platform_valid_actions_for_state(self) -> list[int]:
         valid_platform_indices = []
         for platform_action in self.actions_platform:
-            if (
-                self.state.num_qubits
-                <= self.action_set.get(platform_action)["max_qubit_size"]
-            ):
+            if self.state.num_qubits <= self.action_set[platform_action]["max_qubit_size"]:
                 valid_platform_indices.append(platform_action)
         return valid_platform_indices

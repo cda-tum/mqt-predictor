@@ -3,13 +3,15 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import requests
+from mqt.predictor import rl, utils
 from packaging import version
-from pytket import architecture
-from pytket.circuit import OpType
-from pytket.passes import (
+from pytket.architecture import Architecture  # type: ignore[attr-defined]
+from pytket.circuit import OpType  # type: ignore[attr-defined]
+from pytket.passes import (  # type: ignore[attr-defined]
     CliffordSimp,
     FullPeepholeOptimise,
     PeepholeOptimise2Q,
@@ -45,19 +47,18 @@ from qiskit.transpiler.passes import (
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
-from mqt.predictor import rl, utils
-
-if sys.version_info < (3, 10, 0):
+if TYPE_CHECKING or sys.version_info >= (3, 10, 0):
+    from importlib import metadata, resources
+else:
     import importlib_metadata as metadata
     import importlib_resources as resources
-else:
-    from importlib import metadata, resources
 
+reward_functions = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
 
 logger = logging.getLogger("mqtpredictor")
 
 
-def qcompile(qc: QuantumCircuit | str, opt_objective="fidelity") -> QuantumCircuit:
+def qcompile(qc: QuantumCircuit | str, opt_objective: reward_functions = "fidelity") -> QuantumCircuit:
     """Returns the compiled quantum circuit which is compiled following an objective function.
     Keyword arguments:
     qc -- to be compiled quantum circuit or path to a qasm file
@@ -69,7 +70,7 @@ def qcompile(qc: QuantumCircuit | str, opt_objective="fidelity") -> QuantumCircu
     return predictor.compile_as_predicted(qc, opt_objective=opt_objective)
 
 
-def get_actions_opt():
+def get_actions_opt() -> list[dict[str, Any]]:
     return [
         {
             "name": "Optimize1qGatesDecomposition",
@@ -134,7 +135,7 @@ def get_actions_opt():
     ]
 
 
-def get_actions_layout():
+def get_actions_layout() -> list[dict[str, Any]]:
     return [
         {
             "name": "TrivialLayout",
@@ -169,7 +170,7 @@ def get_actions_layout():
     ]
 
 
-def get_actions_routing():
+def get_actions_routing() -> list[dict[str, Any]]:
     return [
         {
             "name": "BasicSwap",
@@ -179,7 +180,7 @@ def get_actions_routing():
         {
             "name": "RoutingPass",
             "transpile_pass": lambda c: [
-                RoutingPass(architecture.Architecture(c)),
+                RoutingPass(Architecture(c)),
             ],
             "origin": "tket",
         },
@@ -196,7 +197,7 @@ def get_actions_routing():
     ]
 
 
-def get_actions_platform_selection():
+def get_actions_platform_selection() -> list[dict[str, Any]]:
     return [
         {
             "name": "IBM",
@@ -225,23 +226,21 @@ def get_actions_platform_selection():
     ]
 
 
-def get_actions_synthesis():
+def get_actions_synthesis() -> list[dict[str, Any]]:
     return [
         {
             "name": "BasisTranslator",
-            "transpile_pass": lambda g: [
-                BasisTranslator(StandardEquivalenceLibrary, target_basis=g)
-            ],
+            "transpile_pass": lambda g: [BasisTranslator(StandardEquivalenceLibrary, target_basis=g)],
             "origin": "qiskit",
         },
     ]
 
 
-def get_action_terminate():
+def get_action_terminate() -> dict[str, Any]:
     return {"name": "terminate"}
 
 
-def get_actions_devices():
+def get_actions_devices() -> list[dict[str, Any]]:
     return [
         {
             "name": "ibm_washington",
@@ -285,15 +284,14 @@ def get_actions_devices():
     ]
 
 
-def get_state_sample():
+def get_state_sample() -> QuantumCircuit:
     file_list = list(get_path_training_circuits().glob("*.qasm"))
 
     path_zip = get_path_training_circuits() / "mqtbench_sample_circuits.zip"
     if len(file_list) == 0 and path_zip.exists():
-        path_zip = str(path_zip)
         import zipfile
 
-        with zipfile.ZipFile(path_zip, "r") as zip_ref:
+        with zipfile.ZipFile(str(path_zip), "r") as zip_ref:
             zip_ref.extractall(get_path_training_circuits())
 
         file_list = list(get_path_training_circuits().glob("*.qasm"))
@@ -303,41 +301,35 @@ def get_state_sample():
     try:
         qc = QuantumCircuit.from_qasm_file(str(file_list[random_index]))
     except Exception:
-        raise RuntimeError(
-            "Could not read QuantumCircuit from: " + str(file_list[random_index])
-        ) from None
+        raise RuntimeError("Could not read QuantumCircuit from: " + str(file_list[random_index])) from None
 
     return qc
 
 
-def get_ibm_native_gates():
-    ibm_gates = ["rz", "sx", "x", "cx", "measure"]
-    return ibm_gates
+def get_ibm_native_gates() -> list[str]:
+    return ["rz", "sx", "x", "cx", "measure"]
 
 
-def get_rigetti_native_gates():
-    rigetti_gates = ["rx", "rz", "cz", "measure"]
-    return rigetti_gates
+def get_rigetti_native_gates() -> list[str]:
+    return ["rx", "rz", "cz", "measure"]
 
 
-def get_ionq_native_gates():
-    ionq_gates = ["rxx", "rz", "ry", "rx", "measure"]
-    return ionq_gates
+def get_ionq_native_gates() -> list[str]:
+    return ["rxx", "rz", "ry", "rx", "measure"]
 
 
-def get_oqc_native_gates():
-    oqc_gates = ["rz", "sx", "x", "ecr", "measure"]
-    return oqc_gates
+def get_oqc_native_gates() -> list[str]:
+    return ["rz", "sx", "x", "ecr", "measure"]
 
 
-def get_rigetti_aspen_m2_map():
+def get_rigetti_aspen_m2_map() -> list[list[int]]:
     """Returns a coupling map of Rigetti Aspen M2 chip."""
     c_map_rigetti = []
     for j in range(5):
         for i in range(0, 7):
             c_map_rigetti.append([i + j * 8, i + 1 + j * 8])
 
-            if i == 6:
+            if i == 6:  # noqa: PLR2004
                 c_map_rigetti.append([0 + j * 8, 7 + j * 8])
 
         if j != 0:
@@ -349,7 +341,7 @@ def get_rigetti_aspen_m2_map():
         for i in range(0, 7):
             c_map_rigetti.append([i + m, i + 1 + m])
 
-            if i == 6:
+            if i == 6:  # noqa: PLR2004
                 c_map_rigetti.append([0 + m, 7 + m])
 
         if j != 0:
@@ -361,12 +353,11 @@ def get_rigetti_aspen_m2_map():
         c_map_rigetti.append([n * 8 + 4, n * 8 + 7 + 5 * 8])
 
     inverted = [[item[1], item[0]] for item in c_map_rigetti]
-    c_map_rigetti = c_map_rigetti + inverted
 
-    return c_map_rigetti
+    return c_map_rigetti + inverted
 
 
-def get_ionq11_c_map():
+def get_ionq11_c_map() -> list[list[int]]:
     ionq11_c_map = []
     for i in range(0, 11):
         for j in range(0, 11):
@@ -375,32 +366,30 @@ def get_ionq11_c_map():
     return ionq11_c_map
 
 
-def get_cmap_oqc_lucy():
+def get_cmap_oqc_lucy() -> list[list[int]]:
     """Returns the coupling map of the OQC Lucy quantum computer."""
     # source: https://github.com/aws/amazon-braket-examples/blob/main/examples/braket_features/Verbatim_Compilation.ipynb
 
     # Connections are NOT bidirectional, this is not an accident
-    c_map_oqc_lucy = [[0, 1], [0, 7], [1, 2], [2, 3], [7, 6], [6, 5], [4, 3], [4, 5]]
-
-    return c_map_oqc_lucy
+    return [[0, 1], [0, 7], [1, 2], [2, 3], [7, 6], [6, 5], [4, 3], [4, 5]]
 
 
-def get_cmap_from_devicename(device: str):
+def get_cmap_from_devicename(device: str) -> Any:
     if device == "ibm_washington":
         return FakeWashington().configuration().coupling_map
-    elif device == "ibm_montreal":
+    if device == "ibm_montreal":
         return FakeMontreal().configuration().coupling_map
-    elif device == "rigetti_aspen_m2":
+    if device == "rigetti_aspen_m2":
         return get_rigetti_aspen_m2_map()
-    elif device == "oqc_lucy":
+    if device == "oqc_lucy":
         return get_cmap_oqc_lucy()
-    elif device == "ionq11":
+    if device == "ionq11":
         return get_ionq11_c_map()
-    else:
-        raise ValueError("Unknown device name")
+    error_msg = "Unknown device name"
+    raise ValueError(error_msg)
 
 
-def create_feature_dict(qc):
+def create_feature_dict(qc: QuantumCircuit) -> dict[str, Any]:
     feature_dict = {
         "num_qubits": np.array([qc.num_qubits], dtype=int),
         "depth": np.array([qc.depth()], dtype=int),
@@ -414,32 +403,28 @@ def create_feature_dict(qc):
         liveness,
     ) = utils.calc_supermarq_features(qc)
     # for all dict values, put them in a list each
-    feature_dict["program_communication"] = np.array(
-        [program_communication], dtype=np.float32
-    )
+    feature_dict["program_communication"] = np.array([program_communication], dtype=np.float32)
     feature_dict["critical_depth"] = np.array([critical_depth], dtype=np.float32)
-    feature_dict["entanglement_ratio"] = np.array(
-        [entanglement_ratio], dtype=np.float32
-    )
+    feature_dict["entanglement_ratio"] = np.array([entanglement_ratio], dtype=np.float32)
     feature_dict["parallelism"] = np.array([parallelism], dtype=np.float32)
     feature_dict["liveness"] = np.array([liveness], dtype=np.float32)
 
     return feature_dict
 
 
-def get_path_training_data():
-    return resources.files("mqt.predictor") / "rl" / "training_data"
+def get_path_training_data() -> Path:
+    return Path(str(resources.files("mqt.predictor"))) / "rl" / "training_data"
 
 
-def get_path_trained_model():
+def get_path_trained_model() -> Path:
     return get_path_training_data() / "trained_model"
 
 
-def get_path_training_circuits():
+def get_path_training_circuits() -> Path:
     return get_path_training_data() / "training_circuits"
 
 
-def load_model(model_name: str):
+def load_model(model_name: str) -> MaskablePPO:
     path = get_path_trained_model()
 
     if Path(path / (model_name + ".zip")).exists():
@@ -449,9 +434,10 @@ def load_model(model_name: str):
     try:
         mqtpredictor_module_version = metadata.version("mqt.predictor")
     except ModuleNotFoundError:
-        raise RuntimeError(
+        error_msg = (
             "Could not retrieve version of mqt.predictor. Please run 'pip install . or pip install mqt.predictor'."
-        ) from None
+        )
+        raise RuntimeError(error_msg) from None
 
     version_found = False
     response = requests.get("https://api.github.com/repos/cda-tum/mqtpredictor/tags")
@@ -459,19 +445,12 @@ def load_model(model_name: str):
     for elem in response.json():
         available_versions.append(elem["name"])
     for possible_version in available_versions:
-        if version.parse(mqtpredictor_module_version) >= version.parse(
-            possible_version
-        ):
-            url = (
-                "https://api.github.com/repos/cda-tum/mqtpredictor/releases/tags/"
-                + possible_version
-            )
+        if version.parse(mqtpredictor_module_version) >= version.parse(possible_version):
+            url = "https://api.github.com/repos/cda-tum/mqtpredictor/releases/tags/" + possible_version
             response = requests.get(url)
             if not response:
-                raise RuntimeError(
-                    "Suitable trained models cannot be downloaded since the GitHub API failed. "
-                    "One reasons could be that the limit of 60 API calls per hour and IP address is exceeded."
-                )
+                error_msg = "Suitable trained models cannot be downloaded since the GitHub API failed. One reasons could be that the limit of 60 API calls per hour and IP address is exceeded."
+                raise RuntimeError(error_msg)
 
             response_json = response.json()
             if "assets" in response_json:
@@ -493,21 +472,20 @@ def load_model(model_name: str):
             break
 
     if not version_found:
-        raise RuntimeError(
-            "No suitable model found on GitHub. Please update your mqt.predictort package using 'pip install -U mqt.predictor'."
-        ) from None
+        error_msg = "No suitable model found on GitHub. Please update your mqt.predictort package using 'pip install -U mqt.predictor'."
+        raise RuntimeError(error_msg) from None
 
     return MaskablePPO.load(path / model_name)
 
 
-def handle_downloading_model(download_url: str, model_name: str):
+def handle_downloading_model(download_url: str, model_name: str) -> None:
     logger.info("Start downloading model...")
 
     r = requests.get(download_url)
-    total_length = int(r.headers.get("content-length"))
+    total_length = int(r.headers.get("content-length"))  # type: ignore[arg-type]
     fname = str(get_path_trained_model() / (model_name + ".zip"))
 
-    with open(fname, "wb") as f, tqdm(
+    with Path(fname).open(mode="wb") as f, tqdm(
         desc=fname,
         total=total_length,
         unit="iB",

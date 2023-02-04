@@ -1,20 +1,25 @@
+from __future__ import annotations
+
 import logging
 import signal
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from qiskit import QuantumCircuit
+
+if TYPE_CHECKING:
+    from qiskit import QuantumCircuit, QuantumRegister
 from qiskit.transpiler.passes import RemoveBarriers
 
 logger = logging.getLogger("mqtpredictor")
 
 
-def timeout_watcher(func, args, timeout):
+def timeout_watcher(func: Any, args: list[Any], timeout: int) -> Any:
     """Method that stops a function call after a given timeout limit."""
 
     class TimeoutException(Exception):  # Custom exception class
         pass
 
-    def timeout_handler(signum, frame):  # Custom signal handler
+    def timeout_handler(_signum: Any, _frame: Any) -> None:  # Custom signal handler
         raise TimeoutException
 
     # Change the behavior of SIGALRM
@@ -24,12 +29,7 @@ def timeout_watcher(func, args, timeout):
     try:
         res = func(*args)
     except TimeoutException:
-        logger.debug(
-            "Calculation/Generation exceeded timeout limit for "
-            + func.__module__
-            + ", "
-            + str(args[1:])
-        )
+        logger.debug("Calculation/Generation exceeded timeout limit for " + func.__module__ + ", " + str(args[1:]))
         return False
     except Exception as e:
         logger.error("Something else went wrong: " + str(e))
@@ -41,7 +41,7 @@ def timeout_watcher(func, args, timeout):
     return res
 
 
-def calc_qubit_index(qargs, qregs, index):
+def calc_qubit_index(qargs: list[Any], qregs: list[QuantumRegister], index: int) -> Any:
     offset = 0
     for reg in qregs:
         if qargs[index] not in reg:
@@ -49,10 +49,14 @@ def calc_qubit_index(qargs, qregs, index):
         else:
             qubit_index = offset + reg.index(qargs[index])
             return qubit_index
-    raise ValueError("Qubit not found.")
+    error_msg = "Qubit not found."
+    raise ValueError(error_msg)
 
 
-def get_rigetti_qubit_dict():
+NUM_QUBIT_INDICES_RIGETTI = 80
+
+
+def get_rigetti_qubit_dict() -> dict[str, str]:
     mapping = {
         "32": "4",
         "39": "3",
@@ -136,31 +140,35 @@ def get_rigetti_qubit_dict():
         "47": "143",
     }
 
-    assert len(mapping) == 80
+    assert len(mapping) == NUM_QUBIT_INDICES_RIGETTI
     return mapping
 
 
-def calc_supermarq_features(qc: QuantumCircuit):
+def calc_supermarq_features(
+    qc: QuantumCircuit,
+) -> tuple[float, float, float, float, float]:
     qc = RemoveBarriers()(qc)
-    connectivity = []
+    connectivity_collection: list[list[int]] = []
     liveness_A_matrix = 0
     for _ in range(qc.num_qubits):
-        connectivity.append([])
+        connectivity_collection.append([])
 
     for _, qargs, _ in qc.data:
         liveness_A_matrix += len(qargs)
         first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
         all_indices = [first_qubit]
-        if len(qargs) == 2:
+        if len(qargs) == 2:  # noqa: PLR2004
             second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
             all_indices.append(second_qubit)
         for qubit_index in all_indices:
             to_be_added_entries = all_indices.copy()
             to_be_added_entries.remove(int(qubit_index))
-            connectivity[int(qubit_index)].extend(to_be_added_entries)
+            connectivity_collection[int(qubit_index)].extend(to_be_added_entries)
 
+    connectivity: list[Any] = []
     for i in range(qc.num_qubits):
-        connectivity[i] = len(set(connectivity[i]))
+        connectivity.append([])
+        connectivity[i] = len(set(connectivity_collection[i]))
 
     num_gates = sum(qc.count_ops().values())
     num_multiple_qubit_gates = qc.num_nonlocal_gates()
@@ -168,11 +176,9 @@ def calc_supermarq_features(qc: QuantumCircuit):
     program_communication = np.sum(connectivity) / (qc.num_qubits * (qc.num_qubits - 1))
 
     if num_multiple_qubit_gates == 0:
-        critical_depth = 0
+        critical_depth = 0.0
     else:
-        critical_depth = (
-            qc.depth(filter_function=lambda x: len(x[1]) > 1) / num_multiple_qubit_gates
-        )
+        critical_depth = qc.depth(filter_function=lambda x: len(x[1]) > 1) / num_multiple_qubit_gates
 
     entanglement_ratio = num_multiple_qubit_gates / num_gates
     assert num_multiple_qubit_gates <= num_gates
@@ -181,11 +187,11 @@ def calc_supermarq_features(qc: QuantumCircuit):
 
     liveness = liveness_A_matrix / (depth * qc.num_qubits)
 
-    assert program_communication >= 0 and program_communication <= 1
-    assert critical_depth >= 0 and critical_depth <= 1
-    assert entanglement_ratio >= 0 and entanglement_ratio <= 1
-    assert parallelism >= 0 and parallelism <= 1
-    assert liveness >= 0 and liveness <= 1
+    assert 0 <= program_communication <= 1
+    assert 0 <= critical_depth <= 1
+    assert 0 <= entanglement_ratio <= 1
+    assert 0 <= parallelism <= 1
+    assert 0 <= liveness <= 1
 
     return (
         program_communication,
