@@ -8,15 +8,16 @@ from typing import Any, get_args
 import numpy as np
 from joblib import Parallel, delayed
 from mqt.predictor import rl
-from pytket import OpType, architecture
+from pytket import OpType
+from pytket.architecture import Architecture  # type: ignore[attr-defined]
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
-from pytket.passes import (
+from pytket.passes import (  # type: ignore[attr-defined]
     FullPeepholeOptimise,
     PlacementPass,
     RoutingPass,
     auto_rebase_pass,
 )
-from pytket.placement import GraphPlacement
+from pytket.placement import GraphPlacement  # type: ignore[attr-defined]
 from qiskit import QuantumCircuit, transpile
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
@@ -175,7 +176,7 @@ class Predictor:
         if used_setup == "tket":
             qc = QuantumCircuit.from_qasm_file(benchmark)
             tket_qc = qiskit_to_tk(qc)
-            arch = architecture.Architecture(rl.helper.get_cmap_from_devicename("ibm_washington"))
+            arch = Architecture(rl.helper.get_cmap_from_devicename("ibm_washington"))
             ibm_rebase = auto_rebase_pass({OpType.Rz, OpType.SX, OpType.X, OpType.CX, OpType.Measure})
 
             start_time = time.time()
