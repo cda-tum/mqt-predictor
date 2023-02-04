@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import Any
+from typing import cast
 
 import numpy as np
 from mqt.predictor import Calibration
@@ -13,7 +15,7 @@ from qiskit import QuantumCircuit
 logger = logging.getLogger("mqtpredictor")
 
 
-def crit_depth(qc: QuantumCircuit, precision: int = 10) -> Any:
+def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
     (
         program_communication,
         critical_depth,
@@ -21,10 +23,10 @@ def crit_depth(qc: QuantumCircuit, precision: int = 10) -> Any:
         parallelism,
         liveness,
     ) = calc_supermarq_features(qc)
-    return np.round(1 - critical_depth, precision)
+    return cast(float, np.round(1 - critical_depth, precision))
 
 
-def parallelism(qc: QuantumCircuit, precision: int = 10) -> Any:
+def parallelism(qc: QuantumCircuit, precision: int = 10) -> float:
     (
         program_communication,
         critical_depth,
@@ -32,18 +34,18 @@ def parallelism(qc: QuantumCircuit, precision: int = 10) -> Any:
         parallelism,
         liveness,
     ) = calc_supermarq_features(qc)
-    return np.round(1 - parallelism, precision)
+    return cast(float, np.round(1 - parallelism, precision))
 
 
-def gate_ratio(qc: QuantumCircuit, precision: int = 10) -> Any:
-    return np.round(1 - qc.num_nonlocal_gates() / qc.size(), precision)
+def gate_ratio(qc: QuantumCircuit, precision: int = 10) -> float:
+    return cast(float, np.round(1 - qc.num_nonlocal_gates() / qc.size(), precision))
 
 
-def mix(qc: QuantumCircuit, device: str, precision: int = 10) -> Any:
+def mix(qc: QuantumCircuit, device: str, precision: int = 10) -> float:
     return expected_fidelity(qc, device, precision) * 0.5 + crit_depth(qc, precision) * 0.5
 
 
-def expected_fidelity(qc_or_path: str, device: str, precision: int = 10) -> Any:
+def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: int = 10) -> float:
     if isinstance(qc_or_path, QuantumCircuit):
         qc = qc_or_path
     else:
@@ -74,7 +76,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10) -> Any:
                 if len(qargs) == 1:
                     try:
                         if gate_type == "measure":
-                            specific_error = backend.readout_error(first_qubit)
+                            specific_error: float = backend.readout_error(first_qubit)
                         else:
                             specific_error = backend.gate_error(gate_type, [first_qubit])
                     except Exception as e:
@@ -112,7 +114,7 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10) -> Any:
                             + qargs
                         ) from None
 
-                res *= 1 - float(specific_error)
+                res *= 1 - specific_error
     elif "oqc_lucy" in device:
         for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
@@ -196,4 +198,4 @@ def expected_fidelity(qc_or_path: str, device: str, precision: int = 10) -> Any:
         error_msg = "Device not supported"
         raise ValueError(error_msg)
 
-    return np.round(res, precision)
+    return cast(float, np.round(res, precision))
