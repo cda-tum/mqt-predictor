@@ -203,7 +203,7 @@ def save_training_data(res: tuple[list[Any], list[Any], list[Any]]) -> None:
     training_data, names_list, scores_list = res
 
     with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
-        data = np.asarray(training_data)
+        data = np.asarray(training_data, dtype=object)
         np.save(str(path / "training_data.npy"), data)
         data = np.asarray(names_list)
         np.save(str(path / "names_list.npy"), data)
