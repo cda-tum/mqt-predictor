@@ -9,9 +9,9 @@ import numpy as np
 import requests
 from mqt.predictor import rl, utils
 from packaging import version
-from pytket import architecture
-from pytket.circuit import OpType
-from pytket.passes import (
+from pytket.architecture import Architecture  # type: ignore[attr-defined]
+from pytket.circuit import OpType  # type: ignore[attr-defined]
+from pytket.passes import (  # type: ignore[attr-defined]
     CliffordSimp,
     FullPeepholeOptimise,
     PeepholeOptimise2Q,
@@ -180,7 +180,7 @@ def get_actions_routing() -> list[dict[str, Any]]:
         {
             "name": "RoutingPass",
             "transpile_pass": lambda c: [
-                RoutingPass(architecture.Architecture(c)),
+                RoutingPass(Architecture(c)),
             ],
             "origin": "tket",
         },
