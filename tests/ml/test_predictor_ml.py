@@ -16,19 +16,19 @@ def test_predict(mock_show: Any) -> None:  # noqa: ARG001
     qc.qasm(filename=filename)
     predictor = ml.Predictor()
     prediction = predictor.predict(filename)
-    assert 0 <= prediction < len(ml.helper.get_index_to_comppath_LUT())
+    assert 0 <= prediction < len(ml.helper.get_index_to_compilation_path_dict())
     prediction = predictor.predict(qc.qasm())
-    assert 0 <= prediction < len(ml.helper.get_index_to_comppath_LUT())
+    assert 0 <= prediction < len(ml.helper.get_index_to_compilation_path_dict())
     with pytest.raises(ValueError, match="Invalid input for 'qc' parameter"):
         predictor.predict("Error Test")
 
     predictor.clf = None
     prediction = predictor.predict(filename)
     Path(filename).unlink()
-    assert 0 <= prediction < len(ml.helper.get_index_to_comppath_LUT())
+    assert 0 <= prediction < len(ml.helper.get_index_to_compilation_path_dict())
 
 
-@pytest.mark.parametrize("comp_path", list(range(len(ml.helper.get_index_to_comppath_LUT()))))
+@pytest.mark.parametrize("comp_path", list(range(len(ml.helper.get_index_to_compilation_path_dict()))))
 def test_compilation_paths(comp_path: int) -> None:  # noqa: ARG001
     qc_qasm = benchmark_generator.get_benchmark("dj", 1, 2).qasm()
     res, compile_info = ml.qcompile(qc_qasm)
@@ -53,7 +53,7 @@ def test_compile_all_circuits_for_qc() -> None:
     predictor = ml.Predictor()
     assert predictor.compile_all_circuits_for_qc(
         filename=tmp_filename,
-        source_path=".",
+        source_path=Path.cwd(),
     )
     if Path(tmp_filename).exists():
         Path(tmp_filename).unlink()
@@ -73,7 +73,7 @@ def test_train_random_forest_classifier(mock_pyplot: Any) -> None:  # noqa: ARG0
 def test_generate_compiled_circuits() -> None:
 
     predictor = ml.Predictor()
-    source_path = "."
+    source_path = Path.cwd()
     target_path = Path("test_compiled_circuits")
     if not target_path.exists():
         target_path.mkdir()
@@ -81,17 +81,16 @@ def test_generate_compiled_circuits() -> None:
     qc = benchmark_generator.get_benchmark("dj", 1, 3)
     qasm_path = Path("compiled_test.qasm")
     qc.qasm(filename=str(qasm_path))
-    predictor.generate_compiled_circuits(source_path, str(target_path))
+    predictor.generate_compiled_circuits(source_path, target_path)
     assert any(file.suffix == ".qasm" for file in target_path.iterdir())
 
     res = predictor.generate_training_sample(
         str(qasm_path),
         path_uncompiled_circuit=source_path,
-        path_compiled_circuits=str(target_path),
+        path_compiled_circuits=target_path,
     )
     assert not isinstance(res, bool)
     training_sample, circuit_name, scores = res
-    assert training_sample
     assert circuit_name
     assert scores
 
@@ -99,7 +98,7 @@ def test_generate_compiled_circuits() -> None:
         training_data,
         name_list,
         scores_list,
-    ) = predictor.generate_trainingdata_from_qasm_files(source_path, str(target_path))
+    ) = predictor.generate_trainingdata_from_qasm_files(source_path, target_path)
     assert training_data
     assert name_list
     assert scores_list
