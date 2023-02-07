@@ -76,7 +76,7 @@ class IBMProvider(Provider):
         device = Device()
         device.name = ibm_calibration["name"]
         device.num_qubits = ibm_calibration["num_qubits"]
-        device.basis_gates = ["id", "rz", "sx", "x", "cx", "measure"]
+        device.basis_gates = ["id", "rz", "sx", "x", "cx", "measure", "barrier"]
         device.coupling_map = [(a, b) for a, b in ibm_calibration["connectivity"]]
 
         calibration = DeviceCalibration()

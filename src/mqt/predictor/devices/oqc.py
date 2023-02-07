@@ -95,7 +95,7 @@ class OQCProvider(Provider):
         device = Device()
         device.name = oqc_calibration["name"]
         device.num_qubits = oqc_calibration["qubitCount"]
-        device.basis_gates = ["rz", "sx", "x", "ecr", "measure"]
+        device.basis_gates = ["rz", "sx", "x", "ecr", "measure", "barrier"]
         device.coupling_map = [(a, b) for a, b in oqc_calibration["connectivity"]]
 
         calibration = DeviceCalibration()
