@@ -1,26 +1,28 @@
 from __future__ import annotations
 
 import sys
-from typing import Any
 
 if sys.version_info < (3, 10, 0):
     import importlib_resources as resources
 else:
     from importlib import resources  # type: ignore[no-redef]
 
+import pickle
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict, cast
 
-import numpy as np
 from joblib import dump
-from mqt.predictor import ml, utils
+from mqt.predictor import ml
+from mqt.predictor.devices import Device, get_available_providers
+from mqt.predictor.reward import calc_supermarq_features
 from qiskit import QuantumCircuit
 
 if TYPE_CHECKING:
     from sklearn.ensemble import RandomForestClassifier
 
 
-def qcompile(qc: QuantumCircuit | str) -> tuple[QuantumCircuit, int]:
+def qcompile(qc: QuantumCircuit | Path) -> tuple[QuantumCircuit, int]:
     """Returns the compiled quantum circuit which is compiled with the predicted combination of compilation options.
 
     Keyword arguments:
@@ -55,130 +57,133 @@ def get_width_penalty() -> int:
     return -10000
 
 
-def get_compilation_pipeline() -> dict[str, dict[str, Any]]:
+class QiskitOptions(TypedDict):
+    optimization_level: int
+
+
+class TketOptions(TypedDict):
+    line_placement: bool
+
+
+class CompilerOptions(TypedDict, total=False):
+    qiskit: QiskitOptions
+    tket: TketOptions
+
+
+class CompilationPipeline(TypedDict):
+    devices: dict[str, list[Device]]
+    compiler: list[CompilerOptions]
+
+
+def get_compilation_pipeline() -> CompilationPipeline:
     return {
-        "devices": {
-            "ibm": [("ibm_washington", 127), ("ibm_montreal", 27)],
-            "rigetti": [("rigetti_aspen_m2", 80)],
-            "ionq": [("ionq11", 11)],
-            "oqc": [("oqc_lucy", 8)],
-        },
-        "compiler": {
-            "qiskit": {"optimization_level": [0, 1, 2, 3]},
-            "tket": {"lineplacement": [False, True]},
-        },
+        "devices": {provider.provider_name: provider.get_available_devices() for provider in get_available_providers()},
+        "compiler": [
+            {"qiskit": {"optimization_level": 0}},
+            {"qiskit": {"optimization_level": 1}},
+            {"qiskit": {"optimization_level": 2}},
+            {"qiskit": {"optimization_level": 3}},
+            {"tket": {"line_placement": False}},
+            {"tket": {"line_placement": True}},
+        ],
     }
 
 
-def get_index_to_comppath_LUT() -> dict[int, Any]:
+class CompilationPath(TypedDict):
+    provider_name: str
+    device: Device
+    compiler: str
+    compiler_options: CompilerOptions
+
+
+def get_index_to_compilation_path_dict() -> dict[int, CompilationPath]:
     compilation_pipeline = get_compilation_pipeline()
     index = 0
-    index_to_comppath_LUT = {}
-    for gate_set_name, devices in compilation_pipeline["devices"].items():
-        for device_name, _max_qubits in devices:
-            for compiler, settings in compilation_pipeline["compiler"].items():
-                if "qiskit" in compiler:
-                    for opt_level in settings["optimization_level"]:
-                        index_to_comppath_LUT[index] = (
-                            gate_set_name,
-                            device_name,
-                            compiler,
-                            opt_level,
-                        )
-                        index += 1
-                elif "tket" in compiler:
-                    for lineplacement in settings["lineplacement"]:
-                        index_to_comppath_LUT[index] = (
-                            gate_set_name,
-                            device_name,
-                            compiler,
-                            lineplacement,
-                        )
-                        index += 1
-    return index_to_comppath_LUT
+    index_to_compilation_path_dict = {}
+    for provider_name, devices in compilation_pipeline["devices"].items():
+        for device in devices:
+            for configuration in compilation_pipeline["compiler"]:
+                for compiler, _settings in configuration.items():
+                    index_to_compilation_path_dict[index] = CompilationPath(
+                        provider_name=provider_name,
+                        device=device,
+                        compiler=compiler,
+                        compiler_options=configuration,
+                    )
+                    index += 1
+    return index_to_compilation_path_dict
 
 
-def get_openqasm_gates() -> list[str]:
-    """Returns a list of all quantum gates within the openQASM 2.0 standard header."""
-    # according to https://github.com/Qiskit/qiskit-terra/blob/main/qiskit/qasm/libs/qelib1.inc
-    return [
-        "u3",
-        "u2",
-        "u1",
-        "cx",
-        "id",
-        "u0",
-        "u",
-        "p",
-        "x",
-        "y",
-        "z",
-        "h",
-        "s",
-        "sdg",
-        "t",
-        "tdg",
-        "rx",
-        "ry",
-        "rz",
-        "sx",
-        "sxdg",
-        "cz",
-        "cy",
-        "swap",
-        "ch",
-        "ccx",
-        "cswap",
-        "crx",
-        "cry",
-        "crz",
-        "cu1",
-        "cp",
-        "cu3",
-        "csx",
-        "cu",
-        "rxx",
-        "rzz",
-        "rccx",
-        "rc3x",
-        "c3x",
-        "c3sqrtx",
-        "c4x",
-    ]
+# according to https://github.com/Qiskit/qiskit-terra/blob/main/qiskit/qasm/libs/qelib1.inc
+class OpenQASMGateCount(TypedDict):
+    u3: float
+    u2: float
+    u1: float
+    cx: float
+    id: float  # noqa: A003
+    u0: float
+    u: float
+    p: float
+    x: float
+    y: float
+    z: float
+    h: float
+    s: float
+    sdg: float
+    t: float
+    tdg: float
+    rx: float
+    ry: float
+    rz: float
+    sx: float
+    sxdg: float
+    cz: float
+    cy: float
+    swap: float
+    ch: float
+    ccx: float
+    cswap: float
+    crx: float
+    cry: float
+    crz: float
+    cu1: float
+    cp: float
+    cu3: float
+    csx: float
+    cu: float
+    rxx: float
+    rzz: float
+    rccx: float
+    rc3x: float
+    c3x: float
+    c3sqrtx: float
+    c4x: float
 
 
-def dict_to_featurevector(gate_dict: dict[str, int]) -> dict[str, int]:
-    """Calculates and returns the feature vector of a given quantum circuit gate dictionary."""
-    res_dct = dict.fromkeys(get_openqasm_gates(), 0)
-    for key, val in dict(gate_dict).items():
-        if key in res_dct:
-            res_dct[key] = val
+class CircuitFeatures(TypedDict):
+    num_qubits: float
+    depth: float
+    program_communication: float
+    critical_depth: float
+    entanglement_ratio: float
+    parallelism: float
+    liveness: float
 
-    return res_dct
+
+class FeatureDict(TypedDict):
+    gate_count: OpenQASMGateCount
+    circuit_features: CircuitFeatures
 
 
 PATH_LENGTH = 260
 
 
-def create_feature_dict(qc: str) -> dict[str, Any]:
-    if not isinstance(qc, QuantumCircuit):
-        if len(qc) < PATH_LENGTH and Path(qc).exists():
-            qc = QuantumCircuit.from_qasm_file(qc)
-        elif "OPENQASM" in qc:
-            qc = QuantumCircuit.from_qasm_str(qc)
-        else:
-            error_msg = "Invalid input for 'qc' parameter."
-            raise ValueError(error_msg) from None
-
-    ops_list = qc.count_ops()
-    ops_list_dict = dict_to_featurevector(ops_list)
-
-    feature_dict = {}
-    for key in ops_list_dict:
-        feature_dict[key] = float(ops_list_dict[key])
-
-    feature_dict["num_qubits"] = float(qc.num_qubits)
-    feature_dict["depth"] = float(qc.depth())
+def create_feature_dict(path: Path) -> FeatureDict:
+    if Path(path).exists():
+        qc = QuantumCircuit.from_qasm_file(str(path))
+    else:
+        error_msg = "Invalid input for 'qc' parameter."
+        raise ValueError(error_msg) from None
 
     (
         program_communication,
@@ -186,41 +191,72 @@ def create_feature_dict(qc: str) -> dict[str, Any]:
         entanglement_ratio,
         parallelism,
         liveness,
-    ) = utils.calc_supermarq_features(qc)
-    feature_dict["program_communication"] = program_communication
-    feature_dict["critical_depth"] = critical_depth
-    feature_dict["entanglement_ratio"] = entanglement_ratio
-    feature_dict["parallelism"] = parallelism
-    feature_dict["liveness"] = liveness
-    return feature_dict
+    ) = calc_supermarq_features(qc)
+    return {
+        "gate_count": cast(
+            OpenQASMGateCount,
+            {
+                gate.name: float(count)
+                for gate, count in qc.count_ops().items()
+                if gate.name in OpenQASMGateCount.__annotations__
+            },
+        ),
+        "circuit_features": {
+            "num_qubits": float(qc.num_qubits),
+            "depth": float(qc.depth()),
+            "program_communication": program_communication,
+            "critical_depth": critical_depth,
+            "entanglement_ratio": entanglement_ratio,
+            "parallelism": parallelism,
+            "liveness": liveness,
+        },
+    }
+
+
+@dataclass
+class TrainingSample:
+    features: FeatureDict
+    score: float
+
+    def get_feature_vector(self) -> list[float]:
+        """
+        Returns the feature vector of the training sample.
+        """
+        return [cast(float, gate_count) for gate_count in self.features["gate_count"].values()] + [
+            cast(float, circuit_feature) for circuit_feature in self.features["circuit_features"].values()
+        ]
 
 
 def save_classifier(clf: RandomForestClassifier) -> None:
     dump(clf, str(get_path_trained_model() / "trained_clf.joblib"))
 
 
-def save_training_data(res: tuple[list[Any], list[Any], list[Any]]) -> None:
+def save_training_data(res: tuple[list[TrainingSample], list[str], list[list[float]]]) -> None:
     training_data, names_list, scores_list = res
 
     with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
-        data = np.asarray(training_data)
-        np.save(str(path / "training_data.npy"), data)
-        data = np.asarray(names_list)
-        np.save(str(path / "names_list.npy"), data)
-        data = np.asarray(scores_list)
-        np.save(str(path / "scores_list.npy"), data)
+        # pickle the data
+        with Path(path / "training_data.pkl").open("wb") as f:
+            pickle.dump(training_data, f)
+        with Path(path / "names_list.pkl").open("wb") as f:
+            pickle.dump(names_list, f)
+        with Path(path / "scores_list.pkl").open("wb") as f:
+            pickle.dump(scores_list, f)
 
 
-def load_training_data() -> tuple[list[Any], list[str], list[Any]]:
+def load_training_data() -> tuple[list[TrainingSample], list[str], list[list[float]]]:
     with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
         if (
-            path.joinpath("training_data.npy").is_file()
-            and path.joinpath("names_list.npy").is_file()
-            and path.joinpath("scores_list.npy").is_file()
+            path.joinpath("training_data.pkl").is_file()
+            and path.joinpath("names_list.pkl").is_file()
+            and path.joinpath("scores_list.pkl").is_file()
         ):
-            training_data = np.load(str(path / "training_data.npy"), allow_pickle=True)
-            names_list = list(np.load(str(path / "names_list.npy"), allow_pickle=True))
-            scores_list = list(np.load(str(path / "scores_list.npy"), allow_pickle=True))
+            with Path(path / "training_data.pkl").open("rb") as f:
+                training_data = pickle.load(f)
+            with Path(path / "names_list.pkl").open("rb") as f:
+                names_list = pickle.load(f)
+            with Path(path / "scores_list.pkl").open("rb") as f:
+                scores_list = pickle.load(f)
         else:
             error_msg = "Training data not found. Please run the training script first."
             raise FileNotFoundError(error_msg)
