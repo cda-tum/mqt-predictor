@@ -7,7 +7,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from mqt.predictor.rl import FeatureDict, RewardFunction
-    from qiskit.transpiler.basepasses import BasePass
 
 import numpy as np
 from gym import Env
@@ -202,7 +201,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
             transpile_pass = optimization_action["transpile_pass"]
 
         if origin == SDK.qiskit:
-            pm = PassManager(cast(list[BasePass], transpile_pass))
+            pm = PassManager(transpile_pass)
             try:
                 return pm.run(self.state)
             except Exception as e:

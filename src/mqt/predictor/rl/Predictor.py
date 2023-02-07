@@ -8,12 +8,14 @@ from typing import get_args
 
 from joblib import Parallel, delayed
 from mqt.predictor.devices import IBMProvider
-from mqt.predictor.rl import PredictorEnv, Result, ResultDict, RewardFunction, Setup
+from mqt.predictor.rl import ResultDict, RewardFunction, Setup
 from mqt.predictor.rl.helper import (
     get_path_trained_model,
     get_path_training_circuits,
     load_model,
 )
+from mqt.predictor.rl.PredictorEnv import PredictorEnv
+from mqt.predictor.rl.Result import Result
 from pytket import OpType
 from pytket.architecture import Architecture  # type: ignore[attr-defined]
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
