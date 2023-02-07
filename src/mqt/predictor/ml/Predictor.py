@@ -217,7 +217,7 @@ class Predictor:
 
     @staticmethod
     def generate_training_sample(
-        file: str,
+        file: Path,
         path_uncompiled_circuit: Path | None = None,
         path_compiled_circuits: Path | None = None,
         logger_level: int = logging.WARNING,
@@ -242,21 +242,18 @@ class Predictor:
         if path_compiled_circuits is None:
             path_compiled_circuits = ml.helper.get_path_training_circuits_compiled()
 
-        if ".qasm" not in file:
+        if file.suffix != ".qasm":
             msg = f"File {file} is not a qasm file"
             logger.error(msg)
             return False
 
         compilation_path_dict = ml.helper.get_index_to_compilation_path_dict()
-        logger.debug("Checking " + file)
+        logger.debug("Checking " + file.name)
         scores: list[float] = [ml.helper.get_width_penalty()] * len(compilation_path_dict)
 
-        all_relevant_paths = path_compiled_circuits / (file.split(".")[0] + "*")
-        all_relevant_files = all_relevant_paths.glob("*")
-
-        for filename in all_relevant_files:
-            if (file.split(".")[0] + "_") in str(filename) and filename.suffix == ".qasm":
-                comp_path_index = int(str(filename).split("_")[-1].split(".")[0])
+        for filename in path_compiled_circuits.glob(file.stem + "*"):
+            if filename.suffix == ".qasm":
+                comp_path_index = int(filename.stem.split("_")[-1])
                 device = compilation_path_dict[comp_path_index]["device"]
                 score = reward.expected_fidelity(filename, device)
                 scores[comp_path_index] = score
@@ -269,7 +266,7 @@ class Predictor:
 
         feature_vec = ml.helper.create_feature_dict(path_uncompiled_circuit / file)
         training_sample = TrainingSample(features=feature_vec, score=float(np.argmax(scores)))
-        circuit_name = file.split(".")[0]
+        circuit_name = file.stem
 
         return training_sample, circuit_name, scores
 
