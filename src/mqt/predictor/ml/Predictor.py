@@ -197,7 +197,7 @@ class Predictor:
 
         results: list[tuple[TrainingSample, str, list[float]] | Literal[False]] = Parallel(n_jobs=-1, verbose=100)(
             delayed(self.generate_training_sample)(
-                filename.name,
+                filename,
                 path_uncompiled_circuits,
                 path_compiled_circuits,
                 logger.level,
