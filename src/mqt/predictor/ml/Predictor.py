@@ -14,7 +14,7 @@ import numpy as np
 from joblib import Parallel, delayed, load
 from mqt.bench.utils import qiskit_helper, tket_helper
 from mqt.predictor import ml, reward, utils
-from mqt.predictor.ml import BackendMapping, QiskitOptions, TketOptions, TrainingSample
+from mqt.predictor.ml import QiskitOptions, TketOptions, TrainingSample
 from pytket.extensions.qiskit import tk_to_qiskit
 from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
@@ -96,7 +96,7 @@ class Predictor:
                                             qc,
                                             provider_name,
                                             qc.num_qubits,
-                                            BackendMapping[device.name],  # todo: temporary fix
+                                            ml.helper.BackendMapping[device.name],  # todo: temporary fix
                                             cast(QiskitOptions, settings)["optimization_level"],
                                             False,
                                             False,
@@ -113,7 +113,7 @@ class Predictor:
                                         qc,
                                         provider_name,
                                         qc.num_qubits,
-                                        BackendMapping[device.name],  # todo: temporary fix
+                                        ml.helper.BackendMapping[device.name],  # todo: temporary fix
                                         cast(TketOptions, settings)["line_placement"],
                                         False,
                                         False,
@@ -535,7 +535,7 @@ class Predictor:
 
         prediction_information = compilation_path_dict[prediction]
         provider_name = prediction_information["provider_name"]
-        device_name = BackendMapping[prediction_information["device"].name]  # todo: temporary fix
+        device_name = ml.helper.BackendMapping[prediction_information["device"].name]  # todo: temporary fix
         compiler = prediction_information["compiler"]
         compiler_settings = prediction_information["compiler_options"]
 

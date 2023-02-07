@@ -22,6 +22,16 @@ if TYPE_CHECKING:
     from sklearn.ensemble import RandomForestClassifier
 
 
+# TODO: This is a temporary solution. We should use the same backend names in MQT Bench.
+BackendMapping: dict[str, str] = {
+    "washington": "ibm_washington",
+    "montreal": "ibm_montreal",
+    "aspen-m2": "rigetti_aspen_m2",
+    "harmony": "ionq11",
+    "lucy": "oqc_lucy",
+}
+
+
 def qcompile(qc: QuantumCircuit | Path) -> tuple[QuantumCircuit, int]:
     """Returns the compiled quantum circuit which is compiled with the predicted combination of compilation options.
 
