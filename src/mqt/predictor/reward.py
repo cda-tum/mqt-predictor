@@ -130,7 +130,10 @@ def expected_fidelity(qc_or_path: QuantumCircuit | Path, device: Device, precisi
 
         if len(qargs) == 1:
             qubit = calc_qubit_index(qargs, qc.qregs, 0)
-            res *= device.get_single_qubit_gate_fidelity(gate_type, qubit)
+            if gate_type == "measure":
+                res *= device.get_readout_fidelity(qubit)
+            else:
+                res *= device.get_single_qubit_gate_fidelity(gate_type, qubit)
         elif len(qargs) == 2:  # noqa: PLR2004
             qubit1 = calc_qubit_index(qargs, qc.qregs, 0)
             qubit2 = calc_qubit_index(qargs, qc.qregs, 1)
