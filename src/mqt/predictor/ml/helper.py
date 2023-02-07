@@ -112,6 +112,9 @@ def get_index_to_compilation_path_dict() -> dict[int, CompilationPath]:
     index_to_compilation_path_dict = {}
     for provider_name, devices in compilation_pipeline["devices"].items():
         for device in devices:
+            if device.name == "aria":  # todo: temporary workaround
+                continue
+
             for configuration in compilation_pipeline["compiler"]:
                 for compiler, _settings in configuration.items():
                     index_to_compilation_path_dict[index] = CompilationPath(
