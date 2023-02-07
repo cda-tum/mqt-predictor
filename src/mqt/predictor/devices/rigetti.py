@@ -122,7 +122,6 @@ class RigettiProvider(Provider):
 
         Returns: the Device object
         """
-        print(f"Importing Rigetti backend from {path}...")
         with path.open() as json_file:
             rigetti_calibration = cast(RigettiCalibration, json.load(json_file))
 
