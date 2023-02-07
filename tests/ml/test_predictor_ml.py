@@ -11,34 +11,33 @@ from mqt.predictor import ml
 def test_predict(mock_show: Any) -> None:  # noqa: ARG001
     path = ml.helper.get_path_trained_model() / "trained_clf.joblib"
     assert path.is_file()
-    filename = "test_qasm.qasm"
     qc = benchmark_generator.get_benchmark("dj", 1, 8)
-    qc.qasm(filename=filename)
     predictor = ml.Predictor()
-    prediction = predictor.predict(filename)
+    prediction = predictor.predict(qc)
     assert 0 <= prediction < len(ml.helper.get_index_to_compilation_path_dict())
     prediction = predictor.predict(qc.qasm())
     assert 0 <= prediction < len(ml.helper.get_index_to_compilation_path_dict())
     with pytest.raises(ValueError, match="Invalid input for 'qc' parameter"):
-        predictor.predict("Error Test")
+        predictor.predict(Path("Error Test"))
 
     predictor.clf = None
-    prediction = predictor.predict(filename)
+    filename = "test_qasm.qasm"
+    qc.qasm(filename=filename)
+    prediction = predictor.predict(Path(filename))
     Path(filename).unlink()
     assert 0 <= prediction < len(ml.helper.get_index_to_compilation_path_dict())
 
 
 @pytest.mark.parametrize("comp_path", list(range(len(ml.helper.get_index_to_compilation_path_dict()))))
 def test_compilation_paths(comp_path: int) -> None:  # noqa: ARG001
-    qc_qasm = benchmark_generator.get_benchmark("dj", 1, 2).qasm()
-    res, compile_info = ml.qcompile(qc_qasm)
+    qc = benchmark_generator.get_benchmark("dj", 1, 2)
+    res, compile_info = ml.qcompile(qc)
     assert res
     assert compile_info
 
-    qc = benchmark_generator.get_benchmark("dj", 1, 2)
     tmp_filename = "test.qasm"
     qc.qasm(filename=tmp_filename)
-    res, compile_info = ml.qcompile(tmp_filename)
+    res, compile_info = ml.qcompile(Path(tmp_filename))
     assert res
     assert compile_info
 
