@@ -107,17 +107,17 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.provider: Provider | None = None
         self.device: Device | None = None
 
-    def step(self, action: int) -> tuple[FeatureDict, float, bool]:
+    def step(self, action: int) -> tuple[FeatureDict, float, bool, dict[str, Any]]:
         altered_qc = self.apply_action(action)
         if not altered_qc:
-            return create_feature_dict(self.state), 0, True
+            return create_feature_dict(self.state), 0, True, {}
 
         self.state = altered_qc
         self.num_steps += 1
 
         self.valid_actions = self.determine_valid_actions_for_state()
         if len(self.valid_actions) == 0:
-            return create_feature_dict(self.state), 0, True
+            return create_feature_dict(self.state), 0, True, {}
 
         if action == self.action_terminate_index:
             reward_val = self.calculate_reward()
@@ -127,7 +127,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
             done = False
 
         self.state = self.state.decompose(gates_to_decompose="unitary")
-        return create_feature_dict(self.state), reward_val, done
+        return create_feature_dict(self.state), reward_val, done, {}
 
     def calculate_reward(self) -> float:
         assert self.device is not None

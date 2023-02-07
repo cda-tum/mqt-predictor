@@ -61,7 +61,7 @@ class Predictor:
             action_index = int(action)
             action_item = env.action_dict[action_index]
             used_compilation_passes.append(action_item["name"])
-            obs, reward_val, done = env.step(action_index)
+            obs, reward_val, done, _ = env.step(action_index)
 
         return env.state, used_compilation_passes
 
@@ -151,7 +151,7 @@ class Predictor:
             while not done:
                 action_masks = get_action_masks(env)
                 action, _states = model.predict(obs, action_masks=action_masks)
-                obs, reward_val, done = env.step(int(action))
+                obs, reward_val, done, _ = env.step(int(action))
 
             runtime = time.time() - start_time
 
