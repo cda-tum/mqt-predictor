@@ -188,11 +188,13 @@ class FeatureDict(TypedDict):
 PATH_LENGTH = 260
 
 
-def create_feature_dict(path: Path) -> FeatureDict:
-    if Path(path).exists():
-        qc = QuantumCircuit.from_qasm_file(str(path))
+def create_feature_dict(qc_or_path: QuantumCircuit | Path) -> FeatureDict:
+    if isinstance(qc_or_path, QuantumCircuit):
+        qc = qc_or_path
+    elif isinstance(qc_or_path, Path) and qc_or_path.exists():
+        qc = QuantumCircuit.from_qasm_file(str(qc_or_path))
     else:
-        error_msg = "Invalid input for 'qc' parameter."
+        error_msg = f"Could not create feature dict from {qc_or_path}."
         raise ValueError(error_msg) from None
 
     (
