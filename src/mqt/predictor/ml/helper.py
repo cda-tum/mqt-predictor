@@ -195,11 +195,7 @@ def create_feature_dict(path: Path) -> FeatureDict:
     return {
         "gate_count": cast(
             OpenQASMGateCount,
-            {
-                gate.name: float(count)
-                for gate, count in qc.count_ops().items()
-                if gate.name in OpenQASMGateCount.__annotations__
-            },
+            {gate: float(count) for gate, count in qc.count_ops().items() if gate in OpenQASMGateCount.__annotations__},
         ),
         "circuit_features": {
             "num_qubits": float(qc.num_qubits),
