@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+import csv
 import logging
 import time
 from pathlib import Path
-from typing import Any, get_args
+from typing import get_args
 
-import numpy as np
 from joblib import Parallel, delayed
-from mqt.predictor import rl
+from mqt.predictor.devices import IBMProvider
+from mqt.predictor.rl import PredictorEnv, Result, ResultDict, RewardFunction, Setup
+from mqt.predictor.rl.helper import (
+    get_path_trained_model,
+    get_path_training_circuits,
+    load_model,
+)
 from pytket import OpType
 from pytket.architecture import Architecture  # type: ignore[attr-defined]
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
@@ -24,7 +30,6 @@ from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPo
 from sb3_contrib.common.maskable.utils import get_action_masks
 
 logger = logging.getLogger("mqtpredictor")
-PATH_LENGTH = 260
 
 
 class Predictor:
@@ -37,17 +42,15 @@ class Predictor:
             lvl = logging.WARNING
         logger.setLevel(lvl)
 
+    @staticmethod
     def compile_as_predicted(
-        self, qc: QuantumCircuit | str, opt_objective: rl.helper.reward_functions = "fidelity"
+        qc: QuantumCircuit | Path, opt_objective: RewardFunction = "fidelity"
     ) -> tuple[QuantumCircuit, list[str]]:
         if not isinstance(qc, QuantumCircuit):
-            if len(qc) < PATH_LENGTH and Path(qc).exists():
-                qc = QuantumCircuit.from_qasm_file(qc)
-            elif "OPENQASM" in qc:
-                qc = QuantumCircuit.from_qasm_str(qc)
+            qc = QuantumCircuit.from_qasm_file(str(qc))
 
-        model = rl.helper.load_model("model_" + opt_objective)
-        env = rl.PredictorEnv(opt_objective)
+        model = load_model("model_" + opt_objective)
+        env = PredictorEnv(opt_objective)
         obs = env.reset(qc)
 
         used_compilation_passes = []
@@ -55,55 +58,57 @@ class Predictor:
         while not done:
             action_masks = get_action_masks(env)
             action, _states = model.predict(obs, action_masks=action_masks)
-            action = int(action)
-            action_item = env.action_set[action]
+            action_index = int(action)
+            action_item = env.action_dict[action_index]
             used_compilation_passes.append(action_item["name"])
-            obs, reward_val, done, info = env.step(action)
+            obs, reward_val, done = env.step(action_index)
 
         return env.state, used_compilation_passes
 
-    def evaluate_sample_circuit(self, file: str) -> dict[str, Any]:
-        logger.info("Evaluate file: " + file)
+    def evaluate_sample_circuit(self, file: Path) -> list[ResultDict]:
+        logger.info("Evaluate file: " + str(file))
 
-        # reward_functions = ["fidelity", "critical_depth", "gate_ratio", "mix"]
-        reward_functions = get_args(rl.helper.reward_functions)
-        results = []
-        for rew in reward_functions:
-            results.append(self.computeRewards(file, "RL", rew))
-
-        results.append(self.computeRewards(file, "qiskit_o3"))
-        results.append(self.computeRewards(file, "tket"))
-
-        combined_res: dict[str, Any] = {
-            "benchmark": str(Path(file).stem).replace("_", " ").split(" ")[0],
-            "num_qubits": str(Path(file).stem).replace("_", " ").split(" ")[-1],
-        }
-
-        for res in results:
-            combined_res.update(res.get_dict())
-        return combined_res
+        reward_functions = get_args(RewardFunction)
+        results = [self.compute_rewards(file, "RL", rew).get_dict() for rew in reward_functions]
+        results.append(self.compute_rewards(file, "qiskit").get_dict())
+        results.append(self.compute_rewards(file, "tket").get_dict())
+        return results
 
     def evaluate_all_sample_circuits(self) -> None:
-        res_csv = []
-
-        results = Parallel(n_jobs=-1, verbose=3, backend="threading")(
-            delayed(self.evaluate_sample_circuit)(file)
-            for file in list(rl.helper.get_path_training_circuits().glob("*.qasm"))
+        collective_results: list[list[ResultDict]] = Parallel(n_jobs=-1, verbose=3, backend="threading")(
+            delayed(self.evaluate_sample_circuit)(file) for file in list(get_path_training_circuits().glob("*.qasm"))
         )
-        res_csv.append(list(results[0].keys()))
-        for res in results:
-            res_csv.append(list(res.values()))
-        np.savetxt(
-            rl.helper.get_path_trained_model() / "res.csv",
-            res_csv,
-            delimiter=",",
-            fmt="%s",
-        )
+        assert len(collective_results) > 0
+        assert len(collective_results[0]) > 0
+        results = collective_results[0]
+        # generate headers for csv file
+        header: list[str] = ["benchmark", "num_qubits"]
+        for result in results:
+            identifier = str(result["setup"])
+            if result["reward_function"] is not None:
+                identifier += "_" + result["reward_function"]
+            for key in result:
+                if key not in ["benchmark", "num_qubits", "setup", "reward_function"]:
+                    header.append(identifier + "_" + key)
+        # generate rows for csv file
+        rows: list[list[str]] = []
+        for results in collective_results:
+            assert len(results) > 0
+            row = [results[0]["benchmark"], str(results[0]["num_qubits"])]
+            for result in results:
+                for key, value in result.items():
+                    if key not in ["benchmark", "num_qubits", "setup", "reward_function"]:
+                        row.append(str(value))
+            rows.append(row)
+        with Path(get_path_trained_model() / "res.csv").open("w") as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+            writer.writerows(rows)
 
+    @staticmethod
     def train_all_models(
-        self,
         timesteps: int = 1000,
-        reward_functions: list[rl.helper.reward_functions] | None = None,
+        reward_functions: list[RewardFunction] | None = None,
         model_name: str = "model",
         verbose: int = 2,
     ) -> None:
@@ -118,7 +123,7 @@ class Predictor:
 
         for rew in reward_functions:
             logger.debug("Start training for: " + rew)
-            env = rl.PredictorEnv(reward_function=rew)
+            env = PredictorEnv(reward_function=rew)
 
             model = MaskablePPO(
                 MaskableMultiInputActorCriticPolicy,
@@ -129,54 +134,63 @@ class Predictor:
                 n_steps=n_steps,
             )
             model.learn(total_timesteps=timesteps, progress_bar=progress_bar)
-            model.save(rl.helper.get_path_trained_model() / (model_name + "_" + rew))
+            model.save(get_path_trained_model() / (model_name + "_" + rew))
 
-    def computeRewards(
-        self,
-        benchmark: str,
-        used_setup: str,
-        reward_function: rl.helper.reward_functions = "fidelity",
-    ) -> rl.Result:
-        if used_setup == "RL":
-            model = rl.helper.load_model("model_" + reward_function)
-            env = rl.PredictorEnv(reward_function)
+    @staticmethod
+    def compute_rewards(
+        benchmark: Path,
+        setup: Setup,
+        reward_function: RewardFunction = "fidelity",
+    ) -> Result:
+        if setup == "RL":
+            model = load_model("model_" + reward_function)
+            env = PredictorEnv(reward_function)
             obs = env.reset(benchmark)
             start_time = time.time()
             done = False
             while not done:
                 action_masks = get_action_masks(env)
                 action, _states = model.predict(obs, action_masks=action_masks)
-                action = int(action)
-                obs, reward_val, done, info = env.step(action)
+                obs, reward_val, done = env.step(int(action))
 
-            duration = time.time() - start_time
+            runtime = time.time() - start_time
 
-            return rl.Result(
-                benchmark,
-                used_setup + "_" + reward_function,
-                duration,
-                env.state,
-                env.device,
+            assert env.device is not None
+            return Result(
+                benchmark=benchmark,
+                runtime=runtime,
+                qc=env.state,
+                device=env.device,
+                setup=setup,
+                reward_function=reward_function,
             )
 
-        if used_setup == "qiskit_o3":
-            qc = QuantumCircuit.from_qasm_file(benchmark)
+        device = IBMProvider.get_device("washington", sanitize_device=True)
+
+        if setup == "qiskit":
+            qc = QuantumCircuit.from_qasm_file(str(benchmark))
             start_time = time.time()
             transpiled_qc_qiskit = transpile(
                 qc,
-                basis_gates=rl.helper.get_ibm_native_gates(),
-                coupling_map=rl.helper.get_cmap_from_devicename("ibm_washington"),
+                basis_gates=device.basis_gates,
+                coupling_map=[[a, b] for a, b in device.coupling_map],
                 optimization_level=3,
                 seed_transpiler=1,
             )
-            duration = time.time() - start_time
+            runtime = time.time() - start_time
 
-            return rl.Result(benchmark, used_setup, duration, transpiled_qc_qiskit, "ibm_washington")
+            return Result(
+                benchmark=benchmark,
+                runtime=runtime,
+                qc=transpiled_qc_qiskit,
+                device=device,
+                setup=setup,
+            )
 
-        if used_setup == "tket":
-            qc = QuantumCircuit.from_qasm_file(benchmark)
+        if setup == "tket":
+            qc = QuantumCircuit.from_qasm_file(str(benchmark))
             tket_qc = qiskit_to_tk(qc)
-            arch = Architecture(rl.helper.get_cmap_from_devicename("ibm_washington"))
+            arch = Architecture(device.coupling_map)
             ibm_rebase = auto_rebase_pass({OpType.Rz, OpType.SX, OpType.X, OpType.CX, OpType.Measure})
 
             start_time = time.time()
@@ -185,10 +199,16 @@ class Predictor:
             PlacementPass(GraphPlacement(arch)).apply(tket_qc)
             RoutingPass(arch).apply(tket_qc)
             ibm_rebase.apply(tket_qc)
-            duration = time.time() - start_time
+            runtime = time.time() - start_time
             transpiled_qc_tket = tk_to_qiskit(tket_qc)
 
-            return rl.Result(benchmark, used_setup, duration, transpiled_qc_tket, "ibm_washington")
+            return Result(
+                benchmark=benchmark,
+                runtime=runtime,
+                qc=transpiled_qc_tket,
+                device=device,
+                setup=setup,
+            )
 
-        error_msg = "Unknown setup. Use either 'RL', 'qiskit_o3' or 'tket'."
-        raise ValueError(error_msg)
+        msg = f"Setup {setup} is not supported. Please use one of {get_args(Setup)}"  # type: ignore[unreachable]
+        raise ValueError(msg)

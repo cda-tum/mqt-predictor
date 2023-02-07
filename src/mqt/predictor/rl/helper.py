@@ -3,11 +3,23 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Callable, Literal, TypedDict
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+    from pytket.passes import BasePass as PytketBasePass  # type: ignore[attr-defined]
+    from qiskit.transpiler.basepasses import BasePass as QiskitBasePass
 
 import numpy as np
 import requests
-from mqt.predictor import rl, utils
+from mqt.predictor import SDK, rl
+from mqt.predictor.devices import (
+    Device,
+    Provider,
+    get_available_devices,
+    get_available_providers,
+)
+from mqt.predictor.reward import calc_supermarq_features
 from packaging import version
 from pytket.architecture import Architecture  # type: ignore[attr-defined]
 from pytket.circuit import OpType  # type: ignore[attr-defined]
@@ -21,7 +33,6 @@ from pytket.passes import (  # type: ignore[attr-defined]
 from qiskit import QuantumCircuit
 from qiskit.circuit.equivalence_library import StandardEquivalenceLibrary
 from qiskit.circuit.library import XGate, ZGate
-from qiskit.providers.fake_provider import FakeMontreal, FakeWashington
 from qiskit.transpiler import CouplingMap
 from qiskit.transpiler.passes import (
     ApplyLayout,
@@ -53,89 +64,105 @@ else:
     import importlib_metadata as metadata
     import importlib_resources as resources
 
-reward_functions = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
+RewardFunction = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
 
 logger = logging.getLogger("mqtpredictor")
 
 
-def qcompile(qc: QuantumCircuit | str, opt_objective: reward_functions = "fidelity") -> QuantumCircuit:
+def qcompile(qc: QuantumCircuit | Path, opt_objective: RewardFunction = "fidelity") -> tuple[QuantumCircuit, list[str]]:
     """Returns the compiled quantum circuit which is compiled following an objective function.
     Keyword arguments:
     qc -- to be compiled quantum circuit or path to a qasm file
     opt_objective -- objective function used for the compilation
-    Returns: compiled quantum circuit as Qiskit QuantumCircuit object
+    Returns: compiled quantum circuit as Qiskit QuantumCircuit object and the compilation steps used.
     """
 
     predictor = rl.Predictor()
     return predictor.compile_as_predicted(qc, opt_objective=opt_objective)
 
 
-def get_actions_opt() -> list[dict[str, Any]]:
+class Action(TypedDict):
+    name: str
+
+
+class CompilationAction(Action):
+    origin: SDK
+
+
+class OptimizationAction(CompilationAction):
+    transpile_pass: list[QiskitBasePass | PytketBasePass]
+
+
+def get_optimization_actions() -> list[OptimizationAction]:
     return [
         {
             "name": "Optimize1qGatesDecomposition",
             "transpile_pass": [Optimize1qGatesDecomposition()],
-            "origin": "qiskit",
+            "origin": SDK.qiskit,
         },
         {
             "name": "CXCancellation",
             "transpile_pass": [CXCancellation()],
-            "origin": "qiskit",
+            "origin": SDK.qiskit,
         },
         {
             "name": "CommutativeCancellation",
             "transpile_pass": [CommutativeCancellation()],
-            "origin": "qiskit",
+            "origin": SDK.qiskit,
         },
         {
             "name": "CommutativeInverseCancellation",
             "transpile_pass": [CommutativeInverseCancellation()],
-            "origin": "qiskit",
+            "origin": SDK.qiskit,
         },
         {
             "name": "RemoveDiagonalGatesBeforeMeasure",
             "transpile_pass": [RemoveDiagonalGatesBeforeMeasure()],
-            "origin": "qiskit",
+            "origin": SDK.qiskit,
         },
         {
             "name": "InverseCancellation",
             "transpile_pass": [InverseCancellation([XGate(), ZGate()])],
-            "origin": "qiskit",
+            "origin": SDK.qiskit,
         },
         {
             "name": "OptimizeCliffords",
             "transpile_pass": [OptimizeCliffords()],
-            "origin": "qiskit",
+            "origin": SDK.qiskit,
         },
         {
             "name": "Opt2qBlocks",
             "transpile_pass": [Collect2qBlocks(), ConsolidateBlocks()],
-            "origin": "qiskit",
+            "origin": SDK.qiskit,
         },
         {
             "name": "PeepholeOptimise2Q",
             "transpile_pass": [PeepholeOptimise2Q()],
-            "origin": "tket",
+            "origin": SDK.tket,
         },
         {
             "name": "CliffordSimp",
             "transpile_pass": [CliffordSimp()],
-            "origin": "tket",
+            "origin": SDK.tket,
         },
         {
             "name": "FullPeepholeOptimiseCX",
             "transpile_pass": [FullPeepholeOptimise(target_2qb_gate=OpType.TK2)],
-            "origin": "tket",
+            "origin": SDK.tket,
         },
         {
             "name": "RemoveRedundancies",
             "transpile_pass": [RemoveRedundancies()],
-            "origin": "tket",
+            "origin": SDK.tket,
         },
     ]
 
 
-def get_actions_layout() -> list[dict[str, Any]]:
+class MappingAction(CompilationAction):
+    transpile_pass: Callable[[list[tuple[int, int]]], list[QiskitBasePass | PytketBasePass]]
+
+
+def get_layout_actions() -> list[MappingAction]:
     return [
         {
             "name": "TrivialLayout",
@@ -145,7 +172,7 @@ def get_actions_layout() -> list[dict[str, Any]]:
                 EnlargeWithAncilla(),
                 ApplyLayout(),
             ],
-            "origin": "qiskit",
+            "origin": SDK.qiskit,
         },
         {
             "name": "DenseLayout",
@@ -155,7 +182,7 @@ def get_actions_layout() -> list[dict[str, Any]]:
                 EnlargeWithAncilla(),
                 ApplyLayout(),
             ],
-            "origin": "qiskit",
+            "origin": SDK.qiskit,
         },
         {
             "name": "SabreLayout",
@@ -165,122 +192,75 @@ def get_actions_layout() -> list[dict[str, Any]]:
                 EnlargeWithAncilla(),
                 ApplyLayout(),
             ],
-            "origin": "qiskit",
+            "origin": SDK.qiskit,
         },
     ]
 
 
-def get_actions_routing() -> list[dict[str, Any]]:
+def get_routing_actions() -> list[MappingAction]:
     return [
         {
             "name": "BasicSwap",
             "transpile_pass": lambda c: [BasicSwap(coupling_map=CouplingMap(c))],
-            "origin": "qiskit",
+            "origin": SDK.qiskit,
         },
         {
             "name": "RoutingPass",
             "transpile_pass": lambda c: [
                 RoutingPass(Architecture(c)),
             ],
-            "origin": "tket",
+            "origin": SDK.tket,
         },
         {
             "name": "StochasticSwap",
             "transpile_pass": lambda c: [StochasticSwap(coupling_map=CouplingMap(c))],
-            "origin": "qiskit",
+            "origin": SDK.qiskit,
         },
         {
             "name": "SabreSwap",
             "transpile_pass": lambda c: [SabreSwap(coupling_map=CouplingMap(c))],
-            "origin": "qiskit",
+            "origin": SDK.qiskit,
         },
     ]
 
 
-def get_actions_platform_selection() -> list[dict[str, Any]]:
-    return [
-        {
-            "name": "IBM",
-            "gates": get_ibm_native_gates(),
-            "devices": ["ibm_washington", "ibm_montreal"],
-            "max_qubit_size": 127,
-        },
-        {
-            "name": "Rigetti",
-            "gates": get_rigetti_native_gates(),
-            "devices": ["rigetti_aspen_m2"],
-            "max_qubit_size": 80,
-        },
-        {
-            "name": "OQC",
-            "gates": get_oqc_native_gates(),
-            "devices": ["oqc_lucy"],
-            "max_qubit_size": 8,
-        },
-        {
-            "name": "IonQ",
-            "gates": get_ionq_native_gates(),
-            "devices": ["ionq11"],
-            "max_qubit_size": 11,
-        },
-    ]
+class PlatformAction(Action):
+    provider: Provider
 
 
-def get_actions_synthesis() -> list[dict[str, Any]]:
+def get_platform_actions() -> list[PlatformAction]:
+    return [{"name": provider.provider_name, "provider": provider} for provider in get_available_providers()]
+
+
+class SynthesisAction(CompilationAction):
+    transpile_pass: Callable[[list[str]], list[QiskitBasePass | PytketBasePass]]
+
+
+def get_synthesis_actions() -> list[SynthesisAction]:
     return [
         {
             "name": "BasisTranslator",
             "transpile_pass": lambda g: [BasisTranslator(StandardEquivalenceLibrary, target_basis=g)],
-            "origin": "qiskit",
+            "origin": SDK.qiskit,
         },
     ]
 
 
-def get_action_terminate() -> dict[str, Any]:
+def get_termination_action() -> Action:
     return {"name": "terminate"}
 
 
-def get_actions_devices() -> list[dict[str, Any]]:
+class DeviceAction(Action):
+    device: Device
+
+
+def get_device_actions() -> list[DeviceAction]:
     return [
         {
-            "name": "ibm_washington",
-            "transpile_pass": [],
-            "full_connectivity": False,
-            "cmap": get_cmap_from_devicename("ibm_washington"),
-            "max_qubits": 127,
-        },
-        {
-            "name": "ibm_montreal",
-            "transpile_pass": [],
-            "device": "ibm_montreal",
-            "full_connectivity": False,
-            "cmap": get_cmap_from_devicename("ibm_montreal"),
-            "max_qubits": 27,
-        },
-        {
-            "name": "oqc_lucy",
-            "transpile_pass": [],
-            "device": "oqc_lucy",
-            "full_connectivity": False,
-            "cmap": get_cmap_from_devicename("oqc_lucy"),
-            "max_qubits": 8,
-        },
-        {
-            "name": "rigetti_aspen_m2",
-            "transpile_pass": [],
-            "device": "rigetti_aspen_m2",
-            "full_connectivity": False,
-            "cmap": get_cmap_from_devicename("rigetti_aspen_m2"),
-            "max_qubits": 80,
-        },
-        {
-            "name": "ionq11",
-            "transpile_pass": [],
-            "device": "ionq11",
-            "full_connectivity": True,
-            "cmap": get_cmap_from_devicename("ionq11"),
-            "max_qubits": 11,
-        },
+            "name": device.name,
+            "device": device,
+        }
+        for device in get_available_devices(sanitize_device=True)
     ]
 
 
@@ -306,110 +286,33 @@ def get_state_sample() -> QuantumCircuit:
     return qc
 
 
-def get_ibm_native_gates() -> list[str]:
-    return ["rz", "sx", "x", "cx", "measure"]
+class FeatureDict(TypedDict):
+    num_qubits: NDArray[np.int_]
+    depth: NDArray[np.int_]
+    program_communication: NDArray[np.float32]
+    critical_depth: NDArray[np.float32]
+    entanglement_ratio: NDArray[np.float32]
+    parallelism: NDArray[np.float32]
+    liveness: NDArray[np.float32]
 
 
-def get_rigetti_native_gates() -> list[str]:
-    return ["rx", "rz", "cz", "measure"]
-
-
-def get_ionq_native_gates() -> list[str]:
-    return ["rxx", "rz", "ry", "rx", "measure"]
-
-
-def get_oqc_native_gates() -> list[str]:
-    return ["rz", "sx", "x", "ecr", "measure"]
-
-
-def get_rigetti_aspen_m2_map() -> list[list[int]]:
-    """Returns a coupling map of Rigetti Aspen M2 chip."""
-    c_map_rigetti = []
-    for j in range(5):
-        for i in range(0, 7):
-            c_map_rigetti.append([i + j * 8, i + 1 + j * 8])
-
-            if i == 6:  # noqa: PLR2004
-                c_map_rigetti.append([0 + j * 8, 7 + j * 8])
-
-        if j != 0:
-            c_map_rigetti.append([j * 8 - 6, j * 8 + 5])
-            c_map_rigetti.append([j * 8 - 7, j * 8 + 6])
-
-    for j in range(5):
-        m = 8 * j + 5 * 8
-        for i in range(0, 7):
-            c_map_rigetti.append([i + m, i + 1 + m])
-
-            if i == 6:  # noqa: PLR2004
-                c_map_rigetti.append([0 + m, 7 + m])
-
-        if j != 0:
-            c_map_rigetti.append([m - 6, m + 5])
-            c_map_rigetti.append([m - 7, m + 6])
-
-    for n in range(5):
-        c_map_rigetti.append([n * 8 + 3, n * 8 + 5 * 8])
-        c_map_rigetti.append([n * 8 + 4, n * 8 + 7 + 5 * 8])
-
-    inverted = [[item[1], item[0]] for item in c_map_rigetti]
-
-    return c_map_rigetti + inverted
-
-
-def get_ionq11_c_map() -> list[list[int]]:
-    ionq11_c_map = []
-    for i in range(0, 11):
-        for j in range(0, 11):
-            if i != j:
-                ionq11_c_map.append([i, j])
-    return ionq11_c_map
-
-
-def get_cmap_oqc_lucy() -> list[list[int]]:
-    """Returns the coupling map of the OQC Lucy quantum computer."""
-    # source: https://github.com/aws/amazon-braket-examples/blob/main/examples/braket_features/Verbatim_Compilation.ipynb
-
-    # Connections are NOT bidirectional, this is not an accident
-    return [[0, 1], [0, 7], [1, 2], [2, 3], [7, 6], [6, 5], [4, 3], [4, 5]]
-
-
-def get_cmap_from_devicename(device: str) -> Any:
-    if device == "ibm_washington":
-        return FakeWashington().configuration().coupling_map
-    if device == "ibm_montreal":
-        return FakeMontreal().configuration().coupling_map
-    if device == "rigetti_aspen_m2":
-        return get_rigetti_aspen_m2_map()
-    if device == "oqc_lucy":
-        return get_cmap_oqc_lucy()
-    if device == "ionq11":
-        return get_ionq11_c_map()
-    error_msg = "Unknown device name"
-    raise ValueError(error_msg)
-
-
-def create_feature_dict(qc: QuantumCircuit) -> dict[str, Any]:
-    feature_dict = {
-        "num_qubits": np.array([qc.num_qubits], dtype=int),
-        "depth": np.array([qc.depth()], dtype=int),
-    }
-
+def create_feature_dict(qc: QuantumCircuit) -> FeatureDict:
     (
         program_communication,
         critical_depth,
         entanglement_ratio,
         parallelism,
         liveness,
-    ) = utils.calc_supermarq_features(qc)
-    # for all dict values, put them in a list each
-    feature_dict["program_communication"] = np.array([program_communication], dtype=np.float32)
-    feature_dict["critical_depth"] = np.array([critical_depth], dtype=np.float32)
-    feature_dict["entanglement_ratio"] = np.array([entanglement_ratio], dtype=np.float32)
-    feature_dict["parallelism"] = np.array([parallelism], dtype=np.float32)
-    feature_dict["liveness"] = np.array([liveness], dtype=np.float32)
-
-    return feature_dict
+    ) = calc_supermarq_features(qc)
+    return {
+        "num_qubits": np.array([qc.num_qubits], dtype=int),
+        "depth": np.array([qc.depth()], dtype=int),
+        "program_communication": np.array([program_communication], dtype=np.float32),
+        "critical_depth": np.array([critical_depth], dtype=np.float32),
+        "entanglement_ratio": np.array([entanglement_ratio], dtype=np.float32),
+        "parallelism": np.array([parallelism], dtype=np.float32),
+        "liveness": np.array([liveness], dtype=np.float32),
+    }
 
 
 def get_path_training_data() -> Path:
@@ -427,8 +330,8 @@ def get_path_training_circuits() -> Path:
 def load_model(model_name: str) -> MaskablePPO:
     path = get_path_trained_model()
 
-    if Path(path / (model_name + ".zip")).exists():
-        return MaskablePPO.load(path / (model_name + ".zip"))
+    if Path(path / f"{model_name}.zip").exists():
+        return MaskablePPO.load(path / f"{model_name}.zip")
 
     logger.info("Model does not exist. Try to retrieve suitable Model from GitHub...")
     try:
