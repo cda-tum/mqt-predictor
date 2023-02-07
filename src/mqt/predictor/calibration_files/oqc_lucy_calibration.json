@@ -1,322 +1,108 @@
 {
-  "braketSchemaHeader": {
-    "name": "braket.device_schema.standardized_gate_model_qpu_device_properties",
-    "version": "1"
-  },
-  "oneQubitProperties": {
-    "0": {
-      "T1": {
-        "value": 32.1,
-        "unit": "S"
+  "name": "lucy",
+  "qubitCount": 8,
+  "connectivity": [
+    [0, 1],
+    [0, 7],
+    [1, 2],
+    [7, 6],
+    [2, 3],
+    [4, 3],
+    [4, 5],
+    [6, 5]
+  ],
+  "properties": {
+    "one_qubit": {
+      "0": {
+        "T1": 15.78628730750543,
+        "T2": 24.431367522076382,
+        "fRB": 0.9991326338074454,
+        "fRO": 0.9525,
+        "qubit": 0.0
       },
-      "T2": {
-        "value": 48.5,
-        "unit": "S"
+      "1": {
+        "T1": 45.13388990674853,
+        "T2": 40.52426113516133,
+        "fRB": 0.9971983436235083,
+        "fRO": 0.7815000000000001,
+        "qubit": 1.0
       },
-      "oneQubitFidelity": [
-        {
-          "fidelityType": {
-            "name": "RANDOMIZED_BENCHMARKING"
-          },
-          "fidelity": 0.9988
-        },
-        {
-          "fidelityType": {
-            "name": "READOUT"
-          },
-          "fidelity": 0.935
-        }
-      ]
+      "2": {
+        "T1": 74.31398709495436,
+        "T2": 48.106140193115536,
+        "fRB": 0.9967053638749326,
+        "fRO": 0.8819999999999999,
+        "qubit": 2.0
+      },
+      "3": {
+        "T1": 34.080372716054455,
+        "T2": 55.3778754258616,
+        "fRB": 0.99958044785722,
+        "fRO": 0.9215,
+        "qubit": 3.0
+      },
+      "4": {
+        "T1": 46.36728003516343,
+        "T2": 36.82970299607173,
+        "fRB": 0.9991684511876318,
+        "fRO": 0.8795,
+        "qubit": 4.0
+      },
+      "5": {
+        "T1": 26.008987722310582,
+        "T2": 42.470426091971845,
+        "fRB": 0.9996325910373496,
+        "fRO": 0.9395,
+        "qubit": 5.0
+      },
+      "6": {
+        "T1": 12.309626980893269,
+        "T2": 19.921244709373912,
+        "fRB": 0.997851766077372,
+        "fRO": 0.9345,
+        "qubit": 6.0
+      },
+      "7": {
+        "T1": 38.66827365399641,
+        "T2": 33.18682064992582,
+        "fRB": 0.999405101667576,
+        "fRO": 0.882,
+        "qubit": 7.0
+      }
     },
-    "1": {
-      "T1": {
-        "value": 40,
-        "unit": "S"
+    "two_qubit": {
+      "0-1": {
+        "coupling": { "control_qubit": 0.0, "target_qubit": 1.0 },
+        "fCX": 0.9453766394259683
       },
-      "T2": {
-        "value": 50.5,
-        "unit": "S"
+      "0-7": {
+        "coupling": { "control_qubit": 0.0, "target_qubit": 7.0 },
+        "fCX": 0.9490327707249107
       },
-      "oneQubitFidelity": [
-        {
-          "fidelityType": {
-            "name": "RANDOMIZED_BENCHMARKING"
-          },
-          "fidelity": 0.9967
-        },
-        {
-          "fidelityType": {
-            "name": "READOUT"
-          },
-          "fidelity": 0.871
-        }
-      ]
-    },
-    "2": {
-      "T1": {
-        "value": 39.8,
-        "unit": "S"
+      "1-2": {
+        "coupling": { "control_qubit": 1.0, "target_qubit": 2.0 },
+        "fCX": 0.937420422997459
       },
-      "T2": {
-        "value": 39.5,
-        "unit": "S"
+      "2-3": {
+        "coupling": { "control_qubit": 2.0, "target_qubit": 3.0 },
+        "fCX": 0.9433658127189578
       },
-      "oneQubitFidelity": [
-        {
-          "fidelityType": {
-            "name": "RANDOMIZED_BENCHMARKING"
-          },
-          "fidelity": 0.9975
-        },
-        {
-          "fidelityType": {
-            "name": "READOUT"
-          },
-          "fidelity": 0.9
-        }
-      ]
-    },
-    "3": {
-      "T1": {
-        "value": 26.1,
-        "unit": "S"
+      "4-3": {
+        "coupling": { "control_qubit": 4.0, "target_qubit": 3.0 },
+        "fCX": 0.9580658927174651
       },
-      "T2": {
-        "value": 44.8,
-        "unit": "S"
+      "4-5": {
+        "coupling": { "control_qubit": 4.0, "target_qubit": 5.0 },
+        "fCX": 0.9716473635543361
       },
-      "oneQubitFidelity": [
-        {
-          "fidelityType": {
-            "name": "RANDOMIZED_BENCHMARKING"
-          },
-          "fidelity": 0.9994
-        },
-        {
-          "fidelityType": {
-            "name": "READOUT"
-          },
-          "fidelity": 0.928
-        }
-      ]
-    },
-    "4": {
-      "T1": {
-        "value": 55.8,
-        "unit": "S"
+      "6-5": {
+        "coupling": { "control_qubit": 6.0, "target_qubit": 5.0 },
+        "fCX": 0.9497968896117499
       },
-      "T2": {
-        "value": 48.4,
-        "unit": "S"
-      },
-      "oneQubitFidelity": [
-        {
-          "fidelityType": {
-            "name": "RANDOMIZED_BENCHMARKING"
-          },
-          "fidelity": 0.9994
-        },
-        {
-          "fidelityType": {
-            "name": "READOUT"
-          },
-          "fidelity": 0.85
-        }
-      ]
-    },
-    "5": {
-      "T1": {
-        "value": 25.5,
-        "unit": "S"
-      },
-      "T2": {
-        "value": 43.2,
-        "unit": "S"
-      },
-      "oneQubitFidelity": [
-        {
-          "fidelityType": {
-            "name": "RANDOMIZED_BENCHMARKING"
-          },
-          "fidelity": 0.9992
-        },
-        {
-          "fidelityType": {
-            "name": "READOUT"
-          },
-          "fidelity": 0.947
-        }
-      ]
-    },
-    "6": {
-      "T1": {
-        "value": 13.5,
-        "unit": "S"
-      },
-      "T2": {
-        "value": 23.5,
-        "unit": "S"
-      },
-      "oneQubitFidelity": [
-        {
-          "fidelityType": {
-            "name": "RANDOMIZED_BENCHMARKING"
-          },
-          "fidelity": 0.999
-        },
-        {
-          "fidelityType": {
-            "name": "READOUT"
-          },
-          "fidelity": 0.948
-        }
-      ]
-    },
-    "7": {
-      "T1": {
-        "value": 45,
-        "unit": "S"
-      },
-      "T2": {
-        "value": 58.9,
-        "unit": "S"
-      },
-      "oneQubitFidelity": [
-        {
-          "fidelityType": {
-            "name": "RANDOMIZED_BENCHMARKING"
-          },
-          "fidelity": 0.9979
-        },
-        {
-          "fidelityType": {
-            "name": "READOUT"
-          },
-          "fidelity": 0.902
-        }
-      ]
-    }
-  },
-  "twoQubitProperties": {
-    "0-1": {
-      "twoQubitGateFidelity": [
-        {
-          "direction": {
-            "control": 0,
-            "target": 1
-          },
-          "gateName": "ecr",
-          "fidelity": 0.896,
-          "fidelityType": {
-            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
-          }
-        }
-      ]
-    },
-    "0-7": {
-      "twoQubitGateFidelity": [
-        {
-          "direction": {
-            "control": 0,
-            "target": 7
-          },
-          "gateName": "ecr",
-          "fidelity": 0.93,
-          "fidelityType": {
-            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
-          }
-        }
-      ]
-    },
-    "1-2": {
-      "twoQubitGateFidelity": [
-        {
-          "direction": {
-            "control": 1,
-            "target": 2
-          },
-          "gateName": "ecr",
-          "fidelity": 0.936,
-          "fidelityType": {
-            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
-          }
-        }
-      ]
-    },
-    "2-3": {
-      "twoQubitGateFidelity": [
-        {
-          "direction": {
-            "control": 2,
-            "target": 3
-          },
-          "gateName": "ecr",
-          "fidelity": 0.939,
-          "fidelityType": {
-            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
-          }
-        }
-      ]
-    },
-    "4-3": {
-      "twoQubitGateFidelity": [
-        {
-          "direction": {
-            "control": 4,
-            "target": 3
-          },
-          "gateName": "ecr",
-          "fidelity": 0.948,
-          "fidelityType": {
-            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
-          }
-        }
-      ]
-    },
-    "4-5": {
-      "twoQubitGateFidelity": [
-        {
-          "direction": {
-            "control": 4,
-            "target": 5
-          },
-          "gateName": "ecr",
-          "fidelity": 0.968,
-          "fidelityType": {
-            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
-          }
-        }
-      ]
-    },
-    "6-5": {
-      "twoQubitGateFidelity": [
-        {
-          "direction": {
-            "control": 6,
-            "target": 5
-          },
-          "gateName": "ecr",
-          "fidelity": 0.963,
-          "fidelityType": {
-            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
-          }
-        }
-      ]
-    },
-    "7-6": {
-      "twoQubitGateFidelity": [
-        {
-          "direction": {
-            "control": 7,
-            "target": 6
-          },
-          "gateName": "ecr",
-          "fidelity": 0.929,
-          "fidelityType": {
-            "name": "INTERLEAVED_RANDOMIZED_BENCHMARKING"
-          }
-        }
-      ]
+      "7-6": {
+        "coupling": { "control_qubit": 7.0, "target_qubit": 6.0 },
+        "fCX": 0.9456903499165887
+      }
     }
   }
 }
