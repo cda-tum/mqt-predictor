@@ -108,7 +108,13 @@ select = [
     "UP",          # pyupgrade
     "YTT",         # flake8-2020
 ]
-ignore = ["E501"]
+ignore = [
+    "ANN101",  # Missing type annotation for self in method
+    "ANN102",  # Missing type annotation for cls in classmethod
+    "E501",    # Line too long (Black is enough)
+    "PLR2004", # Magic values
+    "PLR0913", # Too many arguments
+]
 target-version = "py39"
 
 # Exclude a variety of commonly ignored directories.
