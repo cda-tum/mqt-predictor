@@ -113,6 +113,7 @@ ignore = [
     "ANN102",  # Missing type annotation for cls in classmethod
     "E501",    # Line too long (Black is enough)
     "PLR2004", # Magic values
+    "PLR0912", # Too many branches
     "PLR0913", # Too many arguments
 ]
 target-version = "py39"

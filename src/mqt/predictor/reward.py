@@ -45,7 +45,7 @@ def mix(qc: QuantumCircuit, device: str, precision: int = 10) -> float:
     return expected_fidelity(qc, device, precision) * 0.5 + crit_depth(qc, precision) * 0.5
 
 
-def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: int = 10) -> float:
+def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: int = 10) -> float:  # noqa: PLR0915
     if isinstance(qc_or_path, QuantumCircuit):
         qc = qc_or_path
     else:
