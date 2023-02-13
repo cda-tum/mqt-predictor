@@ -103,7 +103,6 @@ def parse_rigetti_calibration_config() -> RigettiCalibration:
     fid_1Q_readout = {}
     missing_indices: list[int] = []
     for elem in rigetti_m2_calibration["specs"]["1Q"]:
-
         fid_1Q[str(elem)] = rigetti_m2_calibration["specs"]["1Q"][elem].get("f1QRB")
         fid_1Q_readout[str(elem)] = rigetti_m2_calibration["specs"]["1Q"][elem].get("fRO")
 

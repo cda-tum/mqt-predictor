@@ -157,7 +157,7 @@ def calc_supermarq_features(
         liveness_A_matrix += len(qargs)
         first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
         all_indices = [first_qubit]
-        if len(qargs) == 2:  # noqa: PLR2004
+        if len(qargs) == 2:
             second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
             all_indices.append(second_qubit)
         for qubit_index in all_indices:

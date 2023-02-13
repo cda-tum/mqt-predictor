@@ -45,7 +45,7 @@ def mix(qc: QuantumCircuit, device: str, precision: int = 10) -> float:
     return expected_fidelity(qc, device, precision) * 0.5 + crit_depth(qc, precision) * 0.5
 
 
-def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: int = 10) -> float:
+def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: int = 10) -> float:  # noqa: PLR0915
     if isinstance(qc_or_path, QuantumCircuit):
         qc = qc_or_path
     else:
@@ -59,7 +59,6 @@ def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: 
     calibration = Calibration.Calibration()
 
     if "ibm_montreal" in device or "ibm_washington" in device:
-
         if "ibm_montreal" in device:
             backend = calibration.ibm_montreal_calibration
         else:
@@ -127,7 +126,7 @@ def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: 
                     specific_fidelity = calibration.oqc_lucy_calibration["fid_1Q"][str(first_qubit)]
                 elif len(qargs) == 1 and gate_type == "measure":
                     specific_fidelity = calibration.oqc_lucy_calibration["fid_1Q_readout"][str(first_qubit)]
-                elif len(qargs) == 2:  # noqa: PLR2004
+                elif len(qargs) == 2:
                     second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     tmp = str(first_qubit) + "-" + str(second_qubit)
                     if calibration.oqc_lucy_calibration["fid_2Q"].get(tmp) is None:
@@ -147,11 +146,10 @@ def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: 
 
                 if len(qargs) == 1:
                     specific_fidelity = calibration.ionq_calibration["avg_1Q"]
-                elif len(qargs) == 2:  # noqa: PLR2004
+                elif len(qargs) == 2:
                     specific_fidelity = calibration.ionq_calibration["avg_2Q"]
                 res *= specific_fidelity
     elif "rigetti_aspen_m2" in device:
-
         mapping = get_rigetti_qubit_dict()
         for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
