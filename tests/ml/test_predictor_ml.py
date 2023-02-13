@@ -71,7 +71,6 @@ def test_train_random_forest_classifier(mock_pyplot: Any) -> None:  # noqa: ARG0
 
 
 def test_generate_compiled_circuits() -> None:
-
     predictor = ml.Predictor()
     source_path = "."
     target_path = Path("test_compiled_circuits")

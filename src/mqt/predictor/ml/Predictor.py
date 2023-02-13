@@ -222,7 +222,6 @@ class Predictor:
         path_compiled_circuits: str = "",
         logger_level: int = logging.WARNING,
     ) -> tuple[tuple[list[Any], Any], str, list[float]] | bool:
-
         """Handles to create training data from a single generated training sample
 
         Keyword arguments:
@@ -276,7 +275,6 @@ class Predictor:
         return (training_sample, circuit_name, scores)
 
     def train_random_forest_classifier(self, visualize_results: bool = False) -> bool:
-
         (
             X_train,
             X_test,
