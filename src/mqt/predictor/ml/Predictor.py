@@ -24,7 +24,7 @@ class Predictor:
     def __init__(self, verbose: int = 0) -> None:
         if verbose == 1:
             lvl = logging.INFO
-        elif verbose == 2:  # noqa: PLR2004
+        elif verbose == 2:
             lvl = logging.DEBUG
         else:
             lvl = logging.WARNING

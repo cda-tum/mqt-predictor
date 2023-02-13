@@ -126,7 +126,7 @@ def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: 
                     specific_fidelity = calibration.oqc_lucy_calibration["fid_1Q"][str(first_qubit)]
                 elif len(qargs) == 1 and gate_type == "measure":
                     specific_fidelity = calibration.oqc_lucy_calibration["fid_1Q_readout"][str(first_qubit)]
-                elif len(qargs) == 2:  # noqa: PLR2004
+                elif len(qargs) == 2:
                     second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
                     tmp = str(first_qubit) + "-" + str(second_qubit)
                     if calibration.oqc_lucy_calibration["fid_2Q"].get(tmp) is None:
@@ -146,7 +146,7 @@ def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: 
 
                 if len(qargs) == 1:
                     specific_fidelity = calibration.ionq_calibration["avg_1Q"]
-                elif len(qargs) == 2:  # noqa: PLR2004
+                elif len(qargs) == 2:
                     specific_fidelity = calibration.ionq_calibration["avg_2Q"]
                 res *= specific_fidelity
     elif "rigetti_aspen_m2" in device:
