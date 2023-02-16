@@ -87,7 +87,7 @@ class Predictor:
         res_csv = []
 
         results = Parallel(n_jobs=-1, verbose=3, backend="threading")(
-            delayed(self.evaluate_sample_circuit)(file)
+            delayed(self.evaluate_sample_circuit)(str(file))
             for file in list(rl.helper.get_path_training_circuits().glob("*.qasm"))
         )
         res_csv.append(list(results[0].keys()))
@@ -109,12 +109,7 @@ class Predictor:
     ) -> None:
         if reward_functions is None:
             reward_functions = ["fidelity"]
-        if "test" in model_name:
-            n_steps = 100
-            progress_bar = False
-        else:
-            n_steps = 2048
-            progress_bar = True
+        n_steps = 100 if "test" in model_name else 2048
 
         for rew in reward_functions:
             logger.debug("Start training for: " + rew)
@@ -125,10 +120,10 @@ class Predictor:
                 env,
                 verbose=verbose,
                 tensorboard_log="./" + model_name + "_" + rew,
-                gamma=0.95,
+                gamma=0.98,
                 n_steps=n_steps,
             )
-            model.learn(total_timesteps=timesteps, progress_bar=progress_bar)
+            model.learn(total_timesteps=timesteps, progress_bar=False)
             model.save(rl.helper.get_path_trained_model() / (model_name + "_" + rew))
 
     def computeRewards(
