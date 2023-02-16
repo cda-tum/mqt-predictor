@@ -109,7 +109,12 @@ class Predictor:
     ) -> None:
         if reward_functions is None:
             reward_functions = ["fidelity"]
-        n_steps = 100 if "test" in model_name else 2048
+        if "test" in model_name:
+            n_steps = 100
+            progress_bar = False
+        else:
+            n_steps = 2048
+            progress_bar = True
 
         for rew in reward_functions:
             logger.debug("Start training for: " + rew)
@@ -120,10 +125,10 @@ class Predictor:
                 env,
                 verbose=verbose,
                 tensorboard_log="./" + model_name + "_" + rew,
-                gamma=0.98,
+                gamma=0.95,
                 n_steps=n_steps,
             )
-            model.learn(total_timesteps=timesteps, progress_bar=False)
+            model.learn(total_timesteps=timesteps, progress_bar=progress_bar)
             model.save(rl.helper.get_path_trained_model() / (model_name + "_" + rew))
 
     def computeRewards(
