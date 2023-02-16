@@ -87,7 +87,7 @@ class Predictor:
         res_csv = []
 
         results = Parallel(n_jobs=-1, verbose=3, backend="threading")(
-            delayed(self.evaluate_sample_circuit)(file)
+            delayed(self.evaluate_sample_circuit)(str(file))
             for file in list(rl.helper.get_path_training_circuits().glob("*.qasm"))
         )
         res_csv.append(list(results[0].keys()))
