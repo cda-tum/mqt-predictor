@@ -56,7 +56,6 @@ else:
 reward_functions = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
 
 logger = logging.getLogger("mqtpredictor")
-SABRELAYOUT_BREAKING_CHANGE_VERSION = "0.40.0"
 
 
 def qcompile(qc: QuantumCircuit | str, opt_objective: reward_functions = "fidelity") -> QuantumCircuit:
@@ -161,9 +160,7 @@ def get_actions_layout() -> list[dict[str, Any]]:
         {
             "name": "SabreLayout",
             "transpile_pass": lambda c: [
-                SabreLayout(coupling_map=CouplingMap(c), skip_routing=True)
-                if metadata.version("qiskit") >= SABRELAYOUT_BREAKING_CHANGE_VERSION
-                else SabreLayout(coupling_map=CouplingMap(c)),
+                SabreLayout(coupling_map=CouplingMap(c), skip_routing=True),
                 FullAncillaAllocation(coupling_map=CouplingMap(c)),
                 EnlargeWithAncilla(),
                 ApplyLayout(),
