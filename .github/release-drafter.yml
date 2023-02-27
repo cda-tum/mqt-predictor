@@ -1,4 +1,4 @@
-name-template: "MQTPredictor $RESOLVED_VERSION Release"
+name-template: "MQT Predictor $RESOLVED_VERSION Release"
 tag-template: "v$RESOLVED_VERSION"
 categories:
   - title: "🚀 Features and Enhancements"
