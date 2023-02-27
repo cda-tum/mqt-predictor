@@ -160,7 +160,7 @@ def get_actions_layout() -> list[dict[str, Any]]:
         {
             "name": "SabreLayout",
             "transpile_pass": lambda c: [
-                SabreLayout(coupling_map=CouplingMap(c)),
+                SabreLayout(coupling_map=CouplingMap(c), skip_routing=True),
                 FullAncillaAllocation(coupling_map=CouplingMap(c)),
                 EnlargeWithAncilla(),
                 ApplyLayout(),

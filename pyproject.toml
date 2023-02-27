@@ -19,7 +19,7 @@ requires-python = ">=3.9"
 dynamic = ["version"]
 
 dependencies = [
-    "mqt.bench>=0.3.0",
+    "mqt.bench>=0.3.4,<0.4.0",
     "sb3_contrib>=1.6.2",
     "scikit-learn>=1.0.2",
     "importlib_metadata>=4.4; python_version < '3.10'",
