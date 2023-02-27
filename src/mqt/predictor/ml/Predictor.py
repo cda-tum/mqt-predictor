@@ -8,7 +8,7 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed, load
-from mqt.bench.utils import qiskit_helper, tket_helper
+from mqt.bench import qiskit_helper, tket_helper
 from mqt.predictor import ml, reward, utils
 from pytket.extensions.qiskit import tk_to_qiskit
 from qiskit import QuantumCircuit
