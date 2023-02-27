@@ -1,7 +1,6 @@
 from pathlib import Path
 
-from mqt.bench import benchmark_generator
-from mqt.bench.utils import qiskit_helper
+from mqt.bench import benchmark_generator, qiskit_helper
 from mqt.predictor import ml, reward
 
 
