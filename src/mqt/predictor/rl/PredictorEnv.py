@@ -126,11 +126,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
     def reset(self, qc: Path | str | QuantumCircuit = None) -> QuantumCircuit:
         if isinstance(qc, QuantumCircuit):
             self.state = qc
+        elif qc:
+            self.state = QuantumCircuit.from_qasm_file(str(qc))
         else:
-            if qc:
-                self.state = QuantumCircuit.from_qasm_file(str(qc))
-            else:
-                self.state = rl.helper.get_state_sample()
+            self.state = rl.helper.get_state_sample()
 
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
