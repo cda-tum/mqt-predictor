@@ -181,7 +181,7 @@ In case you are using MQT Predictor with the ML model in your work, we would be 
 In case you are using the RL model in your work, we would be thankful if you referred to it by citing the following publication:
 
 ```bibtex
-@INPROCEEDINGS{quetschlich2023compileroptimizer,
+@INPROCEEDINGS{quetschlich2023compileroptimization,
   author        = {N. Quetschlich and L. Burgholzer and R. Wille},
   title         = {{Compiler Optimization for Quantum Computing Using Reinforcement Learning}},
   booktitle     = {{Design Automation Conference (DAC)}},
