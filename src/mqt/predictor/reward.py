@@ -4,10 +4,9 @@ import logging
 from typing import cast
 
 import numpy as np
+from mqt.bench.utils import calc_qubit_index, calc_supermarq_features
 from mqt.predictor import Calibration
 from mqt.predictor.utils import (
-    calc_qubit_index,
-    calc_supermarq_features,
     get_rigetti_qubit_dict,
 )
 from qiskit import QuantumCircuit
@@ -16,25 +15,13 @@ logger = logging.getLogger("mqtpredictor")
 
 
 def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
-    (
-        program_communication,
-        critical_depth,
-        entanglement_ratio,
-        parallelism,
-        liveness,
-    ) = calc_supermarq_features(qc)
-    return cast(float, np.round(1 - critical_depth, precision))
+    supermarq_features = calc_supermarq_features(qc)
+    return cast(float, np.round(1 - supermarq_features.critical_depth, precision))
 
 
 def parallelism(qc: QuantumCircuit, precision: int = 10) -> float:
-    (
-        program_communication,
-        critical_depth,
-        entanglement_ratio,
-        parallelism,
-        liveness,
-    ) = calc_supermarq_features(qc)
-    return cast(float, np.round(1 - parallelism, precision))
+    supermarq_features = calc_supermarq_features(qc)
+    return cast(float, np.round(1 - supermarq_features.parallelism, precision))
 
 
 def gate_ratio(qc: QuantumCircuit, precision: int = 10) -> float:
