@@ -13,7 +13,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from joblib import dump
-from mqt.predictor import ml, utils
+from mqt.bench.utils import calc_supermarq_features
+from mqt.predictor import ml
 from qiskit import QuantumCircuit
 
 if TYPE_CHECKING:
@@ -180,18 +181,12 @@ def create_feature_dict(qc: str) -> dict[str, Any]:
     feature_dict["num_qubits"] = float(qc.num_qubits)
     feature_dict["depth"] = float(qc.depth())
 
-    (
-        program_communication,
-        critical_depth,
-        entanglement_ratio,
-        parallelism,
-        liveness,
-    ) = utils.calc_supermarq_features(qc)
-    feature_dict["program_communication"] = program_communication
-    feature_dict["critical_depth"] = critical_depth
-    feature_dict["entanglement_ratio"] = entanglement_ratio
-    feature_dict["parallelism"] = parallelism
-    feature_dict["liveness"] = liveness
+    supermarq_features = calc_supermarq_features(qc)
+    feature_dict["program_communication"] = supermarq_features.program_communication
+    feature_dict["critical_depth"] = supermarq_features.critical_depth
+    feature_dict["entanglement_ratio"] = supermarq_features.entanglement_ratio
+    feature_dict["parallelism"] = supermarq_features.parallelism
+    feature_dict["liveness"] = supermarq_features.liveness
     return feature_dict
 
 

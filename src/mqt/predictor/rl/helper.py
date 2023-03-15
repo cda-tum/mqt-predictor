@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import requests
-from mqt.predictor import rl, utils
+from mqt.bench.utils import calc_supermarq_features
+from mqt.predictor import rl
 from packaging import version
 from pytket.architecture import Architecture  # type: ignore[attr-defined]
 from pytket.circuit import OpType  # type: ignore[attr-defined]
@@ -395,19 +396,13 @@ def create_feature_dict(qc: QuantumCircuit) -> dict[str, Any]:
         "depth": np.array([qc.depth()], dtype=int),
     }
 
-    (
-        program_communication,
-        critical_depth,
-        entanglement_ratio,
-        parallelism,
-        liveness,
-    ) = utils.calc_supermarq_features(qc)
+    supermarq_features = calc_supermarq_features(qc)
     # for all dict values, put them in a list each
-    feature_dict["program_communication"] = np.array([program_communication], dtype=np.float32)
-    feature_dict["critical_depth"] = np.array([critical_depth], dtype=np.float32)
-    feature_dict["entanglement_ratio"] = np.array([entanglement_ratio], dtype=np.float32)
-    feature_dict["parallelism"] = np.array([parallelism], dtype=np.float32)
-    feature_dict["liveness"] = np.array([liveness], dtype=np.float32)
+    feature_dict["program_communication"] = np.array([supermarq_features.program_communication], dtype=np.float32)
+    feature_dict["critical_depth"] = np.array([supermarq_features.critical_depth], dtype=np.float32)
+    feature_dict["entanglement_ratio"] = np.array([supermarq_features.entanglement_ratio], dtype=np.float32)
+    feature_dict["parallelism"] = np.array([supermarq_features.parallelism], dtype=np.float32)
+    feature_dict["liveness"] = np.array([supermarq_features.liveness], dtype=np.float32)
 
     return feature_dict
 
