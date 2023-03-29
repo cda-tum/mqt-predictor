@@ -14,6 +14,7 @@ from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
+from qiskit.transpiler.runningpassmanager import TranspileLayout
 
 logger = logging.getLogger("mqtpredictor")
 
@@ -80,6 +81,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.native_gates = None
         self.device = ""
         self.cmap = None
+        self.layout = None
 
     def step(self, action: int) -> tuple[dict[str, Any], float, bool, dict[Any, Any]]:
         altered_qc = self.apply_action(action)
@@ -138,6 +140,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.native_gates = None
         self.device = ""
         self.cmap = None
+        self.layout = None
 
         self.valid_actions = self.get_platform_valid_actions_for_state()
 
@@ -186,6 +189,14 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         + ", "
                         + str(e)
                     ) from None
+                if action_index in self.actions_layout_indices:
+                    assert pm.property_set["layout"]
+                    self.layout = TranspileLayout(
+                        initial_layout=pm.property_set["layout"],
+                        input_qubit_mapping=pm.property_set["original_qubit_indices"],
+                        final_layout=pm.property_set["final_layout"],
+                    )
+
             elif action["origin"] == "tket":
                 try:
                     tket_qc = qiskit_to_tk(self.state)
