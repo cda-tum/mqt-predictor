@@ -68,13 +68,14 @@ Now a prediction can be made for any `qiskit.QuantumCircuit` object or `qasm` fi
 ```python
 from mqt.predictor import ml, rl
 
-compiled_qc_ML, compilation_info_ML = ml.qcompile("qasm_file_path", model="ML")
+compiled_qc_ML, compilation_info_ML = ml.qcompile("qasm_file_path_or_QuantumCircuit")
 compiled_qc_RL, compilation_info_RL = rl.qcompile(
-    "qasm_file_path", model="RL", opt_objective="fidelity"
+    "qasm_file_path_or_QuantumCircuit", opt_objective="fidelity"
 )
 ```
 
-In the RL model, the `opt_objective` options are `fidelity`, `critical_depth`, and `parallelism`.
+In the RL model, the `opt_objective` options are `fidelity`, `critical_depth`, `gate_ratio`,
+and `mix` (combination of `fidelity` and `critical_depth`).
 
 # Examination of all seven trained classifiers of the ML model
 
