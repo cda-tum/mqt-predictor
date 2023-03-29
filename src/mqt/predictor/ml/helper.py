@@ -161,7 +161,7 @@ def dict_to_featurevector(gate_dict: dict[str, int]) -> dict[str, int]:
 PATH_LENGTH = 260
 
 
-def create_feature_dict(qc: str) -> dict[str, Any]:
+def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     if not isinstance(qc, QuantumCircuit):
         if len(qc) < PATH_LENGTH and Path(qc).exists():
             qc = QuantumCircuit.from_qasm_file(qc)
