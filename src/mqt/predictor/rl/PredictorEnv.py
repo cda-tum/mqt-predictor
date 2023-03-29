@@ -107,7 +107,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
             reward_val = 0
             done = False
 
-        self.state = self.state.decompose(gates_to_decompose="unitary")
+        # in case the Qiskit.QuantumCircuit has unitary or u gates in it, decompose them (because otherwise qiskit will throw an error when applying the BasisTranslator
+        if self.state.count_ops().get("unitary"):
+            self.state = self.state.decompose(gates_to_decompose="unitary")
         return rl.helper.create_feature_dict(self.state), reward_val, done, {}
 
     def calculate_reward(self) -> Any:
@@ -215,6 +217,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
             else:
                 error_msg = f"Origin {action['origin']} not supported."
                 raise ValueError(error_msg)
+
         else:
             error_msg = f"Action {action_index} not supported."
             raise ValueError(error_msg)
