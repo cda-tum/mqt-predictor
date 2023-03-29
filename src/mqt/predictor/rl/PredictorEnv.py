@@ -239,7 +239,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         check_mapping(self.state)
         mapped = check_mapping.property_set["is_swap_mapped"]
 
-        if mapped:
+        if mapped and self.layout is not None:
             return [self.action_terminate_index, *self.actions_opt_indices]
 
         # No layout applied yet
