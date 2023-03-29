@@ -233,7 +233,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         only_nat_gates = check_nat_gates.property_set["all_gates_in_basis"]
 
         if not only_nat_gates:
-            return self.actions_synthesis_indices
+            return self.actions_synthesis_indices + self.actions_opt_indices
 
         check_mapping = CheckMap(coupling_map=CouplingMap(self.cmap))
         check_mapping(self.state)
@@ -244,7 +244,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
         # No layout applied yet
         if self.state._layout is not None:
-            return self.actions_routing_indices + self.actions_opt_indices
+            return self.actions_routing_indices
         return self.actions_layout_indices + self.actions_opt_indices
 
     def get_device_action_indices_for_nat_gates(self) -> list[int]:
