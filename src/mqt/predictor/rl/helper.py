@@ -495,7 +495,14 @@ def handle_downloading_model(download_url: str, model_name: str) -> None:
     logger.info(f"Download completed to {fname}. ")
 
 
-class PreProcessTKETRouting:
+class PreProcessTKETRoutingAfterQiskitLayout:
+    """
+    Pre-processing step to route a circuit with tket after a Qiskit Layout pass has been applied.
+    The reason why we can apply the trivial layout here is that the circuit is already mapped by qiskit to the
+    device qubits and its qubits are sorted by their ascending physical qubit indices.
+    The trivial layout indices that this layout of the physical qubits is the identity mapping.
+    """
+
     def apply(self, circuit: Circuit) -> Circuit:
         mapping = {Qubit(i): Node(i) for i in range(circuit.n_qubits)}
         place_with_map(circuit=circuit, qmap=mapping)
