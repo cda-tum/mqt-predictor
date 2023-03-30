@@ -19,11 +19,6 @@ def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
     return cast(float, np.round(1 - supermarq_features.critical_depth, precision))
 
 
-def parallelism(qc: QuantumCircuit, precision: int = 10) -> float:
-    supermarq_features = calc_supermarq_features(qc)
-    return cast(float, np.round(1 - supermarq_features.parallelism, precision))
-
-
 def gate_ratio(qc: QuantumCircuit, precision: int = 10) -> float:
     return cast(float, np.round(1 - qc.num_nonlocal_gates() / qc.size(), precision))
 

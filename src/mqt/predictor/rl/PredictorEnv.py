@@ -14,6 +14,7 @@ from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
+from qiskit.transpiler.runningpassmanager import TranspileLayout
 
 logger = logging.getLogger("mqtpredictor")
 
@@ -80,6 +81,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.native_gates = None
         self.device = ""
         self.cmap = None
+        self.layout = None
 
     def step(self, action: int) -> tuple[dict[str, Any], float, bool, dict[Any, Any]]:
         altered_qc = self.apply_action(action)
@@ -105,7 +107,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
             reward_val = 0
             done = False
 
-        self.state = self.state.decompose(gates_to_decompose="unitary")
+        # in case the Qiskit.QuantumCircuit has unitary or u gates in it, decompose them (because otherwise qiskit will throw an error when applying the BasisTranslator
+        if self.state.count_ops().get("unitary"):
+            self.state = self.state.decompose(gates_to_decompose="unitary")
         return rl.helper.create_feature_dict(self.state), reward_val, done, {}
 
     def calculate_reward(self) -> Any:
@@ -138,6 +142,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.native_gates = None
         self.device = ""
         self.cmap = None
+        self.layout = None
 
         self.valid_actions = self.get_platform_valid_actions_for_state()
 
@@ -186,6 +191,14 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         + ", "
                         + str(e)
                     ) from None
+                if action_index in self.actions_layout_indices:
+                    assert pm.property_set["layout"]
+                    self.layout = TranspileLayout(
+                        initial_layout=pm.property_set["layout"],
+                        input_qubit_mapping=pm.property_set["original_qubit_indices"],
+                        final_layout=pm.property_set["final_layout"],
+                    )
+
             elif action["origin"] == "tket":
                 try:
                     tket_qc = qiskit_to_tk(self.state)
@@ -204,6 +217,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
             else:
                 error_msg = f"Origin {action['origin']} not supported."
                 raise ValueError(error_msg)
+
         else:
             error_msg = f"Action {action_index} not supported."
             raise ValueError(error_msg)
@@ -222,18 +236,18 @@ class PredictorEnv(Env):  # type: ignore[misc]
         only_nat_gates = check_nat_gates.property_set["all_gates_in_basis"]
 
         if not only_nat_gates:
-            return self.actions_synthesis_indices
+            return self.actions_synthesis_indices + self.actions_opt_indices
 
         check_mapping = CheckMap(coupling_map=CouplingMap(self.cmap))
         check_mapping(self.state)
         mapped = check_mapping.property_set["is_swap_mapped"]
 
-        if mapped:
+        if mapped and self.layout is not None:
             return [self.action_terminate_index, *self.actions_opt_indices]
 
         # No layout applied yet
         if self.state._layout is not None:
-            return self.actions_routing_indices + self.actions_opt_indices
+            return self.actions_routing_indices
         return self.actions_layout_indices + self.actions_opt_indices
 
     def get_device_action_indices_for_nat_gates(self) -> list[int]:

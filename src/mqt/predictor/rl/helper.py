@@ -11,7 +11,7 @@ from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import rl
 from packaging import version
 from pytket.architecture import Architecture  # type: ignore[attr-defined]
-from pytket.circuit import OpType  # type: ignore[attr-defined]
+from pytket.circuit import Circuit, Node, OpType, Qubit  # type: ignore[attr-defined]
 from pytket.passes import (  # type: ignore[attr-defined]
     CliffordSimp,
     FullPeepholeOptimise,
@@ -19,6 +19,7 @@ from pytket.passes import (  # type: ignore[attr-defined]
     RemoveRedundancies,
     RoutingPass,
 )
+from pytket.placement import place_with_map  # type: ignore[attr-defined]
 from qiskit import QuantumCircuit
 from qiskit.circuit.equivalence_library import StandardEquivalenceLibrary
 from qiskit.circuit.library import XGate, ZGate
@@ -181,6 +182,7 @@ def get_actions_routing() -> list[dict[str, Any]]:
         {
             "name": "RoutingPass",
             "transpile_pass": lambda c: [
+                PreProcessTKETRoutingAfterQiskitLayout(),
                 RoutingPass(Architecture(c)),
             ],
             "origin": "tket",
@@ -424,7 +426,6 @@ def load_model(model_name: str) -> MaskablePPO:
 
     if Path(path / (model_name + ".zip")).exists():
         return MaskablePPO.load(path / (model_name + ".zip"))
-
     logger.info("Model does not exist. Try to retrieve suitable Model from GitHub...")
     try:
         mqtpredictor_module_version = metadata.version("mqt.predictor")
@@ -491,3 +492,16 @@ def handle_downloading_model(download_url: str, model_name: str) -> None:
             size = f.write(data)
             bar.update(size)
     logger.info(f"Download completed to {fname}. ")
+
+
+class PreProcessTKETRoutingAfterQiskitLayout:
+    """
+    Pre-processing step to route a circuit with tket after a Qiskit Layout pass has been applied.
+    The reason why we can apply the trivial layout here is that the circuit is already mapped by qiskit to the
+    device qubits and its qubits are sorted by their ascending physical qubit indices.
+    The trivial layout indices that this layout of the physical qubits is the identity mapping.
+    """
+
+    def apply(self, circuit: Circuit) -> Circuit:
+        mapping = {Qubit(i): Node(i) for i in range(circuit.n_qubits)}
+        place_with_map(circuit=circuit, qmap=mapping)

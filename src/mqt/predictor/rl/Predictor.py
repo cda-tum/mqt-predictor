@@ -59,7 +59,7 @@ class Predictor:
             action_item = env.action_set[action]
             used_compilation_passes.append(action_item["name"])
             obs, reward_val, done, info = env.step(action)
-
+            env.state._layout = env.layout
         return env.state, used_compilation_passes
 
     def evaluate_sample_circuit(self, file: str) -> dict[str, Any]:
