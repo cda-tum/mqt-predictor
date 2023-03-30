@@ -182,7 +182,7 @@ def get_actions_routing() -> list[dict[str, Any]]:
         {
             "name": "RoutingPass",
             "transpile_pass": lambda c: [
-                PreProcessTKETRouting(),
+                PreProcessTKETRoutingAfterQiskitLayout(),
                 RoutingPass(Architecture(c)),
             ],
             "origin": "tket",
@@ -426,7 +426,8 @@ def load_model(model_name: str) -> MaskablePPO:
 
     if Path(path / (model_name + ".zip")).exists():
         return MaskablePPO.load(path / (model_name + ".zip"))
-
+    print("Model ", model_name, "does not exist. Try to retrieve suitable Model from GitHub...")
+    print(Path(path / (model_name + ".zip")))
     logger.info("Model does not exist. Try to retrieve suitable Model from GitHub...")
     try:
         mqtpredictor_module_version = metadata.version("mqt.predictor")
