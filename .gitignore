@@ -1,3 +1,5 @@
+model_*.zip
+
 /build*
 /cmake-build-*
 .idea/*

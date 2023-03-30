@@ -3,7 +3,7 @@ from __future__ import annotations
 import glob
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -493,7 +493,7 @@ class Predictor:
             result_path.mkdir()
         plt.savefig(result_path / "y_pred_eval_normed.pdf")
 
-    def predict(self, qasm_str_or_path: str) -> Any:
+    def predict(self, qasm_str_or_path: str | QuantumCircuit) -> int:
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
 
         if self.clf is None:
@@ -511,12 +511,11 @@ class Predictor:
         non_zero_indices = np.load(str(path), allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
-        return self.clf.predict([feature_vector])[0]  # type: ignore[attr-defined]
+        return cast(int, self.clf.predict([feature_vector])[0])  # type: ignore[attr-defined]
 
-    def compile_as_predicted(self, qc: str, prediction: int) -> tuple[QuantumCircuit, int]:
+    def compile_as_predicted(self, qc: str | QuantumCircuit, prediction: int) -> tuple[QuantumCircuit, int]:
         """Returns the compiled quantum circuit when the original qasm circuit is provided as either
         a string or a file path and the prediction index is given."""
-
         LUT = ml.helper.get_index_to_comppath_LUT()
         if prediction < 0 or prediction >= len(LUT):
             error_msg = "Prediction index is out of range."
