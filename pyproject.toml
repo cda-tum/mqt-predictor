@@ -20,7 +20,7 @@ dynamic = ["version"]
 
 dependencies = [
     "mqt.bench>=0.4.2,<0.4.3",
-    "sb3_contrib>=1.6.2",
+    "sb3_contrib==2.0.0a4",
     "scikit-learn>=1.0.2",
     "importlib_metadata>=4.4; python_version < '3.10'",
     "importlib_resources>=5.0; python_version < '3.10'",
@@ -80,7 +80,7 @@ implicit_reexport = true
 # recent versions of `gym` are typed, but stable-baselines3 pins a very old version of gym.
 # qiskit is not yet marked as typed, but is typed mostly.
 # the other libraries do not have type stubs.
-module = ["qiskit.*", "joblib.*", "sklearn.*", "matplotlib.*", "mqt.bench.*", "gym.*", "sb3_contrib.*"]
+module = ["qiskit.*", "joblib.*", "sklearn.*", "matplotlib.*", "mqt.bench.*", "gymnasium.*", "sb3_contrib.*"]
 ignore_missing_imports = true
 
 [tool.ruff]
