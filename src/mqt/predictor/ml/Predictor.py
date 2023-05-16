@@ -396,7 +396,7 @@ class Predictor:
 
         return res, relative_scores
 
-    def plot_eval_histogram(self, res: list[int], filename: str = "histogram") -> None:
+    def plot_eval_histogram(self, res: list[int], filename: str = "histogram", color: str = "blue") -> None:
         """Method to generate the histogram of the resulting ranks
 
         Keyword arguments:
@@ -410,13 +410,16 @@ class Predictor:
         plt.bar(
             list(range(0, num_of_comp_paths, 1)),
             height=[res.count(i) / len(res) for i in range(1, num_of_comp_paths + 1, 1)],
-            width=1,
+            width=0.95,
+            color=color,
         )
+
         plt.xticks(
             list(range(0, num_of_comp_paths, 1)),
-            list(range(1, num_of_comp_paths + 1, 1)),
+            [i if i % 2 == 1 else "" for i in range(1, num_of_comp_paths + 1, 1)],
             fontsize=16,
         )
+
         plt.yticks(fontsize=16)
 
         plt.xlabel(
@@ -427,7 +430,7 @@ class Predictor:
         result_path = Path("results")
         if not result_path.is_dir():
             result_path.mkdir()
-        plt.savefig(result_path / (filename + ".pdf"))
+        plt.savefig(result_path / (filename + ".pdf"), bbox_inches="tight")
         plt.show()
 
     def plot_eval_all_detailed_compact_normed(
@@ -436,6 +439,8 @@ class Predictor:
         scores_filtered: list[Any],
         y_pred: np.ndarray[Any, np.dtype[np.float64]],
         y_test: np.ndarray[Any, np.dtype[np.float64]],
+        color_all: str = "blue",
+        color_pred: str = "orange",
     ) -> None:
         """Method to generate the detailed graph to examine the differences in evaluation scores
 
@@ -463,19 +468,19 @@ class Predictor:
             tmp_res = scores_filtered_sorted_accordingly[i]
             max_score = max(tmp_res)
             for j in range(len(tmp_res)):
-                plt.plot(i, tmp_res[j] / max_score, "b.", alpha=1.0, markersize=1.7)
+                plt.plot(i, tmp_res[j] / max_score, "b.", alpha=1.0, markersize=1.7, color=color_all)
 
             plt.plot(
                 i,
                 tmp_res[y_pred_sorted_accordingly[i]] / max_score,
-                "#ff8600",
+                color=color_pred,
                 marker=".",
                 linestyle="None",
             )
 
         plt.xticks(
-            list(range(0, len(scores_filtered), 20)),
-            [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 20)],
+            list(range(0, len(scores_filtered), 30)),
+            [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 30)],
             fontsize=18,
         )
         plt.yticks(fontsize=18)
@@ -491,7 +496,7 @@ class Predictor:
         result_path = Path("results")
         if not result_path.is_dir():
             result_path.mkdir()
-        plt.savefig(result_path / "y_pred_eval_normed.pdf")
+        plt.savefig(result_path / "y_pred_eval_normed.pdf", bbox_inches="tight")
 
     def predict(self, qasm_str_or_path: str | QuantumCircuit) -> int:
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
