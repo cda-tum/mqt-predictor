@@ -410,7 +410,7 @@ class Predictor:
         plt.bar(
             list(range(0, num_of_comp_paths, 1)),
             height=[res.count(i) / len(res) for i in range(1, num_of_comp_paths + 1, 1)],
-            width=0.95,
+            width=0.90,
             color=color,
         )
 
