@@ -130,7 +130,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
     def render(self) -> None:
         print(self.state.draw())
 
-    def reset(self, qc: Path | str | QuantumCircuit = None) -> tuple[QuantumCircuit, dict[str, Any]]:
+    def reset(
+        self, qc: Path | str | QuantumCircuit = None, seed: int | None = None
+    ) -> tuple[QuantumCircuit, dict[str, Any]]:
+        super().reset(seed=seed)
         if isinstance(qc, QuantumCircuit):
             self.state = qc
         elif qc:
