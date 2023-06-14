@@ -394,8 +394,8 @@ def get_cmap_from_devicename(device: str) -> Any:
 
 def create_feature_dict(qc: QuantumCircuit) -> dict[str, Any]:
     feature_dict = {
-        "num_qubits": np.array([qc.num_qubits], dtype=int),
-        "depth": np.array([qc.depth()], dtype=int),
+        "num_qubits": qc.num_qubits,
+        "depth": qc.depth(),
     }
 
     supermarq_features = calc_supermarq_features(qc)

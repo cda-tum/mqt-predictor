@@ -131,7 +131,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
         print(self.state.draw())
 
     def reset(
-        self, qc: Path | str | QuantumCircuit = None, seed: int | None = None
+        self,
+        qc: Path | str | QuantumCircuit = None,
+        seed: int | None = None,
+        options: dict[str, Any] | None = None,  # noqa: ARG002
     ) -> tuple[QuantumCircuit, dict[str, Any]]:
         super().reset(seed=seed)
         if isinstance(qc, QuantumCircuit):
@@ -151,7 +154,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.layout = None
 
         self.valid_actions = self.get_platform_valid_actions_for_state()
-
+        obs = rl.helper.create_feature_dict(self.state)
+        print(obs)
         return rl.helper.create_feature_dict(self.state), {}
 
     def action_masks(self) -> list[bool]:
