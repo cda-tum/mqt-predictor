@@ -107,10 +107,11 @@ class Predictor:
         reward_functions: list[rl.helper.reward_functions] | None = None,
         model_name: str = "model",
         verbose: int = 2,
+        test: bool = False,
     ) -> None:
         if reward_functions is None:
             reward_functions = ["fidelity"]
-        if "test" in model_name:
+        if test:
             n_steps = 100
             progress_bar = False
         else:
