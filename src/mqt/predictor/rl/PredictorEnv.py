@@ -154,8 +154,6 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.layout = None
 
         self.valid_actions = self.get_platform_valid_actions_for_state()
-        obs = rl.helper.create_feature_dict(self.state)
-        print(obs)
         return rl.helper.create_feature_dict(self.state), {}
 
     def action_masks(self) -> list[bool]:
