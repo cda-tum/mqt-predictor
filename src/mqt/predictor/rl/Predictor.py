@@ -48,17 +48,18 @@ class Predictor:
 
         model = rl.helper.load_model("model_" + opt_objective)
         env = rl.PredictorEnv(opt_objective)
-        obs = env.reset(qc)
+        obs, _ = env.reset(qc)
 
         used_compilation_passes = []
-        done = False
-        while not done:
+        terminated = False
+        truncated = False
+        while not (terminated or truncated):
             action_masks = get_action_masks(env)
-            action, _states = model.predict(obs, action_masks=action_masks)
+            action, _ = model.predict(obs, action_masks=action_masks)
             action = int(action)
             action_item = env.action_set[action]
             used_compilation_passes.append(action_item["name"])
-            obs, reward_val, done, info = env.step(action)
+            obs, reward_val, terminated, truncated, info = env.step(action)
             env.state._layout = env.layout
         return env.state, used_compilation_passes
 
@@ -106,10 +107,11 @@ class Predictor:
         reward_functions: list[rl.helper.reward_functions] | None = None,
         model_name: str = "model",
         verbose: int = 2,
+        test: bool = False,
     ) -> None:
         if reward_functions is None:
             reward_functions = ["fidelity"]
-        if "test" in model_name:
+        if test:
             n_steps = 100
             progress_bar = False
         else:
@@ -140,14 +142,15 @@ class Predictor:
         if used_setup == "RL":
             model = rl.helper.load_model("model_" + reward_function)
             env = rl.PredictorEnv(reward_function)
-            obs = env.reset(benchmark)
+            obs, _ = env.reset(benchmark)
             start_time = time.time()
-            done = False
-            while not done:
+            terminated = False
+            truncated = False
+            while not (terminated or truncated):
                 action_masks = get_action_masks(env)
-                action, _states = model.predict(obs, action_masks=action_masks)
+                action, _ = model.predict(obs, action_masks=action_masks)
                 action = int(action)
-                obs, reward_val, done, info = env.step(action)
+                obs, reward_val, terminated, truncated, info = env.step(action)
 
             duration = time.time() - start_time
 
