@@ -4,6 +4,17 @@ from mqt.predictor import rl
 from qiskit import QuantumCircuit
 
 
+@pytest.mark.parametrize(
+    "opt_objective",
+    ["fidelity", "critical_depth", "gate_ratio", "mix"],
+)
+def test_qcompile_with_pretrained_models(opt_objective: rl.helper.reward_functions) -> None:
+    qc = get_benchmark("ghz", 1, 5)
+    qc_compiled, compilation_information = rl.qcompile(qc, opt_objective=opt_objective)
+    assert isinstance(qc_compiled, QuantumCircuit)
+    assert compilation_information is not None
+
+
 def test_instantiate_models() -> None:
     predictor = rl.Predictor()
     predictor.train_all_models(
@@ -17,7 +28,7 @@ def test_instantiate_models() -> None:
     "opt_objective",
     ["fidelity", "critical_depth", "gate_ratio", "mix"],
 )
-def test_qcompile(opt_objective: rl.helper.reward_functions) -> None:
+def test_qcompile_with_newly_trained_models(opt_objective: rl.helper.reward_functions) -> None:
     qc = get_benchmark("ghz", 1, 5)
     qc_compiled, compilation_information = rl.qcompile(qc, opt_objective=opt_objective)
     assert isinstance(qc_compiled, QuantumCircuit)
