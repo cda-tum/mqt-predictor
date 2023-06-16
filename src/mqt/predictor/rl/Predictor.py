@@ -127,7 +127,7 @@ class Predictor:
                 env,
                 verbose=verbose,
                 tensorboard_log="./" + model_name + "_" + rew,
-                gamma=0.95,
+                gamma=0.98,
                 n_steps=n_steps,
             )
             model.learn(total_timesteps=timesteps, progress_bar=progress_bar)
