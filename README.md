@@ -168,16 +168,16 @@ Additionally, the raw training data may be extracted and can be used for any mac
 In case you are using MQT Predictor with the ML model in your work, we would be thankful if you referred to it by citing the following publication:
 
 ```bibtex
-@misc{quetschlich2022mqtpredictor,
-  title={Predicting Good Quantum Circuit Compilation Options},
-  shorttitle = {{{MQT Predictor}}},
-  author={Quetschlich, Nils and Burgholzer, Lukas and Wille, Robert},
-  year={2022},
-  eprint = {2210.08027},
-  eprinttype = {arxiv},
-  publisher = {arXiv},
+@INPROCEEDINGS{quetschlich2023prediction,
+	AUTHOR    = {N. Quetschlich and L. Burgholzer and R. Wille},
+	TITLE     = {{Predicting Good Quantum Circuit Compilation Options}},
+	BOOKTITLE = {IEEE International Conference on Quantum Software (QSW)},
+	YEAR      = {2023},
 }
 ```
+
+which is also available on arXiv:
+[![a](https://img.shields.io/static/v1?label=arXiv&message=2210.08027&color=inactive&style=flat-square)](https://arxiv.org/abs/2210.08027)
 
 In case you are using the RL model in your work, we would be thankful if you referred to it by citing the following publication:
 
@@ -189,3 +189,6 @@ In case you are using the RL model in your work, we would be thankful if you ref
   year          = {2023},
 }
 ```
+
+which is also available on arXiv:
+[![a](https://img.shields.io/static/v1?label=arXiv&message=2212.04508&color=inactive&style=flat-square)](https://arxiv.org/abs/2212.04508)

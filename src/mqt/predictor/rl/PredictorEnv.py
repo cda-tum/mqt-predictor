@@ -7,8 +7,8 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 import numpy as np
-from gym import Env
-from gym.spaces import Box, Dict, Discrete
+from gymnasium import Env
+from gymnasium.spaces import Box, Dict, Discrete
 from mqt.predictor import reward, rl
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
@@ -83,13 +83,14 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.cmap = None
         self.layout = None
 
-    def step(self, action: int) -> tuple[dict[str, Any], float, bool, dict[Any, Any]]:
+    def step(self, action: int) -> tuple[dict[str, Any], float, bool, bool, dict[Any, Any]]:
         altered_qc = self.apply_action(action)
         if not altered_qc:
             return (
                 rl.helper.create_feature_dict(self.state),
                 0,
                 True,
+                False,
                 {},
             )
 
@@ -98,7 +99,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
         self.valid_actions = self.determine_valid_actions_for_state()
         if len(self.valid_actions) == 0:
-            return rl.helper.create_feature_dict(self.state), 0, True, {}
+            return rl.helper.create_feature_dict(self.state), 0, True, False, {}
 
         if action == self.action_terminate_index:
             reward_val = self.calculate_reward()
@@ -110,7 +111,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
         # in case the Qiskit.QuantumCircuit has unitary or u gates in it, decompose them (because otherwise qiskit will throw an error when applying the BasisTranslator
         if self.state.count_ops().get("unitary"):
             self.state = self.state.decompose(gates_to_decompose="unitary")
-        return rl.helper.create_feature_dict(self.state), reward_val, done, {}
+
+        obs = rl.helper.create_feature_dict(self.state)
+        return obs, reward_val, done, False, {}
 
     def calculate_reward(self) -> Any:
         if self.reward_function == "fidelity":
@@ -127,7 +130,13 @@ class PredictorEnv(Env):  # type: ignore[misc]
     def render(self) -> None:
         print(self.state.draw())
 
-    def reset(self, qc: Path | str | QuantumCircuit = None) -> QuantumCircuit:
+    def reset(
+        self,
+        qc: Path | str | QuantumCircuit = None,
+        seed: int | None = None,
+        options: dict[str, Any] | None = None,  # noqa: ARG002
+    ) -> tuple[QuantumCircuit, dict[str, Any]]:
+        super().reset(seed=seed)
         if isinstance(qc, QuantumCircuit):
             self.state = qc
         elif qc:
@@ -145,8 +154,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.layout = None
 
         self.valid_actions = self.get_platform_valid_actions_for_state()
-
-        return rl.helper.create_feature_dict(self.state)
+        return rl.helper.create_feature_dict(self.state), {}
 
     def action_masks(self) -> list[bool]:
         return [action in self.valid_actions for action in self.action_set]
