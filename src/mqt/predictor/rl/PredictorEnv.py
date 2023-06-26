@@ -132,7 +132,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
     def reset(
         self,
-        qc: Path | str | QuantumCircuit = None,
+        qc: Path | str | QuantumCircuit | None = None,
         seed: int | None = None,
         options: dict[str, Any] | None = None,  # noqa: ARG002
     ) -> tuple[QuantumCircuit, dict[str, Any]]:
