@@ -396,7 +396,7 @@ class Predictor:
 
         return res, relative_scores
 
-    def plot_eval_histogram(self, res: list[int], filename: str = "histogram", color: str = "blue") -> None:
+    def plot_eval_histogram(self, res: list[int], filename: str = "histogram", color: str = "#21918c") -> None:
         """Method to generate the histogram of the resulting ranks
 
         Keyword arguments:
@@ -439,8 +439,8 @@ class Predictor:
         scores_filtered: list[Any],
         y_pred: np.ndarray[Any, np.dtype[np.float64]],
         y_test: np.ndarray[Any, np.dtype[np.float64]],
-        color_all: str = "blue",
-        color_pred: str = "orange",
+        color_all: str = "#21918c",
+        color_pred: str = "#440154",
     ) -> None:
         """Method to generate the detailed graph to examine the differences in evaluation scores
 
