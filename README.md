@@ -1,6 +1,6 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![CodeCov](https://github.com/cda-tum/MQTPredictor/actions/workflows/coverage.yml/badge.svg)](https://github.com/cda-tum/MQTPredictor/actions/workflows/coverage.yml)
-[![Deploy to PyPI](https://github.com/cda-tum/MQTPredictor/actions/workflows/deploy.yml/badge.svg)](https://github.com/cda-tum/MQTPredictor/actions/workflows/deploy.yml)
+[![CodeCov](https://github.com/cda-tum/mqt-predictor/actions/workflows/coverage.yml/badge.svg)](https://github.com/cda-tum/mqt-predictor/actions/workflows/coverage.yml)
+[![Deploy to PyPI](https://github.com/cda-tum/mqt-predictor/actions/workflows/deploy.yml/badge.svg)](https://github.com/cda-tum/mqt-predictor/actions/workflows/deploy.yml)
 [![codecov](https://codecov.io/gh/cda-tum/mqt-predictor/branch/main/graph/badge.svg?token=ZL5js1wjrB)](https://codecov.io/gh/cda-tum/mqt-predictor)
 
 <p align="center">
