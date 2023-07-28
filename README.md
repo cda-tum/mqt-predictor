@@ -17,7 +17,11 @@ To this end, we provide two models for predicting good compilation options and r
 
 ## Supervised Machine Learning Model (referred to as "ML")
 
-Here, the problem is treated as a statistical classification task.
+Here, the problem is treated as a statistical classification task and a supervised machine learning model is trained to predict
+the best compilation options for a given quantum circuits consisting of a qubit technology, a quantum device, a respective compiler, and its settings:
+
+![](https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/img/mqt_predictor_ml.png)
+
 Furthermore, the resulting methodology does not only provide end-users with a prediction on the best compilation options,
 but additionally provides insights on why certain decisions have been made—allowing them to learn from the predicted results.
 
@@ -48,7 +52,7 @@ Through distinct constraints and a unifying interface, the framework supports th
 from different compilers and optimization tools in a single compilation flow.
 The compilation process is modelled as a Markov Decision Process:
 
-![](https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/img/mdp.png)
+![](https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/img/mqt_predictor_rl.png)
 
 In this implementation, compilation passes from both IBM's Qiskit and Quantinuum's TKET are utilized for the RL training
 of the optimized compiler.
