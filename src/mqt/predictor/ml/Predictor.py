@@ -251,7 +251,7 @@ class Predictor:
         all_relevant_files = Path(path_compiled_circuits).glob(file.split(".")[0] + "*")
 
         for filename in all_relevant_files:
-            filename_str = filename.name
+            filename_str = str(filename)
             if (file.split(".")[0] + "_") in filename_str and filename_str.endswith(".qasm"):
                 comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
                 device = LUT[comp_path_index][1]
