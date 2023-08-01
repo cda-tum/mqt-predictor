@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import glob
 import logging
 from pathlib import Path
 from typing import Any, cast
@@ -249,15 +248,15 @@ class Predictor:
         scores: list[float] = []
         for _ in range(len(LUT)):
             scores.append(ml.helper.get_width_penalty())
-        all_relevant_paths = Path(path_compiled_circuits) / (file.split(".")[0] + "*")
-        all_relevant_files = glob.glob(str(all_relevant_paths))
+        all_relevant_files = Path(path_compiled_circuits).glob(file.split(".")[0] + "*")
 
         for filename in all_relevant_files:
-            if (file.split(".")[0] + "_") in filename and filename.endswith(".qasm"):
-                comp_path_index = int(filename.split("_")[-1].split(".")[0])
+            filename_str = str(filename)
+            if (file.split(".")[0] + "_") in filename_str and filename_str.endswith(".qasm"):
+                comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
                 device = LUT[comp_path_index][1]
 
-                score = reward.expected_fidelity(filename, device)
+                score = reward.expected_fidelity(filename_str, device)
                 scores[comp_path_index] = score
 
         num_not_empty_entries = 0
