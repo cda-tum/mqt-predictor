@@ -22,7 +22,7 @@ class Calibration:
             self.oqc_lucy_calibration = parse_oqc_calibration_config()
             self.rigetti_m2_calibration = parse_rigetti_calibration_config()
             self.ionq_harmony_calibration = parse_generic_calibration_config("ionq_harmony")
-            self.ionq_aria1_calibration = parse_generic_calibration_config("ionq1_aria1")
+            self.ionq_aria1_calibration = parse_generic_calibration_config("ionq_aria1")
             self.quantinuum_h2 = parse_generic_calibration_config("quantinuum_h2")
 
         except Exception as e:

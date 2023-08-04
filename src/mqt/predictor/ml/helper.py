@@ -61,8 +61,9 @@ def get_compilation_pipeline() -> dict[str, dict[str, Any]]:
         "devices": {
             "ibm": [("ibm_washington", 127), ("ibm_montreal", 27)],
             "rigetti": [("rigetti_aspen_m2", 80)],
-            "ionq": [("ionq11", 11)],
+            "ionq": [("ionq_harmony", 11), ("ionq_aria1", 25)],
             "oqc": [("oqc_lucy", 8)],
+            "quantinuum": [("quantinuum_h2", 32)],
         },
         "compiler": {
             "qiskit": {"optimization_level": [0, 1, 2, 3]},
