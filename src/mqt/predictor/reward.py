@@ -37,7 +37,6 @@ def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: 
             raise RuntimeError("Could not read QuantumCircuit from: " + qc_or_path) from None
 
     res = 1.0
-
     calibration = Calibration.Calibration()
 
     if "ibm_montreal" in device or "ibm_washington" in device:
@@ -119,10 +118,10 @@ def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: 
                 res *= specific_fidelity
 
     elif "ionq_harmony" in device or "ionq_aria1" in device:
-        if "ionq_harmony" in device:
-            calibration_data = calibration.ionq_harmony_calibration
-        else:
+        if "ionq_aria1" in device:
             calibration_data = calibration.ionq_aria1_calibration
+        else:
+            calibration_data = calibration.ionq_harmony_calibration
         for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
 

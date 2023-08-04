@@ -2,6 +2,8 @@ from pathlib import Path
 
 import pytest
 from mqt.bench import get_benchmark
+from mqt.bench.qiskit_helper import get_native_gates
+from mqt.bench.utils import get_cmap_from_devicename
 from mqt.predictor import rl
 from qiskit import QuantumCircuit
 
@@ -26,7 +28,7 @@ def test_et_actions_routing() -> None:
     assert len(rl.helper.get_actions_routing()) == NUM_ACTIONS_ROUTING
 
 
-NUM_ACTIONS_PLATFORM = 4
+NUM_ACTIONS_PLATFORM = 5
 
 
 def test_get_actions_platform_selection() -> None:
@@ -47,7 +49,7 @@ def test_get_action_terminate() -> None:
     assert len(rl.helper.get_action_terminate()) == NUM_ACTIONS_TERMINATE
 
 
-NUM_ACTIONS_DEVICES = 5
+NUM_ACTIONS_DEVICES = 7
 
 
 def test_get_actions_devices() -> None:
@@ -60,49 +62,47 @@ def test_get_random_state_sample() -> None:
     assert isinstance(sample, QuantumCircuit)
 
 
-def test_get_ibm_native_gates() -> None:
-    assert rl.helper.get_ibm_native_gates() == ["rz", "sx", "x", "cx", "measure"]
-
-
-def test_get_rigetti_native_gates() -> None:
-    assert rl.helper.get_rigetti_native_gates() == ["rx", "rz", "cz", "measure"]
-
-
-def test_get_ionq_native_gates() -> None:
-    assert rl.helper.get_ionq_native_gates() == ["rxx", "rz", "ry", "rx", "measure"]
-
-
-def test_get_oqc_native_gates() -> None:
-    assert rl.helper.get_oqc_native_gates() == ["rz", "sx", "x", "ecr", "measure"]
+@pytest.mark.parametrize(
+    ("device", "gate_set"),
+    [
+        ("ibm", ["rz", "sx", "x", "cx", "measure"]),
+        ("ionq", ["rxx", "rz", "ry", "rx", "measure"]),
+        ("rigetti", ["rx", "rz", "cz", "measure"]),
+        ("oqc", ["rz", "sx", "x", "ecr", "measure"]),
+        ("quantinuum", ["rzz", "rz", "ry", "rx", "measure"]),
+    ],
+)
+def test_get_native_gatesets(device: str, gate_set: list[str]) -> None:
+    assert get_native_gates(device) == gate_set
 
 
 NUM_CONNECTIONS_RIGETTI_M2 = 212
 
 
 def test_get_rigetti_aspen_m2_map() -> None:
-    assert len(rl.helper.get_rigetti_aspen_m2_map()) == NUM_CONNECTIONS_RIGETTI_M2
+    assert len(get_cmap_from_devicename("rigetti_aspen_m2")) == NUM_CONNECTIONS_RIGETTI_M2
 
 
-NUM_CONNECTIONS_IONQ_11 = 110
+NUM_CONNECTIONS_IONQ_HARMONY = 110
 
 
-def test_get_ionq11_c_map() -> None:
-    assert len(rl.helper.get_ionq11_c_map()) == NUM_CONNECTIONS_IONQ_11
+def test_get_ionq_harmony_c_map() -> None:
+    assert len(get_cmap_from_devicename("ionq_harmony")) == NUM_CONNECTIONS_IONQ_HARMONY
 
 
 NUM_CONNECTIONS_OQC_LUCY = 8
 
 
 def test_get_cmap_oqc_lucy() -> None:
-    assert len(rl.helper.get_cmap_oqc_lucy()) == NUM_CONNECTIONS_OQC_LUCY
+    assert len(get_cmap_from_devicename("oqc_lucy")) == NUM_CONNECTIONS_OQC_LUCY
 
 
 @pytest.mark.parametrize(
     "device",
-    ["ibm_washington", "ibm_montreal", "rigetti_aspen_m2", "oqc_lucy", "ionq11"],
+    ["ibm_washington", "ibm_montreal", "rigetti_aspen_m2", "oqc_lucy", "ionq_harmony", "ionq_aria1", "quantinuum_h2"],
 )
 def test_get_cmap_from_devicename(device: str) -> None:
-    assert rl.helper.get_cmap_from_devicename(device)
+    assert get_cmap_from_devicename(device)
 
 
 NUM_FEATURES = 7

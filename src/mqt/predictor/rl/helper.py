@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import requests
-from mqt.bench.utils import calc_supermarq_features
+from mqt.bench.qiskit_helper import get_native_gates
+from mqt.bench.utils import calc_supermarq_features, get_cmap_from_devicename
 from mqt.predictor import rl
 from packaging import version
 from pytket.architecture import Architecture  # type: ignore[attr-defined]
@@ -23,7 +24,6 @@ from pytket.placement import place_with_map  # type: ignore[attr-defined]
 from qiskit import QuantumCircuit
 from qiskit.circuit.equivalence_library import StandardEquivalenceLibrary
 from qiskit.circuit.library import XGate, ZGate
-from qiskit.providers.fake_provider import FakeMontreal, FakeWashington
 from qiskit.transpiler import CouplingMap
 from qiskit.transpiler.passes import (
     ApplyLayout,
@@ -204,27 +204,33 @@ def get_actions_platform_selection() -> list[dict[str, Any]]:
     return [
         {
             "name": "IBM",
-            "gates": get_ibm_native_gates(),
+            "gates": get_native_gates("ibm"),
             "devices": ["ibm_washington", "ibm_montreal"],
             "max_qubit_size": 127,
         },
         {
             "name": "Rigetti",
-            "gates": get_rigetti_native_gates(),
+            "gates": get_native_gates("rigetti"),
             "devices": ["rigetti_aspen_m2"],
             "max_qubit_size": 80,
         },
         {
             "name": "OQC",
-            "gates": get_oqc_native_gates(),
+            "gates": get_native_gates("oqc"),
             "devices": ["oqc_lucy"],
             "max_qubit_size": 8,
         },
         {
             "name": "IonQ",
-            "gates": get_ionq_native_gates(),
-            "devices": ["ionq11"],
-            "max_qubit_size": 11,
+            "gates": get_native_gates("ionq"),
+            "devices": ["ionq_harmony", "ionq_aria1"],
+            "max_qubit_size": 25,
+        },
+        {
+            "name": "Quantinuum",
+            "gates": get_native_gates("quantinuum"),
+            "devices": ["quantinuum_h2"],
+            "max_qubit_size": 25,
         },
     ]
 
@@ -277,12 +283,28 @@ def get_actions_devices() -> list[dict[str, Any]]:
             "max_qubits": 80,
         },
         {
-            "name": "ionq11",
+            "name": "ionq_harmony",
             "transpile_pass": [],
-            "device": "ionq11",
+            "device": "ionq_harmony",
             "full_connectivity": True,
-            "cmap": get_cmap_from_devicename("ionq11"),
+            "cmap": get_cmap_from_devicename("ionq_harmony"),
             "max_qubits": 11,
+        },
+        {
+            "name": "ionq_aria11",
+            "transpile_pass": [],
+            "device": "ionq_aria11",
+            "full_connectivity": True,
+            "cmap": get_cmap_from_devicename("ionq_aria1"),
+            "max_qubits": 25,
+        },
+        {
+            "name": "quantinuum",
+            "transpile_pass": [],
+            "device": "quantinuum_h2",
+            "full_connectivity": True,
+            "cmap": get_cmap_from_devicename("quantinuum_h2"),
+            "max_qubits": 32,
         },
     ]
 
@@ -307,89 +329,6 @@ def get_state_sample() -> QuantumCircuit:
         raise RuntimeError("Could not read QuantumCircuit from: " + str(file_list[random_index])) from None
 
     return qc
-
-
-def get_ibm_native_gates() -> list[str]:
-    return ["rz", "sx", "x", "cx", "measure"]
-
-
-def get_rigetti_native_gates() -> list[str]:
-    return ["rx", "rz", "cz", "measure"]
-
-
-def get_ionq_native_gates() -> list[str]:
-    return ["rxx", "rz", "ry", "rx", "measure"]
-
-
-def get_oqc_native_gates() -> list[str]:
-    return ["rz", "sx", "x", "ecr", "measure"]
-
-
-def get_rigetti_aspen_m2_map() -> list[list[int]]:
-    """Returns a coupling map of Rigetti Aspen M2 chip."""
-    c_map_rigetti = []
-    for j in range(5):
-        for i in range(0, 7):
-            c_map_rigetti.append([i + j * 8, i + 1 + j * 8])
-
-            if i == 6:
-                c_map_rigetti.append([0 + j * 8, 7 + j * 8])
-
-        if j != 0:
-            c_map_rigetti.append([j * 8 - 6, j * 8 + 5])
-            c_map_rigetti.append([j * 8 - 7, j * 8 + 6])
-
-    for j in range(5):
-        m = 8 * j + 5 * 8
-        for i in range(0, 7):
-            c_map_rigetti.append([i + m, i + 1 + m])
-
-            if i == 6:
-                c_map_rigetti.append([0 + m, 7 + m])
-
-        if j != 0:
-            c_map_rigetti.append([m - 6, m + 5])
-            c_map_rigetti.append([m - 7, m + 6])
-
-    for n in range(5):
-        c_map_rigetti.append([n * 8 + 3, n * 8 + 5 * 8])
-        c_map_rigetti.append([n * 8 + 4, n * 8 + 7 + 5 * 8])
-
-    inverted = [[item[1], item[0]] for item in c_map_rigetti]
-
-    return c_map_rigetti + inverted
-
-
-def get_ionq11_c_map() -> list[list[int]]:
-    ionq11_c_map = []
-    for i in range(0, 11):
-        for j in range(0, 11):
-            if i != j:
-                ionq11_c_map.append([i, j])
-    return ionq11_c_map
-
-
-def get_cmap_oqc_lucy() -> list[list[int]]:
-    """Returns the coupling map of the OQC Lucy quantum computer."""
-    # source: https://github.com/aws/amazon-braket-examples/blob/main/examples/braket_features/Verbatim_Compilation.ipynb
-
-    # Connections are NOT bidirectional, this is not an accident
-    return [[0, 1], [0, 7], [1, 2], [2, 3], [7, 6], [6, 5], [4, 3], [4, 5]]
-
-
-def get_cmap_from_devicename(device: str) -> Any:
-    if device == "ibm_washington":
-        return FakeWashington().configuration().coupling_map
-    if device == "ibm_montreal":
-        return FakeMontreal().configuration().coupling_map
-    if device == "rigetti_aspen_m2":
-        return get_rigetti_aspen_m2_map()
-    if device == "oqc_lucy":
-        return get_cmap_oqc_lucy()
-    if device == "ionq11":
-        return get_ionq11_c_map()
-    error_msg = "Unknown device name"
-    raise ValueError(error_msg)
 
 
 def create_feature_dict(qc: QuantumCircuit) -> dict[str, Any]:

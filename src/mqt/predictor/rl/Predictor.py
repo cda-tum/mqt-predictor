@@ -7,6 +7,8 @@ from typing import Any, get_args
 
 import numpy as np
 from joblib import Parallel, delayed
+from mqt.bench.qiskit_helper import get_native_gates
+from mqt.bench.utils import get_cmap_from_devicename
 from mqt.predictor import rl
 from pytket import OpType
 from pytket.architecture import Architecture  # type: ignore[attr-defined]
@@ -153,7 +155,7 @@ class Predictor:
                 obs, reward_val, terminated, truncated, info = env.step(action)
 
             duration = time.time() - start_time
-
+            print("device: ", env.device)
             return rl.Result(
                 benchmark,
                 used_setup + "_" + reward_function,
@@ -167,8 +169,8 @@ class Predictor:
             start_time = time.time()
             transpiled_qc_qiskit = transpile(
                 qc,
-                basis_gates=rl.helper.get_ibm_native_gates(),
-                coupling_map=rl.helper.get_cmap_from_devicename("ibm_washington"),
+                basis_gates=get_native_gates("ibm"),
+                coupling_map=get_cmap_from_devicename("ibm_washington"),
                 optimization_level=3,
                 seed_transpiler=1,
             )
@@ -179,7 +181,7 @@ class Predictor:
         if used_setup == "tket":
             qc = QuantumCircuit.from_qasm_file(benchmark)
             tket_qc = qiskit_to_tk(qc)
-            arch = Architecture(rl.helper.get_cmap_from_devicename("ibm_washington"))
+            arch = Architecture(get_cmap_from_devicename("ibm_washington"))
             ibm_rebase = auto_rebase_pass({OpType.Rz, OpType.SX, OpType.X, OpType.CX, OpType.Measure})
 
             start_time = time.time()
