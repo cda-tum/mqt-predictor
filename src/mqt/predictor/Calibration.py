@@ -21,7 +21,9 @@ class Calibration:
             self.ibm_washington_calibration = FakeWashington().properties()
             self.oqc_lucy_calibration = parse_oqc_calibration_config()
             self.rigetti_m2_calibration = parse_rigetti_calibration_config()
-            self.ionq_calibration = parse_ionq_calibration_config()
+            self.ionq_harmony_calibration = parse_generic_calibration_config("ionq_harmony")
+            self.ionq_aria1_calibration = parse_generic_calibration_config("ionq1_aria1")
+            self.quantinuum_h2 = parse_generic_calibration_config("quantinuum_h2")
 
         except Exception as e:
             raise RuntimeError("Error in Calibration initialization: " + str(e)) from e
@@ -45,8 +47,9 @@ class DeviceCalibration(TypedDict):
     avg_2Q: float
 
 
-def parse_ionq_calibration_config() -> DeviceCalibration:
-    ref = resources.files("mqt.predictor") / "calibration_files" / "ionq_calibration.json"
+def parse_generic_calibration_config(device: str) -> DeviceCalibration:
+    calibration_filename = device + "_calibration.json"
+    ref = resources.files("mqt.predictor") / "calibration_files" / calibration_filename
     with ref.open() as f:
         ionq_calibration = json.load(f)
     return {

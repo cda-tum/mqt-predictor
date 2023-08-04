@@ -118,19 +118,35 @@ def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: 
 
                 res *= specific_fidelity
 
-    elif "ionq11" in device:
+    elif "ionq_harmony" in device or "ionq_aria1" in device:
+        if "ionq_harmony" in device:
+            calibration_data = calibration.ionq_harmony_calibration
+        else:
+            calibration_data = calibration.ionq_aria1_calibration
         for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
 
             assert gate_type in ["rxx", "rz", "ry", "rx", "measure", "barrier"]
             if gate_type != "barrier":
                 assert len(qargs) in [1, 2]
-
                 if len(qargs) == 1:
-                    specific_fidelity = calibration.ionq_calibration["avg_1Q"]
+                    specific_fidelity = calibration_data["avg_1Q"]
                 elif len(qargs) == 2:
-                    specific_fidelity = calibration.ionq_calibration["avg_2Q"]
+                    specific_fidelity = calibration_data["avg_2Q"]
                 res *= specific_fidelity
+
+    elif "quantinuum_h2" in device:
+        for instruction, qargs, _cargs in qc.data:
+            gate_type = instruction.name
+            assert gate_type in ["rzz", "rz", "ry", "rx", "measure", "barrier"]
+            if gate_type != "barrier":
+                assert len(qargs) in [1, 2]
+                if len(qargs) == 1:
+                    specific_fidelity = calibration.quantinuum_h2["avg_1Q"]
+                elif len(qargs) == 2:
+                    specific_fidelity = calibration.quantinuum_h2["avg_2Q"]
+                res *= specific_fidelity
+
     elif "rigetti_aspen_m2" in device:
         mapping = get_rigetti_qubit_dict()
         for instruction, qargs, _cargs in qc.data:
