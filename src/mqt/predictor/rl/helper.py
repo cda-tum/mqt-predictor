@@ -230,7 +230,7 @@ def get_actions_platform_selection() -> list[dict[str, Any]]:
             "name": "Quantinuum",
             "gates": get_native_gates("quantinuum"),
             "devices": ["quantinuum_h2"],
-            "max_qubit_size": 25,
+            "max_qubit_size": 32,
         },
     ]
 
