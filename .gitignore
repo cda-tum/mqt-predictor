@@ -1,4 +1,6 @@
 model_*.zip
+*.qasm
+*.DS_Store
 
 /build*
 /cmake-build-*
