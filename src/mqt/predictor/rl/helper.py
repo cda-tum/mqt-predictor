@@ -308,7 +308,7 @@ def get_state_sample() -> QuantumCircuit:
     except Exception:
         raise RuntimeError("Could not read QuantumCircuit from: " + str(file_list[random_index])) from None
 
-    return qc
+    return qc, file_list[random_index]
 
 
 def create_feature_dict(qc: QuantumCircuit) -> dict[str, Any]:

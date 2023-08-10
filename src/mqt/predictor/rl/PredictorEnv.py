@@ -31,6 +31,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.actions_routing_indices = []
         self.actions_opt_indices = []
 
+        self.used_actions: list[str] = []
+
         index = 0
         for elem in rl.helper.get_actions_platform_selection():
             self.action_set[index] = elem
@@ -69,7 +71,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
         spaces = {
             "num_qubits": Discrete(128),
-            "depth": Discrete(100000),
+            "depth": Discrete(1000000),
             "program_communication": Box(low=0, high=1, shape=(1,), dtype=np.float32),
             "critical_depth": Box(low=0, high=1, shape=(1,), dtype=np.float32),
             "entanglement_ratio": Box(low=0, high=1, shape=(1,), dtype=np.float32),
@@ -82,8 +84,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.device = ""
         self.cmap = None
         self.layout = None
+        self.filename = ""
 
     def step(self, action: int) -> tuple[dict[str, Any], float, bool, bool, dict[Any, Any]]:
+        self.used_actions.append(str(self.action_set[action].get("name")))
         altered_qc = self.apply_action(action)
         if not altered_qc:
             return (
@@ -142,7 +146,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         elif qc:
             self.state = QuantumCircuit.from_qasm_file(str(qc))
         else:
-            self.state = rl.helper.get_state_sample()
+            self.state, self.filename = rl.helper.get_state_sample()
 
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
@@ -194,8 +198,12 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     raise RuntimeError(
                         "Error in executing Qiskit transpile pass: "
                         + action["name"]
+                        + ", steps: "
+                        + str(self.num_steps)
                         + ", "
-                        + self.state.name
+                        + str(self.filename)
+                        + ", "
+                        + self.used_actions
                         + ", "
                         + str(e)
                     ) from None
@@ -217,8 +225,12 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     raise RuntimeError(
                         "Error in executing TKET transpile pass: "
                         + action["name"]
+                        + ", steps: "
+                        + str(self.num_steps)
                         + ", "
                         + self.state.name
+                        + ", "
+                        + str(self.filename)
                         + ", "
                         + str(e),
                     ) from None
