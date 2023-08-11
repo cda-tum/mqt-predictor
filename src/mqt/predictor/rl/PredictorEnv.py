@@ -20,33 +20,23 @@ logger = logging.getLogger("mqtpredictor")
 
 
 class PredictorEnv(Env):  # type: ignore[misc]
-    def __init__(self, reward_function: rl.helper.reward_functions = "fidelity"):
+    def __init__(self, reward_function: rl.helper.reward_functions = "fidelity", device_name: str = "ibm_washington"):
         logger.info("Init env: " + reward_function)
 
         self.action_set = {}
-        self.actions_platform = []
         self.actions_synthesis_indices = []
-        self.actions_devices_indices = []
         self.actions_layout_indices = []
         self.actions_routing_indices = []
+        self.actions_mapping_indices = []
         self.actions_opt_indices = []
-
         self.used_actions: list[str] = []
+        self.device = rl.helper.get_device(device_name)
 
         index = 0
-        for elem in rl.helper.get_actions_platform_selection():
-            self.action_set[index] = elem
-            self.actions_platform.append(index)
-            index += 1
 
         for elem in rl.helper.get_actions_synthesis():
             self.action_set[index] = elem
             self.actions_synthesis_indices.append(index)
-            index += 1
-
-        for elem in rl.helper.get_actions_devices():
-            self.action_set[index] = elem
-            self.actions_devices_indices.append(index)
             index += 1
         for elem in rl.helper.get_actions_layout():
             self.action_set[index] = elem
@@ -56,10 +46,13 @@ class PredictorEnv(Env):  # type: ignore[misc]
             self.action_set[index] = elem
             self.actions_routing_indices.append(index)
             index += 1
-
         for elem in rl.helper.get_actions_opt():
             self.action_set[index] = elem
             self.actions_opt_indices.append(index)
+            index += 1
+        for elem in rl.helper.get_actions_mapping():
+            self.action_set[index] = elem
+            self.actions_mapping_indices.append(index)
             index += 1
 
         self.action_set[index] = rl.helper.get_action_terminate()
@@ -79,11 +72,6 @@ class PredictorEnv(Env):  # type: ignore[misc]
             "liveness": Box(low=0, high=1, shape=(1,), dtype=np.float32),
         }
         self.observation_space = Dict(spaces)
-        self.native_gateset_name = ""
-        self.native_gates = None
-        self.device = ""
-        self.cmap = None
-        self.layout = None
         self.filename = ""
 
     def step(self, action: int) -> tuple[dict[str, Any], float, bool, bool, dict[Any, Any]]:
@@ -121,11 +109,11 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
     def calculate_reward(self) -> Any:
         if self.reward_function == "fidelity":
-            return reward.expected_fidelity(self.state, self.device)
+            return reward.expected_fidelity(self.state, self.device["name"])
         if self.reward_function == "critical_depth":
             return reward.crit_depth(self.state)
         if self.reward_function == "mix":
-            return reward.mix(self.state, self.device)
+            return reward.mix(self.state, self.device["name"])
         if self.reward_function == "gate_ratio":
             return reward.gate_ratio(self.state)
         error_msg = f"Reward function {self.reward_function} not supported."  # type: ignore[unreachable]
@@ -146,48 +134,31 @@ class PredictorEnv(Env):  # type: ignore[misc]
         elif qc:
             self.state = QuantumCircuit.from_qasm_file(str(qc))
         else:
-            self.state, self.filename = rl.helper.get_state_sample()
+            self.state, self.filename = rl.helper.get_state_sample(self.device["max_qubits"])
 
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
 
-        self.native_gateset_name = ""
-        self.native_gates = None
-        self.device = ""
-        self.cmap = None
         self.layout = None
 
-        self.valid_actions = self.get_platform_valid_actions_for_state()
+        self.valid_actions = self.actions_opt_indices + self.actions_synthesis_indices
         return rl.helper.create_feature_dict(self.state), {}
 
     def action_masks(self) -> list[bool]:
         return [action in self.valid_actions for action in self.action_set]
 
     def apply_action(self, action_index: int) -> QuantumCircuit:
-        if action_index in self.actions_platform:
-            self.native_gateset_name = self.action_set[action_index]["name"]
-            self.native_gates = self.action_set[action_index]["gates"]
-        elif action_index in self.actions_devices_indices:
-            self.device = self.action_set[action_index]["name"]
-            self.cmap = self.action_set[action_index]["cmap"]
-
         if action_index in self.action_set:
             action = self.action_set[action_index]
             if action["name"] == "terminate":
                 return self.state
-
-            if action_index in self.actions_platform:
-                self.native_gates = self.action_set[action_index]["gates"]
-                return self.state
-
-            if action_index in self.actions_devices_indices:
-                self.cmap = self.action_set[action_index]["cmap"]
-                return self.state
-
-            if action_index in self.actions_layout_indices + self.actions_routing_indices:
-                transpile_pass = action["transpile_pass"](self.cmap)
+            if (
+                action_index
+                in self.actions_layout_indices + self.actions_routing_indices + self.actions_mapping_indices
+            ):
+                transpile_pass = action["transpile_pass"](self.device["cmap"])
             elif action_index in self.actions_synthesis_indices:
-                transpile_pass = action["transpile_pass"](self.native_gates)
+                transpile_pass = action["transpile_pass"](self.device["native_gates"])
             else:
                 transpile_pass = action["transpile_pass"]
             if action["origin"] == "qiskit":
@@ -195,7 +166,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 try:
                     altered_qc = pm.run(self.state)
                 except Exception as e:
-                    raise RuntimeError(
+                    print(
                         "Error in executing Qiskit transpile pass: "
                         + action["name"]
                         + ", steps: "
@@ -203,10 +174,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         + ", "
                         + str(self.filename)
                         + ", "
-                        + self.used_actions
-                        + ", "
                         + str(e)
-                    ) from None
+                    )
+                    print(self.used_actions)
+                    return None
                 if action_index in self.actions_layout_indices:
                     assert pm.property_set["layout"]
                     self.layout = TranspileLayout(
@@ -245,48 +216,22 @@ class PredictorEnv(Env):  # type: ignore[misc]
         return altered_qc
 
     def determine_valid_actions_for_state(self) -> list[int]:
-        if self.native_gates is None:
-            return self.get_platform_valid_actions_for_state() + self.actions_opt_indices
-
-        if not self.device:  # type: ignore[unreachable]
-            return self.get_device_action_indices_for_nat_gates()
-
-        check_nat_gates = GatesInBasis(basis_gates=self.native_gates)
+        check_nat_gates = GatesInBasis(basis_gates=self.device["native_gates"])
         check_nat_gates(self.state)
         only_nat_gates = check_nat_gates.property_set["all_gates_in_basis"]
 
         if not only_nat_gates:
             return self.actions_synthesis_indices + self.actions_opt_indices
 
-        check_mapping = CheckMap(coupling_map=CouplingMap(self.cmap))
+        check_mapping = CheckMap(coupling_map=CouplingMap(self.device["cmap"]))
         check_mapping(self.state)
         mapped = check_mapping.property_set["is_swap_mapped"]
 
         if mapped and self.layout is not None:
-            return [self.action_terminate_index, *self.actions_opt_indices]
+            return [self.action_terminate_index, *self.actions_opt_indices]  # type: ignore[unreachable]
 
         # No layout applied yet
         if self.state._layout is not None:
             return self.actions_routing_indices
-        return self.actions_layout_indices + self.actions_opt_indices
 
-    def get_device_action_indices_for_nat_gates(self) -> list[int]:
-        nat_gate_index = -1
-        for key in self.action_set:
-            if self.action_set[key]["name"] == self.native_gateset_name:
-                nat_gate_index = key
-                break
-        potential_devices_names = self.action_set[nat_gate_index]["devices"]
-        potential_devices_indices = []
-        for dev in potential_devices_names:
-            for key in self.action_set:
-                if self.action_set[key]["name"] == dev and self.state.num_qubits <= self.action_set[key]["max_qubits"]:
-                    potential_devices_indices.append(key)
-        return potential_devices_indices
-
-    def get_platform_valid_actions_for_state(self) -> list[int]:
-        valid_platform_indices = []
-        for platform_action in self.actions_platform:
-            if self.state.num_qubits <= self.action_set[platform_action]["max_qubit_size"]:
-                valid_platform_indices.append(platform_action)
-        return valid_platform_indices
+        return self.actions_mapping_indices + self.actions_layout_indices + self.actions_opt_indices

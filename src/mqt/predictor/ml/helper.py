@@ -14,25 +14,11 @@ from typing import TYPE_CHECKING
 import numpy as np
 from joblib import dump
 from mqt.bench.utils import calc_supermarq_features
-from mqt.predictor import ml
+from mqt.predictor import rl
 from qiskit import QuantumCircuit
 
 if TYPE_CHECKING:
     from sklearn.ensemble import RandomForestClassifier
-
-
-def qcompile(qc: QuantumCircuit | str) -> tuple[QuantumCircuit, int]:
-    """Returns the compiled quantum circuit which is compiled with the predicted combination of compilation options.
-
-    Keyword arguments:
-    qc -- to be compiled quantum circuit or path to a qasm file
-
-    Returns: compiled quantum circuit as Qiskit QuantumCircuit object
-    """
-
-    predictor = ml.Predictor()
-    prediction = predictor.predict(qc)
-    return predictor.compile_as_predicted(qc, prediction)
 
 
 def get_path_training_data() -> Path:
@@ -72,32 +58,34 @@ def get_compilation_pipeline() -> dict[str, dict[str, Any]]:
     }
 
 
-def get_index_to_comppath_LUT() -> dict[int, Any]:
-    compilation_pipeline = get_compilation_pipeline()
-    index = 0
-    index_to_comppath_LUT = {}
-    for gate_set_name, devices in compilation_pipeline["devices"].items():
-        for device_name, _max_qubits in devices:
-            for compiler, settings in compilation_pipeline["compiler"].items():
-                if "qiskit" in compiler:
-                    for opt_level in settings["optimization_level"]:
-                        index_to_comppath_LUT[index] = (
-                            gate_set_name,
-                            device_name,
-                            compiler,
-                            opt_level,
-                        )
-                        index += 1
-                elif "tket" in compiler:
-                    for lineplacement in settings["lineplacement"]:
-                        index_to_comppath_LUT[index] = (
-                            gate_set_name,
-                            device_name,
-                            compiler,
-                            lineplacement,
-                        )
-                        index += 1
-    return index_to_comppath_LUT
+def get_index_to_comppath_LUT() -> dict[int, str]:
+    devices = rl.helper.get_devices()
+    return {i: device["name"] for i, device in enumerate(devices)}
+    # compilation_pipeline = get_compilation_pipeline()
+    # index = 0
+    # index_to_comppath_LUT = {}
+    # for gate_set_name, devices in compilation_pipeline["devices"].items():
+    #     for device_name, _max_qubits in devices:
+    #         for compiler, settings in compilation_pipeline["compiler"].items():
+    #             if "qiskit" in compiler:
+    #                 for opt_level in settings["optimization_level"]:
+    #                     index_to_comppath_LUT[index] = (
+    #                         gate_set_name,
+    #                         device_name,
+    #                         compiler,
+    #                         opt_level,
+    #                     )
+    #                     index += 1
+    #             elif "tket" in compiler:
+    #                 for lineplacement in settings["lineplacement"]:
+    #                     index_to_comppath_LUT[index] = (
+    #                         gate_set_name,
+    #                         device_name,
+    #                         compiler,
+    #                         lineplacement,
+    #                     )
+    #                     index += 1
+    # return index_to_comppath_LUT
 
 
 def get_openqasm_gates() -> list[str]:

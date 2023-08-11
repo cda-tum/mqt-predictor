@@ -28,13 +28,6 @@ def test_et_actions_routing() -> None:
     assert len(rl.helper.get_actions_routing()) == NUM_ACTIONS_ROUTING
 
 
-NUM_ACTIONS_PLATFORM = 5
-
-
-def test_get_actions_platform_selection() -> None:
-    assert len(rl.helper.get_actions_platform_selection()) == NUM_ACTIONS_PLATFORM
-
-
 NUM_ACTIONS_SYNTHESIS = 1
 
 
@@ -53,7 +46,7 @@ NUM_ACTIONS_DEVICES = 7
 
 
 def test_get_actions_devices() -> None:
-    assert len(rl.helper.get_actions_devices()) == NUM_ACTIONS_DEVICES
+    assert len(rl.helper.get_devices()) == NUM_ACTIONS_DEVICES
 
 
 def test_get_random_state_sample() -> None:
@@ -103,6 +96,14 @@ def test_get_cmap_oqc_lucy() -> None:
 )
 def test_get_cmap_from_devicename(device: str) -> None:
     assert get_cmap_from_devicename(device)
+
+
+@pytest.mark.parametrize(
+    "platform",
+    ["ibm", "rigetti", "oqc", "ionq", "quantinuum"],
+)
+def test_get_native_gates_from_platform_name(platform: str) -> None:
+    assert get_native_gates(platform)
 
 
 NUM_FEATURES = 7

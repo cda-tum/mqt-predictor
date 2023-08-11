@@ -60,7 +60,9 @@ reward_functions = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
 logger = logging.getLogger("mqtpredictor")
 
 
-def qcompile(qc: QuantumCircuit | str, opt_objective: reward_functions = "fidelity") -> QuantumCircuit:
+def qcompile(
+    qc: QuantumCircuit | str, opt_objective: reward_functions = "fidelity", device_name: str = "ibm"
+) -> QuantumCircuit:
     """Returns the compiled quantum circuit which is compiled following an objective function.
     Keyword arguments:
     qc -- to be compiled quantum circuit or path to a qasm file
@@ -69,7 +71,7 @@ def qcompile(qc: QuantumCircuit | str, opt_objective: reward_functions = "fideli
     """
 
     predictor = rl.Predictor()
-    return predictor.compile_as_predicted(qc, opt_objective=opt_objective)
+    return predictor.compile_as_predicted(qc, opt_objective=opt_objective, device_name=device_name)
 
 
 def get_actions_opt() -> list[dict[str, Any]]:
@@ -200,37 +202,14 @@ def get_actions_routing() -> list[dict[str, Any]]:
     ]
 
 
-def get_actions_platform_selection() -> list[dict[str, Any]]:
+def get_actions_mapping() -> list[dict[str, Any]]:
     return [
         {
-            "name": "IBM",
-            "gates": get_native_gates("ibm"),
-            "devices": ["ibm_washington", "ibm_montreal"],
-            "max_qubit_size": 127,
-        },
-        {
-            "name": "Rigetti",
-            "gates": get_native_gates("rigetti"),
-            "devices": ["rigetti_aspen_m2"],
-            "max_qubit_size": 80,
-        },
-        {
-            "name": "OQC",
-            "gates": get_native_gates("oqc"),
-            "devices": ["oqc_lucy"],
-            "max_qubit_size": 8,
-        },
-        {
-            "name": "IonQ",
-            "gates": get_native_gates("ionq"),
-            "devices": ["ionq_harmony", "ionq_aria1"],
-            "max_qubit_size": 25,
-        },
-        {
-            "name": "Quantinuum",
-            "gates": get_native_gates("quantinuum"),
-            "devices": ["quantinuum_h2"],
-            "max_qubit_size": 32,
+            "name": "SabreMapping",
+            "transpile_pass": lambda c: [
+                SabreLayout(coupling_map=CouplingMap(c), skip_routing=False),
+            ],
+            "origin": "qiskit",
         },
     ]
 
@@ -249,47 +228,89 @@ def get_action_terminate() -> dict[str, Any]:
     return {"name": "terminate"}
 
 
-def get_actions_devices() -> list[dict[str, Any]]:
+def get_platforms() -> list[dict[str, Any]]:
+    return [
+        {
+            "name": "ibm",
+            "gates": get_native_gates("ibm"),
+            "devices": ["ibm_washington", "ibm_montreal"],
+            "max_qubit_size": 127,
+        },
+        {
+            "name": "rigetti",
+            "gates": get_native_gates("rigetti"),
+            "devices": ["rigetti_aspen_m2"],
+            "max_qubit_size": 80,
+        },
+        {
+            "name": "oqc",
+            "gates": get_native_gates("oqc"),
+            "devices": ["oqc_lucy"],
+            "max_qubit_size": 8,
+        },
+        {
+            "name": "ionq",
+            "gates": get_native_gates("ionq"),
+            "devices": ["ionq_harmony", "ionq_aria1"],
+            "max_qubit_size": 25,
+        },
+        {
+            "name": "quantinuum",
+            "gates": get_native_gates("quantinuum"),
+            "devices": ["quantinuum_h2"],
+            "max_qubit_size": 32,
+        },
+    ]
+
+
+def get_devices() -> list[dict[str, Any]]:
     return [
         {
             "name": "ibm_washington",
             "cmap": get_cmap_from_devicename("ibm_washington"),
+            "native_gates": get_native_gates("ibm"),
             "max_qubits": 127,
         },
         {
             "name": "ibm_montreal",
             "cmap": get_cmap_from_devicename("ibm_montreal"),
+            "native_gates": get_native_gates("ibm"),
             "max_qubits": 27,
         },
         {
             "name": "oqc_lucy",
             "cmap": get_cmap_from_devicename("oqc_lucy"),
+            "native_gates": get_native_gates("oqc"),
             "max_qubits": 8,
         },
         {
             "name": "rigetti_aspen_m2",
             "cmap": get_cmap_from_devicename("rigetti_aspen_m2"),
+            "native_gates": get_native_gates("rigetti"),
             "max_qubits": 80,
         },
         {
             "name": "ionq_harmony",
             "cmap": get_cmap_from_devicename("ionq_harmony"),
+            "native_gates": get_native_gates("ionq"),
             "max_qubits": 11,
         },
         {
-            "name": "ionq_aria11",
+            "name": "ionq_aria1",
             "cmap": get_cmap_from_devicename("ionq_aria1"),
+            "native_gates": get_native_gates("ionq"),
             "max_qubits": 25,
         },
         {
             "name": "quantinuum_h2",
             "cmap": get_cmap_from_devicename("quantinuum_h2"),
+            "native_gates": get_native_gates("quantinuum"),
             "max_qubits": 32,
         },
     ]
 
 
-def get_state_sample() -> QuantumCircuit:
+def get_state_sample(max_qubits: int = -1) -> QuantumCircuit:
     file_list = list(get_path_training_circuits().glob("*.qasm"))
 
     path_zip = get_path_training_circuits() / "mqtbench_sample_circuits.zip"
@@ -302,7 +323,14 @@ def get_state_sample() -> QuantumCircuit:
         file_list = list(get_path_training_circuits().glob("*.qasm"))
         assert len(file_list) > 0
 
-    random_index = np.random.randint(len(file_list))
+    found_suitable_qc = False
+    while not found_suitable_qc:
+        random_index = np.random.randint(len(file_list))
+        num_qubits = int(str(file_list[random_index]).split("_")[-1].split(".")[0])
+        if max_qubits > 0 and num_qubits > max_qubits:
+            continue
+        found_suitable_qc = True
+
     try:
         qc = QuantumCircuit.from_qasm_file(str(file_list[random_index]))
     except Exception:
@@ -424,3 +452,13 @@ class PreProcessTKETRoutingAfterQiskitLayout:
     def apply(self, circuit: Circuit) -> Circuit:
         mapping = {Qubit(i): Node(i) for i in range(circuit.n_qubits)}
         place_with_map(circuit=circuit, qmap=mapping)
+
+
+def get_device(device_name: str) -> dict[str, Any]:
+    devices = get_devices()
+    for device in devices:
+        if device["name"] == device_name:
+            return device
+
+    msg = "No suitable device found."
+    raise RuntimeError(msg)

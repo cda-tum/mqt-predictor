@@ -40,7 +40,10 @@ class Predictor:
         logger.setLevel(lvl)
 
     def compile_as_predicted(
-        self, qc: QuantumCircuit | str, opt_objective: rl.helper.reward_functions = "fidelity"
+        self,
+        qc: QuantumCircuit | str,
+        opt_objective: rl.helper.reward_functions = "fidelity",
+        device_name: str = "ibm_washington",
     ) -> tuple[QuantumCircuit, list[str]]:
         if not isinstance(qc, QuantumCircuit):
             if len(qc) < PATH_LENGTH and Path(qc).exists():
@@ -48,8 +51,8 @@ class Predictor:
             elif "OPENQASM" in qc:
                 qc = QuantumCircuit.from_qasm_str(qc)
 
-        model = rl.helper.load_model("model_" + opt_objective)
-        env = rl.PredictorEnv(opt_objective)
+        model = rl.helper.load_model("model_" + opt_objective + "_" + device_name)
+        env = rl.PredictorEnv(opt_objective, device_name)
         obs, _ = env.reset(qc)
 
         used_compilation_passes = []
@@ -108,6 +111,7 @@ class Predictor:
         timesteps: int = 1000,
         reward_functions: list[rl.helper.reward_functions] | None = None,
         model_name: str = "model",
+        device_name: str = "ibm_washington",
         verbose: int = 2,
         test: bool = False,
     ) -> None:
@@ -122,18 +126,18 @@ class Predictor:
 
         for rew in reward_functions:
             logger.debug("Start training for: " + rew)
-            env = rl.PredictorEnv(reward_function=rew)
+            env = rl.PredictorEnv(reward_function=rew, device_name=device_name)
 
             model = MaskablePPO(
                 MaskableMultiInputActorCriticPolicy,
                 env,
                 verbose=verbose,
-                tensorboard_log="./" + model_name + "_" + rew,
+                tensorboard_log="./" + model_name + "_" + rew + "_" + device_name,
                 gamma=0.98,
                 n_steps=n_steps,
             )
             model.learn(total_timesteps=timesteps, progress_bar=progress_bar)
-            model.save(rl.helper.get_path_trained_model() / (model_name + "_" + rew))
+            model.save(rl.helper.get_path_trained_model() / (model_name + "_" + rew + "_" + device_name))
 
     def computeRewards(
         self,
@@ -155,13 +159,13 @@ class Predictor:
                 obs, reward_val, terminated, truncated, info = env.step(action)
 
             duration = time.time() - start_time
-            print("device: ", env.device)
+            print("device: ", env.device_index)
             return rl.Result(
                 benchmark,
                 used_setup + "_" + reward_function,
                 duration,
                 env.state,
-                env.device,
+                rl.helper.get_devices()[env.device_index]["name"],
             )
 
         if used_setup == "qiskit_o3":

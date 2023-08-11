@@ -7,9 +7,7 @@ from typing import Any, cast
 import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed, load
-from mqt.bench import qiskit_helper, tket_helper
-from mqt.predictor import ml, reward, utils
-from pytket.extensions.qiskit import tk_to_qiskit
+from mqt.predictor import ml, reward, rl, utils
 from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
@@ -68,68 +66,85 @@ class Predictor:
         if not qc:
             return False
 
-        compilation_pipeline = ml.helper.get_compilation_pipeline()
+        devices = rl.helper.get_devices()
 
         results = []
-        comp_path_id = 0
-        try:
-            for gate_set_name, devices in compilation_pipeline["devices"].items():
-                for device_name, max_qubits in devices:
-                    for compiler, settings in compilation_pipeline["compiler"].items():
-                        if "qiskit" in compiler:
-                            for opt_level in settings["optimization_level"]:
-                                target_filename = filename.split(".qasm")[0] + "_" + str(comp_path_id)
-                                comp_path_id += 1
-                                if max_qubits >= qc.num_qubits:
-                                    tmp = utils.timeout_watcher(
-                                        qiskit_helper.get_mapped_level,
-                                        [
-                                            qc,
-                                            gate_set_name,
-                                            qc.num_qubits,
-                                            device_name,
-                                            opt_level,
-                                            False,
-                                            False,
-                                            target_path,
-                                            target_filename,
-                                        ],
-                                        timeout,
-                                    )
-                                    results.append(tmp)
-                                    if not tmp:
-                                        continue
-                        elif "tket" in compiler:
-                            for lineplacement in settings["lineplacement"]:
-                                target_filename = filename.split(".qasm")[0] + "_" + str(comp_path_id)
-                                comp_path_id += 1
-                                if max_qubits >= qc.num_qubits:
-                                    tmp = utils.timeout_watcher(
-                                        tket_helper.get_mapped_level,
-                                        [
-                                            qc,
-                                            gate_set_name,
-                                            qc.num_qubits,
-                                            device_name,
-                                            lineplacement,
-                                            False,
-                                            False,
-                                            target_path,
-                                            target_filename,
-                                        ],
-                                        timeout,
-                                    )
-                                    results.append(tmp)
-                                    if not tmp:
-                                        continue
 
-            if all(x is False for x in results):
-                logger.debug("No compilation succeeded for this quantum circuit: " + filename)
-                return False
-            return True
+        for i, device in enumerate(devices):
+            target_filename = filename.split(".qasm")[0] + "_" + str(i)
+            try:
+                compiled_qc = utils.timeout_watcher(rl.qcompile, [qc, "fidelity", device], timeout)
+                if compiled_qc:
+                    compiled_qc.qasm(filename=target_filename)
 
-        except Exception as e:
-            raise RuntimeError("Error during compilation: " + str(e)) from e
+                results.append(compiled_qc)
+            except Exception as e:
+                raise RuntimeError("Error during compilation: " + str(e)) from e
+
+        if all(x is False for x in results):
+            logger.debug("No compilation succeeded for this quantum circuit: " + filename)
+            return False
+        return True
+
+        # comp_path_id = 0
+        # try:
+        #     for gate_set_name, devices in compilation_pipeline["devices"].items():
+        #         for device_name, max_qubits in devices:
+        #             for compiler, settings in compilation_pipeline["compiler"].items():
+        #                 if "qiskit" in compiler:
+        #                     for opt_level in settings["optimization_level"]:
+        #                         target_filename = filename.split(".qasm")[0] + "_" + str(comp_path_id)
+        #                         comp_path_id += 1
+        #                         if max_qubits >= qc.num_qubits:
+        #                             tmp = utils.timeout_watcher(
+        #                                 qiskit_helper.get_mapped_level,
+        #                                 [
+        #                                     qc,
+        #                                     gate_set_name,
+        #                                     qc.num_qubits,
+        #                                     device_name,
+        #                                     opt_level,
+        #                                     False,
+        #                                     False,
+        #                                     target_path,
+        #                                     target_filename,
+        #                                 ],
+        #                                 timeout,
+        #                             )
+        #                             results.append(tmp)
+        #                             if not tmp:
+        #                                 continue
+        #                 elif "tket" in compiler:
+        #                     for lineplacement in settings["lineplacement"]:
+        #                         target_filename = filename.split(".qasm")[0] + "_" + str(comp_path_id)
+        #                         comp_path_id += 1
+        #                         if max_qubits >= qc.num_qubits:
+        #                             tmp = utils.timeout_watcher(
+        #                                 tket_helper.get_mapped_level,
+        #                                 [
+        #                                     qc,
+        #                                     gate_set_name,
+        #                                     qc.num_qubits,
+        #                                     device_name,
+        #                                     lineplacement,
+        #                                     False,
+        #                                     False,
+        #                                     target_path,
+        #                                     target_filename,
+        #                                 ],
+        #                                 timeout,
+        #                             )
+        #                             results.append(tmp)
+        #                             if not tmp:
+        #                                 continue
+        #
+        #     if all(x is False for x in results):
+        #         logger.debug("No compilation succeeded for this quantum circuit: " + filename)
+        #         return False
+        #     return True
+        #
+        # except Exception as e:
+        #     raise RuntimeError("Error during compilation: " + str(e)) from e
 
     def generate_compiled_circuits(
         self,
@@ -517,51 +532,51 @@ class Predictor:
 
         return cast(int, self.clf.predict([feature_vector])[0])  # type: ignore[attr-defined]
 
-    def compile_as_predicted(self, qc: str | QuantumCircuit, prediction: int) -> tuple[QuantumCircuit, int]:
-        """Returns the compiled quantum circuit when the original qasm circuit is provided as either
-        a string or a file path and the prediction index is given."""
-        LUT = ml.helper.get_index_to_comppath_LUT()
-        if prediction < 0 or prediction >= len(LUT):
-            error_msg = "Prediction index is out of range."
-            raise IndexError(error_msg)
-        if not isinstance(qc, QuantumCircuit):
-            if Path(qc).exists():
-                logger.info("Reading from .qasm path: " + str(qc))
-                qc = QuantumCircuit.from_qasm_file(qc)
-            elif QuantumCircuit.from_qasm_str(qc):
-                logger.info("Reading from .qasm str")
-                qc = QuantumCircuit.from_qasm_str(qc)
-            else:
-                error_msg = "Invalid 'qc' parameter value."
-                raise ValueError(error_msg)
-
-        prediction_information = LUT[prediction]
-        gate_set_name = prediction_information[0]
-        device = prediction_information[1]
-        compiler = prediction_information[2]
-        compiler_settings = prediction_information[3]
-
-        if compiler == "qiskit":
-            compiled_qc = qiskit_helper.get_mapped_level(
-                qc, gate_set_name, qc.num_qubits, device, compiler_settings, False, True
-            )
-            return compiled_qc, ml.helper.get_index_to_comppath_LUT()[prediction]
-        if compiler == "tket":
-            compiled_qc = tket_helper.get_mapped_level(
-                qc,
-                gate_set_name,
-                qc.num_qubits,
-                device,
-                compiler_settings,
-                False,
-                True,
-            )
-            return (
-                tk_to_qiskit(compiled_qc),
-                ml.helper.get_index_to_comppath_LUT()[prediction],
-            )
-        error_msg = "Invalid compiler name."
-        raise ValueError(error_msg)
+    # def compile_as_predicted(self, qc: str | QuantumCircuit, prediction: int) -> tuple[QuantumCircuit, int]:
+    #     """Returns the compiled quantum circuit when the original qasm circuit is provided as either
+    #     a string or a file path and the prediction index is given."""
+    #     LUT = ml.helper.get_index_to_comppath_LUT()
+    #     if prediction < 0 or prediction >= len(LUT):
+    #         error_msg = "Prediction index is out of range."
+    #         raise IndexError(error_msg)
+    #     if not isinstance(qc, QuantumCircuit):
+    #         if Path(qc).exists():
+    #             logger.info("Reading from .qasm path: " + str(qc))
+    #             qc = QuantumCircuit.from_qasm_file(qc)
+    #         elif QuantumCircuit.from_qasm_str(qc):
+    #             logger.info("Reading from .qasm str")
+    #             qc = QuantumCircuit.from_qasm_str(qc)
+    #         else:
+    #             error_msg = "Invalid 'qc' parameter value."
+    #             raise ValueError(error_msg)
+    #
+    #     prediction_information = LUT[prediction]
+    #     gate_set_name = prediction_information[0]
+    #     device = prediction_information[1]
+    #     compiler = prediction_information[2]
+    #     compiler_settings = prediction_information[3]
+    #
+    #     if compiler == "qiskit":
+    #         compiled_qc = qiskit_helper.get_mapped_level(
+    #             qc, gate_set_name, qc.num_qubits, device, compiler_settings, False, True
+    #         )
+    #         return compiled_qc, ml.helper.get_index_to_comppath_LUT()[prediction]
+    #     if compiler == "tket":
+    #         compiled_qc = tket_helper.get_mapped_level(
+    #             qc,
+    #             gate_set_name,
+    #             qc.num_qubits,
+    #             device,
+    #             compiler_settings,
+    #             False,
+    #             True,
+    #         )
+    #         return (
+    #             tk_to_qiskit(compiled_qc),
+    #             ml.helper.get_index_to_comppath_LUT()[prediction],
+    #         )
+    #     error_msg = "Invalid compiler name."
+    #     raise ValueError(error_msg)
 
     def instantiate_supervised_ML_model(self, timeout: int) -> None:
         # Generate compiled circuits and save them as qasm files
