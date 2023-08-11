@@ -138,6 +138,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
+        self.used_actions = []
 
         self.layout = None
 

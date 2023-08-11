@@ -6,6 +6,6 @@ from mqt.predictor.ml.Predictor import Predictor
 
 __all__ = [
     "helper",
-    # "qcompile",
+    "qcompile",
     "Predictor",
 ]

@@ -14,11 +14,18 @@ from typing import TYPE_CHECKING
 import numpy as np
 from joblib import dump
 from mqt.bench.utils import calc_supermarq_features
-from mqt.predictor import rl
+from mqt.predictor import ml, rl
 from qiskit import QuantumCircuit
 
 if TYPE_CHECKING:
     from sklearn.ensemble import RandomForestClassifier
+
+
+def qcompile(qc: QuantumCircuit) -> tuple[QuantumCircuit, list[str]]:
+    ml_predictor = ml.Predictor()
+    predicted_device_index = ml_predictor.predict(qc)
+    device = rl.helper.get_devices()[predicted_device_index]["name"]
+    return rl.qcompile(qc, device)
 
 
 def get_path_training_data() -> Path:

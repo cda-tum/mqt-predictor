@@ -62,7 +62,7 @@ logger = logging.getLogger("mqtpredictor")
 
 def qcompile(
     qc: QuantumCircuit | str, opt_objective: reward_functions = "fidelity", device_name: str = "ibm"
-) -> QuantumCircuit:
+) -> tuple[QuantumCircuit, list[str]]:
     """Returns the compiled quantum circuit which is compiled following an objective function.
     Keyword arguments:
     qc -- to be compiled quantum circuit or path to a qasm file
