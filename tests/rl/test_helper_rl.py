@@ -50,7 +50,7 @@ def test_get_actions_devices() -> None:
 
 
 def test_get_random_state_sample() -> None:
-    sample = rl.helper.get_state_sample()
+    sample, _ = rl.helper.get_state_sample()
     assert sample
     assert isinstance(sample, QuantumCircuit)
 
