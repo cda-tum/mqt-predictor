@@ -10,7 +10,9 @@ from qiskit import QuantumCircuit
 )
 def test_qcompile_with_pretrained_models(opt_objective: rl.helper.reward_functions) -> None:
     qc = get_benchmark("ghz", 1, 5)
-    qc_compiled, compilation_information = rl.qcompile(qc, opt_objective=opt_objective)
+    res = rl.qcompile(qc, opt_objective=opt_objective)
+    assert type(res) == tuple
+    qc_compiled, compilation_information = res
     assert isinstance(qc_compiled, QuantumCircuit)
     assert compilation_information is not None
 
@@ -30,17 +32,9 @@ def test_instantiate_models() -> None:
 )
 def test_qcompile_with_newly_trained_models(opt_objective: rl.helper.reward_functions) -> None:
     qc = get_benchmark("ghz", 1, 5)
-    qc_compiled, compilation_information = rl.qcompile(qc, opt_objective=opt_objective)
+    res = rl.qcompile(qc, opt_objective=opt_objective)
+    assert type(res) == tuple
+    qc_compiled, compilation_information = res
+
     assert isinstance(qc_compiled, QuantumCircuit)
     assert compilation_information is not None
-
-
-NUM_EVALUATION_FEATURES = 32
-
-
-def test_evaluate_sample_circuit() -> None:
-    qc = get_benchmark("ghz", 1, 5)
-    qc.qasm(filename="test_5.qasm")
-    predictor = rl.Predictor()
-    res = predictor.evaluate_sample_circuit("test_5.qasm")
-    assert len(res) == NUM_EVALUATION_FEATURES

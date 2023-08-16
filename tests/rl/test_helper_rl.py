@@ -49,6 +49,13 @@ def test_get_actions_devices() -> None:
     assert len(rl.helper.get_devices()) == NUM_ACTIONS_DEVICES
 
 
+NUM_ACTIONS_MAPPING = 1
+
+
+def test_get_actions_mapping() -> None:
+    assert len(rl.helper.get_actions_mapping()) == NUM_ACTIONS_MAPPING
+
+
 def test_get_random_state_sample() -> None:
     sample, _ = rl.helper.get_state_sample()
     assert sample
@@ -99,6 +106,14 @@ def test_get_cmap_from_devicename(device: str) -> None:
 
 
 @pytest.mark.parametrize(
+    "device",
+    ["ibm_washington", "ibm_montreal", "rigetti_aspen_m2", "oqc_lucy", "ionq_harmony", "ionq_aria1", "quantinuum_h2"],
+)
+def test_get_device(device: str) -> None:
+    assert rl.helper.get_device(device)
+
+
+@pytest.mark.parametrize(
     "platform",
     ["ibm", "rigetti", "oqc", "ionq", "quantinuum"],
 )
@@ -126,3 +141,8 @@ def test_get_path_training_circuits() -> None:
     path = rl.helper.get_path_training_circuits()
     assert path.exists()
     assert isinstance(path, Path)
+
+
+def test_qcompile() -> None:
+    qc = get_benchmark("dj", 1, 5)
+    assert rl.helper.qcompile(qc) is not None

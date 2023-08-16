@@ -1,8 +1,9 @@
 from mqt.predictor.Calibration import Calibration
 
+
 def test_calibration() -> None:
     c = Calibration()
-    assert             c.ibm_washington_cx_mean_error
+    assert c.ibm_washington_cx_mean_error
     assert c.ibm_montreal_calibration
     assert c.ibm_washington_calibration
     assert c.oqc_lucy_calibration
@@ -10,4 +11,3 @@ def test_calibration() -> None:
     assert c.ionq_harmony_calibration
     assert c.ionq_aria1_calibration
     assert c.quantinuum_h2
-

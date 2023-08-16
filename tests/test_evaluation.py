@@ -1,6 +1,7 @@
+from pathlib import Path
+
 from mqt.bench import get_benchmark
 from mqt.predictor.evaluation import evaluate_sample_circuit
-from pathlib import Path
 
 
 def test_evaluate_sample_circuit() -> None:

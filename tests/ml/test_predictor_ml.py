@@ -16,16 +16,16 @@ def test_predict(mock_show: Any) -> None:  # noqa: ARG001
     qc.qasm(filename=filename)
     predictor = ml.Predictor()
     prediction = predictor.predict(filename)
-    assert 0 <= prediction < len(ml.helper.get_index_to_comppath_LUT())
+    assert 0 <= prediction < len(ml.helper.get_index_to_device_LUT())
     prediction = predictor.predict(qc.qasm())
-    assert 0 <= prediction < len(ml.helper.get_index_to_comppath_LUT())
+    assert 0 <= prediction < len(ml.helper.get_index_to_device_LUT())
     with pytest.raises(ValueError, match="Invalid input for 'qc' parameter"):
         predictor.predict("Error Test")
 
     predictor.clf = None
     prediction = predictor.predict(filename)
     Path(filename).unlink()
-    assert 0 <= prediction < len(ml.helper.get_index_to_comppath_LUT())
+    assert 0 <= prediction < len(ml.helper.get_index_to_device_LUT())
 
 
 # @pytest.mark.parametrize("comp_path", list(range(len(ml.helper.get_index_to_comppath_LUT()))))
