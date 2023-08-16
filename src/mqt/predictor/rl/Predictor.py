@@ -4,15 +4,7 @@ import logging
 from pathlib import Path
 
 from mqt.predictor import rl
-from pytket.architecture import Architecture  # type: ignore[attr-defined]
-from pytket.passes import (  # type: ignore[attr-defined]
-    FullPeepholeOptimise,
-    PlacementPass,
-    RoutingPass,
-    auto_rebase_pass,
-)
-from pytket.placement import GraphPlacement  # type: ignore[attr-defined]
-from qiskit import QuantumCircuit, transpile
+from qiskit import QuantumCircuit
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 from sb3_contrib.common.maskable.utils import get_action_masks
@@ -36,13 +28,13 @@ class Predictor:
         qc: QuantumCircuit | str,
         opt_objective: rl.helper.reward_functions = "fidelity",
         device_name: str = "ibm_washington",
-    ) -> tuple[QuantumCircuit, list[str]]:
+    ) -> tuple[QuantumCircuit, list[str]] | bool:
         if not isinstance(qc, QuantumCircuit):
             if len(qc) < PATH_LENGTH and Path(qc).exists():
                 qc = QuantumCircuit.from_qasm_file(qc)
             elif "OPENQASM" in qc:
                 qc = QuantumCircuit.from_qasm_str(qc)
-        print('read model: ', "model_" + opt_objective + "_" + device_name)
+        print("read model: ", "model_" + opt_objective + "_" + device_name)
         model = rl.helper.load_model("model_" + opt_objective + "_" + device_name)
         env = rl.PredictorEnv(opt_objective, device_name)
         obs, _ = env.reset(qc)
@@ -68,8 +60,6 @@ class Predictor:
         if not env.error_occured:
             return env.state, used_compilation_passes
         return False
-
-
 
     def train_all_models(
         self,
@@ -103,4 +93,3 @@ class Predictor:
             )
             model.learn(total_timesteps=timesteps, progress_bar=progress_bar)
             model.save(rl.helper.get_path_trained_model() / (model_name + "_" + rew + "_" + device_name))
-

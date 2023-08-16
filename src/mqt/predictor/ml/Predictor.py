@@ -74,9 +74,9 @@ class Predictor:
             try:
                 res = utils.timeout_watcher(rl.qcompile, [qc, "fidelity", device["name"]], timeout)
                 if res:
-                    print('Compilation successful')
+                    print("Compilation successful")
                 else:
-                    print('Compilation failed')
+                    print("Compilation failed")
                 if res:
                     compiled_qc = res[0]
                     compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
@@ -199,7 +199,7 @@ class Predictor:
         if ".qasm" not in file:
             return False
 
-        LUT = ml.helper.get_index_to_comppath_LUT()
+        LUT = ml.helper.get_index_to_device_LUT()
         logger.debug("Checking " + file)
         scores: list[float] = []
         for _ in range(len(LUT)):
@@ -210,7 +210,7 @@ class Predictor:
             filename_str = str(filename)
             if (file.split(".")[0] + "_") in filename_str and filename_str.endswith(".qasm"):
                 comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
-                device = LUT.get(comp_path_index)
+                device = LUT[comp_path_index]
 
                 score = reward.expected_fidelity(filename_str, device)
                 scores[comp_path_index] = score
@@ -360,7 +360,7 @@ class Predictor:
 
         plt.figure(figsize=(10, 5))
 
-        num_of_comp_paths = len(ml.helper.get_index_to_comppath_LUT())
+        num_of_comp_paths = len(ml.helper.get_index_to_device_LUT())
         plt.bar(
             list(range(0, num_of_comp_paths, 1)),
             height=[res.count(i) / len(res) for i in range(1, num_of_comp_paths + 1, 1)],
@@ -470,8 +470,7 @@ class Predictor:
         non_zero_indices = np.load(str(path), allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
-        return cast(int, self.clf.qcompile([feature_vector])[0])  # type: ignore[attr-defined]
-
+        return cast(int, self.clf.predict([feature_vector])[0])  # type: ignore[attr-defined]
 
     def instantiate_supervised_ML_model(self, timeout: int) -> None:
         # Generate compiled circuits and save them as qasm files

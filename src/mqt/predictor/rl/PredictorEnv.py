@@ -91,7 +91,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
         self.valid_actions = self.determine_valid_actions_for_state()
         if len(self.valid_actions) == 0:
-            raise RuntimeError("No valid actions left.")
+            msg = "No valid actions left."
+            raise RuntimeError(msg)
 
         if action == self.action_terminate_index:
             reward_val = self.calculate_reward()
@@ -181,7 +182,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     )
                     self.error_occured = True
                     return None
-                if action_index in self.actions_layout_indices+self.actions_mapping_indices:
+                if action_index in self.actions_layout_indices + self.actions_mapping_indices:
                     assert pm.property_set["layout"]
                     self.layout = TranspileLayout(
                         initial_layout=pm.property_set["layout"],
