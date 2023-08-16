@@ -91,7 +91,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
         self.valid_actions = self.determine_valid_actions_for_state()
         if len(self.valid_actions) == 0:
-            return rl.helper.create_feature_dict(self.state), 0, True, False, {}
+            raise RuntimeError("No valid actions left.")
 
         if action == self.action_terminate_index:
             reward_val = self.calculate_reward()
@@ -143,6 +143,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.layout = None
 
         self.valid_actions = self.actions_opt_indices + self.actions_synthesis_indices
+
+        self.error_occured = False
         return rl.helper.create_feature_dict(self.state), {}
 
     def action_masks(self) -> list[bool]:
@@ -177,9 +179,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         + ", "
                         + str(e)
                     )
-                    print(self.used_actions)
+                    self.error_occured = True
                     return None
-                if action_index in self.actions_layout_indices:
+                if action_index in self.actions_layout_indices+self.actions_mapping_indices:
                     assert pm.property_set["layout"]
                     self.layout = TranspileLayout(
                         initial_layout=pm.property_set["layout"],
@@ -194,7 +196,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         elem.apply(tket_qc)
                     altered_qc = tk_to_qiskit(tket_qc)
                 except Exception as e:
-                    raise RuntimeError(
+                    print(
                         "Error in executing TKET transpile pass: "
                         + action["name"]
                         + ", steps: "
@@ -204,8 +206,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         + ", "
                         + str(self.filename)
                         + ", "
-                        + str(e),
-                    ) from None
+                        + str(e)
+                    )
+                    self.error_occured = True
+                    return None
             else:
                 error_msg = f"Origin {action['origin']} not supported."
                 raise ValueError(error_msg)
