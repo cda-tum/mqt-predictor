@@ -1,4 +1,9 @@
 import logging
+from mqt.predictor.Result import Result
+
+__all__ = [
+    "Result",
+]
 
 logger = logging.getLogger("mqtpredictor")
 
