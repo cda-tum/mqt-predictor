@@ -1,8 +1,10 @@
 import logging
 from mqt.predictor.Result import Result
+from mqt.predictor.ml import qcompile
 
 __all__ = [
     "Result",
+    "qcompile",
 ]
 
 logger = logging.getLogger("mqtpredictor")
