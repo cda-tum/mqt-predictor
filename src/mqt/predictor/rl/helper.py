@@ -12,7 +12,7 @@ from mqt.bench.utils import calc_supermarq_features, get_cmap_from_devicename
 from mqt.predictor import rl
 from packaging import version
 from pytket.architecture import Architecture  # type: ignore[attr-defined]
-from pytket.circuit import Circuit, Node, OpType, Qubit  # type: ignore[attr-defined]
+from pytket.circuit import Circuit, Node, Qubit  # type: ignore[attr-defined]
 from pytket.passes import (  # type: ignore[attr-defined]
     CliffordSimp,
     FullPeepholeOptimise,
@@ -61,8 +61,8 @@ logger = logging.getLogger("mqtpredictor")
 
 
 def qcompile(
-    qc: QuantumCircuit | str, opt_objective: reward_functions = "fidelity", device_name: str = "ibm"
-) -> tuple[QuantumCircuit, list[str]]:
+    qc: QuantumCircuit | str, opt_objective: reward_functions = "fidelity", device_name: str = "ibm_washington"
+) -> tuple[QuantumCircuit, list[str]] | bool:
     """Returns the compiled quantum circuit which is compiled following an objective function.
     Keyword arguments:
     qc -- to be compiled quantum circuit or path to a qasm file
@@ -228,8 +228,6 @@ def get_action_terminate() -> dict[str, Any]:
     return {"name": "terminate"}
 
 
-
-
 def get_devices() -> list[dict[str, Any]]:
     return [
         {
@@ -382,7 +380,7 @@ def load_model(model_name: str) -> MaskablePPO:
             break
 
     if not version_found:
-        error_msg = "No suitable model found on GitHub. Please update your mqt.predictort package using 'pip install -U mqt.predictor'."
+        error_msg = "No suitable model found on GitHub. Please update your mqt.predictor package using 'pip install -U mqt.predictor'."
         raise RuntimeError(error_msg) from None
 
     return MaskablePPO.load(path / model_name)

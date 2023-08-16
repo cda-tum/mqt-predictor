@@ -21,11 +21,11 @@ if TYPE_CHECKING:
     from sklearn.ensemble import RandomForestClassifier
 
 
-def qcompile(qc: QuantumCircuit) -> tuple[QuantumCircuit, list[str]]:
+def qcompile(qc: QuantumCircuit) -> tuple[QuantumCircuit, list[str]] | bool:
     ml_predictor = ml.Predictor()
     predicted_device_index = ml_predictor.predict(qc)
     device = rl.helper.get_devices()[predicted_device_index]["name"]
-    return rl.qcompile(qc, device)
+    return rl.qcompile(qc, device_name=device)
 
 
 def get_path_training_data() -> Path:
@@ -44,8 +44,7 @@ def get_path_training_circuits_compiled() -> Path:
     return get_path_training_data() / "training_circuits_compiled"
 
 
-
-def get_index_to_comppath_LUT() -> dict[int, str]:
+def get_index_to_device_LUT() -> dict[int, str]:
     devices = rl.helper.get_devices()
     return {i: device["name"] for i, device in enumerate(devices)}
 
