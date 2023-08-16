@@ -44,55 +44,10 @@ def get_path_training_circuits_compiled() -> Path:
     return get_path_training_data() / "training_circuits_compiled"
 
 
-def get_width_penalty() -> int:
-    """Returns the penalty value if a quantum computer has not enough qubits."""
-    return -10000
-
-
-def get_compilation_pipeline() -> dict[str, dict[str, Any]]:
-    return {
-        "devices": {
-            "ibm": [("ibm_washington", 127), ("ibm_montreal", 27)],
-            "rigetti": [("rigetti_aspen_m2", 80)],
-            "ionq": [("ionq_harmony", 11), ("ionq_aria1", 25)],
-            "oqc": [("oqc_lucy", 8)],
-            "quantinuum": [("quantinuum_h2", 32)],
-        },
-        "compiler": {
-            "qiskit": {"optimization_level": [0, 1, 2, 3]},
-            "tket": {"lineplacement": [False, True]},
-        },
-    }
-
 
 def get_index_to_comppath_LUT() -> dict[int, str]:
     devices = rl.helper.get_devices()
     return {i: device["name"] for i, device in enumerate(devices)}
-    # compilation_pipeline = get_compilation_pipeline()
-    # index = 0
-    # index_to_comppath_LUT = {}
-    # for gate_set_name, devices in compilation_pipeline["devices"].items():
-    #     for device_name, _max_qubits in devices:
-    #         for compiler, settings in compilation_pipeline["compiler"].items():
-    #             if "qiskit" in compiler:
-    #                 for opt_level in settings["optimization_level"]:
-    #                     index_to_comppath_LUT[index] = (
-    #                         gate_set_name,
-    #                         device_name,
-    #                         compiler,
-    #                         opt_level,
-    #                     )
-    #                     index += 1
-    #             elif "tket" in compiler:
-    #                 for lineplacement in settings["lineplacement"]:
-    #                     index_to_comppath_LUT[index] = (
-    #                         gate_set_name,
-    #                         device_name,
-    #                         compiler,
-    #                         lineplacement,
-    #                     )
-    #                     index += 1
-    # return index_to_comppath_LUT
 
 
 def get_openqasm_gates() -> list[str]:

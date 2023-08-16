@@ -128,7 +128,7 @@ def get_actions_opt() -> list[dict[str, Any]]:
         },
         {
             "name": "FullPeepholeOptimiseCX",
-            "transpile_pass": [FullPeepholeOptimise(target_2qb_gate=OpType.TK2)],
+            "transpile_pass": [FullPeepholeOptimise()],
             "origin": "tket",
         },
         {
