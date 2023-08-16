@@ -1,18 +1,10 @@
 from __future__ import annotations
 
 import logging
-import time
 from pathlib import Path
-from typing import Any, get_args
 
-import numpy as np
-from joblib import Parallel, delayed
-from mqt.bench.qiskit_helper import get_native_gates
-from mqt.bench.utils import get_cmap_from_devicename
 from mqt.predictor import rl
-from pytket import OpType
 from pytket.architecture import Architecture  # type: ignore[attr-defined]
-from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from pytket.passes import (  # type: ignore[attr-defined]
     FullPeepholeOptimise,
     PlacementPass,
@@ -50,7 +42,7 @@ class Predictor:
                 qc = QuantumCircuit.from_qasm_file(qc)
             elif "OPENQASM" in qc:
                 qc = QuantumCircuit.from_qasm_str(qc)
-
+        print('read model: ', "model_" + opt_objective + "_" + device_name)
         model = rl.helper.load_model("model_" + opt_objective + "_" + device_name)
         env = rl.PredictorEnv(opt_objective, device_name)
         obs, _ = env.reset(qc)
@@ -65,46 +57,19 @@ class Predictor:
             action_item = env.action_set[action]
             used_compilation_passes.append(action_item["name"])
             obs, reward_val, terminated, truncated, info = env.step(action)
+            # print("Action taken: ", action_item["name"])
+            # print("Gate: ", env.state.count_ops())
             env.state._layout = env.layout
-        return env.state, used_compilation_passes
 
-    def evaluate_sample_circuit(self, file: str) -> dict[str, Any]:
-        logger.info("Evaluate file: " + file)
+        if env.state.count_ops().get("u"):
+            print("Warning: u gates are still present in the circuit")
+            print("Error occurred: ", env.error_occured)
 
-        # reward_functions = ["fidelity", "critical_depth", "gate_ratio", "mix"]
-        reward_functions = get_args(rl.helper.reward_functions)
-        results = []
-        for rew in reward_functions:
-            results.append(self.computeRewards(file, "RL", rew))
+        if not env.error_occured:
+            return env.state, used_compilation_passes
+        return False
 
-        results.append(self.computeRewards(file, "qiskit_o3"))
-        results.append(self.computeRewards(file, "tket"))
 
-        combined_res: dict[str, Any] = {
-            "benchmark": str(Path(file).stem).replace("_", " ").split(" ")[0],
-            "num_qubits": str(Path(file).stem).replace("_", " ").split(" ")[-1],
-        }
-
-        for res in results:
-            combined_res.update(res.get_dict())
-        return combined_res
-
-    def evaluate_all_sample_circuits(self) -> None:
-        res_csv = []
-
-        results = Parallel(n_jobs=-1, verbose=3, backend="threading")(
-            delayed(self.evaluate_sample_circuit)(str(file))
-            for file in list(rl.helper.get_path_training_circuits().glob("*.qasm"))
-        )
-        res_csv.append(list(results[0].keys()))
-        for res in results:
-            res_csv.append(list(res.values()))
-        np.savetxt(
-            rl.helper.get_path_trained_model() / "res.csv",
-            res_csv,
-            delimiter=",",
-            fmt="%s",
-        )
 
     def train_all_models(
         self,
@@ -139,65 +104,3 @@ class Predictor:
             model.learn(total_timesteps=timesteps, progress_bar=progress_bar)
             model.save(rl.helper.get_path_trained_model() / (model_name + "_" + rew + "_" + device_name))
 
-    def computeRewards(
-        self,
-        benchmark: str,
-        used_setup: str,
-        reward_function: rl.helper.reward_functions = "fidelity",
-    ) -> rl.Result:
-        if used_setup == "RL":
-            model = rl.helper.load_model("model_" + reward_function)
-            env = rl.PredictorEnv(reward_function)
-            obs, _ = env.reset(benchmark)
-            start_time = time.time()
-            terminated = False
-            truncated = False
-            while not (terminated or truncated):
-                action_masks = get_action_masks(env)
-                action, _ = model.predict(obs, action_masks=action_masks)
-                action = int(action)
-                obs, reward_val, terminated, truncated, info = env.step(action)
-
-            duration = time.time() - start_time
-            print("device: ", env.device_index)
-            return rl.Result(
-                benchmark,
-                used_setup + "_" + reward_function,
-                duration,
-                env.state,
-                rl.helper.get_devices()[env.device_index]["name"],
-            )
-
-        if used_setup == "qiskit_o3":
-            qc = QuantumCircuit.from_qasm_file(benchmark)
-            start_time = time.time()
-            transpiled_qc_qiskit = transpile(
-                qc,
-                basis_gates=get_native_gates("ibm"),
-                coupling_map=get_cmap_from_devicename("ibm_washington"),
-                optimization_level=3,
-                seed_transpiler=1,
-            )
-            duration = time.time() - start_time
-
-            return rl.Result(benchmark, used_setup, duration, transpiled_qc_qiskit, "ibm_washington")
-
-        if used_setup == "tket":
-            qc = QuantumCircuit.from_qasm_file(benchmark)
-            tket_qc = qiskit_to_tk(qc)
-            arch = Architecture(get_cmap_from_devicename("ibm_washington"))
-            ibm_rebase = auto_rebase_pass({OpType.Rz, OpType.SX, OpType.X, OpType.CX, OpType.Measure})
-
-            start_time = time.time()
-            ibm_rebase.apply(tket_qc)
-            FullPeepholeOptimise(target_2qb_gate=OpType.TK2).apply(tket_qc)
-            PlacementPass(GraphPlacement(arch)).apply(tket_qc)
-            RoutingPass(arch).apply(tket_qc)
-            ibm_rebase.apply(tket_qc)
-            duration = time.time() - start_time
-            transpiled_qc_tket = tk_to_qiskit(tket_qc)
-
-            return rl.Result(benchmark, used_setup, duration, transpiled_qc_tket, "ibm_washington")
-
-        error_msg = "Unknown setup. Use either 'RL', 'qiskit_o3' or 'tket'."
-        raise ValueError(error_msg)
