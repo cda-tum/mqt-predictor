@@ -1,20 +1,18 @@
 from __future__ import annotations
-from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 
-from pytket import OpType
+import logging
+import time
+from pathlib import Path
 from typing import Any, get_args
 
 import numpy as np
 from joblib import Parallel, delayed
 from mqt.bench.qiskit_helper import get_native_gates
 from mqt.bench.utils import get_cmap_from_devicename
-
-import time
-
-from pathlib import Path
-
-
+from mqt.predictor import Result, ml, rl
+from pytket import OpType
 from pytket.architecture import Architecture  # type: ignore[attr-defined]
+from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from pytket.passes import (  # type: ignore[attr-defined]
     FullPeepholeOptimise,
     PlacementPass,
@@ -22,23 +20,17 @@ from pytket.passes import (  # type: ignore[attr-defined]
     auto_rebase_pass,
 )
 from pytket.placement import GraphPlacement  # type: ignore[attr-defined]
-
-
-from mqt.predictor import rl, ml
-
 from qiskit import QuantumCircuit, transpile
-import logging
-from mqt.predictor import Result
 
 logger = logging.getLogger("mqtpredictor")
 
-def computeRewards(
-        benchmark: str,
-        used_setup: str,
-        opt_objective: rl.helper.reward_functions = "fidelity",
-) -> Result:
-    if used_setup == "MQTPredictor":
 
+def computeRewards(
+    benchmark: str,
+    used_setup: str,
+    opt_objective: rl.helper.reward_functions = "fidelity",
+) -> Result | None:
+    if used_setup == "MQTPredictor":
         qc = QuantumCircuit.from_qasm_file(benchmark)
         start_time = time.time()
         ml_predictor = ml.Predictor()
@@ -48,6 +40,7 @@ def computeRewards(
         duration = time.time() - start_time
 
         if res:
+            assert type(res) == tuple
             return Result(
                 benchmark,
                 used_setup + "_" + opt_objective,
@@ -55,7 +48,7 @@ def computeRewards(
                 res[0],
                 rl.helper.get_devices()[predicted_device_index]["name"],
             )
-        return False
+        return None
 
     if used_setup == "qiskit_o3":
         qc = QuantumCircuit.from_qasm_file(benchmark)
@@ -91,6 +84,7 @@ def computeRewards(
     error_msg = "Unknown setup. Use either 'RL', 'qiskit_o3' or 'tket'."
     raise ValueError(error_msg)
 
+
 def evaluate_all_sample_circuits() -> None:
     res_csv = []
 
@@ -108,12 +102,13 @@ def evaluate_all_sample_circuits() -> None:
         fmt="%s",
     )
 
+
 def evaluate_sample_circuit(file: str) -> dict[str, Any]:
     print("Evaluate file: " + file)
     logger.info("Evaluate file: " + file)
 
     # reward_functions = ["fidelity", "critical_depth", "gate_ratio", "mix"]
-    reward_functions = get_args(rl.helper.reward_functions)
+    get_args(rl.helper.reward_functions)
     results = []
     # for rew in reward_functions:
     print("Calc MQT Predictor Reward")
@@ -130,6 +125,6 @@ def evaluate_sample_circuit(file: str) -> dict[str, Any]:
     }
 
     for res in results:
+        assert res is not None
         combined_res.update(res.get_dict())
     return combined_res
-
