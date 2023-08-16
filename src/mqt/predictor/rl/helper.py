@@ -228,39 +228,6 @@ def get_action_terminate() -> dict[str, Any]:
     return {"name": "terminate"}
 
 
-def get_platforms() -> list[dict[str, Any]]:
-    return [
-        {
-            "name": "ibm",
-            "gates": get_native_gates("ibm"),
-            "devices": ["ibm_washington", "ibm_montreal"],
-            "max_qubit_size": 127,
-        },
-        {
-            "name": "rigetti",
-            "gates": get_native_gates("rigetti"),
-            "devices": ["rigetti_aspen_m2"],
-            "max_qubit_size": 80,
-        },
-        {
-            "name": "oqc",
-            "gates": get_native_gates("oqc"),
-            "devices": ["oqc_lucy"],
-            "max_qubit_size": 8,
-        },
-        {
-            "name": "ionq",
-            "gates": get_native_gates("ionq"),
-            "devices": ["ionq_harmony", "ionq_aria1"],
-            "max_qubit_size": 25,
-        },
-        {
-            "name": "quantinuum",
-            "gates": get_native_gates("quantinuum"),
-            "devices": ["quantinuum_h2"],
-            "max_qubit_size": 32,
-        },
-    ]
 
 
 def get_devices() -> list[dict[str, Any]]:
