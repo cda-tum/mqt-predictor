@@ -180,6 +180,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         + ", "
                         + str(e)
                     )
+                    print(self.used_actions)
                     self.error_occured = True
                     return None
                 if action_index in self.actions_layout_indices + self.actions_mapping_indices:
