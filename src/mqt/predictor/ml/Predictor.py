@@ -452,6 +452,24 @@ class Predictor:
             result_path.mkdir()
         plt.savefig(result_path / "y_pred_eval_normed.pdf", bbox_inches="tight")
 
+    def predict_probs(self, qasm_str_or_path: str | QuantumCircuit) -> int:
+        if self.clf is None:
+            path = ml.helper.get_path_trained_model() / "trained_clf.joblib"
+            if path.is_file():
+                self.clf = load(str(path))
+            else:
+                error_msg = "Classifier is neither trained nor saved."
+                raise FileNotFoundError(error_msg)
+
+        feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)
+        feature_vector = list(feature_dict.values())
+
+        path = ml.helper.get_path_trained_model() / "non_zero_indices.npy"
+        non_zero_indices = np.load(str(path), allow_pickle=True)
+        feature_vector = [feature_vector[i] for i in non_zero_indices]
+
+        return cast(int, self.clf.predict_proba([feature_vector])[0])  # type: ignore[attr-defined]
+
     def predict(self, qasm_str_or_path: str | QuantumCircuit) -> int:
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
 
