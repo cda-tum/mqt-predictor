@@ -9,7 +9,7 @@ import numpy as np
 from joblib import Parallel, delayed
 from mqt.bench.qiskit_helper import get_native_gates
 from mqt.bench.utils import get_cmap_from_devicename
-from mqt.predictor import Result, ml, rl
+from mqt.predictor import Result, ml, qcompile, rl
 from pytket import OpType
 from pytket.architecture import Architecture  # type: ignore[attr-defined]
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
@@ -33,10 +33,8 @@ def computeRewards(
     if used_setup == "MQTPredictor":
         qc = QuantumCircuit.from_qasm_file(benchmark)
         start_time = time.time()
-        ml_predictor = ml.Predictor()
-        predicted_device_index = ml_predictor.predict(benchmark)
-        device_name = rl.helper.get_devices()[predicted_device_index]["name"]
-        res = rl.qcompile(qc, device_name=device_name)
+        res = qcompile(qc)
+
         duration = time.time() - start_time
 
         if res:
@@ -46,7 +44,7 @@ def computeRewards(
                 used_setup + "_" + opt_objective,
                 duration,
                 res[0],
-                rl.helper.get_devices()[predicted_device_index]["name"],
+                res[2],
             )
         return None
 

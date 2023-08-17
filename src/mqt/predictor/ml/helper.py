@@ -21,11 +21,22 @@ if TYPE_CHECKING:
     from sklearn.ensemble import RandomForestClassifier
 
 
-def qcompile(qc: QuantumCircuit) -> tuple[QuantumCircuit, list[str]] | bool:
+def qcompile(qc: QuantumCircuit) -> tuple[QuantumCircuit, list[str], str] | bool:
     ml_predictor = ml.Predictor()
-    predicted_device_index = ml_predictor.predict(qc)
-    device = rl.helper.get_devices()[predicted_device_index]["name"]
-    return rl.qcompile(qc, device_name=device)
+    predicted_device_index_probs = ml_predictor.predict_probs(qc)
+    assert ml_predictor.clf is not None
+    classes = ml_predictor.clf.classes_  # type: ignore[unreachable]
+    predicted_device_index = classes[np.argsort(predicted_device_index_probs)[::-1]]
+    devices = rl.helper.get_devices()
+
+    for index in predicted_device_index:
+        # check if the device is large enough for the circuit
+        if devices[index]["max_qubits"] >= qc.num_qubits:
+            device_name = devices[index]["name"]
+            return *rl.qcompile(qc, device_name=device_name), device_name
+    return False
+    # device = rl.helper.get_devices()[predicted_device_index]["name"]
+    # return rl.qcompile(qc, device_name=device)
 
 
 def get_path_training_data() -> Path:
