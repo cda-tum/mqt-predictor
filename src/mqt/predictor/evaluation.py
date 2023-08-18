@@ -33,7 +33,7 @@ def computeRewards(
     if used_setup == "MQTPredictor":
         qc = QuantumCircuit.from_qasm_file(benchmark)
         start_time = time.time()
-        res = qcompile(qc)
+        res = qcompile(qc, figure_of_merit=figure_of_merit)
 
         duration = time.time() - start_time
 

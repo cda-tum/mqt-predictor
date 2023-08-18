@@ -304,7 +304,7 @@ class Predictor:
 
         if save_non_zero_indices:
             data = np.asarray(non_zero_indices)
-            np.save(ml.helper.get_path_trained_model() / "non_zero_indices.npy", data)
+            np.save(ml.helper.get_path_trained_model() / ("non_zero_indices_" + figure_of_merit + ".npy"), data)
 
         (
             X_train,
@@ -472,7 +472,7 @@ class Predictor:
         feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)
         feature_vector = list(feature_dict.values())
 
-        path = ml.helper.get_path_trained_model() / "non_zero_indices.npy"
+        path = ml.helper.get_path_trained_model() / ("non_zero_indices_" + figure_of_merit + ".npy")
         non_zero_indices = np.load(str(path), allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
@@ -492,7 +492,7 @@ class Predictor:
         feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)
         feature_vector = list(feature_dict.values())
 
-        path = ml.helper.get_path_trained_model() / "non_zero_indices.npy"
+        path = ml.helper.get_path_trained_model() / ("non_zero_indices_" + figure_of_merit + ".npy")
         non_zero_indices = np.load(str(path), allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
