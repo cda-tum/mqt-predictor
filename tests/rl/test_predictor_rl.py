@@ -1,16 +1,16 @@
 import pytest
 from mqt.bench import get_benchmark
-from mqt.predictor import rl
+from mqt.predictor import reward, rl
 from qiskit import QuantumCircuit
 
 
 @pytest.mark.parametrize(
-    "opt_objective",
+    "figure_of_merit",
     ["fidelity", "critical_depth", "gate_ratio", "mix"],
 )
-def test_qcompile_with_pretrained_models(opt_objective: rl.helper.reward_functions) -> None:
+def test_qcompile_with_pretrained_models(figure_of_merit: reward.reward_functions) -> None:
     qc = get_benchmark("ghz", 1, 5)
-    res = rl.qcompile(qc, opt_objective=opt_objective)
+    res = rl.qcompile(qc, figure_of_merit=figure_of_merit)
     assert type(res) == tuple
     qc_compiled, compilation_information = res
     assert isinstance(qc_compiled, QuantumCircuit)
@@ -27,12 +27,12 @@ def test_instantiate_models() -> None:
 
 
 @pytest.mark.parametrize(
-    "opt_objective",
+    "figure_of_merit",
     ["fidelity", "critical_depth", "gate_ratio", "mix"],
 )
-def test_qcompile_with_newly_trained_models(opt_objective: rl.helper.reward_functions) -> None:
+def test_qcompile_with_newly_trained_models(figure_of_merit: reward.reward_functions) -> None:
     qc = get_benchmark("ghz", 1, 5)
-    res = rl.qcompile(qc, opt_objective=opt_objective)
+    res = rl.qcompile(qc, figure_of_merit=figure_of_merit)
     assert type(res) == tuple
     qc_compiled, compilation_information = res
 

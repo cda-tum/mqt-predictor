@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import cast
+from typing import Literal, cast
 
 import numpy as np
 from mqt.bench.utils import calc_qubit_index, calc_supermarq_features
@@ -12,6 +12,8 @@ from mqt.predictor.utils import (
 from qiskit import QuantumCircuit
 
 logger = logging.getLogger("mqtpredictor")
+
+reward_functions = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
 
 
 def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:

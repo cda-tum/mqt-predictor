@@ -14,16 +14,18 @@ from typing import TYPE_CHECKING
 import numpy as np
 from joblib import dump
 from mqt.bench.utils import calc_supermarq_features
-from mqt.predictor import ml, rl
+from mqt.predictor import ml, reward, rl
 from qiskit import QuantumCircuit
 
 if TYPE_CHECKING:
     from sklearn.ensemble import RandomForestClassifier
 
 
-def qcompile(qc: QuantumCircuit) -> tuple[QuantumCircuit, list[str], str] | bool:
+def qcompile(
+    qc: QuantumCircuit, figure_of_merit: reward.reward_functions = "fidelity"
+) -> tuple[QuantumCircuit, list[str], str] | bool:
     ml_predictor = ml.Predictor()
-    predicted_device_index_probs = ml_predictor.predict_probs(qc)
+    predicted_device_index_probs = ml_predictor.predict_probs(qc, figure_of_merit)
     assert ml_predictor.clf is not None
     classes = ml_predictor.clf.classes_  # type: ignore[unreachable]
     predicted_device_index = classes[np.argsort(predicted_device_index_probs)[::-1]]
@@ -33,7 +35,9 @@ def qcompile(qc: QuantumCircuit) -> tuple[QuantumCircuit, list[str], str] | bool
         # check if the device is large enough for the circuit
         if devices[index]["max_qubits"] >= qc.num_qubits:
             device_name = devices[index]["name"]
-            return *rl.qcompile(qc, device_name=device_name), device_name
+            res = rl.qcompile(qc, device_name=device_name)
+            if res:
+                return *res, device_name
     return False
     # device = rl.helper.get_devices()[predicted_device_index]["name"]
     # return rl.qcompile(qc, device_name=device)
@@ -151,32 +155,36 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     return feature_dict
 
 
-def save_classifier(clf: RandomForestClassifier) -> None:
-    dump(clf, str(get_path_trained_model() / "trained_clf.joblib"))
+def save_classifier(clf: RandomForestClassifier, figure_of_merit: reward.reward_functions = "fidelity") -> None:
+    dump(clf, str(get_path_trained_model() / ("trained_clf_" + figure_of_merit + ".joblib")))
 
 
-def save_training_data(res: tuple[list[Any], list[Any], list[Any]]) -> None:
+def save_training_data(
+    res: tuple[list[Any], list[Any], list[Any]], figure_of_merit: reward.reward_functions = "fidelity"
+) -> None:
     training_data, names_list, scores_list = res
 
     with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
         data = np.asarray(training_data, dtype=object)
-        np.save(str(path / "training_data.npy"), data)
+        np.save(str(path / ("training_data_" + figure_of_merit + ".npy")), data)
         data = np.asarray(names_list)
-        np.save(str(path / "names_list.npy"), data)
+        np.save(str(path / ("names_list_" + figure_of_merit + ".npy")), data)
         data = np.asarray(scores_list)
-        np.save(str(path / "scores_list.npy"), data)
+        np.save(str(path / ("scores_list_" + figure_of_merit + ".npy")), data)
 
 
-def load_training_data() -> tuple[list[Any], list[str], list[Any]]:
+def load_training_data(
+    figure_of_merit: reward.reward_functions = "fidelity",
+) -> tuple[list[Any], list[str], list[Any]]:
     with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
         if (
-            path.joinpath("training_data.npy").is_file()
-            and path.joinpath("names_list.npy").is_file()
-            and path.joinpath("scores_list.npy").is_file()
+            path.joinpath("training_data_" + figure_of_merit + ".npy").is_file()
+            and path.joinpath("names_list_" + figure_of_merit + ".npy").is_file()
+            and path.joinpath("scores_list_" + figure_of_merit + ".npy").is_file()
         ):
-            training_data = np.load(str(path / "training_data.npy"), allow_pickle=True)
-            names_list = list(np.load(str(path / "names_list.npy"), allow_pickle=True))
-            scores_list = list(np.load(str(path / "scores_list.npy"), allow_pickle=True))
+            training_data = np.load(str(path / ("training_data_" + figure_of_merit + ".npy")), allow_pickle=True)
+            names_list = list(np.load(str(path / ("names_list_" + figure_of_merit + ".npy")), allow_pickle=True))
+            scores_list = list(np.load(str(path / ("scores_list_" + figure_of_merit + ".npy")), allow_pickle=True))
         else:
             error_msg = "Training data not found. Please run the training script first."
             raise FileNotFoundError(error_msg)

@@ -4,26 +4,27 @@ from unittest.mock import patch
 
 import pytest
 from mqt.bench import benchmark_generator
-from mqt.predictor import ml
+from mqt.predictor import ml, reward
 
 
 @patch("matplotlib.pyplot.show")
 def test_predict(mock_show: Any) -> None:  # noqa: ARG001
-    path = ml.helper.get_path_trained_model() / "trained_clf.joblib"
+    path = ml.helper.get_path_trained_model() / "trained_clf_fidelity.joblib"
     assert path.is_file()
     filename = "test_qasm.qasm"
+    figure_of_merit: reward.reward_functions = "fidelity"
     qc = benchmark_generator.get_benchmark("dj", 1, 8)
     qc.qasm(filename=filename)
     predictor = ml.Predictor()
-    prediction = predictor.predict(filename)
+    prediction = predictor.predict(filename, figure_of_merit=figure_of_merit)
     assert 0 <= prediction < len(ml.helper.get_index_to_device_LUT())
-    prediction = predictor.predict(qc.qasm())
+    prediction = predictor.predict(qc.qasm(), figure_of_merit=figure_of_merit)
     assert 0 <= prediction < len(ml.helper.get_index_to_device_LUT())
     with pytest.raises(ValueError, match="Invalid input for 'qc' parameter"):
-        predictor.predict("Error Test")
+        predictor.predict("Error Test", figure_of_merit=figure_of_merit)
 
     predictor.clf = None
-    prediction = predictor.predict(filename)
+    prediction = predictor.predict(filename, figure_of_merit=figure_of_merit)
     Path(filename).unlink()
     assert 0 <= prediction < len(ml.helper.get_index_to_device_LUT())
 
@@ -53,6 +54,7 @@ def test_compile_all_circuits_for_qc() -> None:
     predictor = ml.Predictor()
     assert predictor.compile_all_circuits_for_qc(
         filename=tmp_filename,
+        figure_of_merit="fidelity",
         source_path=".",
     )
     if Path(tmp_filename).exists():
@@ -76,11 +78,12 @@ def test_generate_compiled_circuits() -> None:
     target_path = Path("test_compiled_circuits")
     if not target_path.exists():
         target_path.mkdir()
+    figure_of_merit: reward.reward_functions = "fidelity"
 
     qc = benchmark_generator.get_benchmark("dj", 1, 3)
     qasm_path = Path("compiled_test.qasm")
     qc.qasm(filename=str(qasm_path))
-    predictor.generate_compiled_circuits(source_path, str(target_path))
+    predictor.generate_compiled_circuits(figure_of_merit, source_path, str(target_path))
     assert any(file.suffix == ".qasm" for file in target_path.iterdir())
 
     res = predictor.generate_training_sample(
@@ -98,7 +101,7 @@ def test_generate_compiled_circuits() -> None:
         training_data,
         name_list,
         scores_list,
-    ) = predictor.generate_trainingdata_from_qasm_files(source_path, str(target_path))
+    ) = predictor.generate_trainingdata_from_qasm_files(figure_of_merit, source_path, str(target_path))
     assert training_data
     assert name_list
     assert scores_list

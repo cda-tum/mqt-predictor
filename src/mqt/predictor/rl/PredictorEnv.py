@@ -20,7 +20,7 @@ logger = logging.getLogger("mqtpredictor")
 
 
 class PredictorEnv(Env):  # type: ignore[misc]
-    def __init__(self, reward_function: rl.helper.reward_functions = "fidelity", device_name: str = "ibm_washington"):
+    def __init__(self, reward_function: reward.reward_functions = "fidelity", device_name: str = "ibm_washington"):
         logger.info("Init env: " + reward_function)
 
         self.action_set = {}

@@ -35,6 +35,7 @@ class Predictor:
     def compile_all_circuits_for_qc(
         self,
         filename: str,
+        figure_of_merit: reward.reward_functions,
         source_path: str = "",
         target_path: str = "",
         timeout: int = 200,
@@ -70,9 +71,9 @@ class Predictor:
         for i, device in enumerate(devices):
             if qc.num_qubits > device["max_qubits"]:
                 continue
-            target_filename = filename.split(".qasm")[0] + "_" + str(i)
+            target_filename = filename.split(".qasm")[0] + "_" + figure_of_merit + "_" + str(i)
             try:
-                res = utils.timeout_watcher(rl.qcompile, [qc, "fidelity", device["name"]], timeout)
+                res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device["name"]], timeout)
                 if res:
                     print("Compilation successful")
                 else:
@@ -89,6 +90,7 @@ class Predictor:
 
     def generate_compiled_circuits(
         self,
+        figure_of_merit: reward.reward_functions,
         source_path: str = "",
         target_path: str = "",
         timeout: int = 200,
@@ -119,12 +121,15 @@ class Predictor:
         source_circuits_list = [file.name for file in Path(source_path).iterdir() if file.suffix == ".qasm"]
 
         Parallel(n_jobs=-1, verbose=100)(
-            delayed(self.compile_all_circuits_for_qc)(filename, source_path, target_path, timeout, logger.level)
+            delayed(self.compile_all_circuits_for_qc)(
+                filename, figure_of_merit, source_path, target_path, timeout, logger.level
+            )
             for filename in source_circuits_list
         )
 
     def generate_trainingdata_from_qasm_files(
         self,
+        figure_of_merit: reward.reward_functions,
         path_uncompiled_circuits: str = "",
         path_compiled_circuits: str = "",
     ) -> tuple[list[Any], list[Any], list[Any]]:
@@ -153,6 +158,7 @@ class Predictor:
         results = Parallel(n_jobs=-1, verbose=100)(
             delayed(self.generate_training_sample)(
                 str(filename.name),
+                figure_of_merit,
                 path_uncompiled_circuits,
                 path_compiled_circuits,
                 logger.level,
@@ -173,6 +179,7 @@ class Predictor:
     def generate_training_sample(
         self,
         file: str,
+        figure_of_merit: reward.reward_functions = "fidelity",
         path_uncompiled_circuit: str = "",
         path_compiled_circuits: str = "",
         logger_level: int = logging.WARNING,
@@ -208,7 +215,7 @@ class Predictor:
 
         for filename in all_relevant_files:
             filename_str = str(filename)
-            if (file.split(".")[0] + "_") in filename_str and filename_str.endswith(".qasm"):
+            if (file.split(".")[0] + "_" + figure_of_merit + "_") in filename_str and filename_str.endswith(".qasm"):
                 comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
                 device = LUT[comp_path_index]
 
@@ -226,10 +233,11 @@ class Predictor:
         feature_vec = ml.helper.create_feature_dict(str(Path(path_uncompiled_circuit) / file))
         training_sample = (list(feature_vec.values()), np.argmax(scores))
         circuit_name = file.split(".")[0]
-
         return (training_sample, circuit_name, scores)
 
-    def train_random_forest_classifier(self, visualize_results: bool = False) -> bool:
+    def train_random_forest_classifier(
+        self, figure_of_merit: reward.reward_functions = "fidelity", visualize_results: bool = False
+    ) -> bool:
         (
             X_train,
             X_test,
@@ -239,7 +247,7 @@ class Predictor:
             indices_test,
             names_list,
             scores_list,
-        ) = self.get_prepared_training_data(save_non_zero_indices=True)
+        ) = self.get_prepared_training_data(figure_of_merit, save_non_zero_indices=True)
 
         scores_filtered = [scores_list[i] for i in indices_test]
         names_filtered = [names_list[i] for i in indices_test]
@@ -269,15 +277,15 @@ class Predictor:
             self.plot_eval_all_detailed_compact_normed(names_filtered, scores_filtered, y_pred, y_test)
 
         self.set_classifier(clf.best_estimator_)
-        ml.helper.save_classifier(clf.best_estimator_)
+        ml.helper.save_classifier(clf.best_estimator_, figure_of_merit)
         logger.info("Random Forest classifier is trained and saved.")
 
         return self.clf is not None
 
     def get_prepared_training_data(
-        self, save_non_zero_indices: bool = False
+        self, figure_of_merit: reward.reward_functions, save_non_zero_indices: bool = False
     ) -> tuple[Any, Any, Any, Any, Any, Any, Any, Any]:
-        training_data, names_list, scores_list = ml.helper.load_training_data()
+        training_data, names_list, scores_list = ml.helper.load_training_data(figure_of_merit)
         X, y = zip(*training_data)
         X = list(X)
         y = list(y)
@@ -452,9 +460,9 @@ class Predictor:
             result_path.mkdir()
         plt.savefig(result_path / "y_pred_eval_normed.pdf", bbox_inches="tight")
 
-    def predict_probs(self, qasm_str_or_path: str | QuantumCircuit) -> int:
+    def predict_probs(self, qasm_str_or_path: str | QuantumCircuit, figure_of_merit: reward.reward_functions) -> int:
         if self.clf is None:
-            path = ml.helper.get_path_trained_model() / "trained_clf.joblib"
+            path = ml.helper.get_path_trained_model() / ("trained_clf_" + figure_of_merit + ".joblib")
             if path.is_file():
                 self.clf = load(str(path))
             else:
@@ -470,11 +478,11 @@ class Predictor:
 
         return cast(int, self.clf.predict_proba([feature_vector])[0])  # type: ignore[attr-defined]
 
-    def predict(self, qasm_str_or_path: str | QuantumCircuit) -> int:
+    def predict(self, qasm_str_or_path: str | QuantumCircuit, figure_of_merit: reward.reward_functions) -> int:
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
 
         if self.clf is None:
-            path = ml.helper.get_path_trained_model() / "trained_clf.joblib"
+            path = ml.helper.get_path_trained_model() / ("trained_clf_" + figure_of_merit + ".joblib")
             if path.is_file():
                 self.clf = load(str(path))
             else:
@@ -490,14 +498,17 @@ class Predictor:
 
         return cast(int, self.clf.predict([feature_vector])[0])  # type: ignore[attr-defined]
 
-    def instantiate_supervised_ML_model(self, timeout: int) -> None:
+    def instantiate_supervised_ML_model(
+        self, timeout: int, figure_of_merit: reward.reward_functions = "fidelity"
+    ) -> None:
         # Generate compiled circuits and save them as qasm files
         self.generate_compiled_circuits(
             timeout=timeout,
+            figure_of_merit=figure_of_merit,
         )
         # Generate training data from qasm files
-        res = self.generate_trainingdata_from_qasm_files()
+        res = self.generate_trainingdata_from_qasm_files(figure_of_merit)
         # Save those training data for faster re-processing
-        ml.helper.save_training_data(res)
+        ml.helper.save_training_data(res, figure_of_merit)
         # Train the Random Forest Classifier on created training data
         self.train_random_forest_classifier()

@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from mqt.predictor import rl
+from mqt.predictor import reward, rl
 from qiskit import QuantumCircuit
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
@@ -26,7 +26,7 @@ class Predictor:
     def compile_as_predicted(
         self,
         qc: QuantumCircuit | str,
-        opt_objective: rl.helper.reward_functions = "fidelity",
+        figure_of_merit: reward.reward_functions = "fidelity",
         device_name: str = "ibm_washington",
     ) -> tuple[QuantumCircuit, list[str]] | bool:
         if not isinstance(qc, QuantumCircuit):
@@ -34,9 +34,9 @@ class Predictor:
                 qc = QuantumCircuit.from_qasm_file(qc)
             elif "OPENQASM" in qc:
                 qc = QuantumCircuit.from_qasm_str(qc)
-        print("read model: ", "model_" + opt_objective + "_" + device_name)
-        model = rl.helper.load_model("model_" + opt_objective + "_" + device_name)
-        env = rl.PredictorEnv(opt_objective, device_name)
+        print("read model: ", "model_" + figure_of_merit + "_" + device_name)
+        model = rl.helper.load_model("model_" + figure_of_merit + "_" + device_name)
+        env = rl.PredictorEnv(figure_of_merit, device_name)
         obs, _ = env.reset(qc)
 
         used_compilation_passes = []
@@ -64,7 +64,7 @@ class Predictor:
     def train_all_models(
         self,
         timesteps: int = 1000,
-        reward_functions: list[rl.helper.reward_functions] | None = None,
+        reward_functions: list[reward.reward_functions] | None = None,
         model_name: str = "model",
         device_name: str = "ibm_washington",
         verbose: int = 2,

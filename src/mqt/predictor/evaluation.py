@@ -9,7 +9,7 @@ import numpy as np
 from joblib import Parallel, delayed
 from mqt.bench.qiskit_helper import get_native_gates
 from mqt.bench.utils import get_cmap_from_devicename
-from mqt.predictor import Result, ml, qcompile, rl
+from mqt.predictor import Result, ml, qcompile, reward
 from pytket import OpType
 from pytket.architecture import Architecture  # type: ignore[attr-defined]
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
@@ -28,7 +28,7 @@ logger = logging.getLogger("mqtpredictor")
 def computeRewards(
     benchmark: str,
     used_setup: str,
-    opt_objective: rl.helper.reward_functions = "fidelity",
+    figure_of_merit: reward.reward_functions = "fidelity",
 ) -> Result | None:
     if used_setup == "MQTPredictor":
         qc = QuantumCircuit.from_qasm_file(benchmark)
@@ -41,7 +41,7 @@ def computeRewards(
             assert type(res) == tuple
             return Result(
                 benchmark,
-                used_setup + "_" + opt_objective,
+                used_setup + "_" + figure_of_merit,
                 duration,
                 res[0],
                 res[2],
@@ -106,11 +106,13 @@ def evaluate_sample_circuit(file: str) -> dict[str, Any]:
     logger.info("Evaluate file: " + file)
 
     # reward_functions = ["fidelity", "critical_depth", "gate_ratio", "mix"]
-    get_args(rl.helper.reward_functions)
+    get_args(reward.reward_functions)
     results = []
     # for rew in reward_functions:
-    print("Calc MQT Predictor Reward")
+    print("Calc MQT Predictor Reward Fid")
     results.append(computeRewards(file, "MQTPredictor", "fidelity"))
+    print("Calc MQT Predictor Reward Dep")
+    results.append(computeRewards(file, "MQTPredictor", "critical_depth"))
 
     print("Calc Qiskit O3 Reward")
     results.append(computeRewards(file, "qiskit_o3"))

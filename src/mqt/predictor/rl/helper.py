@@ -3,13 +3,13 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import requests
 from mqt.bench.qiskit_helper import get_native_gates
 from mqt.bench.utils import calc_supermarq_features, get_cmap_from_devicename
-from mqt.predictor import rl
+from mqt.predictor import reward, rl
 from packaging import version
 from pytket.architecture import Architecture  # type: ignore[attr-defined]
 from pytket.circuit import Circuit, Node, Qubit  # type: ignore[attr-defined]
@@ -55,23 +55,22 @@ else:
     import importlib_metadata as metadata
     import importlib_resources as resources
 
-reward_functions = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
 
 logger = logging.getLogger("mqtpredictor")
 
 
 def qcompile(
-    qc: QuantumCircuit | str, opt_objective: reward_functions = "fidelity", device_name: str = "ibm_washington"
+    qc: QuantumCircuit | str, figure_of_merit: reward.reward_functions = "fidelity", device_name: str = "ibm_washington"
 ) -> tuple[QuantumCircuit, list[str]] | bool:
     """Returns the compiled quantum circuit which is compiled following an objective function.
     Keyword arguments:
     qc -- to be compiled quantum circuit or path to a qasm file
-    opt_objective -- objective function used for the compilation
+    figure_of_merit -- objective function used for the compilation
     Returns: compiled quantum circuit as Qiskit QuantumCircuit object
     """
 
     predictor = rl.Predictor()
-    return predictor.compile_as_predicted(qc, opt_objective=opt_objective, device_name=device_name)
+    return predictor.compile_as_predicted(qc, figure_of_merit=figure_of_merit, device_name=device_name)
 
 
 def get_actions_opt() -> list[dict[str, Any]]:
