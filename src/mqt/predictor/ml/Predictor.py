@@ -93,7 +93,7 @@ class Predictor:
         figure_of_merit: reward.reward_functions,
         source_path: str = "",
         target_path: str = "",
-        timeout: int = 200,
+        timeout: int = 300,
     ) -> None:
         """Handles the creation of all training samples.
 
@@ -219,7 +219,11 @@ class Predictor:
                 comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
                 device = LUT[comp_path_index]
 
-                score = reward.expected_fidelity(filename_str, device)
+                if figure_of_merit == "critical_depth":
+                    score = reward.crit_depth(filename_str)
+                elif figure_of_merit == "fidelity":
+                    score = reward.expected_fidelity(filename_str, device)
+                # score = reward.expected_fidelity(filename_str, device)
                 scores[comp_path_index] = score
 
         num_not_empty_entries = 0
