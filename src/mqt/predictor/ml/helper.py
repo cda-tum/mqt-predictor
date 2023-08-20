@@ -35,12 +35,10 @@ def qcompile(
         # check if the device is large enough for the circuit
         if devices[index]["max_qubits"] >= qc.num_qubits:
             device_name = devices[index]["name"]
-            res = rl.qcompile(qc, device_name=device_name)
+            res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device_name)
             if res:
                 return *res, device_name
     return False
-    # device = rl.helper.get_devices()[predicted_device_index]["name"]
-    # return rl.qcompile(qc, device_name=device)
 
 
 def get_path_training_data() -> Path:
