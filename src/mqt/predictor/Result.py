@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from mqt.predictor import reward
+from mqt.predictor import reward, rl
 
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit
@@ -46,3 +46,37 @@ class Result:
             self.used_setup + "_" + "fidelity": self.fidelity,
             self.used_setup + "_" + "critical_depth": self.critical_depth,
         }
+
+
+class LargeResult:
+    def __init__(
+        self,
+        benchmark: str,
+        res_qiskit: list[tuple[float, float, float]],
+        res_tket: list[tuple[float, float, float]],
+        res_MQT: list[tuple[float, float, float, float]],
+    ) -> None:
+        self.benchmark: str = benchmark
+        self.res_qiskit = res_qiskit
+        self.res_tket = res_tket
+        self.res_MQT = res_MQT
+
+    def get_dict(self) -> dict[str, float | str]:
+        overall: dict[str, float | str] = {"benchmark": self.benchmark}
+        for i, dev in enumerate(rl.helper.get_devices()):
+            overall.update(
+                {
+                    "qiskit_fid_" + dev["name"]: self.res_qiskit[i][0],
+                    "tket_fid_" + dev["name"]: self.res_tket[i][0],
+                    "MQT_fid_" + dev["name"]: self.res_MQT[i][0],
+                    "qiskit_dep_" + dev["name"]: self.res_qiskit[i][1],
+                    "tket_dep_" + dev["name"]: self.res_tket[i][1],
+                    "MQT_dep_" + dev["name"]: self.res_MQT[i][1],
+                    "qiskit_duration_" + dev["name"]: self.res_qiskit[i][2],
+                    "tket_duration_" + dev["name"]: self.res_tket[i][2],
+                    "MQT_fid_duration_" + dev["name"]: self.res_MQT[i][2],
+                    "MQT_dep_duration_" + dev["name"]: self.res_MQT[i][3],
+                }
+            )
+
+        return overall
