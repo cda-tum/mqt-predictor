@@ -70,7 +70,29 @@ def qcompile(
     """
 
     predictor = rl.Predictor()
-    return predictor.compile_as_predicted(qc, figure_of_merit=figure_of_merit, device_name=device_name)
+    # old_eval_score = -1
+    # eval_score = 0
+    # counter = 0
+
+    # while eval_score != old_eval_score and counter<5:
+    #     compiled_result = predictor.compile_as_predicted(qc, figure_of_merit=figure_of_merit, device_name=device_name)
+    #     counter *= 1
+    #     if not compiled_result:
+    #         return False
+    #     old_eval_score = eval_score
+    #     if figure_of_merit == 'fidelity':
+    #         eval_score = reward.expected_fidelity(compiled_result[0], device=device_name)
+    #     elif figure_of_merit == 'critical_depth':
+    #         eval_score = reward.crit_depth(compiled_result[0])
+    #     else:
+    #         return False
+    #     qc = compiled_result[0]
+    #     print(eval_score)
+
+    compiled_result = predictor.compile_as_predicted(qc, figure_of_merit=figure_of_merit, device_name=device_name)
+    if not compiled_result:
+        return False
+    return compiled_result
 
 
 def get_actions_opt() -> list[dict[str, Any]]:
@@ -135,6 +157,15 @@ def get_actions_opt() -> list[dict[str, Any]]:
             "transpile_pass": [RemoveRedundancies()],
             "origin": "tket",
         },
+        # {
+        #     "name": "BQSKit_Optimization_3",
+        #     "transpile_pass": lambda qc:
+        #         bqskit_compile(qc,
+        #         max_synthesis_size=2,
+        #         optimization_level=2),
+        #
+        #     "origin": "bqskit",
+        # },
     ]
 
 
@@ -210,6 +241,14 @@ def get_actions_mapping() -> list[dict[str, Any]]:
             ],
             "origin": "qiskit",
         },
+        # {
+        #     "name": "QMapHeuristic",
+        #     "transpile_pass": lambda c: lambda qc: qmap.compile(circ=qc,
+        #     arch=qmap.Architecture(max(max({tuple(elem) for elem in c}))+1, {tuple(elem) for elem in c}),
+        #     method="heuristic",
+        #     post_mapping_optimizations=True),
+        #     "origin": "mqt",
+        # },
     ]
 
 
