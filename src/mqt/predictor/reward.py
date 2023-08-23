@@ -16,7 +16,9 @@ logger = logging.getLogger("mqtpredictor")
 reward_functions = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
 
 
-def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
+def crit_depth(qc: QuantumCircuit | str, precision: int = 10) -> float:
+    if isinstance(qc, str):
+        qc = QuantumCircuit.from_qasm_file(qc)
     supermarq_features = calc_supermarq_features(qc)
     return cast(float, np.round(1 - supermarq_features.critical_depth, precision))
 
