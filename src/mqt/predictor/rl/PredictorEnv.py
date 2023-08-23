@@ -212,6 +212,14 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     )
                     self.error_occured = True
                     return None
+            # elif action["origin"] == "mqt":
+            #     print(self.state.count_ops())
+            #     altered_qc = transpile_pass(self.state)[0]
+            # elif action["origin"] == "bqskit":
+            #     bqskit_qc = qiskit_to_bqskit(self.state)
+            #     compiled_bqskit_qc = transpile_pass(bqskit_qc)
+            #     altered_qc = bqskit_to_qiskit(compiled_bqskit_qc)
+
             else:
                 error_msg = f"Origin {action['origin']} not supported."
                 raise ValueError(error_msg)
