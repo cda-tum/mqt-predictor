@@ -52,8 +52,6 @@ class Result:
         }
 
 
-
-
 class MQTDurationResult:
     def __init__(
         self,
