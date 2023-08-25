@@ -28,11 +28,15 @@ class Result:
         benchmark: str,
         used_setup: str,
         duration: float,
-        qc: QuantumCircuit,
+        qc: QuantumCircuit | None,
         device: str,
     ) -> None:
-        rew_fid = reward.expected_fidelity(qc, device)
-        rew_crit_depth = reward.crit_depth(qc)
+        if qc is not None:
+            rew_fid = reward.expected_fidelity(qc, device)
+            rew_crit_depth = reward.crit_depth(qc)
+        else:
+            rew_fid = -1
+            rew_crit_depth = -1
 
         self.benchmark: str = benchmark
         self.used_setup: str = used_setup
@@ -48,34 +52,25 @@ class Result:
         }
 
 
-class LargeResult:
+
+
+class MQTDurationResult:
     def __init__(
         self,
         benchmark: str,
-        res_qiskit: list[tuple[float, float, float]],
-        res_tket: list[tuple[float, float, float]],
-        res_MQT: list[tuple[float, float, float, float]],
+        figure_of_merit: str,
+        res_mqt: list[float],
     ) -> None:
         self.benchmark: str = benchmark
-        self.res_qiskit = res_qiskit
-        self.res_tket = res_tket
-        self.res_MQT = res_MQT
+        self.res_mqt = res_mqt
+        self.figure_of_merit = figure_of_merit
 
     def get_dict(self) -> dict[str, float | str]:
         overall: dict[str, float | str] = {"benchmark": self.benchmark}
         for i, dev in enumerate(rl.helper.get_devices()):
             overall.update(
                 {
-                    "qiskit_fid_" + dev["name"]: self.res_qiskit[i][0],
-                    "tket_fid_" + dev["name"]: self.res_tket[i][0],
-                    "MQT_fid_" + dev["name"]: self.res_MQT[i][0],
-                    "qiskit_dep_" + dev["name"]: self.res_qiskit[i][1],
-                    "tket_dep_" + dev["name"]: self.res_tket[i][1],
-                    "MQT_dep_" + dev["name"]: self.res_MQT[i][1],
-                    "qiskit_duration_" + dev["name"]: self.res_qiskit[i][2],
-                    "tket_duration_" + dev["name"]: self.res_tket[i][2],
-                    "MQT_fid_duration_" + dev["name"]: self.res_MQT[i][2],
-                    "MQT_dep_duration_" + dev["name"]: self.res_MQT[i][3],
+                    "mqt_duration_" + self.figure_of_merit + "_" + dev["name"]: self.res_mqt[i],
                 }
             )
 

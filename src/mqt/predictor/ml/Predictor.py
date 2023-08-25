@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import logging
+import time
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed, load
 from mqt.predictor import ml, reward, rl, utils
+from mqt.predictor.Result import MQTDurationResult
 from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
@@ -40,7 +42,7 @@ class Predictor:
         target_path: str = "",
         timeout: int = 200,
         logger_level: int = logging.INFO,
-    ) -> bool:
+    ) -> MQTDurationResult | Literal[False]:
         """Handles the creation of one training sample.
 
         Keyword arguments:
@@ -68,12 +70,16 @@ class Predictor:
             return False
 
         devices = rl.helper.get_devices()
+        durations: list[float] = []
         for i, device in enumerate(devices):
             if qc.num_qubits > device["max_qubits"]:
+                durations.append(-1)
                 continue
             target_filename = filename.split(".qasm")[0] + "_" + figure_of_merit + "_" + str(i)
             try:
+                start_time = time.time()
                 res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device["name"]], timeout)
+                durations.append(time.time() - start_time)
                 if res:
                     print("Compilation successful")
                 else:
@@ -86,7 +92,7 @@ class Predictor:
                 print(e, filename, device["name"])
                 raise RuntimeError("Error during compilation: " + str(e)) from e
 
-        return True
+        return MQTDurationResult(filename, figure_of_merit, durations)
 
     def generate_compiled_circuits(
         self,
@@ -120,11 +126,22 @@ class Predictor:
 
         source_circuits_list = [file.name for file in Path(source_path).iterdir() if file.suffix == ".qasm"]
 
-        Parallel(n_jobs=-1, verbose=100)(
+        results = Parallel(n_jobs=-1, verbose=100)(
             delayed(self.compile_all_circuits_for_qc)(
                 filename, figure_of_merit, source_path, target_path, timeout, logger.level
             )
             for filename in source_circuits_list
+        )
+
+        res_csv = []
+        res_csv.append([results[0].get_dict().keys()])
+        for res in results:
+            res_csv.append([res.get_dict().values()])
+        np.savetxt(
+            ml.helper.get_path_trained_model() / "mqt_times.csv",
+            res_csv,
+            delimiter=",",
+            fmt="%s",
         )
 
     def generate_trainingdata_from_qasm_files(
