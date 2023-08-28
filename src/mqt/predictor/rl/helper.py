@@ -55,12 +55,14 @@ else:
     import importlib_metadata as metadata
     import importlib_resources as resources
 
-
 logger = logging.getLogger("mqtpredictor")
 
 
 def qcompile(
-    qc: QuantumCircuit | str, figure_of_merit: reward.reward_functions = "fidelity", device_name: str = "ibm_washington"
+    qc: QuantumCircuit | str,
+    figure_of_merit: reward.reward_functions = "fidelity",
+    device_name: str = "ibm_washington",
+    predictor_singleton: rl.Predictor | None = None,
 ) -> tuple[QuantumCircuit, list[str]] | bool:
     """Returns the compiled quantum circuit which is compiled following an objective function.
     Keyword arguments:
@@ -69,30 +71,44 @@ def qcompile(
     Returns: compiled quantum circuit as Qiskit QuantumCircuit object
     """
 
-    predictor = rl.Predictor()
-    # old_eval_score = -1
-    # eval_score = 0
-    # counter = 0
+    if predictor_singleton is None:
+        predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device_name)
+    else:
+        predictor = predictor_singleton
 
-    # while eval_score != old_eval_score and counter<5:
-    #     compiled_result = predictor.compile_as_predicted(qc, figure_of_merit=figure_of_merit, device_name=device_name)
-    #     counter *= 1
-    #     if not compiled_result:
-    #         return False
-    #     old_eval_score = eval_score
-    #     if figure_of_merit == 'fidelity':
-    #         eval_score = reward.expected_fidelity(compiled_result[0], device=device_name)
-    #     elif figure_of_merit == 'critical_depth':
-    #         eval_score = reward.crit_depth(compiled_result[0])
-    #     else:
-    #         return False
-    #     qc = compiled_result[0]
-    #     print(eval_score)
+    eval_score = 0.0
+    counter = 0.0
 
-    compiled_result = predictor.compile_as_predicted(qc, figure_of_merit=figure_of_merit, device_name=device_name)
-    if not compiled_result:
-        return False
+    for _ in range(3):
+        tmp_compiled_result = predictor.compile_as_predicted(qc)
+        if not tmp_compiled_result:
+            return False
+        if figure_of_merit == "fidelity":
+            assert isinstance(tmp_compiled_result, tuple)
+            tmp_eval_score = reward.expected_fidelity(tmp_compiled_result[0], device=device_name)
+            if tmp_eval_score >= eval_score:
+                eval_score = tmp_eval_score
+                compiled_result = tmp_compiled_result
+            else:
+                return compiled_result
+        elif figure_of_merit == "critical_depth":
+            assert isinstance(tmp_compiled_result, tuple)
+            tmp_eval_score = reward.crit_depth(tmp_compiled_result[0])
+            if tmp_eval_score >= eval_score:
+                eval_score = tmp_eval_score
+                compiled_result = tmp_compiled_result
+            else:
+                return compiled_result
+        else:
+            return False
+        qc = compiled_result[0]
+        print("counter: ", counter)
+
     return compiled_result
+
+    # compiled_result = predictor.compile_as_predicted(qc, figure_of_merit=figure_of_merit, device_name=device_name)
+    # if not compiled_result:
+    #     return False
 
 
 def get_actions_opt() -> list[dict[str, Any]]:
