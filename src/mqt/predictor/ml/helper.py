@@ -24,6 +24,18 @@ if TYPE_CHECKING:
 def qcompile(
     qc: QuantumCircuit, figure_of_merit: reward.reward_functions = "fidelity"
 ) -> tuple[QuantumCircuit, list[str], str] | bool:
+    device_name = get_predicted_and_suitable_device_name(qc, figure_of_merit)
+    assert device_name is not None
+    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device_name)
+    if res:
+        assert isinstance(res, tuple)
+        return *res, device_name
+    return False
+
+
+def get_predicted_and_suitable_device_name(
+    qc: QuantumCircuit, figure_of_merit: reward.reward_functions = "fidelity"
+) -> str | None:
     ml_predictor = ml.Predictor()
     predicted_device_index_probs = ml_predictor.predict_probs(qc, figure_of_merit)
     assert ml_predictor.clf is not None
@@ -32,13 +44,9 @@ def qcompile(
     devices = rl.helper.get_devices()
 
     for index in predicted_device_index:
-        # check if the device is large enough for the circuit
         if devices[index]["max_qubits"] >= qc.num_qubits:
-            device_name = devices[index]["name"]
-            res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device_name)
-            if res:
-                return *res, device_name
-    return False
+            return devices[index]["name"]
+    return None
 
 
 def get_path_training_data() -> Path:
