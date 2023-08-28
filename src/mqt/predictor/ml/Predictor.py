@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 import logging
-import time
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed, load
 from mqt.predictor import ml, reward, rl, utils
-from mqt.predictor.Result import MQTDurationResult
 from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
@@ -34,114 +32,78 @@ class Predictor:
     def set_classifier(self, clf: RandomForestClassifier) -> None:
         self.clf = clf
 
-    def compile_all_circuits_for_qc(
+    def compile_all_circuits_for_dev_and_fom(
         self,
-        filename: str,
+        device_name: str,
         figure_of_merit: reward.reward_functions,
-        source_path: str = "",
-        target_path: str = "",
+        source_path: Path | None = None,
+        target_path: Path | None = None,
         timeout: int = 200,
         logger_level: int = logging.INFO,
-    ) -> MQTDurationResult | Literal[False]:
-        """Handles the creation of one training sample.
-
-        Keyword arguments:
-        filename -- qasm circuit sample filename
-        source_path -- path to file
-        target_path -- path to directory for compiled circuit
-        timeout -- timeout in seconds
-
-        Return values:
-        True -- at least one compilation option succeeded
-        False -- if not
-        """
-
+    ) -> None:
         logger.setLevel(logger_level)
-        if not source_path:
-            source_path = str(ml.helper.get_path_training_circuits())
 
-        if not target_path:
-            target_path = str(ml.helper.get_path_training_circuits_compiled())
+        print("Processing: " + device_name, figure_of_merit)
+        rl_pred = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device_name)
 
-        logger.info("Processing: " + filename)
-        qc = QuantumCircuit.from_qasm_file(Path(source_path) / filename)
+        dev_index = next((index for index, d in enumerate(rl.helper.get_devices()) if d["name"] == device_name), None)
+        assert dev_index is not None
+        dev_max_qubits = rl.helper.get_devices()[dev_index]["max_qubits"]
 
-        if not qc:
-            return False
+        if source_path is None:
+            source_path = ml.helper.get_path_training_circuits()
 
-        devices = rl.helper.get_devices()
-        durations: list[float] = []
-        for i, device in enumerate(devices):
-            if qc.num_qubits > device["max_qubits"]:
-                durations.append(-1)
+        if target_path is None:
+            target_path = ml.helper.get_path_training_circuits_compiled()
+
+        for filename in source_path.iterdir():
+            print(filename.stem)
+            if filename.suffix != ".qasm":
                 continue
-            target_filename = filename.split(".qasm")[0] + "_" + figure_of_merit + "_" + str(i)
+            qc = QuantumCircuit.from_qasm_file(Path(source_path) / filename)
+            if qc.num_qubits > dev_max_qubits:
+                continue
+
+            target_filename = (
+                str(filename).split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(dev_index)
+            )
             try:
-                start_time = time.time()
-                res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device["name"]], timeout)
-                durations.append(time.time() - start_time)
-                if res:
-                    print("Compilation successful")
-                else:
-                    print("Compilation failed")
+                res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device_name, rl_pred], timeout)
                 if res:
                     compiled_qc = res[0]
                     compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
 
             except Exception as e:
-                print(e, filename, device["name"])
+                print(e, filename, device_name)
                 raise RuntimeError("Error during compilation: " + str(e)) from e
-
-        return MQTDurationResult(filename, figure_of_merit, durations)
 
     def generate_compiled_circuits(
         self,
-        figure_of_merit: reward.reward_functions,
-        source_path: str = "",
-        target_path: str = "",
-        timeout: int = 300,
+        source_path: Path | None = None,
+        target_path: Path | None = None,
+        timeout: int = 600,
     ) -> None:
-        """Handles the creation of all training samples.
+        if source_path is None:
+            source_path = ml.helper.get_path_training_circuits()
 
-        Keyword arguments:
-        source_path -- path to file
-        target_directory -- path to directory for compiled circuit
-        timeout -- timeout in seconds
+        if target_path is None:
+            target_path = ml.helper.get_path_training_circuits_compiled()
 
-        """
-        if not source_path:
-            source_path = str(ml.helper.get_path_training_circuits())
-
-        if not target_path:
-            target_path = str(ml.helper.get_path_training_circuits_compiled())
-
-        path_zip = Path(source_path) / "mqtbench_training_samples.zip"
-        if not any(file.suffix == ".qasm" for file in Path(source_path).iterdir()) and path_zip.exists():
+        path_zip = source_path / "mqtbench_training_samples.zip"
+        if not any(file.suffix == ".qasm" for file in source_path.iterdir()) and path_zip.exists():
             import zipfile
 
             with zipfile.ZipFile(str(path_zip), "r") as zip_ref:
                 zip_ref.extractall(source_path)
 
-        Path(target_path).mkdir(exist_ok=True)
+        target_path.mkdir(exist_ok=True)
 
-        source_circuits_list = [file.name for file in Path(source_path).iterdir() if file.suffix == ".qasm"]
-
-        results = Parallel(n_jobs=-1, verbose=100)(
-            delayed(self.compile_all_circuits_for_qc)(
-                filename, figure_of_merit, source_path, target_path, timeout, logger.level
+        Parallel(n_jobs=-1, verbose=100)(
+            delayed(self.compile_all_circuits_for_dev_and_fom)(
+                device_name, figure_of_merit, source_path, target_path, timeout, logger.level
             )
-            for filename in source_circuits_list
-        )
-
-        res_csv = []
-        res_csv.append([results[0].get_dict().keys()])
-        for res in results:
-            res_csv.append([res.get_dict().values()])
-        np.savetxt(
-            ml.helper.get_path_trained_model() / "mqt_times.csv",
-            res_csv,
-            delimiter=",",
-            fmt="%s",
+            for figure_of_merit in ["fidelity", "critical_depth"]
+            for device_name in [dev["name"] for dev in rl.helper.get_devices()]
         )
 
     def generate_trainingdata_from_qasm_files(
@@ -172,7 +134,7 @@ class Predictor:
         name_list = []
         scores_list = []
 
-        results = Parallel(n_jobs=-1, verbose=100)(
+        results = Parallel(n_jobs=5, verbose=100)(
             delayed(self.generate_training_sample)(
                 str(filename.name),
                 figure_of_merit,
@@ -227,7 +189,7 @@ class Predictor:
         logger.debug("Checking " + file)
         scores: list[float] = []
         for _ in range(len(LUT)):
-            scores.append(0.0)
+            scores.append(-1.0)
         all_relevant_files = Path(path_compiled_circuits).glob(file.split(".")[0] + "*")
 
         for filename in all_relevant_files:
@@ -245,10 +207,11 @@ class Predictor:
 
         num_not_empty_entries = 0
         for i in range(len(LUT)):
-            if scores[i] != 0.0:
+            if scores[i] != -1.0:
                 num_not_empty_entries += 1
 
         if num_not_empty_entries == 0:
+            print("no compiled circuits found for:", file)
             return False
 
         feature_vec = ml.helper.create_feature_dict(str(Path(path_uncompiled_circuit) / file))
@@ -519,17 +482,17 @@ class Predictor:
 
         return cast(int, self.clf.predict([feature_vector])[0])  # type: ignore[attr-defined]
 
-    def instantiate_supervised_ML_model(
-        self, timeout: int, figure_of_merit: reward.reward_functions = "fidelity"
-    ) -> None:
-        # Generate compiled circuits and save them as qasm files
-        self.generate_compiled_circuits(
-            timeout=timeout,
-            figure_of_merit=figure_of_merit,
-        )
-        # Generate training data from qasm files
-        res = self.generate_trainingdata_from_qasm_files(figure_of_merit)
-        # Save those training data for faster re-processing
-        ml.helper.save_training_data(res, figure_of_merit)
-        # Train the Random Forest Classifier on created training data
-        self.train_random_forest_classifier()
+    # def instantiate_supervised_ML_model(
+    #     self, timeout: int, figure_of_merit: reward.reward_functions = "fidelity"
+    # ) -> None:
+    #     # Generate compiled circuits and save them as qasm files
+    #     self.generate_compiled_circuits(
+    #         timeout=timeout,
+    #         figure_of_merit=figure_of_merit,
+    #     )
+    #     # Generate training data from qasm files
+    #     res = self.generate_trainingdata_from_qasm_files(figure_of_merit)
+    #     # Save those training data for faster re-processing
+    #     ml.helper.save_training_data(res, figure_of_merit)
+    #     # Train the Random Forest Classifier on created training data
+    #     self.train_random_forest_classifier()

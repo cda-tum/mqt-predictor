@@ -14,7 +14,9 @@ PATH_LENGTH = 260
 
 
 class Predictor:
-    def __init__(self, verbose: int = 0):
+    def __init__(
+        self, figure_of_merit: reward.reward_functions | None = None, device_name: str | None = None, verbose: int = 0
+    ):
         if verbose == 1:
             lvl = logging.INFO
         elif verbose == 2:
@@ -23,42 +25,41 @@ class Predictor:
             lvl = logging.WARNING
         logger.setLevel(lvl)
 
+        if figure_of_merit is not None and device_name is not None:
+            self.model = rl.helper.load_model("model_" + figure_of_merit + "_" + device_name)
+            self.env = rl.PredictorEnv(figure_of_merit, device_name)
+
     def compile_as_predicted(
         self,
         qc: QuantumCircuit | str,
-        figure_of_merit: reward.reward_functions = "fidelity",
-        device_name: str = "ibm_washington",
     ) -> tuple[QuantumCircuit, list[str]] | bool:
+        assert self.model is not None
+        assert self.env is not None
         if not isinstance(qc, QuantumCircuit):
             if len(qc) < PATH_LENGTH and Path(qc).exists():
                 qc = QuantumCircuit.from_qasm_file(qc)
             elif "OPENQASM" in qc:
                 qc = QuantumCircuit.from_qasm_str(qc)
-        print("read model: ", "model_" + figure_of_merit + "_" + device_name)
-        model = rl.helper.load_model("model_" + figure_of_merit + "_" + device_name)
-        env = rl.PredictorEnv(figure_of_merit, device_name)
-        obs, _ = env.reset(qc)
+        obs, _ = self.env.reset(qc)
 
         used_compilation_passes = []
         terminated = False
         truncated = False
         while not (terminated or truncated):
-            action_masks = get_action_masks(env)
-            action, _ = model.predict(obs, action_masks=action_masks)
+            action_masks = get_action_masks(self.env)
+            action, _ = self.model.predict(obs, action_masks=action_masks)
             action = int(action)
-            action_item = env.action_set[action]
+            action_item = self.env.action_set[action]
             used_compilation_passes.append(action_item["name"])
-            obs, reward_val, terminated, truncated, info = env.step(action)
-            # print("Action taken: ", action_item["name"])
-            # print("Gate: ", env.state.count_ops())
-            env.state._layout = env.layout
+            obs, reward_val, terminated, truncated, info = self.env.step(action)
+            self.env.state._layout = self.env.layout
 
-        if env.state.count_ops().get("u"):
+        if self.env.state.count_ops().get("u"):
             print("Warning: u gates are still present in the circuit")
-            print("Error occurred: ", env.error_occured)
+            print("Error occurred: ", self.env.error_occured)
 
-        if not env.error_occured:
-            return env.state, used_compilation_passes
+        if not self.env.error_occured:
+            return self.env.state, used_compilation_passes
         return False
 
     def train_all_models(
