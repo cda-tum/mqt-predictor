@@ -52,10 +52,8 @@ def test_compile_all_circuits_for_qc() -> None:
     tmp_filename = "test.qasm"
     qc.qasm(filename=tmp_filename)
     predictor = ml.Predictor()
-    assert predictor.compile_all_circuits_for_qc(
-        filename=tmp_filename,
-        figure_of_merit="fidelity",
-        source_path=".",
+    predictor.generate_compiled_circuits(
+        source_path=Path(),
     )
     if Path(tmp_filename).exists():
         Path(tmp_filename).unlink()
@@ -74,7 +72,7 @@ def test_train_random_forest_classifier(mock_pyplot: Any) -> None:  # noqa: ARG0
 
 def test_generate_compiled_circuits() -> None:
     predictor = ml.Predictor()
-    source_path = "."
+    source_path = Path()
     target_path = Path("test_compiled_circuits")
     if not target_path.exists():
         target_path.mkdir()
@@ -83,12 +81,12 @@ def test_generate_compiled_circuits() -> None:
     qc = benchmark_generator.get_benchmark("dj", 1, 3)
     qasm_path = Path("compiled_test.qasm")
     qc.qasm(filename=str(qasm_path))
-    predictor.generate_compiled_circuits(figure_of_merit, source_path, str(target_path))
+    predictor.generate_compiled_circuits(source_path, target_path)
     assert any(file.suffix == ".qasm" for file in target_path.iterdir())
 
     res = predictor.generate_training_sample(
         str(qasm_path),
-        path_uncompiled_circuit=source_path,
+        path_uncompiled_circuit=str(source_path),
         path_compiled_circuits=str(target_path),
     )
     assert not isinstance(res, bool)
@@ -101,7 +99,7 @@ def test_generate_compiled_circuits() -> None:
         training_data,
         name_list,
         scores_list,
-    ) = predictor.generate_trainingdata_from_qasm_files(figure_of_merit, source_path, str(target_path))
+    ) = predictor.generate_trainingdata_from_qasm_files(figure_of_merit, str(source_path), str(target_path))
     assert training_data
     assert name_list
     assert scores_list
