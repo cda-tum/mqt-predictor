@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
+from importlib import resources
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +24,7 @@ from qiskit import QuantumCircuit, transpile
 logger = logging.getLogger("mqtpredictor")
 
 
-def computeRewards(  # noqa: PLR0911
+def computeRewards(  # noqa: PLR0911, PLR0915
     benchmark: str,
     used_setup: str,
     figure_of_merit: reward.reward_functions = "fidelity",
@@ -147,6 +148,24 @@ def evaluate_all_sample_circuits() -> None:
     )
 
 
+def evaluate_GHZ_circuits() -> None:
+    res_csv = []
+
+    path = Path(str(resources.files("mqt.predictor"))) / "ml" / "training_data" / "GHZ"
+    results = Parallel(n_jobs=-1, verbose=3, backend="threading")(
+        delayed(evaluate_sample_circuit)(str(file)) for file in list(path.glob("*.qasm"))
+    )
+    res_csv.append(list(results[0].keys()))
+    for res in results:
+        res_csv.append(list(res.values()))
+    np.savetxt(
+        ml.helper.get_path_trained_model() / "res_GHZ.csv",
+        res_csv,
+        delimiter=",",
+        fmt="%s",
+    )
+
+
 def evaluate_sample_circuit(file: str) -> dict[str, Any]:
     print("Evaluate file: " + file)
     logger.info("Evaluate file: " + file)
@@ -155,11 +174,9 @@ def evaluate_sample_circuit(file: str) -> dict[str, Any]:
     results.append(computeRewards(file, "MQTPredictor", "fidelity"))
     results.append(computeRewards(file, "MQTPredictor", "critical_depth"))
 
-    print("Calc Qiskit O3 Reward")
     for _i, dev in enumerate(rl.helper.get_devices()):
         results.append(computeRewards(file, "qiskit_" + dev["name"], device=dev))
 
-    print("Calc tket Reward")
     for _i, dev in enumerate(rl.helper.get_devices()):
         results.append(computeRewards(file, "tket_" + dev["name"], device=dev))
 
