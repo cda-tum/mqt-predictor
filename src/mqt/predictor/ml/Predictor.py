@@ -57,7 +57,6 @@ class Predictor:
             target_path = ml.helper.get_path_training_circuits_compiled()
 
         for filename in source_path.iterdir():
-            print(filename.stem)
             if filename.suffix != ".qasm":
                 continue
             qc = QuantumCircuit.from_qasm_file(Path(source_path) / filename)
@@ -134,7 +133,7 @@ class Predictor:
         name_list = []
         scores_list = []
 
-        results = Parallel(n_jobs=5, verbose=100)(
+        results = Parallel(n_jobs=-1, verbose=100)(
             delayed(self.generate_training_sample)(
                 str(filename.name),
                 figure_of_merit,
@@ -202,7 +201,6 @@ class Predictor:
                     score = reward.crit_depth(filename_str)
                 elif figure_of_merit == "fidelity":
                     score = reward.expected_fidelity(filename_str, device)
-                # score = reward.expected_fidelity(filename_str, device)
                 scores[comp_path_index] = score
 
         num_not_empty_entries = 0
