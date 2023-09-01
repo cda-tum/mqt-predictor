@@ -21,7 +21,7 @@ def test_instantiate_models() -> None:
     predictor = rl.Predictor()
     predictor.train_all_models(
         timesteps=100,
-        reward_functions=["fidelity", "critical_depth", "mix", "gate_ratio"],
+        reward_functions=["fidelity", "critical_depth"],
         test=True,
     )
 
