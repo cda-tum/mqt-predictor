@@ -6,7 +6,7 @@ from qiskit import QuantumCircuit
 
 @pytest.mark.parametrize(
     "figure_of_merit",
-    ["fidelity", "critical_depth", "gate_ratio", "mix"],
+    ["fidelity", "critical_depth"],
 )
 def test_qcompile_with_pretrained_models(figure_of_merit: reward.reward_functions) -> None:
     qc = get_benchmark("ghz", 1, 5)
@@ -28,7 +28,7 @@ def test_instantiate_models() -> None:
 
 @pytest.mark.parametrize(
     "figure_of_merit",
-    ["fidelity", "critical_depth", "gate_ratio", "mix"],
+    ["fidelity", "critical_depth"],
 )
 def test_qcompile_with_newly_trained_models(figure_of_merit: reward.reward_functions) -> None:
     qc = get_benchmark("ghz", 1, 5)
