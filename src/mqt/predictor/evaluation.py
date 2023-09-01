@@ -24,7 +24,7 @@ from qiskit import QuantumCircuit, transpile
 logger = logging.getLogger("mqtpredictor")
 
 
-def computeRewards(  # noqa: PLR0911, PLR0915
+def computeRewards(  # noqa: PLR0911
     benchmark: str,
     used_setup: str,
     figure_of_merit: reward.reward_functions = "fidelity",
@@ -49,22 +49,22 @@ def computeRewards(  # noqa: PLR0911, PLR0915
                     qc,
                     dev_name,
                 )
-        else:
-            try:
-                qc_compiled = ml.qcompile(QuantumCircuit.from_qasm_file(benchmark), figure_of_merit=figure_of_merit)
-                if qc_compiled:
-                    assert isinstance(qc_compiled, tuple)
-                    return Result(
-                        benchmark,
-                        used_setup + "_" + figure_of_merit,
-                        -1,
-                        qc_compiled[0],
-                        dev_name,
-                    )
+        # else:
+        #     try:
+        #         qc_compiled = ml.qcompile(QuantumCircuit.from_qasm_file(benchmark), figure_of_merit=figure_of_merit)
+        #         if qc_compiled:
+        #             assert isinstance(qc_compiled, tuple)
+        #             return Result(
+        #                 benchmark,
+        #                 used_setup + "_" + figure_of_merit,
+        #                 -1,
+        #                 qc_compiled[0],
+        #                 dev_name,
+        #             )
 
-            except Exception as e:
-                print("Error occurred for: ", benchmark, dev_name, e)
-                return Result(benchmark, used_setup, -1, None, dev_name)
+        # except Exception as e:
+        #     print("Error occurred for: ", benchmark, dev_name, e)
+        #     return Result(benchmark, used_setup, -1, None, dev_name)
 
         return Result(benchmark, used_setup, -1, None, dev_name)
 
