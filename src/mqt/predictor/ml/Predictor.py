@@ -38,7 +38,7 @@ class Predictor:
         figure_of_merit: reward.reward_functions,
         source_path: Path | None = None,
         target_path: Path | None = None,
-        timeout: int = 200,
+        timeout: int = 600,
         logger_level: int = logging.INFO,
     ) -> None:
         logger.setLevel(logger_level)
@@ -66,15 +66,16 @@ class Predictor:
             target_filename = (
                 str(filename).split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(dev_index)
             )
-            try:
-                res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device_name, rl_pred], timeout)
-                if res:
-                    compiled_qc = res[0]
-                    compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
+            if not (Path(target_path) / (target_filename + ".qasm")).exists():
+                try:
+                    res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device_name, rl_pred], timeout)
+                    if res:
+                        compiled_qc = res[0]
+                        compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
 
-            except Exception as e:
-                print(e, filename, device_name)
-                raise RuntimeError("Error during compilation: " + str(e)) from e
+                except Exception as e:
+                    print(e, filename, device_name)
+                    raise RuntimeError("Error during compilation: " + str(e)) from e
 
     def generate_compiled_circuits(
         self,
