@@ -35,10 +35,10 @@ class Predictor:
     def compile_all_circuits_for_dev_and_fom(
         self,
         device_name: str,
+        timeout: int,
         figure_of_merit: reward.reward_functions,
         source_path: Path | None = None,
         target_path: Path | None = None,
-        timeout: int = 600,
         logger_level: int = logging.INFO,
     ) -> None:
         logger.setLevel(logger_level)
@@ -81,7 +81,7 @@ class Predictor:
         self,
         source_path: Path | None = None,
         target_path: Path | None = None,
-        timeout: int = 600,
+        timeout: int = 300,
     ) -> None:
         if source_path is None:
             source_path = ml.helper.get_path_training_circuits()
@@ -100,7 +100,7 @@ class Predictor:
 
         Parallel(n_jobs=-1, verbose=100)(
             delayed(self.compile_all_circuits_for_dev_and_fom)(
-                device_name, figure_of_merit, source_path, target_path, timeout, logger.level
+                device_name, timeout, figure_of_merit, source_path, target_path, logger.level
             )
             for figure_of_merit in ["fidelity", "critical_depth"]
             for device_name in [dev["name"] for dev in rl.helper.get_devices()]
@@ -197,7 +197,6 @@ class Predictor:
             if (file.split(".")[0] + "_" + figure_of_merit + "_") in filename_str and filename_str.endswith(".qasm"):
                 comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
                 device = LUT[comp_path_index]
-
                 if figure_of_merit == "critical_depth":
                     score = reward.crit_depth(filename_str)
                 elif figure_of_merit == "fidelity":

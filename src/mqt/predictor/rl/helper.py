@@ -76,35 +76,44 @@ def qcompile(
     else:
         predictor = predictor_singleton
 
-    eval_score = 0.0
-    counter = 0.0
-
-    for _ in range(3):
-        tmp_compiled_result = predictor.compile_as_predicted(qc)
-        if not tmp_compiled_result:
+    try:
+        compiled_result = predictor.compile_as_predicted(qc)
+        if not isinstance(compiled_result, tuple):
             return False
-        if figure_of_merit == "fidelity":
-            assert isinstance(tmp_compiled_result, tuple)
-            tmp_eval_score = reward.expected_fidelity(tmp_compiled_result[0], device=device_name)
-            if tmp_eval_score >= eval_score:
-                eval_score = tmp_eval_score
-                compiled_result = tmp_compiled_result
-            else:
-                return compiled_result
-        elif figure_of_merit == "critical_depth":
-            assert isinstance(tmp_compiled_result, tuple)
-            tmp_eval_score = reward.crit_depth(tmp_compiled_result[0])
-            if tmp_eval_score >= eval_score:
-                eval_score = tmp_eval_score
-                compiled_result = tmp_compiled_result
-            else:
-                return compiled_result
-        else:
-            return False
-        qc = compiled_result[0]
-        print("counter: ", counter)
+        return compiled_result
+    except Exception as e:
+        print("Error occurred for: ", qc, device_name, e)
+        return False
 
-    return compiled_result
+    # eval_score = 0.0
+    # counter = 0.0
+    #
+    # for _ in range(3):
+    #     tmp_compiled_result = predictor.compile_as_predicted(qc)
+    #     if not tmp_compiled_result:
+    #         return False
+    #     if figure_of_merit == "fidelity":
+    #         assert isinstance(tmp_compiled_result, tuple)
+    #         tmp_eval_score = reward.expected_fidelity(tmp_compiled_result[0], device=device_name)
+    #         if tmp_eval_score >= eval_score:
+    #             eval_score = tmp_eval_score
+    #             compiled_result = tmp_compiled_result
+    #         else:
+    #             return compiled_result
+    #     elif figure_of_merit == "critical_depth":
+    #         assert isinstance(tmp_compiled_result, tuple)
+    #         tmp_eval_score = reward.crit_depth(tmp_compiled_result[0])
+    #         if tmp_eval_score >= eval_score:
+    #             eval_score = tmp_eval_score
+    #             compiled_result = tmp_compiled_result
+    #         else:
+    #             return compiled_result
+    #     else:
+    #         return False
+    #     qc = compiled_result[0]
+    #     print("counter: ", counter)
+
+    # return compiled_result
 
     # compiled_result = predictor.compile_as_predicted(qc, figure_of_merit=figure_of_merit, device_name=device_name)
     # if not compiled_result:
