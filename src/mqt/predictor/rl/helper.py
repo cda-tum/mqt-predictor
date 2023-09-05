@@ -82,7 +82,9 @@ def qcompile(
             return False
         return compiled_result
     except Exception as e:
-        print("Error occurred for: ", qc, device_name, e)
+        print("Error occurred for: ", device_name, e)
+        if isinstance(qc, str):
+            print(qc)
         return False
 
     # eval_score = 0.0
