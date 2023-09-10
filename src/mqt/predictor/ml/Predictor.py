@@ -32,6 +32,58 @@ class Predictor:
     def set_classifier(self, clf: RandomForestClassifier) -> None:
         self.clf = clf
 
+    def compile_all_circuits_fidelity(
+        self,
+        timeout: int,
+        source_path: Path | None = None,
+        target_path: Path | None = None,
+        logger_level: int = logging.INFO,
+    ) -> None:
+        logger.setLevel(logger_level)
+
+        if source_path is None:
+            source_path = ml.helper.get_path_training_circuits()
+
+        if target_path is None:
+            target_path = ml.helper.get_path_training_circuits_compiled()
+
+        Parallel(n_jobs=6, verbose=100)(
+            delayed(self.single_fid_sample)(filename, timeout, source_path, target_path)
+            for filename in source_path.iterdir()
+        )
+
+    def single_fid_sample(
+        self,
+        filename: Path,
+        timeout: int,
+        source_path: Path,
+        target_path: Path,
+    ) -> None:
+        figure_of_merit = "critical_depth"
+        print("Processing: ", filename)
+        try:
+            qc = QuantumCircuit.from_qasm_file(Path(source_path) / filename)
+            if filename.suffix != ".qasm":
+                return
+
+            for i, dev in enumerate(rl.helper.get_devices()):
+                target_filename = str(filename).split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(i)
+                if (
+                    not (Path(target_path) / (target_filename + ".qasm")).exists()
+                    and qc.num_qubits <= dev["max_qubits"]
+                ):
+                    try:
+                        res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, dev["name"]], timeout)
+                        if res:
+                            compiled_qc = res[0]
+                            compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
+
+                    except Exception as e:
+                        print(e, filename, "inner")
+
+        except Exception as e:
+            print(e, filename, "outer")
+
     def compile_all_circuits_for_dev_and_fom(
         self,
         device_name: str,
@@ -81,7 +133,7 @@ class Predictor:
         self,
         source_path: Path | None = None,
         target_path: Path | None = None,
-        timeout: int = 300,
+        timeout: int = 600,
     ) -> None:
         if source_path is None:
             source_path = ml.helper.get_path_training_circuits()
@@ -97,14 +149,15 @@ class Predictor:
                 zip_ref.extractall(source_path)
 
         target_path.mkdir(exist_ok=True)
+        self.compile_all_circuits_fidelity(timeout, source_path, target_path, logger.level)
 
-        Parallel(n_jobs=-1, verbose=100)(
-            delayed(self.compile_all_circuits_for_dev_and_fom)(
-                device_name, timeout, figure_of_merit, source_path, target_path, logger.level
-            )
-            for figure_of_merit in ["fidelity", "critical_depth"]
-            for device_name in [dev["name"] for dev in rl.helper.get_devices()]
-        )
+        # Parallel(n_jobs=7, verbose=100)(
+        #     delayed(self.compile_all_circuits_for_dev_and_fom)(
+        #         device_name, timeout, figure_of_merit, source_path, target_path, logger.level
+        #     )
+        #     for figure_of_merit in ["critical_depth"]
+        #     for device_name in [dev["name"] for dev in rl.helper.get_devices() if not dev["name"]=="ibm_washington"]
+        # )
 
     def generate_trainingdata_from_qasm_files(
         self,

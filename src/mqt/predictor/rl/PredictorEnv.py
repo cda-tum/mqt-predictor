@@ -166,8 +166,15 @@ class PredictorEnv(Env):  # type: ignore[misc]
             else:
                 transpile_pass = action["transpile_pass"]
             if action["origin"] == "qiskit":
-                pm = PassManager(transpile_pass)
                 try:
+                    if action["name"] == "QiskitO3":
+                        pm = PassManager()
+                        pm.append(
+                            action["transpile_pass"](self.device["native_gates"], CouplingMap(self.device["cmap"])),
+                            do_while=action["do_while"],
+                        )
+                    else:
+                        pm = PassManager(transpile_pass)
                     altered_qc = pm.run(self.state)
                 except Exception as e:
                     print(

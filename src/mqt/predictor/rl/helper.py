@@ -35,17 +35,25 @@ from qiskit.transpiler.passes import (
     ConsolidateBlocks,
     CXCancellation,
     DenseLayout,
+    Depth,
     EnlargeWithAncilla,
+    FixedPoint,
     FullAncillaAllocation,
+    GatesInBasis,
     InverseCancellation,
+    MinimumPoint,
     Optimize1qGatesDecomposition,
     OptimizeCliffords,
     RemoveDiagonalGatesBeforeMeasure,
     SabreLayout,
     SabreSwap,
+    Size,
     StochasticSwap,
     TrivialLayout,
+    UnitarySynthesis,
 )
+from qiskit.transpiler.preset_passmanagers import common
+from qiskit.transpiler.runningpassmanager import ConditionalController
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
@@ -183,6 +191,35 @@ def get_actions_opt() -> list[dict[str, Any]]:
             "name": "RemoveRedundancies",
             "transpile_pass": [RemoveRedundancies()],
             "origin": "tket",
+        },
+        {
+            "name": "QiskitO3",
+            "transpile_pass": lambda bgates, cmap: [
+                Collect2qBlocks(),
+                ConsolidateBlocks(basis_gates=bgates),
+                UnitarySynthesis(basis_gates=bgates, coupling_map=cmap),
+                Optimize1qGatesDecomposition(basis=bgates),
+                CommutativeCancellation(basis_gates=bgates),
+                GatesInBasis(bgates),
+                ConditionalController(
+                    [
+                        pass_
+                        for x in common.generate_translation_passmanager(
+                            target=None, basis_gates=bgates, coupling_map=cmap
+                        ).passes()
+                        for pass_ in x["passes"]
+                    ],
+                    condition=lambda property_set: not property_set["all_gates_in_basis"],
+                ),
+                Depth(recurse=True),
+                FixedPoint("depth"),
+                Size(recurse=True),
+                FixedPoint("size"),
+                MinimumPoint(["depth", "size"], "optimization_loop"),
+            ],
+            "origin": "qiskit",
+            "do_while": lambda property_set: (not property_set["optimization_loop_minimum_point"])
+            # "do_while": lambda property_set: (not property_set["depth_fixed_point"]) or (not property_set["size_fixed_point"])
         },
         # {
         #     "name": "BQSKit_Optimization_3",
