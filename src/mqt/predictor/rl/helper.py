@@ -325,7 +325,7 @@ def get_devices() -> list[dict[str, Any]]:
     ]
 
 
-def get_state_sample(max_qubits: int = -1) -> QuantumCircuit:
+def get_state_sample(max_qubits: int = -1) -> tuple[QuantumCircuit, str]:
     file_list = list(get_path_training_circuits().glob("*.qasm"))
 
     path_zip = get_path_training_circuits() / "mqtbench_sample_circuits.zip"
@@ -351,7 +351,7 @@ def get_state_sample(max_qubits: int = -1) -> QuantumCircuit:
     except Exception:
         raise RuntimeError("Could not read QuantumCircuit from: " + str(file_list[random_index])) from None
 
-    return qc, file_list[random_index]
+    return qc, str(file_list[random_index])
 
 
 def create_feature_dict(qc: QuantumCircuit) -> dict[str, Any]:
