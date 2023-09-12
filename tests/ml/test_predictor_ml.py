@@ -29,24 +29,6 @@ def test_predict(mock_show: Any) -> None:  # noqa: ARG001
     assert 0 <= prediction < len(ml.helper.get_index_to_device_LUT())
 
 
-# @pytest.mark.parametrize("comp_path", list(range(len(ml.helper.get_index_to_comppath_LUT()))))
-# def test_compilation_paths(comp_path: int) -> None:
-#     qc_qasm = benchmark_generator.get_benchmark("dj", 1, 2).qasm()
-#     res, compile_info = ml.qcompile(qc_qasm)
-#     assert res
-#     assert compile_info
-#
-#     qc = benchmark_generator.get_benchmark("dj", 1, 2)
-#     tmp_filename = "test.qasm"
-#     qc.qasm(filename=tmp_filename)
-#     res, compile_info = ml.qcompile(tmp_filename)
-#     assert res
-#     assert compile_info
-#
-#     if Path(tmp_filename).exists():
-#         Path(tmp_filename).unlink()
-
-
 def test_compile_all_circuits_for_qc() -> None:
     qc = benchmark_generator.get_benchmark("dj", 1, 2)
     tmp_filename = "test.qasm"
