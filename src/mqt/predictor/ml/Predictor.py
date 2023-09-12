@@ -149,15 +149,14 @@ class Predictor:
                 zip_ref.extractall(source_path)
 
         target_path.mkdir(exist_ok=True)
-        self.compile_all_circuits_fidelity(timeout, source_path, target_path, logger.level)
 
-        # Parallel(n_jobs=7, verbose=100)(
-        #     delayed(self.compile_all_circuits_for_dev_and_fom)(
-        #         device_name, timeout, figure_of_merit, source_path, target_path, logger.level
-        #     )
-        #     for figure_of_merit in ["critical_depth"]
-        #     for device_name in [dev["name"] for dev in rl.helper.get_devices() if not dev["name"]=="ibm_washington"]
-        # )
+        Parallel(n_jobs=1, verbose=100)(
+            delayed(self.compile_all_circuits_for_dev_and_fom)(
+                device_name, timeout, figure_of_merit, source_path, target_path, logger.level
+            )
+            for figure_of_merit in ["fidelity", "critical_depth"]
+            for device_name in [dev["name"] for dev in rl.helper.get_devices()]
+        )
 
     def generate_trainingdata_from_qasm_files(
         self,

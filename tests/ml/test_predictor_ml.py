@@ -67,7 +67,8 @@ def test_generate_compiled_circuits() -> None:
     assert any(file.suffix == ".qasm" for file in target_path.iterdir())
 
     res = predictor.generate_training_sample(
-        str(qasm_path),
+        file=str(qasm_path),
+        figure_of_merit=figure_of_merit,
         path_uncompiled_circuit=str(source_path),
         path_compiled_circuits=str(target_path),
     )

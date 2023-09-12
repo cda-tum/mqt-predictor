@@ -7,7 +7,7 @@ from mqt.bench.utils import get_cmap_from_devicename
 from mqt.predictor import rl
 from qiskit import QuantumCircuit
 
-NUM_ACTIONS_OPT = 12
+NUM_ACTIONS_OPT = 13
 
 
 def test_get_actions_opt() -> None:

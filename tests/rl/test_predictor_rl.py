@@ -10,7 +10,7 @@ from qiskit import QuantumCircuit
 )
 def test_qcompile_with_pretrained_models(figure_of_merit: reward.reward_functions) -> None:
     qc = get_benchmark("ghz", 1, 5)
-    res = rl.qcompile(qc, figure_of_merit=figure_of_merit)
+    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name="ibm_washington")
     assert type(res) == tuple
     qc_compiled, compilation_information = res
     assert isinstance(qc_compiled, QuantumCircuit)
