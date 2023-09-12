@@ -11,20 +11,20 @@ from joblib import Parallel, delayed
 from mqt.bench.tket_helper import get_rebase
 from mqt.predictor import Result, ml, reward, rl
 from pytket import OpType
-from pytket.architecture import Architecture  # type: ignore[attr-defined]
+from pytket.architecture import Architecture
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
-from pytket.passes import (  # type: ignore[attr-defined]
+from pytket.passes import (
     FullPeepholeOptimise,
     PlacementPass,
     RoutingPass,
 )
-from pytket.placement import GraphPlacement  # type: ignore[attr-defined]
+from pytket.placement import GraphPlacement
 from qiskit import QuantumCircuit, transpile
 
 logger = logging.getLogger("mqtpredictor")
 
 
-def computeRewards(  # noqa: PLR0911
+def computeRewards(  # noqa: PLR0911, PLR0915
     benchmark: str,
     used_setup: str,
     figure_of_merit: reward.reward_functions = "fidelity",

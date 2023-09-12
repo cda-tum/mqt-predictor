@@ -11,16 +11,16 @@ from mqt.bench.qiskit_helper import get_native_gates
 from mqt.bench.utils import calc_supermarq_features, get_cmap_from_devicename
 from mqt.predictor import reward, rl
 from packaging import version
-from pytket.architecture import Architecture  # type: ignore[attr-defined]
-from pytket.circuit import Circuit, Node, Qubit  # type: ignore[attr-defined]
-from pytket.passes import (  # type: ignore[attr-defined]
+from pytket.architecture import Architecture
+from pytket.circuit import Circuit, Node, Qubit
+from pytket.passes import (
     CliffordSimp,
     FullPeepholeOptimise,
     PeepholeOptimise2Q,
     RemoveRedundancies,
     RoutingPass,
 )
-from pytket.placement import place_with_map  # type: ignore[attr-defined]
+from pytket.placement import place_with_map
 from qiskit import QuantumCircuit
 from qiskit.circuit.equivalence_library import StandardEquivalenceLibrary
 from qiskit.circuit.library import XGate, ZGate
@@ -464,7 +464,7 @@ class PreProcessTKETRoutingAfterQiskitLayout:
     The trivial layout indices that this layout of the physical qubits is the identity mapping.
     """
 
-    def apply(self, circuit: Circuit) -> Circuit:
+    def apply(self, circuit: Circuit) -> None:
         mapping = {Qubit(i): Node(i) for i in range(circuit.n_qubits)}
         place_with_map(circuit=circuit, qmap=mapping)
 

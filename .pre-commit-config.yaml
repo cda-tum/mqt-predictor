@@ -93,3 +93,6 @@ repos:
           - types-requests
           - types-tqdm
           - pytket-qiskit
+          - qiskit_optimization
+          - qiskit_nature
+          - qiskit_finance
