@@ -95,40 +95,6 @@ def qcompile(
             print(qc)
         return False
 
-    # eval_score = 0.0
-    # counter = 0.0
-    #
-    # for _ in range(3):
-    #     tmp_compiled_result = predictor.compile_as_predicted(qc)
-    #     if not tmp_compiled_result:
-    #         return False
-    #     if figure_of_merit == "fidelity":
-    #         assert isinstance(tmp_compiled_result, tuple)
-    #         tmp_eval_score = reward.expected_fidelity(tmp_compiled_result[0], device=device_name)
-    #         if tmp_eval_score >= eval_score:
-    #             eval_score = tmp_eval_score
-    #             compiled_result = tmp_compiled_result
-    #         else:
-    #             return compiled_result
-    #     elif figure_of_merit == "critical_depth":
-    #         assert isinstance(tmp_compiled_result, tuple)
-    #         tmp_eval_score = reward.crit_depth(tmp_compiled_result[0])
-    #         if tmp_eval_score >= eval_score:
-    #             eval_score = tmp_eval_score
-    #             compiled_result = tmp_compiled_result
-    #         else:
-    #             return compiled_result
-    #     else:
-    #         return False
-    #     qc = compiled_result[0]
-    #     print("counter: ", counter)
-
-    # return compiled_result
-
-    # compiled_result = predictor.compile_as_predicted(qc, figure_of_merit=figure_of_merit, device_name=device_name)
-    # if not compiled_result:
-    #     return False
-
 
 def get_actions_opt() -> list[dict[str, Any]]:
     return [
@@ -218,18 +184,8 @@ def get_actions_opt() -> list[dict[str, Any]]:
                 MinimumPoint(["depth", "size"], "optimization_loop"),
             ],
             "origin": "qiskit",
-            "do_while": lambda property_set: (not property_set["optimization_loop_minimum_point"])
-            # "do_while": lambda property_set: (not property_set["depth_fixed_point"]) or (not property_set["size_fixed_point"])
+            "do_while": lambda property_set: (not property_set["optimization_loop_minimum_point"]),
         },
-        # {
-        #     "name": "BQSKit_Optimization_3",
-        #     "transpile_pass": lambda qc:
-        #         bqskit_compile(qc,
-        #         max_synthesis_size=2,
-        #         optimization_level=2),
-        #
-        #     "origin": "bqskit",
-        # },
     ]
 
 
@@ -305,14 +261,6 @@ def get_actions_mapping() -> list[dict[str, Any]]:
             ],
             "origin": "qiskit",
         },
-        # {
-        #     "name": "QMapHeuristic",
-        #     "transpile_pass": lambda c: lambda qc: qmap.compile(circ=qc,
-        #     arch=qmap.Architecture(max(max({tuple(elem) for elem in c}))+1, {tuple(elem) for elem in c}),
-        #     method="heuristic",
-        #     post_mapping_optimizations=True),
-        #     "origin": "mqt",
-        # },
     ]
 
 
