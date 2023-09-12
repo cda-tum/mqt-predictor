@@ -354,7 +354,6 @@ def get_state_sample(max_qubits: int = -1) -> tuple[QuantumCircuit, str]:
     return qc, str(file_list[random_index])
 
 
-
 def create_feature_dict(qc: QuantumCircuit) -> dict[str, Any]:
     feature_dict = {
         "num_qubits": qc.num_qubits,
