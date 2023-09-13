@@ -34,8 +34,6 @@ def test_train_random_forest_classifier(mock_pyplot: Any) -> None:  # noqa: ARG0
     predictor = ml.Predictor()
     assert predictor.clf is None
     predictor.train_random_forest_classifier(visualize_results=False)
-    if Path("non_zero_indices.npy").exists():
-        Path("non_zero_indices.npy").unlink()
 
     assert predictor.clf is not None
 
