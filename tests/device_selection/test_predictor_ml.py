@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -6,8 +5,6 @@ from unittest.mock import patch
 import pytest
 from mqt.bench import benchmark_generator
 from mqt.predictor import ml, reward
-
-IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
 
 @patch("matplotlib.pyplot.show")
