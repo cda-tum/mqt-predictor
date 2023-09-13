@@ -29,18 +29,6 @@ def test_predict(mock_show: Any) -> None:  # noqa: ARG001
     assert 0 <= prediction < len(ml.helper.get_index_to_device_LUT())
 
 
-def test_compile_all_circuits_for_qc() -> None:
-    qc = benchmark_generator.get_benchmark("dj", 1, 2)
-    tmp_filename = "test.qasm"
-    qc.qasm(filename=tmp_filename)
-    predictor = ml.Predictor()
-    predictor.generate_compiled_circuits(
-        source_path=Path(),
-    )
-    if Path(tmp_filename).exists():
-        Path(tmp_filename).unlink()
-
-
 @patch("matplotlib.pyplot.show")
 def test_train_random_forest_classifier(mock_pyplot: Any) -> None:  # noqa: ARG001
     predictor = ml.Predictor()
@@ -61,7 +49,7 @@ def test_generate_compiled_circuits() -> None:
     figure_of_merit: reward.reward_functions = "fidelity"
 
     qc = benchmark_generator.get_benchmark("dj", 1, 3)
-    qasm_path = Path("compiled_test.qasm")
+    qasm_path = Path("test.qasm")
     qc.qasm(filename=str(qasm_path))
     predictor.generate_compiled_circuits(source_path, target_path)
     assert any(file.suffix == ".qasm" for file in target_path.iterdir())
