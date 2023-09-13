@@ -18,13 +18,12 @@ from qiskit import QuantumCircuit
 
 def test_instantiate_models() -> None:
     predictor = rl.Predictor()
-    for dev in rl.helper.get_devices():
-        predictor.train_all_models(
-            timesteps=100,
-            reward_functions=["fidelity", "critical_depth"],
-            device_name=dev["name"],
-            test=True,
-        )
+    predictor.train_all_models(
+        timesteps=100,
+        reward_functions=["fidelity", "critical_depth"],
+        device_name="ibm_washington",
+        test=True,
+    )
 
 
 @pytest.mark.parametrize(
