@@ -141,8 +141,3 @@ def test_get_path_training_circuits() -> None:
     path = rl.helper.get_path_training_circuits()
     assert path.exists()
     assert isinstance(path, Path)
-
-
-def test_qcompile() -> None:
-    qc = get_benchmark("dj", 1, 5)
-    assert rl.helper.qcompile(qc) is not None
