@@ -39,6 +39,7 @@ NUM_QUBIT_INDICES_RIGETTI = 80
 
 
 def get_rigetti_qubit_dict() -> dict[str, str]:
+    """Returns a dictionary mapping the qubit indices of the Rigetti Aspen-M2 device to a sequence of numbers that does not skip index numbers."""
     mapping = {
         "32": "4",
         "39": "3",

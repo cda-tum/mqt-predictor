@@ -14,6 +14,8 @@ PATH_LENGTH = 260
 
 
 class Predictor:
+    """The Predictor class is used to compile a given quantum circuit to a device optimizing for the given figure of merit."""
+
     def __init__(
         self, figure_of_merit: reward.reward_functions | None = None, device_name: str | None = None, verbose: int = 0
     ):
@@ -33,6 +35,15 @@ class Predictor:
         self,
         qc: QuantumCircuit | str,
     ) -> tuple[QuantumCircuit, list[str]] | bool:
+        """Compiles a given quantum circuit such that the expected fidelity is maximized by using the respectively trained optimized compiler.
+
+        Args:
+            qc (QuantumCircuit | str): The quantum circuit to be compiled or the path to a qasm file containing the quantum circuit.
+
+        Returns:
+            tuple[QuantumCircuit, list[str]] | bool: Returns a tuple containing the compiled quantum circuit and the compilation information. If compilation fails, False is returned.
+        """
+
         assert self.model is not None
         assert self.env is not None
         if not isinstance(qc, QuantumCircuit):
@@ -71,6 +82,17 @@ class Predictor:
         verbose: int = 2,
         test: bool = False,
     ) -> None:
+        """Trains all models for the given reward functions and device.
+
+        Args:
+            timesteps (int, optional): The number of timesteps to train the model. Defaults to 1000.
+            reward_functions (list[reward.reward_functions] | None, optional): The reward functions to train the model for. Defaults to None.
+            model_name (str, optional): The name of the model. Defaults to "model".
+            device_name (str, optional): The name of the device. Defaults to "ibm_washington".
+            verbose (int, optional): The verbosity level. Defaults to 2.
+            test (bool, optional): Whether to train the model for testing purposes. Defaults to False.
+        """
+
         if reward_functions is None:
             reward_functions = ["fidelity"]
         if test:

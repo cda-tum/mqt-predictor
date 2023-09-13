@@ -72,11 +72,16 @@ def qcompile(
     device_name: str = "ibm_washington",
     predictor_singleton: rl.Predictor | None = None,
 ) -> tuple[QuantumCircuit, list[str]] | bool:
-    """Returns the compiled quantum circuit which is compiled following an objective function.
-    Keyword arguments:
-    qc -- to be compiled quantum circuit or path to a qasm file
-    figure_of_merit -- objective function used for the compilation
-    Returns: compiled quantum circuit as Qiskit QuantumCircuit object
+    """Compiles a given quantum circuit to a device optimizing for the given figure of merit.
+
+    Args:
+        qc (QuantumCircuit | str): The quantum circuit to be compiled. If a string is given, it is assumed to be a path to a qasm file.
+        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+        device_name (str, optional): The name of the device to compile to. Defaults to "ibm_washington".
+        predictor_singleton (rl.Predictor, optional): A predictor object that is used for compilation. If None, a new predictor object is created. Defaults to None.
+
+    Returns:
+        tuple[QuantumCircuit, list[str]] | bool: Returns a tuple containing the compiled quantum circuit and the compilation information. If compilation fails, False is returned.
     """
 
     if predictor_singleton is None:
@@ -97,6 +102,7 @@ def qcompile(
 
 
 def get_actions_opt() -> list[dict[str, Any]]:
+    """Returns a list of dictionaries containing information about the optimization passes that are available."""
     return [
         {
             "name": "Optimize1qGatesDecomposition",
@@ -190,6 +196,7 @@ def get_actions_opt() -> list[dict[str, Any]]:
 
 
 def get_actions_layout() -> list[dict[str, Any]]:
+    """Returns a list of dictionaries containing information about the layout passes that are available."""
     return [
         {
             "name": "TrivialLayout",
@@ -225,6 +232,7 @@ def get_actions_layout() -> list[dict[str, Any]]:
 
 
 def get_actions_routing() -> list[dict[str, Any]]:
+    """Returns a list of dictionaries containing information about the routing passes that are available."""
     return [
         {
             "name": "BasicSwap",
@@ -253,6 +261,7 @@ def get_actions_routing() -> list[dict[str, Any]]:
 
 
 def get_actions_mapping() -> list[dict[str, Any]]:
+    """Returns a list of dictionaries containing information about the mapping passes that are available."""
     return [
         {
             "name": "SabreMapping",
@@ -265,6 +274,7 @@ def get_actions_mapping() -> list[dict[str, Any]]:
 
 
 def get_actions_synthesis() -> list[dict[str, Any]]:
+    """Returns a list of dictionaries containing information about the synthesis passes that are available."""
     return [
         {
             "name": "BasisTranslator",
@@ -275,10 +285,12 @@ def get_actions_synthesis() -> list[dict[str, Any]]:
 
 
 def get_action_terminate() -> dict[str, Any]:
+    """Returns a dictionary containing information about the terminate pass that is available."""
     return {"name": "terminate"}
 
 
 def get_devices() -> list[dict[str, Any]]:
+    """Returns a list of dictionaries containing information about the devices that are available."""
     return [
         {
             "name": "ibm_washington",
@@ -326,6 +338,14 @@ def get_devices() -> list[dict[str, Any]]:
 
 
 def get_state_sample(max_qubits: int = -1) -> tuple[QuantumCircuit, str]:
+    """Returns a random quantum circuit from the training circuits folder.
+
+    Args:
+        max_qubits (int, optional): The maximum number of qubits the returned quantum circuit may have. If -1, no limit is set. Defaults to -1.
+
+    Returns:
+        tuple[QuantumCircuit, str]: A tuple containing the random quantum circuit and the path to the file from which it was read.
+    """
     file_list = list(get_path_training_circuits().glob("*.qasm"))
 
     path_zip = get_path_training_circuits() / "mqtbench_sample_circuits.zip"
@@ -355,6 +375,15 @@ def get_state_sample(max_qubits: int = -1) -> tuple[QuantumCircuit, str]:
 
 
 def create_feature_dict(qc: QuantumCircuit) -> dict[str, Any]:
+    """Creates a feature dictionary for a given quantum circuit.
+
+    Args:
+        qc (QuantumCircuit): The quantum circuit for which the feature dictionary is created.
+
+    Returns:
+        dict[str, Any]: The feature dictionary for the given quantum circuit.
+    """
+
     feature_dict = {
         "num_qubits": qc.num_qubits,
         "depth": qc.depth(),
@@ -372,18 +401,29 @@ def create_feature_dict(qc: QuantumCircuit) -> dict[str, Any]:
 
 
 def get_path_training_data() -> Path:
+    """Returns the path to the training data folder used for RL training."""
     return Path(str(resources.files("mqt.predictor"))) / "rl" / "training_data"
 
 
 def get_path_trained_model() -> Path:
+    """Returns the path to the trained model folder used for RL training."""
     return get_path_training_data() / "trained_model"
 
 
 def get_path_training_circuits() -> Path:
+    """Returns the path to the training circuits folder used for RL training."""
     return get_path_training_data() / "training_circuits"
 
 
 def load_model(model_name: str) -> MaskablePPO:
+    """Loads a trained model from the trained model folder.
+
+    Args:
+        model_name (str): The name of the model to be loaded.
+
+    Returns:
+        MaskablePPO: The loaded model.
+    """
     path = get_path_trained_model()
 
     if Path(path / (model_name + ".zip")).exists():
@@ -437,6 +477,12 @@ def load_model(model_name: str) -> MaskablePPO:
 
 
 def handle_downloading_model(download_url: str, model_name: str) -> None:
+    """Downloads a trained model from the given URL and saves it to the trained model folder.
+
+    Args:
+        download_url (str): The URL from which the model is downloaded.
+        model_name (str): The name of the model to be downloaded.
+    """
     logger.info("Start downloading model...")
 
     r = requests.get(download_url)
@@ -465,11 +511,20 @@ class PreProcessTKETRoutingAfterQiskitLayout:
     """
 
     def apply(self, circuit: Circuit) -> None:
+        """Applies the pre-processing step to route a circuit with tket after a Qiskit Layout pass has been applied."""
         mapping = {Qubit(i): Node(i) for i in range(circuit.n_qubits)}
         place_with_map(circuit=circuit, qmap=mapping)
 
 
 def get_device(device_name: str) -> dict[str, Any]:
+    """Returns the device with the given name.
+
+    Args:
+        device_name (str): The name of the device to be returned.
+
+    Returns:
+        dict[str, Any]: The device with the given name.
+    """
     devices = get_devices()
     for device in devices:
         if device["name"] == device_name:

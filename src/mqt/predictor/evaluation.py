@@ -30,6 +30,17 @@ def computeRewards(  # noqa: PLR0911, PLR0915
     figure_of_merit: reward.reward_functions = "fidelity",
     device: dict[str, Any] | None = None,
 ) -> Result | None:
+    """Compiles a given quantum circuit to a device with the highest predicted figure of merit.
+
+    Args:
+        benchmark (str): The path to the benchmark to be compiled.
+        used_setup (str): The setup to be used for compilation. Either 'MQTPredictor', 'qiskit_o3' or 'tket'.
+        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+        device (dict[str, Any] | None, optional): The device to be used for compilation. Defaults to None.
+
+    Returns:
+        Result | None: Returns a Result object containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, None is returned.
+    """
     if used_setup == "MQTPredictor":
         dev_name = ml.helper.get_predicted_and_suitable_device_name(
             QuantumCircuit.from_qasm_file(benchmark), figure_of_merit
@@ -131,6 +142,7 @@ def computeRewards(  # noqa: PLR0911, PLR0915
 
 
 def evaluate_all_sample_circuits() -> None:
+    """Evaluates all sample circuits and saves the results to a csv file."""
     res_csv = []
 
     results = Parallel(n_jobs=-1, verbose=3, backend="threading")(
@@ -149,6 +161,7 @@ def evaluate_all_sample_circuits() -> None:
 
 
 def evaluate_GHZ_circuits() -> None:
+    """Evaluates all GHZ circuits and saves the results to a csv file."""
     res_csv = []
 
     path = Path(str(resources.files("mqt.predictor"))) / "ml" / "training_data" / "GHZ"
@@ -167,6 +180,14 @@ def evaluate_GHZ_circuits() -> None:
 
 
 def evaluate_sample_circuit(file: str) -> dict[str, Any]:
+    """Evaluates a given sample circuit and returns the results as a dictionary.
+
+    Args:
+        file (str): The path to the sample circuit to be evaluated.
+
+    Returns:
+        dict[str, Any]: Returns a dictionary containing the results of the evaluation.
+    """
     print("Evaluate file: " + file)
     logger.info("Evaluate file: " + file)
 

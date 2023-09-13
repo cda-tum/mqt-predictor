@@ -24,6 +24,16 @@ if TYPE_CHECKING:
 def qcompile(
     qc: QuantumCircuit, figure_of_merit: reward.reward_functions = "fidelity"
 ) -> tuple[QuantumCircuit, list[str], str] | bool:
+    """Compiles a given quantum circuit to a device with the highest predicted figure of merit.
+
+    Args:
+        qc (QuantumCircuit): The quantum circuit to be compiled.
+        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+
+    Returns:
+        tuple[QuantumCircuit, list[str], str] | bool: Returns a tuple containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, False is returned.
+    """
+
     device_name = get_predicted_and_suitable_device_name(qc, figure_of_merit)
     assert device_name is not None
     res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device_name)
@@ -36,6 +46,16 @@ def qcompile(
 def get_predicted_and_suitable_device_name(
     qc: QuantumCircuit, figure_of_merit: reward.reward_functions = "fidelity"
 ) -> str | None:
+    """Returns the name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
+
+    Args:
+        qc (QuantumCircuit): The quantum circuit to be compiled.
+        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+
+    Returns:
+        str | None: The name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit. If no device is suitable, None is returned.
+    """
+
     ml_predictor = ml.Predictor()
     predicted_device_index_probs = ml_predictor.predict_probs(qc, figure_of_merit)
     assert ml_predictor.clf is not None
@@ -50,22 +70,27 @@ def get_predicted_and_suitable_device_name(
 
 
 def get_path_training_data() -> Path:
+    """Returns the path to the training data folder."""
     return Path(str(resources.files("mqt.predictor"))) / "ml" / "training_data"
 
 
 def get_path_trained_model() -> Path:
+    """Returns the path to the trained model folder resulting from the machine learning training."""
     return get_path_training_data() / "trained_model"
 
 
 def get_path_training_circuits() -> Path:
+    """Returns the path to the training circuits folder."""
     return get_path_training_data() / "training_circuits"
 
 
 def get_path_training_circuits_compiled() -> Path:
+    """Returns the path to the compiled training circuits folder."""
     return get_path_training_data() / "training_circuits_compiled"
 
 
 def get_index_to_device_LUT() -> dict[int, str]:
+    """Returns a look-up table (LUT) that maps the index of a device to its name."""
     devices = rl.helper.get_devices()
     return {i: device["name"] for i, device in enumerate(devices)}
 
@@ -133,6 +158,14 @@ PATH_LENGTH = 260
 
 
 def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
+    """Creates and returns a feature dictionary for a given quantum circuit.
+
+    Args:
+        qc (str | QuantumCircuit): The quantum circuit to be compiled.
+
+    Returns:
+        dict[str, Any]: The feature dictionary of the given quantum circuit.
+    """
     if not isinstance(qc, QuantumCircuit):
         if len(qc) < PATH_LENGTH and Path(qc).exists():
             qc = QuantumCircuit.from_qasm_file(qc)
@@ -162,12 +195,25 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
 
 
 def save_classifier(clf: RandomForestClassifier, figure_of_merit: reward.reward_functions = "fidelity") -> None:
+    """Saves the given classifier to the trained model folder.
+
+    Args:
+        clf (RandomForestClassifier): The classifier to be saved.
+        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+    """
     dump(clf, str(get_path_trained_model() / ("trained_clf_" + figure_of_merit + ".joblib")))
 
 
 def save_training_data(
     res: tuple[list[Any], list[Any], list[Any]], figure_of_merit: reward.reward_functions = "fidelity"
 ) -> None:
+    """Saves the given training data to the training data folder.
+
+    Args:
+        res (tuple[list[Any], list[Any], list[Any]]): The training data, the names list and the scores list to be saved.
+        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+    """
+
     training_data, names_list, scores_list = res
 
     with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
@@ -182,6 +228,14 @@ def save_training_data(
 def load_training_data(
     figure_of_merit: reward.reward_functions = "fidelity",
 ) -> tuple[list[Any], list[str], list[Any]]:
+    """Loads and returns the training data from the training data folder.
+
+    Args:
+        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+
+    Returns:
+        tuple[list[Any], list[str], list[Any]]: The training data, the names list and the scores list.
+    """
     with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
         if (
             path.joinpath("training_data_" + figure_of_merit + ".npy").is_file()

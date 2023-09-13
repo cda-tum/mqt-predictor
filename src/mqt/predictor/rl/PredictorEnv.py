@@ -20,6 +20,8 @@ logger = logging.getLogger("mqtpredictor")
 
 
 class PredictorEnv(Env):  # type: ignore[misc]
+    """Predictor environment for reinforcement learning."""
+
     def __init__(self, reward_function: reward.reward_functions = "fidelity", device_name: str = "ibm_washington"):
         logger.info("Init env: " + reward_function)
 
@@ -75,6 +77,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.filename = ""
 
     def step(self, action: int) -> tuple[dict[str, Any], float, bool, bool, dict[Any, Any]]:
+        """Executes the given action and returns the new state, the reward, whether the episode is done, whether the episode is truncated and additional information."""
         self.used_actions.append(str(self.action_set[action].get("name")))
         altered_qc = self.apply_action(action)
         if not altered_qc:
@@ -109,6 +112,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         return obs, reward_val, done, False, {}
 
     def calculate_reward(self) -> Any:
+        """Calculates and returns the reward for the current state."""
         if self.reward_function == "fidelity":
             return reward.expected_fidelity(self.state, self.device["name"])
         if self.reward_function == "critical_depth":
@@ -121,6 +125,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         raise ValueError(error_msg)
 
     def render(self) -> None:
+        """Renders the current state."""
         print(self.state.draw())
 
     def reset(
@@ -129,6 +134,16 @@ class PredictorEnv(Env):  # type: ignore[misc]
         seed: int | None = None,
         options: dict[str, Any] | None = None,  # noqa: ARG002
     ) -> tuple[QuantumCircuit, dict[str, Any]]:
+        """Resets the environment to the given state or a random state.
+
+        Args:
+            qc (Path | str | QuantumCircuit | None, optional): The quantum circuit to be compiled or the path to a qasm file containing the quantum circuit. Defaults to None.
+            seed (int | None, optional): The seed to be used for the random number generator. Defaults to None.
+            options (dict[str, Any] | None, optional): Additional options. Defaults to None.
+
+        Returns:
+            tuple[QuantumCircuit, dict[str, Any]]: The initial state and additional information.
+        """
         super().reset(seed=seed)
         if isinstance(qc, QuantumCircuit):
             self.state = qc
@@ -149,9 +164,11 @@ class PredictorEnv(Env):  # type: ignore[misc]
         return rl.helper.create_feature_dict(self.state), {}
 
     def action_masks(self) -> list[bool]:
+        """Returns a list of valid actions for the current state."""
         return [action in self.valid_actions for action in self.action_set]
 
     def apply_action(self, action_index: int) -> QuantumCircuit:
+        """Applies the given action to the current state and returns the altered state."""
         if action_index in self.action_set:
             action = self.action_set[action_index]
             if action["name"] == "terminate":
@@ -231,6 +248,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         return altered_qc
 
     def determine_valid_actions_for_state(self) -> list[int]:
+        """Determines and returns the valid actions for the current state."""
         check_nat_gates = GatesInBasis(basis_gates=self.device["native_gates"])
         check_nat_gates(self.state)
         only_nat_gates = check_nat_gates.property_set["all_gates_in_basis"]

@@ -10,16 +10,14 @@ if TYPE_CHECKING:
 
 class Result:
     """
-    Class to calculate and store the result of a compiler for a given benchmark.
+    The Result class is used to store the results of a compilation.
 
-    Attributes
-    benchmark: str - name of the benchmark
-    used_setup: str - name of the used setup
-    time: float - time needed to compile the circuit
-    fidelity: float - fidelity reward of the compiled circuit
-    depth: float - depth reward of the compiled circuit
-    gate_ratio: float - gate ratio reward of the compiled circuit
-    mix: float - mix reward of the compiled circuit
+    Attributes:
+        benchmark (str): The path to the benchmark to be compiled.
+        used_setup (str): The setup used for compilation. Either 'MQTPredictor', 'qiskit_o3' or 'tket'.
+        duration (float): The time it took to compile the benchmark.
+        qc (QuantumCircuit | None): The compiled quantum circuit. If compilation failed, None is returned.
+        device (str): The device used for compilation.
 
     """
 
@@ -45,6 +43,8 @@ class Result:
         self.critical_depth: float = rew_crit_depth
 
     def get_dict(self) -> dict[str, float]:
+        """Returns the results as a dictionary."""
+
         return {
             self.used_setup + "_" + "time": self.time,
             self.used_setup + "_" + "fidelity": self.fidelity,
@@ -53,6 +53,10 @@ class Result:
 
 
 class MQTDurationResult:
+    """
+    The MQTDurationResult class is used to store the results of a compilation.
+    """
+
     def __init__(
         self,
         benchmark: str,
@@ -64,6 +68,7 @@ class MQTDurationResult:
         self.figure_of_merit = figure_of_merit
 
     def get_dict(self) -> dict[str, float | str]:
+        """Returns the results as a dictionary."""
         overall: dict[str, float | str] = {"benchmark": self.benchmark}
         for i, dev in enumerate(rl.helper.get_devices()):
             overall.update(
