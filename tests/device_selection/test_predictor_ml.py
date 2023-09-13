@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -5,6 +6,8 @@ from unittest.mock import patch
 import pytest
 from mqt.bench import benchmark_generator
 from mqt.predictor import ml, reward
+
+IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
 
 @patch("matplotlib.pyplot.show")
@@ -40,6 +43,10 @@ def test_train_random_forest_classifier(mock_pyplot: Any) -> None:  # noqa: ARG0
     assert predictor.clf is not None
 
 
+@pytest.mark.skipif(
+    IN_GITHUB_ACTIONS,
+    reason="Trained models are not yet available. Skipping may be reverted after release with trained models.",
+)
 def test_generate_compiled_circuits() -> None:
     predictor = ml.Predictor()
     source_path = Path()
