@@ -43,11 +43,7 @@ def test_train_random_forest_classifier(mock_pyplot: Any) -> None:  # noqa: ARG0
     assert predictor.clf is not None
 
 
-@pytest.mark.skipif(
-    IN_GITHUB_ACTIONS,
-    reason="Trained models are not yet available. Skipping may be reverted after release with trained models.",
-)
-def test_generate_compiled_circuits() -> None:
+def test_compile_all_circuits_for_dev_and_fom() -> None:
     predictor = ml.Predictor()
     source_path = Path()
     target_path = Path("test_compiled_circuits")
@@ -58,7 +54,13 @@ def test_generate_compiled_circuits() -> None:
     qc = benchmark_generator.get_benchmark("dj", 1, 3)
     qasm_path = Path("test.qasm")
     qc.qasm(filename=str(qasm_path))
-    predictor.generate_compiled_circuits(source_path, target_path)
+    predictor.compile_all_circuits_for_dev_and_fom(
+        device_name="ibm_washington",
+        timeout=10,
+        figure_of_merit=figure_of_merit,
+        source_path=source_path,
+        target_path=target_path,
+    )
     assert any(file.suffix == ".qasm" for file in target_path.iterdir())
 
     res = predictor.generate_training_sample(
