@@ -1,6 +1,7 @@
 model_*.zip
 *.qasm
 *.DS_Store
+*-checkpoint.ipynb
 
 /build*
 /cmake-build-*
