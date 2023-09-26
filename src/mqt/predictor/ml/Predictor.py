@@ -176,7 +176,7 @@ class Predictor:
         if target_path is None:
             target_path = ml.helper.get_path_training_circuits_compiled()
 
-        path_zip = source_path / "mqtbench_training_samples.zip"
+        path_zip = source_path / "training_data_device_selection.zip"
         if not any(file.suffix == ".qasm" for file in source_path.iterdir()) and path_zip.exists():
             import zipfile
 

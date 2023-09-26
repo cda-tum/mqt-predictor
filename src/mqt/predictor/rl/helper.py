@@ -348,7 +348,7 @@ def get_state_sample(max_qubits: int = -1) -> tuple[QuantumCircuit, str]:
     """
     file_list = list(get_path_training_circuits().glob("*.qasm"))
 
-    path_zip = get_path_training_circuits() / "mqtbench_sample_circuits.zip"
+    path_zip = get_path_training_circuits() / "training_data_compilation.zip"
     if len(file_list) == 0 and path_zip.exists():
         import zipfile
 
