@@ -40,7 +40,7 @@ The compilation process is modelled as a Markov Decision Process and takes three
 
 <p align="center">
 <picture>
-  <img src="./img/rl.png" width="60%">
+  <img src="./img/rl.png" width="100%">
 </picture>
 </p>
 
@@ -69,7 +69,7 @@ For that, the framework is trained with a set of quantum circuits and their resp
 
 <p align="center">
 <picture>
-  <img src="./img/ml.png" width="60%">
+  <img src="./img/ml.png" width="100%">
 </picture>
 </p>
 
@@ -93,7 +93,7 @@ From a user's perspective, the framework is used as follows:
 
 <p align="center">
 <picture>
-  <img src="./img/mqt_predictor.png" width="60%">
+  <img src="./img/mqt_predictor.png" width="100%">
 </picture>
 </p>
 
