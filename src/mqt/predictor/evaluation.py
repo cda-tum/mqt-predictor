@@ -164,7 +164,7 @@ def evaluate_GHZ_circuits() -> None:
     """Evaluates all GHZ circuits and saves the results to a csv file."""
     res_csv = []
 
-    path = Path(str(resources.files("mqt.predictor"))) / "ml" / "training_data" / "GHZ"
+    path = Path(str(resources.files("mqt.predictor"))) / "ml" / "training_data" / "ghz"
     results = Parallel(n_jobs=-1, verbose=3, backend="threading")(
         delayed(evaluate_sample_circuit)(str(file)) for file in list(path.glob("*.qasm"))
     )
