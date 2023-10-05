@@ -13,7 +13,7 @@ from qiskit import QuantumCircuit
 
 logger = logging.getLogger("mqt-predictor")
 
-figure_of_merit = Literal["expected_fidelity", "critical_depth", "mix", "gate_ratio"]
+figure_of_merit = Literal["expected_fidelity", "critical_depth"]
 
 
 def crit_depth(qc: QuantumCircuit | str, precision: int = 10) -> float:
@@ -24,17 +24,7 @@ def crit_depth(qc: QuantumCircuit | str, precision: int = 10) -> float:
     return cast(float, np.round(1 - supermarq_features.critical_depth, precision))
 
 
-def gate_ratio(qc: QuantumCircuit, precision: int = 10) -> float:
-    """Calculates the gate ratio of a given quantum circuit."""
-    return cast(float, np.round(1 - qc.num_nonlocal_gates() / qc.size(), precision))
-
-
-def mix(qc: QuantumCircuit, device: str, precision: int = 10) -> float:
-    """Calculates the combination of expected fidelity and critical depth of a given quantum circuit."""
-    return expected_fidelity(qc, device, precision) * 0.5 + crit_depth(qc, precision) * 0.5
-
-
-def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: int = 10) -> float:  # noqa: PLR0915
+def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: int = 10) -> float:
     """Calculates the expected fidelity of a given quantum circuit on a given device.
 
     Args:
@@ -53,161 +43,198 @@ def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: 
         except Exception:
             raise RuntimeError("Could not read QuantumCircuit from: " + qc_or_path) from None
 
-    res = 1.0
-    calibration = Calibration.Calibration()
+    if "ibm" in device:
+        res = calc_expected_fidelity_ibm(qc, device)
 
-    if "ibm_montreal" in device or "ibm_washington" in device:
-        if "ibm_montreal" in device:
-            backend = calibration.ibm_montreal_calibration
-        else:
-            backend = calibration.ibm_washington_calibration
-
-        for instruction, qargs, _cargs in qc.data:
-            gate_type = instruction.name
-
-            assert gate_type in ["rz", "sx", "x", "cx", "measure", "barrier"]
-
-            if gate_type != "barrier":
-                assert len(qargs) in [1, 2]
-                first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
-                if len(qargs) == 1:
-                    try:
-                        if gate_type == "measure":
-                            specific_error: float = backend.readout_error(first_qubit)
-                        else:
-                            specific_error = backend.gate_error(gate_type, [first_qubit])
-                    except Exception as e:
-                        raise RuntimeError(
-                            "Error in IBM backend.gate_error(): "
-                            + str(e)
-                            + ", "
-                            + device
-                            + ", "
-                            + first_qubit
-                            + ", "
-                            + instruction
-                            + ", "
-                            + qargs
-                        ) from None
-                else:
-                    second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
-                    try:
-                        specific_error = backend.gate_error(gate_type, [first_qubit, second_qubit])
-                        if specific_error == 1:
-                            specific_error = calibration.ibm_washington_cx_mean_error
-                    except Exception as e:
-                        raise RuntimeError(
-                            "Error in IBM backend.gate_error(): "
-                            + str(e)
-                            + ", "
-                            + device
-                            + ", "
-                            + first_qubit
-                            + ", "
-                            + second_qubit
-                            + ", "
-                            + instruction
-                            + ", "
-                            + qargs
-                        ) from None
-
-                res *= 1 - specific_error
     elif "oqc_lucy" in device:
-        for instruction, qargs, _cargs in qc.data:
-            gate_type = instruction.name
+        res = calc_expected_fidelity_oqc_lucy(qc)
 
-            assert gate_type in ["rz", "sx", "x", "ecr", "measure", "barrier"]
-            if gate_type != "barrier":
-                assert len(qargs) in [1, 2]
-                first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
-                if len(qargs) == 1 and gate_type != "measure":
-                    specific_fidelity = calibration.oqc_lucy_calibration["fid_1Q"][str(first_qubit)]
-                elif len(qargs) == 1 and gate_type == "measure":
-                    specific_fidelity = calibration.oqc_lucy_calibration["fid_1Q_readout"][str(first_qubit)]
-                elif len(qargs) == 2:
-                    second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
-                    tmp = str(first_qubit) + "-" + str(second_qubit)
-                    if calibration.oqc_lucy_calibration["fid_2Q"].get(tmp) is None:
-                        specific_fidelity = calibration.oqc_lucy_calibration["avg_2Q"]
-                    else:
-                        specific_fidelity = calibration.oqc_lucy_calibration["fid_2Q"][tmp]
-
-                res *= specific_fidelity
-
-    elif "ionq_harmony" in device or "ionq_aria1" in device:
-        if "ionq_aria1" in device:
-            calibration_data = calibration.ionq_aria1_calibration
-        else:
-            calibration_data = calibration.ionq_harmony_calibration
-        for instruction, qargs, _cargs in qc.data:
-            gate_type = instruction.name
-
-            assert gate_type in ["rxx", "rz", "ry", "rx", "measure", "barrier"]
-            if gate_type != "barrier":
-                assert len(qargs) in [1, 2]
-                if len(qargs) == 1:
-                    specific_fidelity = calibration_data["avg_1Q"]
-                elif len(qargs) == 2:
-                    specific_fidelity = calibration_data["avg_2Q"]
-                res *= specific_fidelity
+    elif "ionq" in device:
+        res = calc_expected_fidelity_ionq(qc, device)
 
     elif "quantinuum_h2" in device:
-        for instruction, qargs, _cargs in qc.data:
-            gate_type = instruction.name
-            assert gate_type in ["rzz", "rz", "ry", "rx", "measure", "barrier"]
-            if gate_type != "barrier":
-                assert len(qargs) in [1, 2]
-                if len(qargs) == 1:
-                    specific_fidelity = calibration.quantinuum_h2["avg_1Q"]
-                elif len(qargs) == 2:
-                    specific_fidelity = calibration.quantinuum_h2["avg_2Q"]
-                res *= specific_fidelity
+        res = calc_expected_fidelity_quantinuum_h2(qc)
 
     elif "rigetti_aspen_m2" in device:
-        mapping = get_rigetti_qubit_dict()
-        for instruction, qargs, _cargs in qc.data:
-            gate_type = instruction.name
-
-            assert gate_type in ["rx", "rz", "cz", "measure", "barrier"]
-            if gate_type != "barrier":
-                assert len(qargs) in [1, 2]
-                first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
-                if len(qargs) == 1:
-                    if gate_type == "measure":
-                        specific_fidelity = calibration.rigetti_m2_calibration["fid_1Q_readout"][
-                            mapping[str(first_qubit)]
-                        ]
-                    else:
-                        specific_fidelity = calibration.rigetti_m2_calibration["fid_1Q"][mapping[str(first_qubit)]]
-                else:
-                    second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
-                    tmp = (
-                        str(
-                            min(
-                                int(mapping[str(first_qubit)]),
-                                int(mapping[str(second_qubit)]),
-                            )
-                        )
-                        + "-"
-                        + str(
-                            max(
-                                int(mapping[str(first_qubit)]),
-                                int(mapping[str(second_qubit)]),
-                            )
-                        )
-                    )
-                    if (
-                        calibration.rigetti_m2_calibration["fid_2Q_CZ"].get(tmp) is None
-                        or calibration.rigetti_m2_calibration["fid_2Q_CZ"][tmp] is None
-                    ):
-                        specific_fidelity = calibration.rigetti_m2_calibration["avg_2Q"]
-                    else:
-                        specific_fidelity = calibration.rigetti_m2_calibration["fid_2Q_CZ"][tmp]
-
-                res *= specific_fidelity
+        res = calc_expected_fidelity_rigetti_aspen_m2(qc)
 
     else:
         error_msg = "Device not supported"
         raise ValueError(error_msg)
 
     return cast(float, np.round(res, precision))
+
+
+def calc_expected_fidelity_rigetti_aspen_m2(qc: QuantumCircuit) -> float:
+    res = 1.0
+    calibration = Calibration.Calibration()
+
+    mapping = get_rigetti_qubit_dict()
+    for instruction, qargs, _cargs in qc.data:
+        gate_type = instruction.name
+
+        assert gate_type in ["rx", "rz", "cz", "measure", "barrier"]
+        if gate_type != "barrier":
+            assert len(qargs) in [1, 2]
+            first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
+            if len(qargs) == 1:
+                if gate_type == "measure":
+                    specific_fidelity = calibration.rigetti_m2_calibration["fid_1Q_readout"][mapping[str(first_qubit)]]
+                else:
+                    specific_fidelity = calibration.rigetti_m2_calibration["fid_1Q"][mapping[str(first_qubit)]]
+            else:
+                second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
+                tmp = (
+                    str(
+                        min(
+                            int(mapping[str(first_qubit)]),
+                            int(mapping[str(second_qubit)]),
+                        )
+                    )
+                    + "-"
+                    + str(
+                        max(
+                            int(mapping[str(first_qubit)]),
+                            int(mapping[str(second_qubit)]),
+                        )
+                    )
+                )
+                if (
+                    calibration.rigetti_m2_calibration["fid_2Q_CZ"].get(tmp) is None
+                    or calibration.rigetti_m2_calibration["fid_2Q_CZ"][tmp] is None
+                ):
+                    specific_fidelity = calibration.rigetti_m2_calibration["avg_2Q"]
+                else:
+                    specific_fidelity = calibration.rigetti_m2_calibration["fid_2Q_CZ"][tmp]
+
+            res *= specific_fidelity
+    return res
+
+
+def calc_expected_fidelity_quantinuum_h2(qc: QuantumCircuit) -> float:
+    res = 1.0
+    calibration = Calibration.Calibration().quantinuum_h2_calibration
+    for instruction, qargs, _cargs in qc.data:
+        gate_type = instruction.name
+        assert gate_type in ["rzz", "rz", "ry", "rx", "measure", "barrier"]
+        if gate_type != "barrier":
+            assert len(qargs) in [1, 2]
+            if len(qargs) == 1:
+                specific_fidelity = calibration["avg_1Q"]
+            elif len(qargs) == 2:
+                specific_fidelity = calibration["avg_2Q"]
+            res *= specific_fidelity
+    return res
+
+
+def calc_expected_fidelity_ionq(qc: QuantumCircuit, device: str) -> float:
+    if device == "ionq_harmony":
+        calibration_data = Calibration.Calibration().ionq_harmony_calibration
+    elif device == "ionq_aria1":
+        calibration_data = Calibration.Calibration().ionq_aria1_calibration
+    else:
+        msg = "Device not supported"
+        raise ValueError(msg)
+
+    res = 1.0
+    for instruction, qargs, _cargs in qc.data:
+        gate_type = instruction.name
+
+        assert gate_type in ["rxx", "rz", "ry", "rx", "measure", "barrier"]
+        if gate_type != "barrier":
+            assert len(qargs) in [1, 2]
+            if len(qargs) == 1:
+                specific_fidelity = calibration_data["avg_1Q"]
+            elif len(qargs) == 2:
+                specific_fidelity = calibration_data["avg_2Q"]
+            res *= specific_fidelity
+    return res
+
+
+def calc_expected_fidelity_oqc_lucy(qc: QuantumCircuit) -> float:
+    res = 1.0
+    calibration = Calibration.Calibration().oqc_lucy_calibration
+    for instruction, qargs, _cargs in qc.data:
+        gate_type = instruction.name
+
+        assert gate_type in ["rz", "sx", "x", "ecr", "measure", "barrier"]
+        if gate_type != "barrier":
+            assert len(qargs) in [1, 2]
+            first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
+            if len(qargs) == 1 and gate_type != "measure":
+                specific_fidelity = calibration["fid_1Q"][str(first_qubit)]
+            elif len(qargs) == 1 and gate_type == "measure":
+                specific_fidelity = calibration["fid_1Q_readout"][str(first_qubit)]
+            elif len(qargs) == 2:
+                second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
+                tmp = str(first_qubit) + "-" + str(second_qubit)
+                if calibration["fid_2Q"].get(tmp) is None:
+                    specific_fidelity = calibration["avg_2Q"]
+                else:
+                    specific_fidelity = calibration["fid_2Q"][tmp]
+
+            res *= specific_fidelity
+    return res
+
+
+def calc_expected_fidelity_ibm(qc: QuantumCircuit, device: str) -> float:
+    if device == "ibm_montreal":
+        calibration = Calibration.Calibration().ibm_montreal_calibration
+    elif device == "ibm_washington":
+        calibration = Calibration.Calibration().ibm_washington_calibration
+    else:
+        msg = "Device not supported"
+        raise ValueError(msg)
+
+    res = 1.0
+    for instruction, qargs, _cargs in qc.data:
+        gate_type = instruction.name
+
+        assert gate_type in ["rz", "sx", "x", "cx", "measure", "barrier"]
+
+        if gate_type != "barrier":
+            assert len(qargs) in [1, 2]
+            first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
+            if len(qargs) == 1:
+                try:
+                    if gate_type == "measure":
+                        specific_error: float = calibration.readout_error(first_qubit)
+                    else:
+                        specific_error = calibration.gate_error(gate_type, [first_qubit])
+                except Exception as e:
+                    raise RuntimeError(
+                        "Error in IBM backend.gate_error(): "
+                        + str(e)
+                        + ", "
+                        + device
+                        + ", "
+                        + first_qubit
+                        + ", "
+                        + instruction
+                        + ", "
+                        + qargs
+                    ) from None
+            else:
+                second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
+                try:
+                    specific_error = calibration.gate_error(gate_type, [first_qubit, second_qubit])
+                    if specific_error == 1:
+                        specific_error = calibration.ibm_washington_cx_mean_error
+                except Exception as e:
+                    raise RuntimeError(
+                        "Error in IBM backend.gate_error(): "
+                        + str(e)
+                        + ", "
+                        + device
+                        + ", "
+                        + first_qubit
+                        + ", "
+                        + second_qubit
+                        + ", "
+                        + instruction
+                        + ", "
+                        + qargs
+                    ) from None
+
+            res *= 1 - specific_error
+    return res

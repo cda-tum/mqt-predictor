@@ -10,4 +10,4 @@ def test_calibration() -> None:
     assert c.rigetti_m2_calibration
     assert c.ionq_harmony_calibration
     assert c.ionq_aria1_calibration
-    assert c.quantinuum_h2
+    assert c.quantinuum_h2_calibration

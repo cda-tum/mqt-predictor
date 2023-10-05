@@ -119,10 +119,6 @@ class PredictorEnv(Env):  # type: ignore[misc]
             return reward.expected_fidelity(self.state, self.device["name"])
         if self.reward_function == "critical_depth":
             return reward.crit_depth(self.state)
-        if self.reward_function == "mix":
-            return reward.mix(self.state, self.device["name"])
-        if self.reward_function == "gate_ratio":
-            return reward.gate_ratio(self.state)
         error_msg = f"Reward function {self.reward_function} not supported."  # type: ignore[unreachable]
         raise ValueError(error_msg)
 
