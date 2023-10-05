@@ -24,13 +24,13 @@ from qiskit import QuantumCircuit, transpile
 logger = logging.getLogger("mqt-predictor")
 
 
-def computeRewards(  # noqa: PLR0911, PLR0915
+def compute_reward_for_compilation_setup(
     benchmark: str,
     compiler: str,
     figure_of_merit: reward.figure_of_merit = "expected_fidelity",
     device: dict[str, Any] | None = None,
 ) -> Result | None:
-    """Compiles a given quantum circuit to a device with the highest predicted figure of merit.
+    """Computes the reward for a given benchmark with the respectively selected compiler/figure of merit/device and returns the results as a Result object.
 
     Args:
         benchmark (str): The path to the benchmark to be compiled.
@@ -42,103 +42,118 @@ def computeRewards(  # noqa: PLR0911, PLR0915
         Result | None: Returns a Result object containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, None is returned.
     """
     if compiler == "mqt-predictor":
-        dev_name = ml.helper.get_predicted_and_suitable_device_name(
-            QuantumCircuit.from_qasm_file(benchmark), figure_of_merit
-        )
-        assert isinstance(dev_name, str)
-        dev_index = next((index for index, d in enumerate(rl.helper.get_devices()) if d["name"] == dev_name), None)
+        return create_mqtpredictor_result(benchmark, compiler, figure_of_merit)
 
-        target_filename = benchmark.split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(dev_index)
-        combined_path_filename = ml.helper.get_path_training_circuits_compiled() / (target_filename + ".qasm")
-        if Path(combined_path_filename).exists():
-            qc = QuantumCircuit.from_qasm_file(combined_path_filename)
-            if qc:
+    qc = QuantumCircuit.from_qasm_file(benchmark)
+    if "qiskit" in compiler:
+        return create_qiskit_result(benchmark, compiler, qc, device)
+
+    if "tket" in compiler:
+        return create_tket_result(benchmark, compiler, qc, device)
+
+    error_msg = "Unknown setup. Use either 'mqt-predictor', 'qiskit' or 'tket'."
+    raise ValueError(error_msg)
+
+
+def create_qiskit_result(
+    benchmark: str, compiler: str, qc: QuantumCircuit, device: dict[str, Any] | None = None
+) -> Result | None:
+    assert device is not None
+    if qc.num_qubits > device["max_qubits"]:
+        return Result(benchmark, compiler, -1, None, device["name"])
+    start_time = time.time()
+    try:
+        transpiled_qc_qiskit = transpile(
+            qc,
+            basis_gates=device["native_gates"],
+            coupling_map=device["cmap"],
+            optimization_level=3,
+            seed_transpiler=1,
+        )
+    except Exception as e:
+        print("Qiskit Transpile Error for: ", benchmark, device["name"], e)
+        return Result(benchmark, compiler, -1, None, device["name"])
+    duration = time.time() - start_time
+    return Result(benchmark, compiler, duration, transpiled_qc_qiskit, device["name"])
+
+
+def create_tket_result(
+    benchmark: str,
+    compiler: str,
+    qc: QuantumCircuit,
+    device: dict[str, Any] | None = None,
+) -> Result | None:
+    assert device is not None
+    if qc.num_qubits > device["max_qubits"]:
+        return Result(benchmark, compiler, -1, None, device["name"])
+    tket_qc = qiskit_to_tk(qc)
+    arch = Architecture(device["cmap"])
+
+    if "ibm" in device["name"]:
+        native_rebase = get_rebase("ibm")
+    elif "oqc" in device["name"]:
+        native_rebase = get_rebase("oqc")
+    elif "rigetti" in device["name"]:
+        native_rebase = get_rebase("rigetti")
+    elif "quantinuum" in device["name"]:
+        native_rebase = get_rebase("quantinuum")
+    elif "ionq" in device["name"]:
+        native_rebase = get_rebase("ionq")
+    else:
+        msg = "Unknown Native Gate-Set"
+        raise RuntimeError(msg)
+
+    start_time = time.time()
+    try:
+        native_rebase.apply(tket_qc)
+        FullPeepholeOptimise(target_2qb_gate=OpType.TK2).apply(tket_qc)
+        PlacementPass(GraphPlacement(arch)).apply(tket_qc)
+        RoutingPass(arch).apply(tket_qc)
+        native_rebase.apply(tket_qc)
+        duration = time.time() - start_time
+        transpiled_qc_tket = tk_to_qiskit(tket_qc)
+    except Exception as e:
+        print("TKET Transpile Error for: ", benchmark, device["name"], e)
+        return Result(benchmark, compiler, -1, None, device["name"])
+
+    return Result(benchmark, compiler, duration, transpiled_qc_tket, device["name"])
+
+
+def create_mqtpredictor_result(benchmark: str, compiler: str, figure_of_merit: reward.figure_of_merit) -> Result | None:
+    dev_name = ml.helper.get_predicted_and_suitable_device_name(
+        QuantumCircuit.from_qasm_file(benchmark), figure_of_merit
+    )
+    assert isinstance(dev_name, str)
+    dev_index = next((index for index, d in enumerate(rl.helper.get_devices()) if d["name"] == dev_name), None)
+    target_filename = benchmark.split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(dev_index)
+    combined_path_filename = ml.helper.get_path_training_circuits_compiled() / (target_filename + ".qasm")
+    if Path(combined_path_filename).exists():
+        qc = QuantumCircuit.from_qasm_file(combined_path_filename)
+        if qc:
+            return Result(
+                benchmark,
+                compiler + "_" + figure_of_merit,
+                -1,
+                qc,
+                dev_name,
+            )
+    else:
+        try:
+            qc_compiled = ml.qcompile(QuantumCircuit.from_qasm_file(benchmark), figure_of_merit=figure_of_merit)
+            if qc_compiled:
+                assert isinstance(qc_compiled, tuple)
                 return Result(
                     benchmark,
                     compiler + "_" + figure_of_merit,
                     -1,
-                    qc,
+                    qc_compiled[0],
                     dev_name,
                 )
-        else:
-            try:
-                qc_compiled = ml.qcompile(QuantumCircuit.from_qasm_file(benchmark), figure_of_merit=figure_of_merit)
-                if qc_compiled:
-                    assert isinstance(qc_compiled, tuple)
-                    return Result(
-                        benchmark,
-                        compiler + "_" + figure_of_merit,
-                        -1,
-                        qc_compiled[0],
-                        dev_name,
-                    )
 
-            except Exception as e:
-                print("Error occurred for: ", benchmark, dev_name, e)
-                return Result(benchmark, compiler, -1, None, dev_name)
-
-        return Result(benchmark, compiler, -1, None, dev_name)
-
-    qc = QuantumCircuit.from_qasm_file(benchmark)
-    if "qiskit" in compiler:
-        assert device is not None
-        if qc.num_qubits > device["max_qubits"]:
-            return Result(benchmark, compiler, -1, None, device["name"])
-        start_time = time.time()
-        try:
-            transpiled_qc_qiskit = transpile(
-                qc,
-                basis_gates=device["native_gates"],  # get_native_gates("ibm"),
-                coupling_map=device["cmap"],  # get_cmap_from_devicename("ibm_washington"),
-                optimization_level=3,
-                seed_transpiler=1,
-            )
         except Exception as e:
-            print("Qiskit Transpile Error for: ", benchmark, device["name"], e)
-            return Result(benchmark, compiler, -1, None, device["name"])
-
-        duration = time.time() - start_time
-
-        return Result(benchmark, compiler, duration, transpiled_qc_qiskit, device["name"])
-
-    if "tket" in compiler:
-        assert device is not None
-        if qc.num_qubits > device["max_qubits"]:
-            return Result(benchmark, compiler, -1, None, device["name"])
-        tket_qc = qiskit_to_tk(qc)
-        arch = Architecture(device["cmap"])
-
-        if "ibm" in device["name"]:
-            native_rebase = get_rebase("ibm")
-        elif "oqc" in device["name"]:
-            native_rebase = get_rebase("oqc")
-        elif "rigetti" in device["name"]:
-            native_rebase = get_rebase("rigetti")
-        elif "quantinuum" in device["name"]:
-            native_rebase = get_rebase("quantinuum")
-        elif "ionq" in device["name"]:
-            native_rebase = get_rebase("ionq")
-        else:
-            msg = "Unknown Native Gate-Set"
-            raise RuntimeError(msg)
-
-        start_time = time.time()
-        try:
-            native_rebase.apply(tket_qc)
-            FullPeepholeOptimise(target_2qb_gate=OpType.TK2).apply(tket_qc)
-            PlacementPass(GraphPlacement(arch)).apply(tket_qc)
-            RoutingPass(arch).apply(tket_qc)
-            native_rebase.apply(tket_qc)
-            duration = time.time() - start_time
-            transpiled_qc_tket = tk_to_qiskit(tket_qc)
-        except Exception as e:
-            print("TKET Transpile Error for: ", benchmark, device["name"], e)
-            return Result(benchmark, compiler, -1, None, device["name"])
-
-        return Result(benchmark, compiler, duration, transpiled_qc_tket, device["name"])
-
-    error_msg = "Unknown setup. Use either 'RL', 'qiskit_o3' or 'tket'."
-    raise ValueError(error_msg)
+            print("Error occurred for: ", benchmark, dev_name, e)
+            return Result(benchmark, compiler, -1, None, dev_name)
+    return Result(benchmark, compiler, -1, None, dev_name)
 
 
 def evaluate_all_sample_circuits() -> None:
@@ -192,14 +207,14 @@ def evaluate_sample_circuit(file: str) -> dict[str, Any]:
     logger.info("Evaluate file: " + file)
 
     results = []
-    results.append(computeRewards(file, "mqt-predictor", "expected_fidelity"))
-    results.append(computeRewards(file, "mqt-predictor", "critical_depth"))
+    results.append(compute_reward_for_compilation_setup(file, "mqt-predictor", "expected_fidelity"))
+    results.append(compute_reward_for_compilation_setup(file, "mqt-predictor", "critical_depth"))
 
     for _i, dev in enumerate(rl.helper.get_devices()):
-        results.append(computeRewards(file, "qiskit_" + dev["name"], device=dev))
+        results.append(compute_reward_for_compilation_setup(file, "qiskit_" + dev["name"], device=dev))
 
     for _i, dev in enumerate(rl.helper.get_devices()):
-        results.append(computeRewards(file, "tket_" + dev["name"], device=dev))
+        results.append(compute_reward_for_compilation_setup(file, "tket_" + dev["name"], device=dev))
 
     combined_res: dict[str, Any] = {
         "file_path": str(Path(file).stem),
@@ -209,7 +224,7 @@ def evaluate_sample_circuit(file: str) -> dict[str, Any]:
 
     for res in results:
         if res is None:
-            print("Error occurred for: ", file)
+            logger.warning("Error occurred for: " + file)
             continue
         assert res is not None
         combined_res.update(res.get_dict())
