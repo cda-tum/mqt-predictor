@@ -14,7 +14,7 @@ class Result:
 
     Attributes:
         benchmark (str): The path to the benchmark to be compiled.
-        used_setup (str): The setup used for compilation. Either 'MQTPredictor', 'qiskit_o3' or 'tket'.
+        used_setup (str): The setup used for compilation. Either 'mqt-predictor', 'qiskit_o3' or 'tket'.
         duration (float): The time it took to compile the benchmark.
         qc (QuantumCircuit | None): The compiled quantum circuit. If compilation failed, None is returned.
         device (str): The device used for compilation.
