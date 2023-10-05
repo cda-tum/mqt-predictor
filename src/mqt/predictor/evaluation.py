@@ -218,22 +218,17 @@ def evaluate_sample_circuit(file: str) -> dict[str, Any]:
     print("Evaluate file: " + file)
     logger.info("Evaluate file: " + file)
 
-    results = []
-    results.append(create_mqtpredictor_result(file, "expected_fidelity"))
-    results.append(create_mqtpredictor_result(file, "critical_depth"))
-
-    for _i, dev in enumerate(rl.helper.get_devices()):
-        results.append(create_qiskit_result(file, device=dev))
-
-    for _i, dev in enumerate(rl.helper.get_devices()):
-        results.append(create_tket_result(file, device=dev))
-
-    combined_res: dict[str, Any] = {
+    results: dict[str, Any] = {
         "file_path": str(Path(file).stem),
         "benchmark_name": str(Path(file).stem).replace("_", " ").split(" ")[0],
         "num_qubits": str(Path(file).stem).replace("_", " ").split(" ")[-1],
     }
 
-    for res in results:
-        combined_res.update(res.get_dict())
-    return combined_res
+    results.update(create_mqtpredictor_result(file, "expected_fidelity").get_dict())
+    results.update(create_mqtpredictor_result(file, "critical_depth").get_dict())
+
+    for _i, dev in enumerate(rl.helper.get_devices()):
+        results.update(create_qiskit_result(file, dev).get_dict())
+        results.update(create_tket_result(file, dev).get_dict())
+
+    return results
