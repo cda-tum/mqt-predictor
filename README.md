@@ -114,7 +114,7 @@ Now a prediction can be made for any `qiskit.QuantumCircuit` object or `qasm` fi
 from mqt.predictor import qcompile
 
 compiled_qc, compilation_info, selected_device = qcompile(
-    "qasm_file_path_or_QuantumCircuit", figure_of_merit="fidelity"
+    "qasm_file_path_or_QuantumCircuit", figure_of_merit="expected_fidelity"
 )
 ```
 
@@ -146,15 +146,17 @@ After the adjustment is finished, the following methods need to be called to gen
 from mqt.predictor import ml
 
 predictor = ml.Predictor()
-predictor.generate_compiled_circuits(figure_of_merit="fidelity")
-res = predictor.generate_trainingdata_from_qasm_files(figure_of_merit="fidelity")
-ml.helper.save_training_data(res, figure_of_merit="fidelity")
+predictor.generate_compiled_circuits(figure_of_merit="expected_fidelity")
+res = predictor.generate_trainingdata_from_qasm_files(
+    figure_of_merit="expected_fidelity"
+)
+ml.helper.save_training_data(res, figure_of_merit="expected_fidelity")
 ```
 
 Now, the Random Forest classifier can be trained:
 
 ```python
-predictor.train_random_forest_classifier(figure_of_merit="fidelity")
+predictor.train_random_forest_classifier(figure_of_merit="expected_fidelity")
 ```
 
 Additionally, the raw training data may be extracted and can be used for any machine learning model:
@@ -170,7 +172,7 @@ Additionally, the raw training data may be extracted and can be used for any mac
     names_list,
     scores_list,
 ) = predictor.get_prepared_training_data(
-    save_non_zero_indices=True, figure_of_merit="fidelity"
+    save_non_zero_indices=True, figure_of_merit="expected_fidelity"
 )
 ```
 

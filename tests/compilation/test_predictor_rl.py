@@ -14,9 +14,9 @@ IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 )
 @pytest.mark.parametrize(
     "figure_of_merit",
-    ["fidelity", "critical_depth"],
+    ["expected_fidelity", "critical_depth"],
 )
-def test_qcompile_with_pretrained_models(figure_of_merit: reward.reward_functions) -> None:
+def test_qcompile_with_pretrained_models(figure_of_merit: reward.figure_of_merit) -> None:
     qc = get_benchmark("ghz", 1, 5)
     res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name="ibm_washington")
     assert type(res) == tuple
@@ -29,7 +29,7 @@ def test_instantiate_models() -> None:
     predictor = rl.Predictor()
     predictor.train_all_models(
         timesteps=100,
-        reward_functions=["fidelity", "critical_depth"],
+        reward_functions=["expected_fidelity", "critical_depth"],
         device_name="ibm_washington",
         test=True,
     )
@@ -37,9 +37,9 @@ def test_instantiate_models() -> None:
 
 @pytest.mark.parametrize(
     "figure_of_merit",
-    ["fidelity", "critical_depth"],
+    ["expected_fidelity", "critical_depth"],
 )
-def test_qcompile_with_newly_trained_models(figure_of_merit: reward.reward_functions) -> None:
+def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
     qc = get_benchmark("ghz", 1, 5)
     res = rl.qcompile(qc, figure_of_merit=figure_of_merit)
     assert type(res) == tuple

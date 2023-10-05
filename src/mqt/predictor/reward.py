@@ -13,7 +13,7 @@ from qiskit import QuantumCircuit
 
 logger = logging.getLogger("mqt-predictor")
 
-reward_functions = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
+figure_of_merit = Literal["expected_fidelity", "critical_depth", "mix", "gate_ratio"]
 
 
 def crit_depth(qc: QuantumCircuit | str, precision: int = 10) -> float:

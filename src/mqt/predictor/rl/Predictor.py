@@ -17,7 +17,7 @@ class Predictor:
     """The Predictor class is used to compile a given quantum circuit to a device optimizing for the given figure of merit."""
 
     def __init__(
-        self, figure_of_merit: reward.reward_functions | None = None, device_name: str | None = None, verbose: int = 0
+        self, figure_of_merit: reward.figure_of_merit | None = None, device_name: str | None = None, verbose: int = 0
     ):
         if verbose == 1:
             lvl = logging.INFO
@@ -76,7 +76,7 @@ class Predictor:
     def train_all_models(
         self,
         timesteps: int = 1000,
-        reward_functions: list[reward.reward_functions] | None = None,
+        reward_functions: list[reward.figure_of_merit] | None = None,
         model_name: str = "model",
         device_name: str = "ibm_washington",
         verbose: int = 2,
@@ -94,7 +94,7 @@ class Predictor:
         """
 
         if reward_functions is None:
-            reward_functions = ["fidelity"]
+            reward_functions = ["expected_fidelity"]
         if test:
             n_steps = 100
             progress_bar = False

@@ -68,7 +68,7 @@ logger = logging.getLogger("mqt-predictor")
 
 def qcompile(
     qc: QuantumCircuit | str,
-    figure_of_merit: reward.reward_functions = "fidelity",
+    figure_of_merit: reward.figure_of_merit = "expected_fidelity",
     device_name: str = "ibm_washington",
     predictor_singleton: rl.Predictor | None = None,
 ) -> tuple[QuantumCircuit, list[str]] | bool:
@@ -76,7 +76,7 @@ def qcompile(
 
     Args:
         qc (QuantumCircuit | str): The quantum circuit to be compiled. If a string is given, it is assumed to be a path to a qasm file.
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
         device_name (str, optional): The name of the device to compile to. Defaults to "ibm_washington".
         predictor_singleton (rl.Predictor, optional): A predictor object that is used for compilation. If None, a new predictor object is created. Defaults to None.
 

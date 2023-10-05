@@ -26,22 +26,22 @@ logger = logging.getLogger("mqt-predictor")
 
 def computeRewards(  # noqa: PLR0911, PLR0915
     benchmark: str,
-    used_setup: str,
-    figure_of_merit: reward.reward_functions = "fidelity",
+    compiler: str,
+    figure_of_merit: reward.figure_of_merit = "expected_fidelity",
     device: dict[str, Any] | None = None,
 ) -> Result | None:
     """Compiles a given quantum circuit to a device with the highest predicted figure of merit.
 
     Args:
         benchmark (str): The path to the benchmark to be compiled.
-        used_setup (str): The setup to be used for compilation. Either 'mqt-predictor', 'qiskit_o3' or 'tket'.
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+        compiler (str): The setup to be used for compilation. Either 'mqt-predictor', 'qiskit_o3' or 'tket'.
+        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
         device (dict[str, Any] | None, optional): The device to be used for compilation. Defaults to None.
 
     Returns:
         Result | None: Returns a Result object containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, None is returned.
     """
-    if used_setup == "mqt-predictor":
+    if compiler == "mqt-predictor":
         dev_name = ml.helper.get_predicted_and_suitable_device_name(
             QuantumCircuit.from_qasm_file(benchmark), figure_of_merit
         )
@@ -55,7 +55,7 @@ def computeRewards(  # noqa: PLR0911, PLR0915
             if qc:
                 return Result(
                     benchmark,
-                    used_setup + "_" + figure_of_merit,
+                    compiler + "_" + figure_of_merit,
                     -1,
                     qc,
                     dev_name,
@@ -67,7 +67,7 @@ def computeRewards(  # noqa: PLR0911, PLR0915
                     assert isinstance(qc_compiled, tuple)
                     return Result(
                         benchmark,
-                        used_setup + "_" + figure_of_merit,
+                        compiler + "_" + figure_of_merit,
                         -1,
                         qc_compiled[0],
                         dev_name,
@@ -75,15 +75,15 @@ def computeRewards(  # noqa: PLR0911, PLR0915
 
             except Exception as e:
                 print("Error occurred for: ", benchmark, dev_name, e)
-                return Result(benchmark, used_setup, -1, None, dev_name)
+                return Result(benchmark, compiler, -1, None, dev_name)
 
-        return Result(benchmark, used_setup, -1, None, dev_name)
+        return Result(benchmark, compiler, -1, None, dev_name)
 
     qc = QuantumCircuit.from_qasm_file(benchmark)
-    if "qiskit" in used_setup:
+    if "qiskit" in compiler:
         assert device is not None
         if qc.num_qubits > device["max_qubits"]:
-            return Result(benchmark, used_setup, -1, None, device["name"])
+            return Result(benchmark, compiler, -1, None, device["name"])
         start_time = time.time()
         try:
             transpiled_qc_qiskit = transpile(
@@ -95,16 +95,16 @@ def computeRewards(  # noqa: PLR0911, PLR0915
             )
         except Exception as e:
             print("Qiskit Transpile Error for: ", benchmark, device["name"], e)
-            return Result(benchmark, used_setup, -1, None, device["name"])
+            return Result(benchmark, compiler, -1, None, device["name"])
 
         duration = time.time() - start_time
 
-        return Result(benchmark, used_setup, duration, transpiled_qc_qiskit, device["name"])
+        return Result(benchmark, compiler, duration, transpiled_qc_qiskit, device["name"])
 
-    if "tket" in used_setup:
+    if "tket" in compiler:
         assert device is not None
         if qc.num_qubits > device["max_qubits"]:
-            return Result(benchmark, used_setup, -1, None, device["name"])
+            return Result(benchmark, compiler, -1, None, device["name"])
         tket_qc = qiskit_to_tk(qc)
         arch = Architecture(device["cmap"])
 
@@ -133,9 +133,9 @@ def computeRewards(  # noqa: PLR0911, PLR0915
             transpiled_qc_tket = tk_to_qiskit(tket_qc)
         except Exception as e:
             print("TKET Transpile Error for: ", benchmark, device["name"], e)
-            return Result(benchmark, used_setup, -1, None, device["name"])
+            return Result(benchmark, compiler, -1, None, device["name"])
 
-        return Result(benchmark, used_setup, duration, transpiled_qc_tket, device["name"])
+        return Result(benchmark, compiler, duration, transpiled_qc_tket, device["name"])
 
     error_msg = "Unknown setup. Use either 'RL', 'qiskit_o3' or 'tket'."
     raise ValueError(error_msg)
@@ -192,7 +192,7 @@ def evaluate_sample_circuit(file: str) -> dict[str, Any]:
     logger.info("Evaluate file: " + file)
 
     results = []
-    results.append(computeRewards(file, "mqt-predictor", "fidelity"))
+    results.append(computeRewards(file, "mqt-predictor", "expected_fidelity"))
     results.append(computeRewards(file, "mqt-predictor", "critical_depth"))
 
     for _i, dev in enumerate(rl.helper.get_devices()):

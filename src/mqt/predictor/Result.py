@@ -47,6 +47,6 @@ class Result:
 
         return {
             self.compiler + "_" + "time": self.compilation_time,
-            self.compiler + "_" + "fidelity": self.fidelity,
+            self.compiler + "_" + "expected_fidelity": self.fidelity,
             self.compiler + "_" + "critical_depth": self.critical_depth,
         }

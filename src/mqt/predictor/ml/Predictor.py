@@ -67,7 +67,12 @@ class Predictor:
         )
 
     def generate_compiled_circuits_for_single_training_circuit(
-        self, filename: Path, timeout: int, source_path: Path, target_path: Path, figure_of_merit: str = "fidelity"
+        self,
+        filename: Path,
+        timeout: int,
+        source_path: Path,
+        target_path: Path,
+        figure_of_merit: str = "expected_fidelity",
     ) -> None:
         """Compiles a single circuit with the given timeout and saves it in the given directory.
 
@@ -76,7 +81,7 @@ class Predictor:
             timeout (int): The timeout in seconds for the compilation of the circuit
             source_path (Path): The path to the directory containing the circuit to be compiled
             target_path (Path): The path to the directory where the compiled circuit should be saved
-            figure_of_merit (str, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+            figure_of_merit (str, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
         """
         try:
@@ -106,7 +111,7 @@ class Predictor:
         self,
         device_name: str,
         timeout: int,
-        figure_of_merit: reward.reward_functions,
+        figure_of_merit: reward.figure_of_merit,
         source_path: Path | None = None,
         target_path: Path | None = None,
         logger_level: int = logging.INFO,
@@ -189,13 +194,13 @@ class Predictor:
             delayed(self.compile_all_circuits_for_dev_and_fom)(
                 device_name, timeout, figure_of_merit, source_path, target_path, logger.level
             )
-            for figure_of_merit in ["fidelity", "critical_depth"]
+            for figure_of_merit in ["expected_fidelity", "critical_depth"]
             for device_name in [dev["name"] for dev in rl.helper.get_devices()]
         )
 
     def generate_trainingdata_from_qasm_files(
         self,
-        figure_of_merit: reward.reward_functions,
+        figure_of_merit: reward.figure_of_merit,
         path_uncompiled_circuits: str = "",
         path_compiled_circuits: str = "",
     ) -> tuple[list[Any], list[Any], list[Any]]:
@@ -245,7 +250,7 @@ class Predictor:
     def generate_training_sample(
         self,
         file: str,
-        figure_of_merit: reward.reward_functions = "fidelity",
+        figure_of_merit: reward.figure_of_merit = "expected_fidelity",
         path_uncompiled_circuit: str | None = None,
         path_compiled_circuits: str | None = None,
         logger_level: int = logging.INFO,
@@ -254,7 +259,7 @@ class Predictor:
 
         Args:
             file (str): The name of the file to be used for training
-            figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+            figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
             path_uncompiled_circuit (str, optional): The path to the directory containing the uncompiled circuits. Defaults to None.
             path_compiled_circuits (str, optional): The path to the directory containing the compiled circuits. Defaults to None.
             logger_level (int, optional): The level of the logger. Defaults to logging.INFO.
@@ -283,7 +288,7 @@ class Predictor:
                 device = LUT[comp_path_index]
                 if figure_of_merit == "critical_depth":
                     score = reward.crit_depth(filename_str)
-                elif figure_of_merit == "fidelity":
+                elif figure_of_merit == "expected_fidelity":
                     score = reward.expected_fidelity(filename_str, device)
                 scores[comp_path_index] = score
 
@@ -302,12 +307,12 @@ class Predictor:
         return (training_sample, circuit_name, scores)
 
     def train_random_forest_classifier(
-        self, figure_of_merit: reward.reward_functions = "fidelity", visualize_results: bool = False
+        self, figure_of_merit: reward.figure_of_merit = "expected_fidelity", visualize_results: bool = False
     ) -> bool:
         """Trains a random forest classifier for the given figure of merit.
 
         Args:
-            figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for training. Defaults to "fidelity".
+            figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for training. Defaults to "expected_fidelity".
             visualize_results (bool, optional): Whether to visualize the results. Defaults to False.
 
         Returns:
@@ -359,7 +364,7 @@ class Predictor:
         return self.clf is not None
 
     def get_prepared_training_data(
-        self, figure_of_merit: reward.reward_functions, save_non_zero_indices: bool = False
+        self, figure_of_merit: reward.figure_of_merit, save_non_zero_indices: bool = False
     ) -> tuple[
         NDArray[np.float_],
         NDArray[np.float_],
@@ -557,7 +562,7 @@ class Predictor:
             result_path.mkdir()
         plt.savefig(result_path / "y_pred_eval_normed.pdf", bbox_inches="tight")
 
-    def predict_probs(self, qasm_str_or_path: str | QuantumCircuit, figure_of_merit: reward.reward_functions) -> int:
+    def predict_probs(self, qasm_str_or_path: str | QuantumCircuit, figure_of_merit: reward.figure_of_merit) -> int:
         """Returns a compilation option prediction index for a given qasm file path or qasm string.
 
         Args:
@@ -585,7 +590,7 @@ class Predictor:
 
         return cast(int, self.clf.predict_proba([feature_vector])[0])  # type: ignore[attr-defined]
 
-    def predict(self, qasm_str_or_path: str | QuantumCircuit, figure_of_merit: reward.reward_functions) -> int:
+    def predict(self, qasm_str_or_path: str | QuantumCircuit, figure_of_merit: reward.figure_of_merit) -> int:
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
 
         if self.clf is None:
@@ -606,7 +611,7 @@ class Predictor:
         return cast(int, self.clf.predict([feature_vector])[0])  # type: ignore[attr-defined]
 
     # def instantiate_supervised_ML_model(
-    #     self, timeout: int, figure_of_merit: reward.reward_functions = "fidelity"
+    #     self, timeout: int, figure_of_merit: reward.reward_functions = "expected_fidelity"
     # ) -> None:
     #     # Generate compiled circuits and save them as qasm files
     #     self.generate_compiled_circuits(

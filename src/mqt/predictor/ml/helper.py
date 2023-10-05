@@ -22,13 +22,13 @@ if TYPE_CHECKING:
 
 
 def qcompile(
-    qc: QuantumCircuit, figure_of_merit: reward.reward_functions = "fidelity"
+    qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit = "expected_fidelity"
 ) -> tuple[QuantumCircuit, list[str], str] | bool:
     """Compiles a given quantum circuit to a device with the highest predicted figure of merit.
 
     Args:
         qc (QuantumCircuit): The quantum circuit to be compiled.
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
         tuple[QuantumCircuit, list[str], str] | bool: Returns a tuple containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, False is returned.
@@ -44,13 +44,13 @@ def qcompile(
 
 
 def get_predicted_and_suitable_device_name(
-    qc: QuantumCircuit, figure_of_merit: reward.reward_functions = "fidelity"
+    qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit = "expected_fidelity"
 ) -> str | None:
     """Returns the name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
 
     Args:
         qc (QuantumCircuit): The quantum circuit to be compiled.
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
         str | None: The name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit. If no device is suitable, None is returned.
@@ -194,24 +194,24 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     return feature_dict
 
 
-def save_classifier(clf: RandomForestClassifier, figure_of_merit: reward.reward_functions = "fidelity") -> None:
+def save_classifier(clf: RandomForestClassifier, figure_of_merit: reward.figure_of_merit = "expected_fidelity") -> None:
     """Saves the given classifier to the trained model folder.
 
     Args:
         clf (RandomForestClassifier): The classifier to be saved.
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
     """
     dump(clf, str(get_path_trained_model() / ("trained_clf_" + figure_of_merit + ".joblib")))
 
 
 def save_training_data(
-    res: tuple[list[Any], list[Any], list[Any]], figure_of_merit: reward.reward_functions = "fidelity"
+    res: tuple[list[Any], list[Any], list[Any]], figure_of_merit: reward.figure_of_merit = "expected_fidelity"
 ) -> None:
     """Saves the given training data to the training data folder.
 
     Args:
         res (tuple[list[Any], list[Any], list[Any]]): The training data, the names list and the scores list to be saved.
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
     """
 
     training_data, names_list, scores_list = res
@@ -226,12 +226,12 @@ def save_training_data(
 
 
 def load_training_data(
-    figure_of_merit: reward.reward_functions = "fidelity",
+    figure_of_merit: reward.figure_of_merit = "expected_fidelity",
 ) -> tuple[list[Any], list[str], list[Any]]:
     """Loads and returns the training data from the training data folder.
 
     Args:
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
+        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
         tuple[list[Any], list[str], list[Any]]: The training data, the names list and the scores list.

@@ -22,7 +22,9 @@ logger = logging.getLogger("mqt-predictor")
 class PredictorEnv(Env):  # type: ignore[misc]
     """Predictor environment for reinforcement learning."""
 
-    def __init__(self, reward_function: reward.reward_functions = "fidelity", device_name: str = "ibm_washington"):
+    def __init__(
+        self, reward_function: reward.figure_of_merit = "expected_fidelity", device_name: str = "ibm_washington"
+    ):
         logger.info("Init env: " + reward_function)
 
         self.action_set = {}
@@ -113,7 +115,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
     def calculate_reward(self) -> Any:
         """Calculates and returns the reward for the current state."""
-        if self.reward_function == "fidelity":
+        if self.reward_function == "expected_fidelity":
             return reward.expected_fidelity(self.state, self.device["name"])
         if self.reward_function == "critical_depth":
             return reward.crit_depth(self.state)
