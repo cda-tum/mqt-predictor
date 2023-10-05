@@ -24,7 +24,7 @@ class Result:
     def __init__(
         self,
         benchmark: str,
-        compilation_setup: str,
+        compiler: str,
         compilation_time: float,
         compiled_qc: QuantumCircuit | None,
         device: str,
@@ -37,7 +37,7 @@ class Result:
             rew_crit_depth = -1.0
 
         self.benchmark = benchmark
-        self.compiler = compilation_setup
+        self.compiler = compiler
         self.compilation_time = compilation_time
         self.fidelity = rew_fid
         self.critical_depth = rew_crit_depth

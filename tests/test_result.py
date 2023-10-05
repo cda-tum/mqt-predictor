@@ -9,7 +9,7 @@ def test_result() -> None:
         qc_compiled = transpile(qc, basis_gates=device["native_gates"], coupling_map=device["cmap"])
         res = Result(
             "test_circuit",
-            compilation_setup="test",
+            compiler="test",
             compilation_time=1.0,
             compiled_qc=qc_compiled,
             device=device["name"],
