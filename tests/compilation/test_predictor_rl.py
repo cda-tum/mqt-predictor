@@ -28,9 +28,9 @@ def test_qcompile_with_pretrained_models(figure_of_merit: reward.figure_of_merit
 def test_instantiate_models() -> None:
     predictor = rl.Predictor()
     predictor.train_all_models(
-        timesteps=100,
+        timesteps=20,
         reward_functions=["expected_fidelity", "critical_depth"],
-        device_name="ibm_washington",
+        device_name="ionq_harmony",
         test=True,
     )
 
@@ -41,7 +41,7 @@ def test_instantiate_models() -> None:
 )
 def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
     qc = get_benchmark("ghz", 1, 5)
-    res = rl.qcompile(qc, figure_of_merit=figure_of_merit)
+    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name="ionq_harmony")
     assert type(res) == tuple
     qc_compiled, compilation_information = res
 
