@@ -63,7 +63,7 @@ A naive approach to select the best quantum device for a given quantum circuit w
 Afterwards, the resulting compiled circuits must be evaluated according to some figure of merit to identify the most promising device.
 However, doing this for each and every to-be-compiled quantum circuit is practically infeasible since compilation is a time-consuming task.
 
-MQT Predictors learns from previous compilations of other quantum circuits and interpret determining the most promising device for a circuit and figure of merit as a statistical classification task—a task prone to be tackled by supervised machine learning.
+The MQT Predictor learns from previous compilations of other quantum circuits and models the problem of determining the most promising device for a circuit and figure of merit as a statistical classification task—a task well suited for supervised machine learning.
 For that, the framework is trained with a set of quantum circuits and their respective compilation options for all supported devices for a given figure of merit:
 
 <p align="center">
