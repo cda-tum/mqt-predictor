@@ -63,7 +63,7 @@ else:
     import importlib_metadata as metadata
     import importlib_resources as resources
 
-logger = logging.getLogger("mqtpredictor")
+logger = logging.getLogger("mqt-predictor")
 
 
 def qcompile(
@@ -438,13 +438,13 @@ def load_model(model_name: str) -> MaskablePPO:
         raise RuntimeError(error_msg) from None
 
     version_found = False
-    response = requests.get("https://api.github.com/repos/cda-tum/mqtpredictor/tags")
+    response = requests.get("https://api.github.com/repos/cda-tum/mqt-predictor/tags")
     available_versions = []
     for elem in response.json():
         available_versions.append(elem["name"])
     for possible_version in available_versions:
         if version.parse(mqtpredictor_module_version) >= version.parse(possible_version):
-            url = "https://api.github.com/repos/cda-tum/mqtpredictor/releases/tags/" + possible_version
+            url = "https://api.github.com/repos/cda-tum/mqt-predictor/releases/tags/" + possible_version
             response = requests.get(url)
             if not response:
                 error_msg = "Suitable trained models cannot be downloaded since the GitHub API failed. One reasons could be that the limit of 60 API calls per hour and IP address is exceeded."

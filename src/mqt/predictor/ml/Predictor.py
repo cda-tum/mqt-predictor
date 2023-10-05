@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 plt.rcParams["font.family"] = "Times New Roman"
 
-logger = logging.getLogger("mqtpredictor")
+logger = logging.getLogger("mqt-predictor")
 
 
 class Predictor:

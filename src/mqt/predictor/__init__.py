@@ -7,7 +7,7 @@ __all__ = [
     "qcompile",
 ]
 
-logger = logging.getLogger("mqtpredictor")
+logger = logging.getLogger("mqt-predictor")
 
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)

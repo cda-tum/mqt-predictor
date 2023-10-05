@@ -21,7 +21,7 @@ from pytket.passes import (
 from pytket.placement import GraphPlacement
 from qiskit import QuantumCircuit, transpile
 
-logger = logging.getLogger("mqtpredictor")
+logger = logging.getLogger("mqt-predictor")
 
 
 def computeRewards(  # noqa: PLR0911, PLR0915
@@ -34,14 +34,14 @@ def computeRewards(  # noqa: PLR0911, PLR0915
 
     Args:
         benchmark (str): The path to the benchmark to be compiled.
-        used_setup (str): The setup to be used for compilation. Either 'MQTPredictor', 'qiskit_o3' or 'tket'.
+        used_setup (str): The setup to be used for compilation. Either 'mqt-predictor', 'qiskit_o3' or 'tket'.
         figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "fidelity".
         device (dict[str, Any] | None, optional): The device to be used for compilation. Defaults to None.
 
     Returns:
         Result | None: Returns a Result object containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, None is returned.
     """
-    if used_setup == "MQTPredictor":
+    if used_setup == "mqt-predictor":
         dev_name = ml.helper.get_predicted_and_suitable_device_name(
             QuantumCircuit.from_qasm_file(benchmark), figure_of_merit
         )
@@ -192,8 +192,8 @@ def evaluate_sample_circuit(file: str) -> dict[str, Any]:
     logger.info("Evaluate file: " + file)
 
     results = []
-    results.append(computeRewards(file, "MQTPredictor", "fidelity"))
-    results.append(computeRewards(file, "MQTPredictor", "critical_depth"))
+    results.append(computeRewards(file, "mqt-predictor", "fidelity"))
+    results.append(computeRewards(file, "mqt-predictor", "critical_depth"))
 
     for _i, dev in enumerate(rl.helper.get_devices()):
         results.append(computeRewards(file, "qiskit_" + dev["name"], device=dev))

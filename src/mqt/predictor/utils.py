@@ -4,7 +4,7 @@ import logging
 import signal
 from typing import Any
 
-logger = logging.getLogger("mqtpredictor")
+logger = logging.getLogger("mqt-predictor")
 
 
 def timeout_watcher(func: Any, args: list[Any], timeout: int) -> Any:

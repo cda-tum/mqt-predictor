@@ -16,7 +16,7 @@ from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
 from qiskit.transpiler.runningpassmanager import TranspileLayout
 
-logger = logging.getLogger("mqtpredictor")
+logger = logging.getLogger("mqt-predictor")
 
 
 class PredictorEnv(Env):  # type: ignore[misc]

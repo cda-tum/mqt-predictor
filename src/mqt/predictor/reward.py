@@ -11,7 +11,7 @@ from mqt.predictor.utils import (
 )
 from qiskit import QuantumCircuit
 
-logger = logging.getLogger("mqtpredictor")
+logger = logging.getLogger("mqt-predictor")
 
 reward_functions = Literal["fidelity", "critical_depth", "mix", "gate_ratio"]
 
