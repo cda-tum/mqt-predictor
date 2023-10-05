@@ -18,7 +18,6 @@ class Calibration:
 
     def __init__(self) -> None:
         try:
-            self.ibm_washington_cx_mean_error = get_mean_IBM_washington_cx_error()
             self.ibm_montreal_calibration = FakeMontreal().properties()
             self.ibm_washington_calibration = FakeWashington().properties()
             self.oqc_lucy_calibration = parse_oqc_calibration_config()
@@ -35,10 +34,23 @@ def get_mean_IBM_washington_cx_error() -> float:
     """Returns the mean cx error for the IBM Washington device."""
     cmap: list[list[int]] = FakeWashington().configuration().coupling_map
     backend = FakeWashington().properties()
-    somelist = [x for x in cmap if backend.gate_error("cx", x) < 1]
+    nonfaulty_connections = [x for x in cmap if backend.gate_error("cx", x) < 1]
 
     res: list[float] = []
-    for elem in somelist:
+    for elem in nonfaulty_connections:
+        res.append(backend.gate_error("cx", elem))
+
+    return cast(float, np.mean(res))
+
+
+def get_mean_IBM_montreal_cx_error() -> float:
+    """Returns the mean cx error for the IBM Washington device."""
+    cmap: list[list[int]] = FakeMontreal().configuration().coupling_map
+    backend = FakeMontreal().properties()
+    nonfaulty_connections = [x for x in cmap if backend.gate_error("cx", x) < 1]
+
+    res: list[float] = []
+    for elem in nonfaulty_connections:
         res.append(backend.gate_error("cx", elem))
 
     return cast(float, np.mean(res))

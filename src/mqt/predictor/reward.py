@@ -219,7 +219,21 @@ def calc_expected_fidelity_ibm(qc: QuantumCircuit, device_name: str) -> float:
                 try:
                     specific_error = calibration.gate_error(gate_type, [first_qubit, second_qubit])
                     if specific_error == 1:
-                        specific_error = calibration.ibm_washington_cx_mean_error
+                        logger.warning(
+                            "Gate error is 1.0 for: "
+                            + device_name
+                            + ", "
+                            + gate_type
+                            + ", "
+                            + str(first_qubit)
+                            + ", "
+                            + str(second_qubit),
+                            "mean error is used instead",
+                        )
+                        if device_name == "ibm_washington":
+                            specific_error = calibration.ibm_washington_cx_mean_error
+                        elif device_name == "ibm_montreal":
+                            specific_error = calibration.ibm_montreal_cx_mean_error
                 except Exception as e:
                     raise RuntimeError(
                         "Error in IBM backend.gate_error(): "
