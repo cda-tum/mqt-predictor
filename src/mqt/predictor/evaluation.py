@@ -185,7 +185,6 @@ def evaluate_sample_circuit(file: str) -> dict[str, Any]:
     Returns:
         dict[str, Any]: Returns a dictionary containing the results of the evaluation.
     """
-    print("Evaluate file: " + file)
     logger.info("Evaluate file: " + file)
 
     results: dict[str, Any] = {
