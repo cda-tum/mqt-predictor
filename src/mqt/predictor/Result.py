@@ -14,7 +14,7 @@ class Result:
 
     Attributes:
         benchmark (str): The path to the benchmark to be compiled.
-        compiler (str): The setup used for compilation. Either 'mqt-predictor', 'qiskit_o3' or 'tket'.
+        compilation_setup (str): The setup used for compilation. Either 'mqt-predictor_<figure_of_merit>', 'qiskit' or 'tket'.
         compilation_time (float): The time it took to compile the benchmark.
         compiled_qc (QuantumCircuit | None): The compiled quantum circuit. If compilation failed, None is returned.
         device (str): The device used for compilation.
@@ -24,7 +24,7 @@ class Result:
     def __init__(
         self,
         benchmark: str,
-        compiler: str,
+        compilation_setup: str,
         compilation_time: float,
         compiled_qc: QuantumCircuit | None,
         device: str,
@@ -37,16 +37,17 @@ class Result:
             rew_crit_depth = -1.0
 
         self.benchmark = benchmark
-        self.compiler = compiler
+        self.compiler = compilation_setup
         self.compilation_time = compilation_time
         self.fidelity = rew_fid
         self.critical_depth = rew_crit_depth
+        self.device = device
 
     def get_dict(self) -> dict[str, float]:
         """Returns the results as a dictionary."""
 
         return {
-            self.compiler + "_" + "time": self.compilation_time,
-            self.compiler + "_" + "expected_fidelity": self.fidelity,
-            self.compiler + "_" + "critical_depth": self.critical_depth,
+            self.compiler + "_" + self.device + "_" + "time": self.compilation_time,
+            self.compiler + "_" + self.device + "_" + "expected_fidelity": self.fidelity,
+            self.compiler + "_" + self.device + "_" + "critical_depth": self.critical_depth,
         }
