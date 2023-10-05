@@ -71,7 +71,7 @@ def create_qiskit_result(
             seed_transpiler=1,
         )
     except Exception as e:
-        print("Qiskit Transpile Error for: ", benchmark, device["name"], e)
+        logger.warning("Qiskit Transpile Error occurred for: " + benchmark + " " + device["name"] + " " + str(e))
         return Result(benchmark, compiler, -1, None, device["name"])
     duration = time.time() - start_time
     return Result(benchmark, compiler, duration, transpiled_qc_qiskit, device["name"])
@@ -102,7 +102,7 @@ def create_tket_result(
         duration = time.time() - start_time
         transpiled_qc_tket = tk_to_qiskit(tket_qc)
     except Exception as e:
-        print("TKET Transpile Error for: ", benchmark, device["name"], e)
+        logger.warning("TKET Transpile Error occurred for: " + benchmark + " " + device["name"] + " " + str(e))
         return Result(benchmark, compiler, -1, None, device["name"])
 
     return Result(benchmark, compiler, duration, transpiled_qc_tket, device["name"])
@@ -140,8 +140,7 @@ def create_mqtpredictor_result(benchmark: str, compiler: str, figure_of_merit: r
                 )
 
         except Exception as e:
-            print("Error occurred for: ", benchmark, dev_name, e)
-            return Result(benchmark, compiler, -1, None, dev_name)
+            logger.warning("mqt-predictor Transpile Error occurred for: " + benchmark + " " + dev_name + " " + str(e))
     return Result(benchmark, compiler, -1, None, dev_name)
 
 
