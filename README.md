@@ -86,7 +86,7 @@ For evaluation of our methodology, seven supervised machine learning classifiers
 
 In our exemplary scenario, the Random Forest classifier achieved the best performance.
 
-# Combining Both Approach to MQT Predictor Framework
+# The MQT Predictor framework: Automatic device selection and optimized compilation
 
 From a user's perspective, the framework is used as follows:
 
@@ -200,7 +200,7 @@ Additionally, the raw training data may be extracted and can be used for any mac
 
 # References
 
-Initial work on MQT Predictor has already been published:
+The MQT Predictor is based on the following publications:
 
 ```bibtex
 @INPROCEEDINGS{quetschlich2023prediction,
