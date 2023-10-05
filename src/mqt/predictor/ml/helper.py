@@ -37,10 +37,7 @@ def qcompile(
     device_name = get_predicted_and_suitable_device_name(qc, figure_of_merit)
     assert device_name is not None
     res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device_name)
-    if res:
-        assert isinstance(res, tuple)
-        return *res, device_name
-    return False
+    return *res, device_name
 
 
 def get_predicted_and_suitable_device_name(

@@ -71,7 +71,7 @@ def qcompile(
     figure_of_merit: reward.figure_of_merit = "expected_fidelity",
     device_name: str = "ibm_washington",
     predictor_singleton: rl.Predictor | None = None,
-) -> tuple[QuantumCircuit, list[str]] | bool:
+) -> tuple[QuantumCircuit, list[str]]:
     """Compiles a given quantum circuit to a device optimizing for the given figure of merit.
 
     Args:
@@ -89,16 +89,7 @@ def qcompile(
     else:
         predictor = predictor_singleton
 
-    try:
-        compiled_result = predictor.compile_as_predicted(qc)
-        if not isinstance(compiled_result, tuple):
-            return False
-        return compiled_result
-    except Exception as e:
-        print("Error occurred for: ", device_name, e)
-        if isinstance(qc, str):
-            print(qc)
-        return False
+    return predictor.compile_as_predicted(qc)
 
 
 def get_actions_opt() -> list[dict[str, Any]]:

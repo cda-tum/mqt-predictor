@@ -36,7 +36,7 @@ class Predictor:
     def compile_as_predicted(
         self,
         qc: QuantumCircuit,
-    ) -> tuple[QuantumCircuit, list[str]] | bool:
+    ) -> tuple[QuantumCircuit, list[str]]:
         """Compiles a given quantum circuit such that the expected fidelity is maximized by using the respectively trained optimized compiler.
 
         Args:
@@ -68,7 +68,9 @@ class Predictor:
 
         if not self.env.error_occured:
             return self.env.state, used_compilation_passes
-        return False
+
+        msg = "Error occurred during compilation."
+        raise Exception(msg)
 
     def train_all_models(
         self,

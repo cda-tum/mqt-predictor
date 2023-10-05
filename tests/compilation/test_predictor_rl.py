@@ -18,9 +18,9 @@ IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 )
 def test_qcompile_with_pretrained_models(figure_of_merit: reward.figure_of_merit) -> None:
     qc = get_benchmark("ghz", 1, 5)
-    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name="ibm_washington")
-    assert type(res) == tuple
-    qc_compiled, compilation_information = res
+    qc_compiled, compilation_information = rl.qcompile(
+        qc, figure_of_merit=figure_of_merit, device_name="ibm_washington"
+    )
     assert isinstance(qc_compiled, QuantumCircuit)
     assert compilation_information is not None
 
