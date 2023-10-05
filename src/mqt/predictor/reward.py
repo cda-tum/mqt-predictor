@@ -24,12 +24,12 @@ def crit_depth(qc: QuantumCircuit | str, precision: int = 10) -> float:
     return cast(float, np.round(1 - supermarq_features.critical_depth, precision))
 
 
-def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: int = 10) -> float:
+def expected_fidelity(qc_or_path: QuantumCircuit | str, device_name: str, precision: int = 10) -> float:
     """Calculates the expected fidelity of a given quantum circuit on a given device.
 
     Args:
         qc_or_path (QuantumCircuit | str): The quantum circuit to be compiled or the path to a qasm file containing the quantum circuit.
-        device (str): The device to be used for compilation.
+        device_name (str): The device to be used for compilation.
         precision (int, optional): The precision of the returned value. Defaults to 10.
 
     Returns:
@@ -43,19 +43,19 @@ def expected_fidelity(qc_or_path: QuantumCircuit | str, device: str, precision: 
         except Exception:
             raise RuntimeError("Could not read QuantumCircuit from: " + qc_or_path) from None
 
-    if "ibm" in device:
-        res = calc_expected_fidelity_ibm(qc, device)
+    if "ibm" in device_name:
+        res = calc_expected_fidelity_ibm(qc, device_name)
 
-    elif "oqc_lucy" in device:
+    elif "oqc_lucy" in device_name:
         res = calc_expected_fidelity_oqc_lucy(qc)
 
-    elif "ionq" in device:
-        res = calc_expected_fidelity_ionq(qc, device)
+    elif "ionq" in device_name:
+        res = calc_expected_fidelity_ionq(qc, device_name)
 
-    elif "quantinuum_h2" in device:
+    elif "quantinuum_h2" in device_name:
         res = calc_expected_fidelity_quantinuum_h2(qc)
 
-    elif "rigetti_aspen_m2" in device:
+    elif "rigetti_aspen_m2" in device_name:
         res = calc_expected_fidelity_rigetti_aspen_m2(qc)
 
     else:
@@ -127,10 +127,10 @@ def calc_expected_fidelity_quantinuum_h2(qc: QuantumCircuit) -> float:
     return res
 
 
-def calc_expected_fidelity_ionq(qc: QuantumCircuit, device: str) -> float:
-    if device == "ionq_harmony":
+def calc_expected_fidelity_ionq(qc: QuantumCircuit, device_name: str) -> float:
+    if device_name == "ionq_harmony":
         calibration_data = Calibration.Calibration().ionq_harmony_calibration
-    elif device == "ionq_aria1":
+    elif device_name == "ionq_aria1":
         calibration_data = Calibration.Calibration().ionq_aria1_calibration
     else:
         msg = "Device not supported"
@@ -177,10 +177,10 @@ def calc_expected_fidelity_oqc_lucy(qc: QuantumCircuit) -> float:
     return res
 
 
-def calc_expected_fidelity_ibm(qc: QuantumCircuit, device: str) -> float:
-    if device == "ibm_montreal":
+def calc_expected_fidelity_ibm(qc: QuantumCircuit, device_name: str) -> float:
+    if device_name == "ibm_montreal":
         calibration = Calibration.Calibration().ibm_montreal_calibration
-    elif device == "ibm_washington":
+    elif device_name == "ibm_washington":
         calibration = Calibration.Calibration().ibm_washington_calibration
     else:
         msg = "Device not supported"
@@ -206,7 +206,7 @@ def calc_expected_fidelity_ibm(qc: QuantumCircuit, device: str) -> float:
                         "Error in IBM backend.gate_error(): "
                         + str(e)
                         + ", "
-                        + device
+                        + device_name
                         + ", "
                         + first_qubit
                         + ", "
@@ -225,7 +225,7 @@ def calc_expected_fidelity_ibm(qc: QuantumCircuit, device: str) -> float:
                         "Error in IBM backend.gate_error(): "
                         + str(e)
                         + ", "
-                        + device
+                        + device_name
                         + ", "
                         + first_qubit
                         + ", "
