@@ -24,36 +24,6 @@ from qiskit import QuantumCircuit, transpile
 logger = logging.getLogger("mqt-predictor")
 
 
-def compute_reward_for_compilation_setup(
-    benchmark: str,
-    compiler: str,
-    figure_of_merit: reward.figure_of_merit = "expected_fidelity",
-    device: dict[str, Any] | None = None,
-) -> Result | None:
-    """Computes the reward for a given benchmark with the respectively selected compiler/figure of merit/device and returns the results as a Result object.
-
-    Args:
-        benchmark (str): The path to the benchmark to be compiled.
-        compiler (str): The setup to be used for compilation. Either 'mqt-predictor', 'qiskit_o3' or 'tket'.
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
-        device (dict[str, Any] | None, optional): The device to be used for compilation. Defaults to None.
-
-    Returns:
-        Result | None: Returns a Result object containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, None is returned.
-    """
-    if compiler == "mqt-predictor":
-        return create_mqtpredictor_result(benchmark, figure_of_merit)
-
-    if "qiskit" in compiler:
-        return create_qiskit_result(benchmark, device)
-
-    if "tket" in compiler:
-        return create_tket_result(benchmark, device)
-
-    error_msg = "Unknown setup. Use either 'mqt-predictor', 'qiskit' or 'tket'."
-    raise ValueError(error_msg)
-
-
 def create_qiskit_result(benchmark: str, device: dict[str, Any] | None = None) -> Result:
     """Creates a Result object for a given benchmark and device using qiskit for compilation.
 
