@@ -56,7 +56,5 @@ def test_get_path_trained_model() -> None:
 
 
 def test_qcompile() -> None:
-    qc = benchmark_generator.get_benchmark(
-        "ghz", 1, 90
-    )  # number of qubits must be above 80 such that only ibmq_washington fits the circuit since only that one is available during CI testing
+    qc = benchmark_generator.get_benchmark("ghz", 1, 5)
     assert ml.helper.qcompile(qc) is not None
