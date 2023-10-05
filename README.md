@@ -28,7 +28,6 @@ In the following, we provide a brief overview of the two approaches.
 
 Compilation, fortunately, is not new per-se, since classical compilers have seen a similar trend of an increasing complexity and variety in the past.
 To not reinvent the wheel and make use of the decades of classical compiler optimization, quantum compilation is modeled in a similar fashion and classical reinforcement learning is used to predict compilation pass sequences optimizing for the chosen figure of merit.
-Thus, the trained model acts as a compiler.
 
 Through distinct constraints and a unifying interface, the framework supports the combination of techniques
 from different compilers and optimization tools in a single compilation flow.
