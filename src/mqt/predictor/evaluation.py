@@ -55,6 +55,15 @@ def compute_reward_for_compilation_setup(
 
 
 def create_qiskit_result(benchmark: str, device: dict[str, Any] | None = None) -> Result:
+    """Creates a Result object for a given benchmark and device using qiskit for compilation.
+
+    Args:
+        benchmark (str): The path to the benchmark to be compiled.
+        device (dict[str, Any] | None, optional): The device to be used for compilation. Defaults to None.
+
+    Returns:
+        Result: Returns a Result object containing the compiled quantum circuit.
+    """
     assert device is not None
     qc = QuantumCircuit.from_qasm_file(benchmark)
     if qc.num_qubits > device["max_qubits"]:
@@ -69,7 +78,7 @@ def create_qiskit_result(benchmark: str, device: dict[str, Any] | None = None) -
             seed_transpiler=1,
         )
     except Exception as e:
-        logger.warning("Qiskit Transpile Error occurred for: " + benchmark + " " + device["name"] + " " + str(e))
+        logger.warning("qiskit Transpile Error occurred for: " + benchmark + " " + device["name"] + " " + str(e))
         return Result(benchmark, "qiskit", -1, None, device["name"])
     duration = time.time() - start_time
     return Result(benchmark, "qiskit", duration, transpiled_qc_qiskit, device["name"])
@@ -79,6 +88,15 @@ def create_tket_result(
     benchmark: str,
     device: dict[str, Any] | None = None,
 ) -> Result:
+    """Creates a Result object for a given benchmark and device using tket for compilation.
+
+    Args:
+        benchmark (str): The path to the benchmark to be compiled.
+        device (dict[str, Any] | None, optional): The device to be used for compilation. Defaults to None.
+
+    Returns:
+        Result: Returns a Result object containing the compiled quantum circuit.
+    """
     qc = QuantumCircuit.from_qasm_file(benchmark)
     assert device is not None
     if qc.num_qubits > device["max_qubits"]:
@@ -99,7 +117,7 @@ def create_tket_result(
         duration = time.time() - start_time
         transpiled_qc_tket = tk_to_qiskit(tket_qc)
     except Exception as e:
-        logger.warning("TKET Transpile Error occurred for: " + benchmark + " " + device["name"] + " " + str(e))
+        logger.warning("tket Transpile Error occurred for: " + benchmark + " " + device["name"] + " " + str(e))
         return Result(benchmark, "tket", -1, None, device["name"])
 
     return Result(benchmark, "tket", duration, transpiled_qc_tket, device["name"])
@@ -109,6 +127,15 @@ def create_mqtpredictor_result(benchmark: str, figure_of_merit: reward.figure_of
     dev_name = ml.helper.get_predicted_and_suitable_device_name(
         QuantumCircuit.from_qasm_file(benchmark), figure_of_merit
     )
+    """ Creates a Result object for a given benchmark and figure of merit using mqt-predictor for compilation.
+
+    Args:
+        benchmark (str): The path to the benchmark to be compiled.
+        figure_of_merit (reward.reward_functions): The figure of merit to be used for compilation.
+
+    Returns:
+        Result: Returns a Result object containing the compiled quantum circuit.
+    """
     assert isinstance(dev_name, str)
     dev_index = next((index for index, d in enumerate(rl.helper.get_devices()) if d["name"] == dev_name), None)
     target_filename = benchmark.split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(dev_index)
