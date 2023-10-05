@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
 from mqt.bench.utils import calc_qubit_index, calc_supermarq_features
@@ -9,39 +9,32 @@ from mqt.predictor import Calibration
 from mqt.predictor.utils import (
     get_rigetti_qubit_dict,
 )
-from qiskit import QuantumCircuit
+
+if TYPE_CHECKING:
+    from qiskit import QuantumCircuit
 
 logger = logging.getLogger("mqt-predictor")
 
 figure_of_merit = Literal["expected_fidelity", "critical_depth"]
 
 
-def crit_depth(qc: QuantumCircuit | str, precision: int = 10) -> float:
+def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
     """Calculates the critical depth of a given quantum circuit."""
-    if isinstance(qc, str):
-        qc = QuantumCircuit.from_qasm_file(qc)
     supermarq_features = calc_supermarq_features(qc)
     return cast(float, np.round(1 - supermarq_features.critical_depth, precision))
 
 
-def expected_fidelity(qc_or_path: QuantumCircuit | str, device_name: str, precision: int = 10) -> float:
+def expected_fidelity(qc: QuantumCircuit, device_name: str, precision: int = 10) -> float:
     """Calculates the expected fidelity of a given quantum circuit on a given device.
 
     Args:
-        qc_or_path (QuantumCircuit | str): The quantum circuit to be compiled or the path to a qasm file containing the quantum circuit.
+        qc (QuantumCircuit): The quantum circuit to be compiled.
         device_name (str): The device to be used for compilation.
         precision (int, optional): The precision of the returned value. Defaults to 10.
 
     Returns:
         float: The expected fidelity of the given quantum circuit on the given device.
     """
-    if isinstance(qc_or_path, QuantumCircuit):
-        qc = qc_or_path
-    else:
-        try:
-            qc = QuantumCircuit.from_qasm_file(qc_or_path)
-        except Exception:
-            raise RuntimeError("Could not read QuantumCircuit from: " + qc_or_path) from None
 
     if "ibm" in device_name:
         res = calc_expected_fidelity_ibm(qc, device_name)

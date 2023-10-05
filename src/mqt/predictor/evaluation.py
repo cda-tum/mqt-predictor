@@ -24,7 +24,7 @@ from qiskit import QuantumCircuit, transpile
 logger = logging.getLogger("mqt-predictor")
 
 
-def create_qiskit_result(benchmark: str, device: dict[str, Any] | None = None) -> Result:
+def create_qiskit_result(qc: QuantumCircuit, device: dict[str, Any] | None = None) -> Result:
     """Creates a Result object for a given benchmark and device using qiskit for compilation.
 
     Args:
@@ -35,9 +35,8 @@ def create_qiskit_result(benchmark: str, device: dict[str, Any] | None = None) -
         Result: Returns a Result object containing the compiled quantum circuit.
     """
     assert device is not None
-    qc = QuantumCircuit.from_qasm_file(benchmark)
     if qc.num_qubits > device["max_qubits"]:
-        return Result(benchmark, "qiskit", -1, None, device["name"])
+        return Result("qiskit", -1, None, device["name"])
     start_time = time.time()
     try:
         transpiled_qc_qiskit = transpile(
@@ -48,14 +47,14 @@ def create_qiskit_result(benchmark: str, device: dict[str, Any] | None = None) -
             seed_transpiler=1,
         )
     except Exception as e:
-        logger.warning("qiskit Transpile Error occurred for: " + benchmark + " " + device["name"] + " " + str(e))
-        return Result(benchmark, "qiskit", -1, None, device["name"])
+        logger.warning("qiskit Transpile Error occurred for: " + device["name"] + " " + str(e))
+        return Result("qiskit", -1, None, device["name"])
     duration = time.time() - start_time
-    return Result(benchmark, "qiskit", duration, transpiled_qc_qiskit, device["name"])
+    return Result("qiskit", duration, transpiled_qc_qiskit, device["name"])
 
 
 def create_tket_result(
-    benchmark: str,
+    qc: QuantumCircuit,
     device: dict[str, Any] | None = None,
 ) -> Result:
     """Creates a Result object for a given benchmark and device using tket for compilation.
@@ -67,10 +66,9 @@ def create_tket_result(
     Returns:
         Result: Returns a Result object containing the compiled quantum circuit.
     """
-    qc = QuantumCircuit.from_qasm_file(benchmark)
     assert device is not None
     if qc.num_qubits > device["max_qubits"]:
-        return Result(benchmark, "tket", -1, None, device["name"])
+        return Result("tket", -1, None, device["name"])
     tket_qc = qiskit_to_tk(qc)
     arch = Architecture(device["cmap"])
 
@@ -87,16 +85,14 @@ def create_tket_result(
         duration = time.time() - start_time
         transpiled_qc_tket = tk_to_qiskit(tket_qc)
     except Exception as e:
-        logger.warning("tket Transpile Error occurred for: " + benchmark + " " + device["name"] + " " + str(e))
-        return Result(benchmark, "tket", -1, None, device["name"])
+        logger.warning("tket Transpile Error occurred for: " + device["name"] + " " + str(e))
+        return Result("tket", -1, None, device["name"])
 
-    return Result(benchmark, "tket", duration, transpiled_qc_tket, device["name"])
+    return Result("tket", duration, transpiled_qc_tket, device["name"])
 
 
-def create_mqtpredictor_result(benchmark: str, figure_of_merit: reward.figure_of_merit) -> Result:
-    dev_name = ml.helper.get_predicted_and_suitable_device_name(
-        QuantumCircuit.from_qasm_file(benchmark), figure_of_merit
-    )
+def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit, filename: str) -> Result:
+    dev_name = ml.helper.get_predicted_and_suitable_device_name(qc, figure_of_merit)
     """ Creates a Result object for a given benchmark and figure of merit using mqt-predictor for compilation.
 
     Args:
@@ -108,13 +104,12 @@ def create_mqtpredictor_result(benchmark: str, figure_of_merit: reward.figure_of
     """
     assert isinstance(dev_name, str)
     dev_index = next((index for index, d in enumerate(rl.helper.get_devices()) if d["name"] == dev_name), None)
-    target_filename = benchmark.split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(dev_index)
+    target_filename = filename.split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(dev_index)
     combined_path_filename = ml.helper.get_path_training_circuits_compiled() / (target_filename + ".qasm")
     if Path(combined_path_filename).exists():
         qc = QuantumCircuit.from_qasm_file(combined_path_filename)
         if qc:
             return Result(
-                benchmark,
                 "mqt-predictor_" + figure_of_merit,
                 -1,
                 qc,
@@ -122,11 +117,10 @@ def create_mqtpredictor_result(benchmark: str, figure_of_merit: reward.figure_of
             )
     else:
         try:
-            qc_compiled = ml.qcompile(QuantumCircuit.from_qasm_file(benchmark), figure_of_merit=figure_of_merit)
+            qc_compiled = ml.qcompile(qc, figure_of_merit=figure_of_merit)
             if qc_compiled:
                 assert isinstance(qc_compiled, tuple)
                 return Result(
-                    benchmark,
                     "mqt-predictor_" + figure_of_merit,
                     -1,
                     qc_compiled[0],
@@ -134,8 +128,8 @@ def create_mqtpredictor_result(benchmark: str, figure_of_merit: reward.figure_of
                 )
 
         except Exception as e:
-            logger.warning("mqt-predictor Transpile Error occurred for: " + benchmark + " " + dev_name + " " + str(e))
-    return Result(benchmark, "mqt-predictor_" + figure_of_merit, -1, None, dev_name)
+            logger.warning("mqt-predictor Transpile Error occurred for: " + filename + " " + dev_name + " " + str(e))
+    return Result("mqt-predictor_" + figure_of_merit, -1, None, dev_name)
 
 
 def evaluate_all_sample_circuits() -> None:
@@ -176,28 +170,28 @@ def evaluate_GHZ_circuits() -> None:
     )
 
 
-def evaluate_sample_circuit(file: str) -> dict[str, Any]:
+def evaluate_sample_circuit(filename: str) -> dict[str, Any]:
     """Evaluates a given sample circuit and returns the results as a dictionary.
 
     Args:
-        file (str): The path to the sample circuit to be evaluated.
+        filename (str): The path to the sample circuit to be evaluated.
 
     Returns:
         dict[str, Any]: Returns a dictionary containing the results of the evaluation.
     """
-    logger.info("Evaluate file: " + file)
+    logger.info("Evaluate file: " + filename)
 
     results: dict[str, Any] = {
-        "file_path": str(Path(file).stem),
-        "benchmark_name": str(Path(file).stem).replace("_", " ").split(" ")[0],
-        "num_qubits": str(Path(file).stem).replace("_", " ").split(" ")[-1],
+        "file_path": str(Path(filename).stem),
+        "benchmark_name": str(Path(filename).stem).replace("_", " ").split(" ")[0],
+        "num_qubits": str(Path(filename).stem).replace("_", " ").split(" ")[-1],
     }
-
-    results.update(create_mqtpredictor_result(file, "expected_fidelity").get_dict())
-    results.update(create_mqtpredictor_result(file, "critical_depth").get_dict())
+    qc = QuantumCircuit.from_qasm_file(filename)
+    results.update(create_mqtpredictor_result(qc, "expected_fidelity", filename=filename).get_dict())
+    results.update(create_mqtpredictor_result(qc, "critical_depth", filename=filename).get_dict())
 
     for _i, dev in enumerate(rl.helper.get_devices()):
-        results.update(create_qiskit_result(file, dev).get_dict())
-        results.update(create_tket_result(file, dev).get_dict())
+        results.update(create_qiskit_result(qc, dev).get_dict())
+        results.update(create_tket_result(qc, dev).get_dict())
 
     return results

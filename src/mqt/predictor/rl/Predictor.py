@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from mqt.predictor import reward, rl
-from qiskit import QuantumCircuit
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 from sb3_contrib.common.maskable.utils import get_action_masks
+
+if TYPE_CHECKING:
+    from qiskit import QuantumCircuit
 
 logger = logging.getLogger("mqt-predictor")
 PATH_LENGTH = 260
@@ -33,7 +35,7 @@ class Predictor:
 
     def compile_as_predicted(
         self,
-        qc: QuantumCircuit | str,
+        qc: QuantumCircuit,
     ) -> tuple[QuantumCircuit, list[str]] | bool:
         """Compiles a given quantum circuit such that the expected fidelity is maximized by using the respectively trained optimized compiler.
 
@@ -46,11 +48,6 @@ class Predictor:
 
         assert self.model is not None
         assert self.env is not None
-        if not isinstance(qc, QuantumCircuit):
-            if len(qc) < PATH_LENGTH and Path(qc).exists():
-                qc = QuantumCircuit.from_qasm_file(qc)
-            elif "OPENQASM" in qc:
-                qc = QuantumCircuit.from_qasm_str(qc)
         obs, _ = self.env.reset(qc)
 
         used_compilation_passes = []

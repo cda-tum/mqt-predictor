@@ -286,10 +286,11 @@ class Predictor:
             if (file.split(".")[0] + "_" + figure_of_merit + "_") in filename_str and filename_str.endswith(".qasm"):
                 comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
                 device = LUT[comp_path_index]
+                qc = QuantumCircuit.from_qasm_file(filename_str)
                 if figure_of_merit == "critical_depth":
-                    score = reward.crit_depth(filename_str)
+                    score = reward.crit_depth(qc)
                 elif figure_of_merit == "expected_fidelity":
-                    score = reward.expected_fidelity(filename_str, device)
+                    score = reward.expected_fidelity(qc, device)
                 scores[comp_path_index] = score
 
         num_not_empty_entries = 0
