@@ -89,19 +89,8 @@ def create_tket_result(
     tket_qc = qiskit_to_tk(qc)
     arch = Architecture(device["cmap"])
 
-    if "ibm" in device["name"]:
-        native_rebase = get_rebase("ibm")
-    elif "oqc" in device["name"]:
-        native_rebase = get_rebase("oqc")
-    elif "rigetti" in device["name"]:
-        native_rebase = get_rebase("rigetti")
-    elif "quantinuum" in device["name"]:
-        native_rebase = get_rebase("quantinuum")
-    elif "ionq" in device["name"]:
-        native_rebase = get_rebase("ionq")
-    else:
-        msg = "Unknown Native Gate-Set"
-        raise RuntimeError(msg)
+    native_rebase = get_rebase(device["name"].split("_")[0])
+    assert native_rebase is not None
 
     start_time = time.time()
     try:
