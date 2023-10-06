@@ -36,7 +36,7 @@ def create_qiskit_result(qc: QuantumCircuit, device: dict[str, Any] | None = Non
     """
     assert device is not None
     if qc.num_qubits > device["max_qubits"]:
-        return Result("qiskit", -1, None, device["name"])
+        return Result("qiskit_", -1, None, device["name"])
     start_time = time.time()
     try:
         transpiled_qc_qiskit = transpile(
@@ -48,9 +48,9 @@ def create_qiskit_result(qc: QuantumCircuit, device: dict[str, Any] | None = Non
         )
     except Exception as e:
         logger.warning("qiskit Transpile Error occurred for: " + device["name"] + " " + str(e))
-        return Result("qiskit", -1, None, device["name"])
+        return Result("qiskit_" + device["name"], -1, None, device["name"])
     duration = time.time() - start_time
-    return Result("qiskit", duration, transpiled_qc_qiskit, device["name"])
+    return Result("qiskit_" + device["name"], duration, transpiled_qc_qiskit, device["name"])
 
 
 def create_tket_result(
@@ -68,7 +68,7 @@ def create_tket_result(
     """
     assert device is not None
     if qc.num_qubits > device["max_qubits"]:
-        return Result("tket", -1, None, device["name"])
+        return Result("tket_" + device["name"], -1, None, device["name"])
     tket_qc = qiskit_to_tk(qc)
     arch = Architecture(device["cmap"])
 
@@ -86,9 +86,9 @@ def create_tket_result(
         transpiled_qc_tket = tk_to_qiskit(tket_qc)
     except Exception as e:
         logger.warning("tket Transpile Error occurred for: " + device["name"] + " " + str(e))
-        return Result("tket", -1, None, device["name"])
+        return Result("tket_" + device["name"], -1, None, device["name"])
 
-    return Result("tket", duration, transpiled_qc_tket, device["name"])
+    return Result("tket_" + device["name"], duration, transpiled_qc_tket, device["name"])
 
 
 def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit, filename: str) -> Result:

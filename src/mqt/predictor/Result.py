@@ -23,7 +23,7 @@ class Result:
 
     def __init__(
         self,
-        compiler: str,
+        compilation_setup: str,
         compilation_time: float,
         compiled_qc: QuantumCircuit | None,
         device: str,
@@ -35,17 +35,16 @@ class Result:
             rew_fid = -1.0
             rew_crit_depth = -1.0
 
-        self.compiler = compiler
+        self.compiler = compilation_setup
         self.compilation_time = compilation_time
         self.fidelity = rew_fid
         self.critical_depth = rew_crit_depth
-        self.device = device
 
     def get_dict(self) -> dict[str, float]:
         """Returns the results as a dictionary."""
 
         return {
-            self.compiler + "_" + self.device + "_" + "time": self.compilation_time,
-            self.compiler + "_" + self.device + "_" + "expected_fidelity": self.fidelity,
-            self.compiler + "_" + self.device + "_" + "critical_depth": self.critical_depth,
+            self.compiler + "_" + "time": self.compilation_time,
+            self.compiler + "_" + "expected_fidelity": self.fidelity,
+            self.compiler + "_" + "critical_depth": self.critical_depth,
         }
