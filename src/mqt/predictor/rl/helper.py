@@ -57,6 +57,9 @@ from qiskit.transpiler.runningpassmanager import ConditionalController
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
 if TYPE_CHECKING or sys.version_info >= (3, 10, 0):
     from importlib import metadata, resources
 else:
@@ -375,7 +378,7 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
     return qc, str(file_list[random_index])
 
 
-def create_feature_dict(qc: QuantumCircuit) -> dict[str, Any]:
+def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float_]]:
     """Creates a feature dictionary for a given quantum circuit.
 
     Args:
