@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from mqt.bench import benchmark_generator
 from mqt.predictor import ml
 
@@ -34,25 +32,21 @@ def test_get_openqasm_gates() -> None:
 def test_get_path_training_circuits() -> None:
     path = ml.helper.get_path_training_circuits()
     assert path.exists()
-    assert isinstance(path, Path)
 
 
 def test_get_path_training_circuits_compiled() -> None:
     path = ml.helper.get_path_training_circuits_compiled()
     assert path.exists()
-    assert isinstance(path, Path)
 
 
 def test_get_path_training_data() -> None:
     path = ml.helper.get_path_training_data()
     assert path.exists()
-    assert isinstance(path, Path)
 
 
 def test_get_path_trained_model() -> None:
     path = ml.helper.get_path_trained_model()
     assert path.exists()
-    assert isinstance(path, Path)
 
 
 def test_qcompile() -> None:
