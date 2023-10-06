@@ -338,11 +338,11 @@ def get_devices() -> list[dict[str, Any]]:
     ]
 
 
-def get_state_sample(max_qubits: int = -1) -> tuple[QuantumCircuit, str]:
+def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str]:
     """Returns a random quantum circuit from the training circuits folder.
 
     Args:
-        max_qubits (int, optional): The maximum number of qubits the returned quantum circuit may have. If -1, no limit is set. Defaults to -1.
+        max_qubits (int, None): The maximum number of qubits the returned quantum circuit may have. If no limit is set, it defaults to None.
 
     Returns:
         tuple[QuantumCircuit, str]: A tuple containing the random quantum circuit and the path to the file from which it was read.
@@ -363,7 +363,7 @@ def get_state_sample(max_qubits: int = -1) -> tuple[QuantumCircuit, str]:
     while not found_suitable_qc:
         random_index = np.random.randint(len(file_list))
         num_qubits = int(str(file_list[random_index]).split("_")[-1].split(".")[0])
-        if max_qubits > 0 and num_qubits > max_qubits:
+        if max_qubits and num_qubits > max_qubits:
             continue
         found_suitable_qc = True
 
