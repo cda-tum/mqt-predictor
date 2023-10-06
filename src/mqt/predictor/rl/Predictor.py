@@ -59,10 +59,6 @@ class Predictor:
             obs, reward_val, terminated, truncated, info = self.env.step(action)
             self.env.state._layout = self.env.layout
 
-        if self.env.state.count_ops().get("u"):
-            print("Warning: u gates are still present in the circuit")
-            print("Error occurred: ", self.env.error_occured)
-
         if not self.env.error_occured:
             return self.env.state, used_compilation_passes
 
