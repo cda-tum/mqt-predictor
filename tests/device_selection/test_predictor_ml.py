@@ -69,9 +69,9 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
         name_list,
         scores_list,
     ) = predictor.generate_trainingdata_from_qasm_files(figure_of_merit, source_path, target_path)
-    assert len(training_data)>0
-    assert len(name_list)>0
-    assert len(scores_list)>0
+    assert len(training_data) > 0
+    assert len(name_list) > 0
+    assert len(scores_list) > 0
 
     if target_path.exists():
         for file in target_path.iterdir():
