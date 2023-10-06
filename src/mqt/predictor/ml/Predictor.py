@@ -565,7 +565,7 @@ class Predictor:
         plt.savefig(result_path / "y_pred_eval_normed.pdf", bbox_inches="tight")
 
     def predict_probs(self, qasm_str_or_path: str | QuantumCircuit, figure_of_merit: reward.figure_of_merit) -> int:
-        """Returns a compilation option prediction index for a given qasm file path or qasm string.
+        """Returns the probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
 
         Args:
             qasm_str_or_path (str | QuantumCircuit): The qasm string or path to the qasm file
@@ -591,26 +591,6 @@ class Predictor:
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
         return cast(int, self.clf.predict_proba([feature_vector])[0])  # type: ignore[attr-defined]
-
-    def predict(self, qasm_str_or_path: str | QuantumCircuit, figure_of_merit: reward.figure_of_merit) -> int:
-        """Returns a compilation option prediction index for a given qasm file path or qasm string."""
-
-        if self.clf is None:
-            path = ml.helper.get_path_trained_model(figure_of_merit)
-            if path.is_file():
-                self.clf = load(str(path))
-            else:
-                error_msg = "Classifier is neither trained nor saved."
-                raise FileNotFoundError(error_msg)
-
-        feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)
-        feature_vector = list(feature_dict.values())
-
-        path = ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True)
-        non_zero_indices = np.load(str(path), allow_pickle=True)
-        feature_vector = [feature_vector[i] for i in non_zero_indices]
-
-        return cast(int, self.clf.predict([feature_vector])[0])  # type: ignore[attr-defined]
 
     # def instantiate_supervised_ML_model(
     #     self, timeout: int, figure_of_merit: reward.reward_functions = "expected_fidelity"

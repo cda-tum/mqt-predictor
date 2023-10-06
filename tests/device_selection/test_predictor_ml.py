@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Final
 
-import pytest
+import numpy as np
 from mqt.bench import benchmark_generator
 from mqt.predictor import ml, reward
 
@@ -14,17 +14,15 @@ def test_predict() -> None:
     qc = benchmark_generator.get_benchmark("dj", 1, 8)
     qc.qasm(filename=filename)
     predictor = ml.Predictor()
-    prediction = predictor.predict(filename, figure_of_merit=figure_of_merit)
-    assert 0 <= prediction < len(ml.helper.get_index_to_device_LUT())
-    prediction = predictor.predict(qc.qasm(), figure_of_merit=figure_of_merit)
-    assert 0 <= prediction < len(ml.helper.get_index_to_device_LUT())
-    with pytest.raises(ValueError, match="Invalid input for 'qc' parameter"):
-        predictor.predict("Error Test", figure_of_merit=figure_of_merit)
-
-    predictor.clf = None
-    prediction = predictor.predict(filename, figure_of_merit=figure_of_merit)
+    predictions = predictor.predict_probs(filename, figure_of_merit=figure_of_merit)
+    assert predictor.clf is not None
+    classes = predictor.clf.classes_  # type: ignore[unreachable]
+    predicted_device_indices = classes[np.argsort(predictions)[::-1]]
+    assert all(0 <= i < len(ml.helper.get_index_to_device_LUT()) for i in predicted_device_indices)
+    predictions = predictor.predict_probs(qc.qasm(), figure_of_merit=figure_of_merit)
+    predicted_device_indices = classes[np.argsort(predictions)[::-1]]
+    assert all(0 <= i < len(ml.helper.get_index_to_device_LUT()) for i in predicted_device_indices)
     Path(filename).unlink()
-    assert 0 <= prediction < len(ml.helper.get_index_to_device_LUT())
 
 
 def test_train_random_forest_classifier() -> None:
