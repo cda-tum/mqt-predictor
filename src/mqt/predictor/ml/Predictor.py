@@ -570,18 +570,3 @@ class Predictor:
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
         return cast(int, self.clf.predict_proba([feature_vector])[0])  # type: ignore[attr-defined]
-
-    # def instantiate_supervised_ML_model(
-    #     self, timeout: int, figure_of_merit: reward.reward_functions = "expected_fidelity"
-    # ) -> None:
-    #     # Generate compiled circuits and save them as qasm files
-    #     self.generate_compiled_circuits(
-    #         timeout=timeout,
-    #         figure_of_merit=figure_of_merit,
-    #     )
-    #     # Generate training data from qasm files
-    #     res = self.generate_trainingdata_from_qasm_files(figure_of_merit)
-    #     # Save those training data for faster re-processing
-    #     ml.helper.save_training_data(res, figure_of_merit)
-    #     # Train the Random Forest Classifier on created training data
-    #     self.train_random_forest_classifier()
