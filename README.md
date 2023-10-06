@@ -22,6 +22,12 @@ Therefore, MQT Predictor tackles this problem from two angles:
 
 2. It provides a prediction method (based on Supervised Machine Learning) that, without performing any compilation, automatically predicts the most suitable device for a given application. This completely eliminates the manual and laborious task of determining a suitable target device and guides end-users through the vast landscape of choices without the need for quantum computing expertise.
 
+<p align="center">
+<picture>
+  <img src="./img/problem.png" width="100%">
+</picture>
+</p>
+
 In the following, we provide a brief overview of the two approaches.
 
 ## Device-specific Quantum Circuit Compiler Using Reinforcement Learning Model
