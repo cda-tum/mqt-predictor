@@ -1,14 +1,11 @@
 from pathlib import Path
-from typing import Any
-from unittest.mock import patch
 
 import pytest
 from mqt.bench import benchmark_generator
 from mqt.predictor import ml, reward
 
 
-@patch("matplotlib.pyplot.show")
-def test_predict(mock_show: Any) -> None:  # noqa: ARG001
+def test_predict() -> None:
     path = ml.helper.get_path_trained_model(figure_of_merit="expected_fidelity")
     assert path.is_file()
     filename = "test_qasm.qasm"
@@ -29,8 +26,7 @@ def test_predict(mock_show: Any) -> None:  # noqa: ARG001
     assert 0 <= prediction < len(ml.helper.get_index_to_device_LUT())
 
 
-@patch("matplotlib.pyplot.show")
-def test_train_random_forest_classifier(mock_pyplot: Any) -> None:  # noqa: ARG001
+def test_train_random_forest_classifier() -> None:
     predictor = ml.Predictor()
     assert predictor.clf is None
     predictor.train_random_forest_classifier(visualize_results=False)
