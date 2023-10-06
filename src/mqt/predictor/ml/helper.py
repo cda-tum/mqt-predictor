@@ -18,6 +18,7 @@ from mqt.predictor import ml, reward, rl
 from qiskit import QuantumCircuit
 
 if TYPE_CHECKING:
+    from numpy._typing import NDArray
     from sklearn.ensemble import RandomForestClassifier
 
 
@@ -212,7 +213,10 @@ def save_classifier(clf: RandomForestClassifier, figure_of_merit: reward.figure_
 
 
 def save_training_data(
-    res: tuple[list[Any], list[Any], list[Any]], figure_of_merit: reward.figure_of_merit = "expected_fidelity"
+    training_data: list[NDArray[np.float_]],
+    names_list: list[str],
+    scores_list: list[NDArray[np.float_]],
+    figure_of_merit: reward.figure_of_merit,
 ) -> None:
     """Saves the given training data to the training data folder.
 
@@ -220,8 +224,6 @@ def save_training_data(
         res (tuple[list[Any], list[Any], list[Any]]): The training data, the names list and the scores list to be saved.
         figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
     """
-
-    training_data, names_list, scores_list = res
 
     with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
         data = np.asarray(training_data, dtype=object)

@@ -147,10 +147,12 @@ from mqt.predictor import ml
 
 predictor = ml.Predictor()
 predictor.generate_compiled_circuits(figure_of_merit="expected_fidelity")
-res = predictor.generate_trainingdata_from_qasm_files(
+training_data, name_list, scores_list = predictor.generate_trainingdata_from_qasm_files(
     figure_of_merit="expected_fidelity"
 )
-ml.helper.save_training_data(res, figure_of_merit="expected_fidelity")
+ml.helper.save_training_data(
+    training_data, name_list, scores_list, figure_of_merit="expected_fidelity"
+)
 ```
 
 Now, the Random Forest classifier can be trained:

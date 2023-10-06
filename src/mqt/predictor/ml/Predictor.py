@@ -203,7 +203,7 @@ class Predictor:
         figure_of_merit: reward.figure_of_merit,
         path_uncompiled_circuits: Path | None = None,
         path_compiled_circuits: Path | None = None,
-    ) -> tuple[list[Any], list[Any], list[Any]]:
+    ) -> tuple[list[NDArray[np.float_]], list[str], list[NDArray[np.float_]]]:
         """Handles to create training data from all generated training samples
 
         Args:
