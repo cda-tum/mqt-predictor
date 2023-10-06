@@ -86,18 +86,16 @@ class Predictor:
 
             for i, dev in enumerate(rl.helper.get_devices()):
                 target_filename = str(filename).split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(i)
-                if (
-                    not (Path(target_path) / (target_filename + ".qasm")).exists()
-                    and qc.num_qubits <= dev["max_qubits"]
-                ):
-                    try:
-                        res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, dev["name"]], timeout)
-                        if res:
-                            compiled_qc = res[0]
-                            compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
+                if (Path(target_path) / (target_filename + ".qasm")).exists() or qc.num_qubits > dev["max_qubits"]:
+                    continue
+                try:
+                    res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, dev["name"]], timeout)
+                    if res:
+                        compiled_qc = res[0]
+                        compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
 
-                    except Exception as e:
-                        print(e, filename, "inner")
+                except Exception as e:
+                    print(e, filename, "inner")
 
         except Exception as e:
             print(e, filename, "outer")
@@ -145,16 +143,17 @@ class Predictor:
             target_filename = (
                 str(filename).split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(dev_index)
             )
-            if not (Path(target_path) / (target_filename + ".qasm")).exists():
-                try:
-                    res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device_name, rl_pred], timeout)
-                    if res:
-                        compiled_qc = res[0]
-                        compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
+            if (Path(target_path) / (target_filename + ".qasm")).exists():
+                continue
+            try:
+                res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device_name, rl_pred], timeout)
+                if res:
+                    compiled_qc = res[0]
+                    compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
 
-                except Exception as e:
-                    print(e, filename, device_name)
-                    raise RuntimeError("Error during compilation: " + str(e)) from e
+            except Exception as e:
+                print(e, filename, device_name)
+                raise RuntimeError("Error during compilation: " + str(e)) from e
 
     def generate_compiled_circuits(
         self,
@@ -274,17 +273,18 @@ class Predictor:
 
         for filename in all_relevant_files:
             filename_str = str(filename)
-            if (str(file).split(".")[0] + "_" + figure_of_merit + "_") in filename_str and filename_str.endswith(
+            if (str(file).split(".")[0] + "_" + figure_of_merit + "_") not in filename_str and filename_str.endswith(
                 ".qasm"
             ):
-                comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
-                device = LUT[comp_path_index]
-                qc = QuantumCircuit.from_qasm_file(filename_str)
-                if figure_of_merit == "critical_depth":
-                    score = reward.crit_depth(qc)
-                elif figure_of_merit == "expected_fidelity":
-                    score = reward.expected_fidelity(qc, device)
-                scores[comp_path_index] = score
+                continue
+            comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
+            device = LUT[comp_path_index]
+            qc = QuantumCircuit.from_qasm_file(filename_str)
+            if figure_of_merit == "critical_depth":
+                score = reward.crit_depth(qc)
+            elif figure_of_merit == "expected_fidelity":
+                score = reward.expected_fidelity(qc, device)
+            scores[comp_path_index] = score
 
         num_not_empty_entries = 0
         for i in range(len(LUT)):
