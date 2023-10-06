@@ -237,10 +237,9 @@ class Predictor:
             for filename in path_uncompiled_circuits.iterdir()
         )
         for sample in results:
-            if not sample:
-                continue
-
             training_sample, circuit_name, scores = sample
+            if all(score == -1 for score in scores):
+                continue
             training_data.append(training_sample)
             name_list.append(circuit_name)
             scores_list.append(scores)
@@ -254,7 +253,7 @@ class Predictor:
         path_compiled_circuits: Path,
         figure_of_merit: reward.figure_of_merit = "expected_fidelity",
         logger_level: int = logging.INFO,
-    ) -> tuple[tuple[list[Any], Any], str, list[float]] | bool:
+    ) -> tuple[tuple[list[Any], Any], str, list[float]]:
         """Handles to create a training sample from a given file.
 
         Args:
@@ -267,7 +266,7 @@ class Predictor:
         logger.setLevel(logger_level)
 
         if ".qasm" not in str(file):
-            return False
+            raise RuntimeError("File is not a qasm file: " + str(file))
 
         LUT = ml.helper.get_index_to_device_LUT()
         logger.debug("Checking " + str(file))
@@ -296,8 +295,7 @@ class Predictor:
                 num_not_empty_entries += 1
 
         if num_not_empty_entries == 0:
-            print("no compiled circuits found for:", file)
-            return False
+            logger.warning("no compiled circuits found for:" + str(file))
 
         feature_vec = ml.helper.create_feature_dict(str(path_uncompiled_circuit / file))
         training_sample = (list(feature_vec.values()), np.argmax(scores))
