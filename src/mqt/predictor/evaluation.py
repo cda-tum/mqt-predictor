@@ -103,7 +103,7 @@ def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figur
         Result: Returns a Result object containing the compiled quantum circuit.
     """
     assert isinstance(dev_name, str)
-    dev_index = next((index for index, d in enumerate(rl.helper.get_devices()) if d["name"] == dev_name), None)
+    dev_index = rl.helper.get_device_index_of_device(dev_name)
     target_filename = filename.split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(dev_index)
     combined_path_filename = ml.helper.get_path_training_circuits_compiled() / (target_filename + ".qasm")
     if Path(combined_path_filename).exists():

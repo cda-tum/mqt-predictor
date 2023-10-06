@@ -536,3 +536,21 @@ def get_device(device_name: str) -> dict[str, Any]:
 
     msg = "No suitable device found."
     raise RuntimeError(msg)
+
+
+def get_device_index_of_device(device_name: str) -> int:
+    """Returns the index of the device with the given name.
+
+    Args:
+        device_name (str): The name of the device to be returned.
+
+    Returns:
+        int: The index of the device with the given name.
+    """
+    devices = get_devices()
+    for i, device in enumerate(devices):
+        if device["name"] == device_name:
+            return i
+
+    msg = "No suitable device found."
+    raise RuntimeError(msg)

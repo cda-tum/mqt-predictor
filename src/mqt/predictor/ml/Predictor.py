@@ -126,8 +126,7 @@ class Predictor:
         logger.info("Processing: " + device_name, figure_of_merit)
         rl_pred = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device_name)
 
-        dev_index = next((index for index, d in enumerate(rl.helper.get_devices()) if d["name"] == device_name), None)
-        assert dev_index is not None
+        dev_index = rl.helper.get_device_index_of_device(device_name)
         dev_max_qubits = rl.helper.get_devices()[dev_index]["max_qubits"]
 
         if source_path is None:
