@@ -22,9 +22,9 @@ class Calibration:
             self.ibm_washington_calibration = FakeWashington().properties()
             self.oqc_lucy_calibration = parse_oqc_calibration_config()
             self.rigetti_m2_calibration = parse_rigetti_calibration_config()
-            self.ionq_harmony_calibration = parse_generic_calibration_config("ionq_harmony")
-            self.ionq_aria1_calibration = parse_generic_calibration_config("ionq_aria1")
-            self.quantinuum_h2_calibration = parse_generic_calibration_config("quantinuum_h2")
+            self.ionq_harmony_calibration = parse_simple_calibration_config("ionq_harmony")
+            self.ionq_aria1_calibration = parse_simple_calibration_config("ionq_aria1")
+            self.quantinuum_h2_calibration = parse_simple_calibration_config("quantinuum_h2")
 
         except Exception as e:
             raise RuntimeError("Error in Calibration initialization: " + str(e)) from e
@@ -64,7 +64,7 @@ class DeviceCalibration(TypedDict):
     avg_2Q: float
 
 
-def parse_generic_calibration_config(device: str) -> DeviceCalibration:
+def parse_simple_calibration_config(device: str) -> DeviceCalibration:
     """Parses the calibration data for the given device.
 
     Args:
@@ -77,11 +77,11 @@ def parse_generic_calibration_config(device: str) -> DeviceCalibration:
     calibration_filename = device + "_calibration.json"
     ref = resources.files("mqt.predictor") / "calibration_files" / calibration_filename
     with ref.open() as f:
-        ionq_calibration = json.load(f)
+        calibration = json.load(f)
     return {
-        "backend": "ionq",
-        "avg_1Q": ionq_calibration["fidelity"]["1Q"].get("mean"),
-        "avg_2Q": ionq_calibration["fidelity"]["2Q"].get("mean"),
+        "backend": device,
+        "avg_1Q": calibration["fidelity"]["1Q"].get("mean"),
+        "avg_2Q": calibration["fidelity"]["2Q"].get("mean"),
     }
 
 
