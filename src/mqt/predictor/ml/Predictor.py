@@ -73,7 +73,7 @@ class Predictor:
         timeout: int,
         source_path: Path,
         target_path: Path,
-        figure_of_merit: reward.figure_of_merit
+        figure_of_merit: reward.figure_of_merit,
     ) -> None:
         """Compiles a single circuit with the given timeout and saves it in the given directory.
 
