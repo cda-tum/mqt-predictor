@@ -81,9 +81,7 @@ def get_path_results(ghz_results: bool = False) -> Path:
 def get_path_trained_model(figure_of_merit: str, return_non_zero_indices: bool = False) -> Path:
     """Returns the path to the trained model folder resulting from the machine learning training."""
     if return_non_zero_indices:
-        return (
-            get_path_training_data() / "trained_model" / ("non_zero_indices_" + figure_of_merit + ".npy")
-        )
+        return get_path_training_data() / "trained_model" / ("non_zero_indices_" + figure_of_merit + ".npy")
     return get_path_training_data() / "trained_model" / ("trained_clf_" + figure_of_merit + ".joblib")
 
 
