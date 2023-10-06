@@ -249,8 +249,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
         if mapped and self.layout is not None:
             return [self.action_terminate_index, *self.actions_opt_indices]  # type: ignore[unreachable]
 
-        # No layout applied yet
         if self.state._layout is not None:
             return self.actions_routing_indices
 
+        # No layout applied yet
         return self.actions_mapping_indices + self.actions_layout_indices + self.actions_opt_indices
