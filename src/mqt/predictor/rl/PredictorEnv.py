@@ -65,6 +65,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.reward_function = reward_function
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
+        self.layout = None
 
         spaces = {
             "num_qubits": Discrete(128),
