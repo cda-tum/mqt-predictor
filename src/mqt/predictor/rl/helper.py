@@ -66,6 +66,15 @@ else:
 logger = logging.getLogger("mqt-predictor")
 
 
+NUM_ACTIONS_OPT = 13
+NUM_ACTIONS_LAYOUT = 3
+NUM_ACTIONS_ROUTING = 4
+NUM_ACTIONS_SYNTHESIS = 1
+NUM_ACTIONS_TERMINATE = 1
+NUM_ACTIONS_DEVICES = 7
+NUM_ACTIONS_MAPPING = 1
+
+
 def qcompile(
     qc: QuantumCircuit | str,
     figure_of_merit: reward.figure_of_merit = "expected_fidelity",

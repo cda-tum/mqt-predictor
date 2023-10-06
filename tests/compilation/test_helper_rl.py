@@ -7,53 +7,33 @@ from mqt.bench.utils import get_cmap_from_devicename
 from mqt.predictor import rl
 from qiskit import QuantumCircuit
 
-NUM_ACTIONS_OPT = 13
-
 
 def test_get_actions_opt() -> None:
-    assert len(rl.helper.get_actions_opt()) == NUM_ACTIONS_OPT
-
-
-NUM_ACTIONS_LAYOUT = 3
+    assert len(rl.helper.get_actions_opt()) == rl.helper.NUM_ACTIONS_OPT
 
 
 def test_get_actions_layout() -> None:
-    assert len(rl.helper.get_actions_layout()) == NUM_ACTIONS_LAYOUT
-
-
-NUM_ACTIONS_ROUTING = 4
+    assert len(rl.helper.get_actions_layout()) == rl.helper.NUM_ACTIONS_LAYOUT
 
 
 def test_et_actions_routing() -> None:
-    assert len(rl.helper.get_actions_routing()) == NUM_ACTIONS_ROUTING
-
-
-NUM_ACTIONS_SYNTHESIS = 1
+    assert len(rl.helper.get_actions_routing()) == rl.helper.NUM_ACTIONS_ROUTING
 
 
 def test_get_actions_synthesis() -> None:
-    assert len(rl.helper.get_actions_synthesis()) == NUM_ACTIONS_SYNTHESIS
-
-
-NUM_ACTIONS_TERMINATE = 1
+    assert len(rl.helper.get_actions_synthesis()) == rl.helper.NUM_ACTIONS_SYNTHESIS
 
 
 def test_get_action_terminate() -> None:
-    assert len(rl.helper.get_action_terminate()) == NUM_ACTIONS_TERMINATE
-
-
-NUM_ACTIONS_DEVICES = 7
+    assert len(rl.helper.get_action_terminate()) == rl.helper.NUM_ACTIONS_TERMINATE
 
 
 def test_get_actions_devices() -> None:
-    assert len(rl.helper.get_devices()) == NUM_ACTIONS_DEVICES
-
-
-NUM_ACTIONS_MAPPING = 1
+    assert len(rl.helper.get_devices()) == rl.helper.NUM_ACTIONS_DEVICES
 
 
 def test_get_actions_mapping() -> None:
-    assert len(rl.helper.get_actions_mapping()) == NUM_ACTIONS_MAPPING
+    assert len(rl.helper.get_actions_mapping()) == rl.helper.NUM_ACTIONS_MAPPING
 
 
 def test_get_random_state_sample() -> None:
