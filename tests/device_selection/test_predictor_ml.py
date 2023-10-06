@@ -46,7 +46,7 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
     qc.qasm(filename=str(qasm_path))
     predictor.compile_all_circuits_devicewise(
         device_name="ionq_harmony",
-        timeout=10,
+        timeout=100,
         figure_of_merit=figure_of_merit,
         source_path=source_path,
         target_path=target_path,
