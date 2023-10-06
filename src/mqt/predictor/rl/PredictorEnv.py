@@ -165,7 +165,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         """Returns a list of valid actions for the current state."""
         return [action in self.valid_actions for action in self.action_set]
 
-    def apply_action(self, action_index: int) -> QuantumCircuit:
+    def apply_action(self, action_index: int) -> QuantumCircuit | None:
         """Applies the given action to the current state and returns the altered state."""
         if action_index in self.action_set:
             action = self.action_set[action_index]
@@ -192,17 +192,12 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         pm = PassManager(transpile_pass)
                     altered_qc = pm.run(self.state)
                 except Exception as e:
-                    print(
-                        "Error in executing Qiskit transpile pass: "
-                        + action["name"]
-                        + ", steps: "
-                        + str(self.num_steps)
-                        + ", "
-                        + str(self.filename)
-                        + ", "
-                        + str(e)
+                    logger.error(
+                        "Error in executing Qiskit transpile pass for {action} at step {i} for {filename}: {e}".format(
+                            action=action["name"], i=self.num_steps, filename=self.filename, e=e
+                        )
                     )
-                    print(self.used_actions)
+
                     self.error_occured = True
                     return None
                 if action_index in self.actions_layout_indices + self.actions_mapping_indices:
@@ -220,17 +215,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         elem.apply(tket_qc)
                     altered_qc = tk_to_qiskit(tket_qc)
                 except Exception as e:
-                    print(
-                        "Error in executing TKET transpile pass: "
-                        + action["name"]
-                        + ", steps: "
-                        + str(self.num_steps)
-                        + ", "
-                        + self.state.name
-                        + ", "
-                        + str(self.filename)
-                        + ", "
-                        + str(e)
+                    logger.error(
+                        "Error in executing TKET transpile  pass for {action} at step {i} for {filename}: {e}".format(
+                            action=action["name"], i=self.num_steps, filename=self.filename, e=e
+                        )
                     )
                     self.error_occured = True
                     return None
