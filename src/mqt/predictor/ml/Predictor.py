@@ -21,14 +21,8 @@ logger = logging.getLogger("mqt-predictor")
 
 
 class Predictor:
-    def __init__(self, verbose: int = 0) -> None:
-        if verbose == 1:
-            lvl = logging.INFO
-        elif verbose == 2:
-            lvl = logging.DEBUG
-        else:
-            lvl = logging.WARNING
-        logger.setLevel(lvl)
+    def __init__(self, logger_level: int = logging.INFO) -> None:
+        logger.setLevel(logger_level)
 
         self.clf = None
 
@@ -73,7 +67,7 @@ class Predictor:
         timeout: int,
         source_path: Path,
         target_path: Path,
-        figure_of_merit: reward.figure_of_merit
+        figure_of_merit: reward.figure_of_merit,
     ) -> None:
         """Compiles a single circuit with the given timeout and saves it in the given directory.
 

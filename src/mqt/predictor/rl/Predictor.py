@@ -18,14 +18,8 @@ PATH_LENGTH = 260
 class Predictor:
     """The Predictor class is used to train a reinforcement learning model for a given figure of merit and device such that it acts as a compiler."""
 
-    def __init__(self, figure_of_merit: reward.figure_of_merit, device_name: str, verbose: int = 0):
-        if verbose == 1:
-            lvl = logging.INFO
-        elif verbose == 2:
-            lvl = logging.DEBUG
-        else:
-            lvl = logging.WARNING
-        logger.setLevel(lvl)
+    def __init__(self, figure_of_merit: reward.figure_of_merit, device_name: str, logger_level: int = logging.INFO):
+        logger.setLevel(logger_level)
 
         self.model = rl.helper.load_model("model_" + figure_of_merit + "_" + device_name)
         self.env = rl.PredictorEnv(figure_of_merit, device_name)
