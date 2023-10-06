@@ -55,10 +55,10 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
     assert any(file.suffix == ".qasm" for file in target_path.iterdir())
 
     res = predictor.generate_training_sample(
-        file=str(qasm_path),
+        file=qasm_path,
         figure_of_merit=figure_of_merit,
-        path_uncompiled_circuit=str(source_path),
-        path_compiled_circuits=str(target_path),
+        path_uncompiled_circuit=source_path,
+        path_compiled_circuits=target_path,
     )
     assert not isinstance(res, bool)
     training_sample, circuit_name, scores = res
@@ -70,7 +70,7 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
         training_data,
         name_list,
         scores_list,
-    ) = predictor.generate_trainingdata_from_qasm_files(figure_of_merit, str(source_path), str(target_path))
+    ) = predictor.generate_trainingdata_from_qasm_files(figure_of_merit, source_path, target_path)
     assert training_data
     assert name_list
     assert scores_list

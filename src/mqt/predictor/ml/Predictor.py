@@ -201,8 +201,8 @@ class Predictor:
     def generate_trainingdata_from_qasm_files(
         self,
         figure_of_merit: reward.figure_of_merit,
-        path_uncompiled_circuits: str = "",
-        path_compiled_circuits: str = "",
+        path_uncompiled_circuits: Path | None = None,
+        path_compiled_circuits: Path | None = None,
     ) -> tuple[list[Any], list[Any], list[Any]]:
         """Handles to create training data from all generated training samples
 
@@ -216,10 +216,10 @@ class Predictor:
         scores -- evaluation scores for all compilation options
         """
         if not path_uncompiled_circuits:
-            path_uncompiled_circuits = str(ml.helper.get_path_training_circuits())
+            path_uncompiled_circuits = ml.helper.get_path_training_circuits()
 
         if not path_compiled_circuits:
-            path_compiled_circuits = str(ml.helper.get_path_training_circuits_compiled())
+            path_compiled_circuits = ml.helper.get_path_training_circuits_compiled()
 
         # init resulting list (feature vector, name, scores)
         training_data = []
@@ -228,13 +228,13 @@ class Predictor:
 
         results = Parallel(n_jobs=-1, verbose=100)(
             delayed(self.generate_training_sample)(
-                str(filename.name),
-                figure_of_merit,
+                filename.name,
                 path_uncompiled_circuits,
                 path_compiled_circuits,
+                figure_of_merit,
                 logger.level,
             )
-            for filename in Path(path_uncompiled_circuits).iterdir()
+            for filename in path_uncompiled_circuits.iterdir()
         )
         for sample in results:
             if not sample:
@@ -249,10 +249,10 @@ class Predictor:
 
     def generate_training_sample(
         self,
-        file: str,
+        file: Path,
+        path_uncompiled_circuit: Path,
+        path_compiled_circuits: Path,
         figure_of_merit: reward.figure_of_merit = "expected_fidelity",
-        path_uncompiled_circuit: str | None = None,
-        path_compiled_circuits: str | None = None,
         logger_level: int = logging.INFO,
     ) -> tuple[tuple[list[Any], Any], str, list[float]] | bool:
         """Handles to create a training sample from a given file.
@@ -265,25 +265,22 @@ class Predictor:
             logger_level (int, optional): The level of the logger. Defaults to logging.INFO.
         """
         logger.setLevel(logger_level)
-        if not path_uncompiled_circuit:
-            path_uncompiled_circuit = str(ml.helper.get_path_training_circuits())
 
-        if not path_compiled_circuits:
-            path_compiled_circuits = str(ml.helper.get_path_training_circuits_compiled())
-
-        if ".qasm" not in file:
+        if ".qasm" not in str(file):
             return False
 
         LUT = ml.helper.get_index_to_device_LUT()
-        logger.debug("Checking " + file)
+        logger.debug("Checking " + str(file))
         scores: list[float] = []
         for _ in range(len(LUT)):
             scores.append(-1.0)
-        all_relevant_files = Path(path_compiled_circuits).glob(file.split(".")[0] + "*")
+        all_relevant_files = path_compiled_circuits.glob(str(file).split(".")[0] + "*")
 
         for filename in all_relevant_files:
             filename_str = str(filename)
-            if (file.split(".")[0] + "_" + figure_of_merit + "_") in filename_str and filename_str.endswith(".qasm"):
+            if (str(file).split(".")[0] + "_" + figure_of_merit + "_") in filename_str and filename_str.endswith(
+                ".qasm"
+            ):
                 comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
                 device = LUT[comp_path_index]
                 qc = QuantumCircuit.from_qasm_file(filename_str)
@@ -302,9 +299,9 @@ class Predictor:
             print("no compiled circuits found for:", file)
             return False
 
-        feature_vec = ml.helper.create_feature_dict(str(Path(path_uncompiled_circuit) / file))
+        feature_vec = ml.helper.create_feature_dict(str(path_uncompiled_circuit / file))
         training_sample = (list(feature_vec.values()), np.argmax(scores))
-        circuit_name = file.split(".")[0]
+        circuit_name = str(file).split(".")[0]
         return (training_sample, circuit_name, scores)
 
     def train_random_forest_classifier(
