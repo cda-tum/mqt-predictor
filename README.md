@@ -189,9 +189,9 @@ Additionally, the raw training data may be extracted and can be used for any mac
 ```
 .
 ├── notebooks/
-│ ├── ml/
-│ │ ├── ...
-│ └── evaluation.ipynb
+│ ├── evaluations/
+│ │     ├── ...
+│ └── example.ipynb
 ├── src/
 │ ├── mqt/
 │   └── predictor/
