@@ -16,11 +16,9 @@ PATH_LENGTH = 260
 
 
 class Predictor:
-    """The Predictor class is used to compile a given quantum circuit to a device optimizing for the given figure of merit."""
+    """The Predictor class is used to train a reinforcement learning model for a given figure of merit and device such that it acts as a compiler."""
 
-    def __init__(
-        self, figure_of_merit: reward.figure_of_merit | None = None, device_name: str | None = None, verbose: int = 0
-    ):
+    def __init__(self, figure_of_merit: reward.figure_of_merit, device_name: str, verbose: int = 0):
         if verbose == 1:
             lvl = logging.INFO
         elif verbose == 2:
@@ -29,25 +27,24 @@ class Predictor:
             lvl = logging.WARNING
         logger.setLevel(lvl)
 
-        if figure_of_merit is not None and device_name is not None:
-            self.model = rl.helper.load_model("model_" + figure_of_merit + "_" + device_name)
-            self.env = rl.PredictorEnv(figure_of_merit, device_name)
+        self.model = rl.helper.load_model("model_" + figure_of_merit + "_" + device_name)
+        self.env = rl.PredictorEnv(figure_of_merit, device_name)
+        self.device_name = device_name
+        self.figure_of_merit = figure_of_merit
 
     def compile_as_predicted(
         self,
         qc: QuantumCircuit,
     ) -> tuple[QuantumCircuit, list[str]]:
-        """Compiles a given quantum circuit such that the expected fidelity is maximized by using the respectively trained optimized compiler.
+        """Compiles a given quantum circuit such that the given figure of merit is maximized by using the respectively trained optimized compiler.
 
         Args:
-            qc (QuantumCircuit | str): The quantum circuit to be compiled or the path to a qasm file containing the quantum circuit.
+            qc (QuantumCircuit: The quantum circuit to be compiled or the path to a qasm file containing the quantum circuit.
 
         Returns:
             tuple[QuantumCircuit, list[str]] | bool: Returns a tuple containing the compiled quantum circuit and the compilation information. If compilation fails, False is returned.
         """
 
-        assert self.model is not None
-        assert self.env is not None
         obs, _ = self.env.reset(qc)
 
         used_compilation_passes = []
@@ -72,12 +69,10 @@ class Predictor:
         msg = "Error occurred during compilation."
         raise Exception(msg)
 
-    def train_all_models(
+    def train_model(
         self,
         timesteps: int = 1000,
-        reward_functions: list[reward.figure_of_merit] | None = None,
         model_name: str = "model",
-        device_name: str = "ibm_washington",
         verbose: int = 2,
         test: bool = False,
     ) -> None:
@@ -85,15 +80,11 @@ class Predictor:
 
         Args:
             timesteps (int, optional): The number of timesteps to train the model. Defaults to 1000.
-            reward_functions (list[reward.reward_functions] | None, optional): The reward functions to train the model for. Defaults to None.
             model_name (str, optional): The name of the model. Defaults to "model".
-            device_name (str, optional): The name of the device. Defaults to "ibm_washington".
             verbose (int, optional): The verbosity level. Defaults to 2.
             test (bool, optional): Whether to train the model for testing purposes. Defaults to False.
         """
 
-        if reward_functions is None:
-            reward_functions = ["expected_fidelity"]
         if test:
             n_steps = 100
             progress_bar = False
@@ -101,17 +92,18 @@ class Predictor:
             n_steps = 2048
             progress_bar = True
 
-        for rew in reward_functions:
-            logger.debug("Start training for: " + rew)
-            env = rl.PredictorEnv(reward_function=rew, device_name=device_name)
+        logger.debug("Start training for: " + self.figure_of_merit + " on " + self.device_name)
+        env = rl.PredictorEnv(reward_function=self.figure_of_merit, device_name=self.device_name)
 
-            model = MaskablePPO(
-                MaskableMultiInputActorCriticPolicy,
-                env,
-                verbose=verbose,
-                tensorboard_log="./" + model_name + "_" + rew + "_" + device_name,
-                gamma=0.98,
-                n_steps=n_steps,
-            )
-            model.learn(total_timesteps=timesteps, progress_bar=progress_bar)
-            model.save(rl.helper.get_path_trained_model() / (model_name + "_" + rew + "_" + device_name))
+        model = MaskablePPO(
+            MaskableMultiInputActorCriticPolicy,
+            env,
+            verbose=verbose,
+            tensorboard_log="./" + model_name + "_" + self.figure_of_merit + "_" + self.device_name,
+            gamma=0.98,
+            n_steps=n_steps,
+        )
+        model.learn(total_timesteps=timesteps, progress_bar=progress_bar)
+        model.save(
+            rl.helper.get_path_trained_model() / (model_name + "_" + self.figure_of_merit + "_" + self.device_name)
+        )
