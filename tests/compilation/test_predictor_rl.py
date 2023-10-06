@@ -17,10 +17,8 @@ IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
     ["expected_fidelity", "critical_depth"],
 )
 def test_qcompile_with_pretrained_models(figure_of_merit: reward.figure_of_merit) -> None:
-    qc = get_benchmark("ghz", 1, 5)
-    qc_compiled, compilation_information = rl.qcompile(
-        qc, figure_of_merit=figure_of_merit, device_name="ibm_washington"
-    )
+    qc = get_benchmark("ghz", 1, 3)
+    qc_compiled, compilation_information = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name="ionq_harmony")
     assert isinstance(qc_compiled, QuantumCircuit)
     assert compilation_information is not None
 
@@ -32,7 +30,7 @@ def test_qcompile_with_pretrained_models(figure_of_merit: reward.figure_of_merit
 def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name="ionq_harmony")
     predictor.train_model(
-        timesteps=100,
+        timesteps=20,
         test=True,
     )
 

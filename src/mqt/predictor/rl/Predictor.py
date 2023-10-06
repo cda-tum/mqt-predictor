@@ -21,10 +21,13 @@ class Predictor:
     def __init__(self, figure_of_merit: reward.figure_of_merit, device_name: str, logger_level: int = logging.INFO):
         logger.setLevel(logger_level)
 
-        self.model = rl.helper.load_model("model_" + figure_of_merit + "_" + device_name)
+        self.model = None
         self.env = rl.PredictorEnv(figure_of_merit, device_name)
         self.device_name = device_name
         self.figure_of_merit = figure_of_merit
+
+    def load_model(self) -> None:
+        self.model = rl.helper.load_model("model_" + self.figure_of_merit + "_" + self.device_name)
 
     def compile_as_predicted(
         self,
@@ -38,7 +41,13 @@ class Predictor:
         Returns:
             tuple[QuantumCircuit, list[str]] | bool: Returns a tuple containing the compiled quantum circuit and the compilation information. If compilation fails, False is returned.
         """
-
+        if not self.model:
+            try:
+                self.load_model()
+            except Exception as e:
+                msg = "Model cannot be loaded. Try to train a local model using 'Predictor.train_model(<...>)'"
+                raise Exception(msg) from e
+        assert self.model
         obs, _ = self.env.reset(qc)
 
         used_compilation_passes = []

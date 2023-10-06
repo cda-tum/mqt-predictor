@@ -122,7 +122,7 @@ class Predictor:
         """
         logger.setLevel(logger_level)
 
-        logger.info("Processing: " + device_name + figure_of_merit)
+        logger.info("Processing: " + device_name + " for " + figure_of_merit)
         rl_pred = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device_name)
 
         dev_index = rl.helper.get_device_index_of_device(device_name)
