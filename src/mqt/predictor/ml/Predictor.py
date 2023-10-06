@@ -234,7 +234,7 @@ class Predictor:
                 figure_of_merit,
                 logger.level,
             )
-            for filename in path_uncompiled_circuits.iterdir()
+            for filename in path_uncompiled_circuits.glob("*.qasm")
         )
         for sample in results:
             training_sample, circuit_name, scores = sample
@@ -262,6 +262,9 @@ class Predictor:
             path_uncompiled_circuit (Path): The path to the directory containing the uncompiled circuits. Defaults to None.
             path_compiled_circuits (Path): The path to the directory containing the compiled circuits. Defaults to None.
             logger_level (int, optional): The level of the logger. Defaults to logging.INFO.
+
+        Returns:
+            tuple[tuple[list[Any], Any], str, list[float]]: Training_sample, circuit_name, scores
         """
         logger.setLevel(logger_level)
 
