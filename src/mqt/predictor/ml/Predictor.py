@@ -36,8 +36,9 @@ class Predictor:
         """Sets the classifier to the given classifier"""
         self.clf = clf
 
-    def compile_all_circuits_fidelity(
+    def compile_all_circuits_circuitwise(
         self,
+        figure_of_merit: reward.figure_of_merit,
         timeout: int,
         source_path: Path | None = None,
         target_path: Path | None = None,
@@ -59,9 +60,9 @@ class Predictor:
         if target_path is None:
             target_path = ml.helper.get_path_training_circuits_compiled()
 
-        Parallel(n_jobs=6, verbose=100)(
+        Parallel(n_jobs=-1, verbose=100)(
             delayed(self.generate_compiled_circuits_for_single_training_circuit)(
-                filename, timeout, source_path, target_path
+                filename, timeout, source_path, target_path, figure_of_merit
             )
             for filename in source_path.iterdir()
         )
@@ -72,7 +73,7 @@ class Predictor:
         timeout: int,
         source_path: Path,
         target_path: Path,
-        figure_of_merit: str = "expected_fidelity",
+        figure_of_merit: reward.figure_of_merit
     ) -> None:
         """Compiles a single circuit with the given timeout and saves it in the given directory.
 
@@ -81,7 +82,7 @@ class Predictor:
             timeout (int): The timeout in seconds for the compilation of the circuit
             source_path (Path): The path to the directory containing the circuit to be compiled
             target_path (Path): The path to the directory where the compiled circuit should be saved
-            figure_of_merit (str, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
+            figure_of_merit (reward.figure_of_merit): The figure of merit to be used for compilation.
 
         """
         try:
@@ -107,7 +108,7 @@ class Predictor:
         except Exception as e:
             print(e, filename, "outer")
 
-    def compile_all_circuits_for_dev_and_fom(
+    def compile_all_circuits_devicewise(
         self,
         device_name: str,
         timeout: int,
@@ -128,7 +129,7 @@ class Predictor:
         """
         logger.setLevel(logger_level)
 
-        print("Processing: " + device_name, figure_of_merit)
+        logger.info("Processing: " + device_name, figure_of_merit)
         rl_pred = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device_name)
 
         dev_index = next((index for index, d in enumerate(rl.helper.get_devices()) if d["name"] == device_name), None)
@@ -191,7 +192,7 @@ class Predictor:
         target_path.mkdir(exist_ok=True)
 
         Parallel(n_jobs=1, verbose=100)(
-            delayed(self.compile_all_circuits_for_dev_and_fom)(
+            delayed(self.compile_all_circuits_devicewise)(
                 device_name, timeout, figure_of_merit, source_path, target_path, logger.level
             )
             for figure_of_merit in ["expected_fidelity", "critical_depth"]

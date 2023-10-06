@@ -44,7 +44,7 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
     qc = benchmark_generator.get_benchmark("dj", 1, 3)
     qasm_path = Path("test.qasm")
     qc.qasm(filename=str(qasm_path))
-    predictor.compile_all_circuits_for_dev_and_fom(
+    predictor.compile_all_circuits_devicewise(
         device_name="ibm_washington",
         timeout=10,
         figure_of_merit=figure_of_merit,
