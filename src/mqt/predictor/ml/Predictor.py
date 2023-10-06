@@ -206,14 +206,14 @@ class Predictor:
     ) -> tuple[list[Any], list[Any], list[Any]]:
         """Handles to create training data from all generated training samples
 
-        Keyword arguments:
-        path_uncompiled_circuits -- path to file
-        path_compiled_circuits -- path to directory for compiled circuit
+        Args:
+            figure_of_merit (reward.reward_functions): The figure of merit to be used for training
+            path_uncompiled_circuits (Path, optional): The path to the directory containing the uncompiled circuits. Defaults to None.
+            path_compiled_circuits (Path, optional): The path to the directory containing the compiled circuits. Defaults to None.
 
-        Return values:
-        training_data_ML_aggregated -- training data
-        name_list -- names of all training samples
-        scores -- evaluation scores for all compilation options
+        Returns:
+            tuple[list[Any], list[Any], list[Any]]: The training data, consisting of training_data, name_list, scores_list
+
         """
         if not path_uncompiled_circuits:
             path_uncompiled_circuits = ml.helper.get_path_training_circuits()
@@ -258,10 +258,10 @@ class Predictor:
         """Handles to create a training sample from a given file.
 
         Args:
-            file (str): The name of the file to be used for training
+            file (Path): The name of the file to be used for training
             figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
-            path_uncompiled_circuit (str, optional): The path to the directory containing the uncompiled circuits. Defaults to None.
-            path_compiled_circuits (str, optional): The path to the directory containing the compiled circuits. Defaults to None.
+            path_uncompiled_circuit (Path): The path to the directory containing the uncompiled circuits. Defaults to None.
+            path_compiled_circuits (Path): The path to the directory containing the compiled circuits. Defaults to None.
             logger_level (int, optional): The level of the logger. Defaults to logging.INFO.
         """
         logger.setLevel(logger_level)
