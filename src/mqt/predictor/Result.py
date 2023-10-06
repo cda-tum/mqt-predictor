@@ -13,8 +13,7 @@ class Result:
     The Result class is used to store the results of a compilation.
 
     Attributes:
-        benchmark (str): The path to the benchmark to be compiled.
-        compilation_setup (str): The setup used for compilation. Either 'mqt-predictor_<figure_of_merit>', 'qiskit' or 'tket'.
+        compilation_setup (str): The setup used for compilation. Either 'mqt-predictor_<figure_of_merit>', 'qiskit' or 'tket'. For the two latter, also the device name is appended.
         compilation_time (float): The time it took to compile the benchmark.
         compiled_qc (QuantumCircuit | None): The compiled quantum circuit. If compilation failed, None is returned.
         device (str): The device used for compilation.
