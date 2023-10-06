@@ -144,7 +144,7 @@ def evaluate_all_sample_circuits() -> None:
     for res in results:
         res_csv.append(list(res.values()))
     np.savetxt(
-        ml.helper.get_path_trained_model() / "res.csv",
+        ml.helper.get_path_results(),
         res_csv,
         delimiter=",",
         fmt="%s",
@@ -163,7 +163,7 @@ def evaluate_GHZ_circuits() -> None:
     for res in results:
         res_csv.append(list(res.values()))
     np.savetxt(
-        ml.helper.get_path_trained_model() / "res_GHZ.csv",
+        ml.helper.get_path_results(ghz_results=True),
         res_csv,
         delimiter=",",
         fmt="%s",

@@ -71,9 +71,20 @@ def get_path_training_data() -> Path:
     return Path(str(resources.files("mqt.predictor"))) / "ml" / "training_data"
 
 
-def get_path_trained_model() -> Path:
+def get_path_results(ghz_results: bool = False) -> Path:
+    """Returns the path to the results file."""
+    if ghz_results:
+        return get_path_training_data() / "trained_model" / "res_GHZ.csv"
+    return get_path_training_data() / "trained_model" / "res.csv"
+
+
+def get_path_trained_model(figure_of_merit: str, return_non_zero_indices: bool = False) -> Path:
     """Returns the path to the trained model folder resulting from the machine learning training."""
-    return get_path_training_data() / "trained_model"
+    if return_non_zero_indices:
+        return (
+            get_path_training_data() / "trained_model" / ("non_zero_indices_" + figure_of_merit + ".npy")
+        )
+    return get_path_training_data() / "trained_model" / ("trained_clf_" + figure_of_merit + ".joblib")
 
 
 def get_path_training_circuits() -> Path:
@@ -198,7 +209,7 @@ def save_classifier(clf: RandomForestClassifier, figure_of_merit: reward.figure_
         clf (RandomForestClassifier): The classifier to be saved.
         figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
     """
-    dump(clf, str(get_path_trained_model() / ("trained_clf_" + figure_of_merit + ".joblib")))
+    dump(clf, str(get_path_trained_model(figure_of_merit)))
 
 
 def save_training_data(

@@ -404,7 +404,10 @@ class Predictor:
 
         if save_non_zero_indices:
             data = np.asarray(non_zero_indices)
-            np.save(ml.helper.get_path_trained_model() / ("non_zero_indices_" + figure_of_merit + ".npy"), data)
+            np.save(
+                ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True),
+                data,
+            )
 
         (
             X_train,
@@ -575,7 +578,7 @@ class Predictor:
         """
 
         if self.clf is None:
-            path = ml.helper.get_path_trained_model() / ("trained_clf_" + figure_of_merit + ".joblib")
+            path = ml.helper.get_path_trained_model(figure_of_merit)
             if path.is_file():
                 self.clf = load(str(path))
             else:
@@ -585,7 +588,7 @@ class Predictor:
         feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)
         feature_vector = list(feature_dict.values())
 
-        path = ml.helper.get_path_trained_model() / ("non_zero_indices_" + figure_of_merit + ".npy")
+        path = ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True)
         non_zero_indices = np.load(str(path), allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
@@ -595,7 +598,7 @@ class Predictor:
         """Returns a compilation option prediction index for a given qasm file path or qasm string."""
 
         if self.clf is None:
-            path = ml.helper.get_path_trained_model() / ("trained_clf_" + figure_of_merit + ".joblib")
+            path = ml.helper.get_path_trained_model(figure_of_merit)
             if path.is_file():
                 self.clf = load(str(path))
             else:
@@ -605,7 +608,7 @@ class Predictor:
         feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)
         feature_vector = list(feature_dict.values())
 
-        path = ml.helper.get_path_trained_model() / ("non_zero_indices_" + figure_of_merit + ".npy")
+        path = ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True)
         non_zero_indices = np.load(str(path), allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 

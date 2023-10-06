@@ -45,8 +45,9 @@ def test_get_path_training_data() -> None:
 
 
 def test_get_path_trained_model() -> None:
-    path = ml.helper.get_path_trained_model()
-    assert path.exists()
+    for figure_of_merit in ["expected_fidelity", "critical_depth"]:
+        path = ml.helper.get_path_trained_model(figure_of_merit=figure_of_merit)
+        assert path.exists()
 
 
 def test_qcompile() -> None:

@@ -9,7 +9,7 @@ from mqt.predictor import ml, reward
 
 @patch("matplotlib.pyplot.show")
 def test_predict(mock_show: Any) -> None:  # noqa: ARG001
-    path = ml.helper.get_path_trained_model() / "trained_clf_expected_fidelity.joblib"
+    path = ml.helper.get_path_trained_model(figure_of_merit="expected_fidelity")
     assert path.is_file()
     filename = "test_qasm.qasm"
     figure_of_merit: reward.figure_of_merit = "expected_fidelity"
