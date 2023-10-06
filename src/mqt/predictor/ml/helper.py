@@ -8,6 +8,7 @@ if sys.version_info < (3, 10, 0):
 else:
     from importlib import resources  # type: ignore[no-redef]
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -236,14 +237,14 @@ def save_training_data(
 
 def load_training_data(
     figure_of_merit: reward.figure_of_merit = "expected_fidelity",
-) -> tuple[list[Any], list[str], list[Any]]:
+) -> tuple[NDArray[np.float_], list[str], list[NDArray[np.float_]]]:
     """Loads and returns the training data from the training data folder.
 
     Args:
         figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
-        tuple[list[Any], list[str], list[Any]]: The training data, the names list and the scores list.
+       tuple[NDArray[np.float_], list[str], list[NDArray[np.float_]]]: The training data, the names list and the scores list.
     """
     with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
         if (
@@ -251,11 +252,23 @@ def load_training_data(
             and path.joinpath("names_list_" + figure_of_merit + ".npy").is_file()
             and path.joinpath("scores_list_" + figure_of_merit + ".npy").is_file()
         ):
-            training_data = np.load(str(path / ("training_data_" + figure_of_merit + ".npy")), allow_pickle=True)
-            names_list = list(np.load(str(path / ("names_list_" + figure_of_merit + ".npy")), allow_pickle=True))
-            scores_list = list(np.load(str(path / ("scores_list_" + figure_of_merit + ".npy")), allow_pickle=True))
+            training_data = np.load(path / ("training_data_" + figure_of_merit + ".npy"), allow_pickle=True)
+            names_list = list(np.load(path / ("names_list_" + figure_of_merit + ".npy"), allow_pickle=True))
+            scores_list = list(np.load(path / ("scores_list_" + figure_of_merit + ".npy"), allow_pickle=True))
         else:
             error_msg = "Training data not found. Please run the training script first."
             raise FileNotFoundError(error_msg)
 
         return training_data, names_list, scores_list
+
+
+@dataclass
+class TrainingData:
+    X_train: NDArray[np.float_]
+    X_test: NDArray[np.float_]
+    y_train: NDArray[np.float_]
+    y_test: NDArray[np.float_]
+    indices_train: list[int]
+    indices_test: list[int]
+    names_list: list[str]
+    scores_list: list[list[float]]

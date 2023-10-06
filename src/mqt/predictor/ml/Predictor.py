@@ -44,6 +44,7 @@ class Predictor:
             timeout (int): The timeout in seconds for the compilation of a single circuit
             source_path (Path, optional): The path to the directory containing the circuits to be compiled. Defaults to None.
             target_path (Path, optional): The path to the directory where the compiled circuits should be saved. Defaults to None.
+            logger_level (int, optional): The level of the logger. Defaults to logging.INFO.
 
         """
         logger.setLevel(logger_level)
@@ -121,7 +122,7 @@ class Predictor:
         """
         logger.setLevel(logger_level)
 
-        logger.info("Processing: " + device_name, figure_of_merit)
+        logger.info("Processing: " + device_name + figure_of_merit)
         rl_pred = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device_name)
 
         dev_index = rl.helper.get_device_index_of_device(device_name)
@@ -312,19 +313,10 @@ class Predictor:
             bool: Whether the training was successful.
         """
 
-        (
-            X_train,
-            X_test,
-            y_train,
-            y_test,
-            indices_train,
-            indices_test,
-            names_list,
-            scores_list,
-        ) = self.get_prepared_training_data(figure_of_merit, save_non_zero_indices=True)
+        training_data = self.get_prepared_training_data(figure_of_merit, save_non_zero_indices=True)
 
-        scores_filtered = [scores_list[i] for i in indices_test]
-        names_filtered = [names_list[i] for i in indices_test]
+        scores_filtered = [training_data.scores_list[i] for i in training_data.indices_test]
+        names_filtered = [training_data.names_list[i] for i in training_data.indices_test]
 
         tree_param = [
             {
@@ -337,18 +329,18 @@ class Predictor:
         ]
 
         clf = RandomForestClassifier(random_state=0)
-        clf = GridSearchCV(clf, tree_param, cv=5, n_jobs=8).fit(X_train, y_train)
+        clf = GridSearchCV(clf, tree_param, cv=5, n_jobs=8).fit(training_data.X_train, training_data.y_train)
 
         if visualize_results:
-            y_pred = np.array(list(clf.predict(X_test)))
-            res, _ = self.calc_performance_measures(scores_filtered, y_pred, y_test)
+            y_pred = np.array(list(clf.predict(training_data.X_test)))
+            res, _ = self.calc_performance_measures(scores_filtered, y_pred, training_data.y_test)
             self.plot_eval_histogram(res, filename="RandomForestClassifier")
 
             logger.info("Best Accuracy: " + str(clf.best_score_))
             top3 = (res.count(1) + res.count(2) + res.count(3)) / len(res)
             logger.info("Top 3: " + str(top3))
             logger.info("Feature Importance: " + str(clf.best_estimator_.feature_importances_))
-            self.plot_eval_all_detailed_compact_normed(names_filtered, scores_filtered, y_pred, y_test)
+            self.plot_eval_all_detailed_compact_normed(names_filtered, scores_filtered, y_pred, training_data.y_test)
 
         self.set_classifier(clf.best_estimator_)
         ml.helper.save_classifier(clf.best_estimator_, figure_of_merit)
@@ -358,16 +350,7 @@ class Predictor:
 
     def get_prepared_training_data(
         self, figure_of_merit: reward.figure_of_merit, save_non_zero_indices: bool = False
-    ) -> tuple[
-        NDArray[np.float_],
-        NDArray[np.float_],
-        NDArray[np.float_],
-        NDArray[np.float_],
-        NDArray[np.float_],
-        NDArray[np.float_],
-        list[str],
-        list[float],
-    ]:
+    ) -> ml.helper.TrainingData:
         """Prepares the training data for the given figure of merit.
 
         Args:
@@ -375,17 +358,19 @@ class Predictor:
             save_non_zero_indices (bool, optional): Whether to save the non zero indices. Defaults to False.
 
         Returns:
-            tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_], NDArray[np.float_], NDArray[np.float_], NDArray[np.float_], list[str], list[float]]: The training data, consisting of X_train, X_test, y_train, y_test, indices_train, indices_test, names_list, scores_list.
+            ml.helper.TrainingData: The prepared training data.
         """
-        training_data, names_list, scores_list = ml.helper.load_training_data(figure_of_merit)
-        X, y = zip(*training_data)
-        X = list(X)
-        y = list(y)
-        for i in range(len(X)):
-            X[i] = list(X[i])
-            scores_list[i] = list(scores_list[i])
+        training_data, names_list, raw_scores_list = ml.helper.load_training_data(figure_of_merit)
+        unzipped_training_data_X, unzipped_training_data_Y = zip(*training_data)
+        scores_list: list[list[float]] = [[] for _ in range(len(raw_scores_list))]
+        X_raw = list(unzipped_training_data_X)
+        X_list: list[list[float]] = [[] for _ in range(len(X_raw))]
+        y_list = list(unzipped_training_data_Y)
+        for i in range(len(X_raw)):
+            X_list[i] = list(X_raw[i])
+            scores_list[i] = list(raw_scores_list[i])
 
-        X, y, indices = np.array(X), np.array(y), np.array(range(len(y)))
+        X, y, indices = np.array(X_list), np.array(y_list), np.array(range(len(y_list)))
 
         # Store all non zero feature indices
         non_zero_indices = []
@@ -410,7 +395,7 @@ class Predictor:
             indices_test,
         ) = train_test_split(X, y, indices, test_size=0.3, random_state=5)
 
-        return (
+        return ml.helper.TrainingData(
             X_train,
             X_test,
             y_train,
@@ -581,7 +566,7 @@ class Predictor:
         feature_vector = list(feature_dict.values())
 
         path = ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True)
-        non_zero_indices = np.load(str(path), allow_pickle=True)
+        non_zero_indices = np.load(path, allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
         return cast(int, self.clf.predict_proba([feature_vector])[0])  # type: ignore[attr-defined]
