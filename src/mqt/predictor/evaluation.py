@@ -92,7 +92,7 @@ def create_tket_result(
 
 
 def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit, filename: str) -> Result:
-    dev_name = ml.helper.get_predicted_and_suitable_device_name(qc, figure_of_merit)
+    dev_name = ml.helper.predict_device_for_figure_of_merit(qc, figure_of_merit)
     """ Creates a Result object for a given benchmark and figure of merit using mqt-predictor for compilation.
 
     Args:

@@ -34,15 +34,15 @@ def qcompile(
         tuple[QuantumCircuit, list[str], str] | bool: Returns a tuple containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, False is returned.
     """
 
-    device_name = get_predicted_and_suitable_device_name(qc, figure_of_merit)
+    device_name = predict_device_for_figure_of_merit(qc, figure_of_merit)
     assert device_name is not None
     res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device_name)
     return *res, device_name
 
 
-def get_predicted_and_suitable_device_name(
+def predict_device_for_figure_of_merit(
     qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit = "expected_fidelity"
-) -> str | None:
+) -> str:
     """Returns the name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
 
     Args:
@@ -50,7 +50,7 @@ def get_predicted_and_suitable_device_name(
         figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
-        str | None: The name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit. If no device is suitable, None is returned.
+        str : The name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
     """
 
     ml_predictor = ml.Predictor()
@@ -63,7 +63,8 @@ def get_predicted_and_suitable_device_name(
     for index in predicted_device_index:
         if devices[index]["max_qubits"] >= qc.num_qubits:
             return devices[index]["name"]
-    return None
+    msg = "No suitable device found."
+    raise ValueError(msg)
 
 
 def get_path_training_data() -> Path:
