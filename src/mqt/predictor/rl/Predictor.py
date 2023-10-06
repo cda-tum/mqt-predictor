@@ -47,8 +47,9 @@ class Predictor:
             except Exception as e:
                 msg = "Model cannot be loaded. Try to train a local model using 'Predictor.train_model(<...>)'"
                 raise Exception(msg) from e
+
         assert self.model
-        obs, _ = self.env.reset(qc)
+        obs, _ = self.env.reset(qc)  # type: ignore[unreachable]
 
         used_compilation_passes = []
         terminated = False

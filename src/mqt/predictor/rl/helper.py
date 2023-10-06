@@ -444,6 +444,9 @@ def load_model(model_name: str) -> MaskablePPO:
     version_found = False
     response = requests.get("https://api.github.com/repos/cda-tum/mqt-predictor/tags")
     available_versions = []
+    if not response:
+        error_msg = "Quering the GitHub API failed. One reasons could be that the limit of 60 API calls per hour and IP address is exceeded."
+        raise RuntimeError(error_msg)
     for elem in response.json():
         available_versions.append(elem["name"])
     for possible_version in available_versions:

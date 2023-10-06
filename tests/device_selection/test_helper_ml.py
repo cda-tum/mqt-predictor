@@ -49,7 +49,6 @@ def test_get_path_trained_model() -> None:
         path = ml.helper.get_path_trained_model(figure_of_merit=figure_of_merit)
         assert path.exists()
 
-
-def test_qcompile() -> None:
+def test_predict_device_for_figure_of_merit() -> None:
     qc = benchmark_generator.get_benchmark("ghz", 1, 5)
-    assert ml.helper.qcompile(qc) is not None
+    assert ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity") in ml.helper.get_index_to_device_LUT().values()
