@@ -1,6 +1,13 @@
 import logging
+from mqt.predictor.Result import Result
+from mqt.predictor.ml import qcompile
 
-logger = logging.getLogger("mqtpredictor")
+__all__ = [
+    "Result",
+    "qcompile",
+]
+
+logger = logging.getLogger("mqt-predictor")
 
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
