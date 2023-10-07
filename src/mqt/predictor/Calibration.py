@@ -14,55 +14,91 @@ from qiskit.providers.fake_provider import FakeMontreal, FakeWashington
 
 
 class Calibration:
+    """The Calibration class is used to store calibration data for different devices."""
+
     def __init__(self) -> None:
         try:
-            self.ibm_washington_cx_mean_error = get_mean_IBM_washington_cx_error()
             self.ibm_montreal_calibration = FakeMontreal().properties()
             self.ibm_washington_calibration = FakeWashington().properties()
             self.oqc_lucy_calibration = parse_oqc_calibration_config()
             self.rigetti_m2_calibration = parse_rigetti_calibration_config()
-            self.ionq_calibration = parse_ionq_calibration_config()
+            self.ionq_harmony_calibration = parse_simple_calibration_config("ionq_harmony")
+            self.ionq_aria1_calibration = parse_simple_calibration_config("ionq_aria1")
+            self.quantinuum_h2_calibration = parse_simple_calibration_config("quantinuum_h2")
 
         except Exception as e:
             raise RuntimeError("Error in Calibration initialization: " + str(e)) from e
 
 
 def get_mean_IBM_washington_cx_error() -> float:
+    """Returns the mean cx error for the IBM Washington device."""
     cmap: list[list[int]] = FakeWashington().configuration().coupling_map
     backend = FakeWashington().properties()
-    somelist = [x for x in cmap if backend.gate_error("cx", x) < 1]
+    nonfaulty_connections = [x for x in cmap if backend.gate_error("cx", x) < 1]
 
     res: list[float] = []
-    for elem in somelist:
+    for elem in nonfaulty_connections:
+        res.append(backend.gate_error("cx", elem))
+
+    return cast(float, np.mean(res))
+
+
+def get_mean_IBM_montreal_cx_error() -> float:
+    """Returns the mean cx error for the IBM Washington device."""
+    cmap: list[list[int]] = FakeMontreal().configuration().coupling_map
+    backend = FakeMontreal().properties()
+    nonfaulty_connections = [x for x in cmap if backend.gate_error("cx", x) < 1]
+
+    res: list[float] = []
+    for elem in nonfaulty_connections:
         res.append(backend.gate_error("cx", elem))
 
     return cast(float, np.mean(res))
 
 
 class DeviceCalibration(TypedDict):
+    """The DeviceCalibration class is used to store calibration data for different devices."""
+
     backend: str
     avg_1Q: float
     avg_2Q: float
 
 
-def parse_ionq_calibration_config() -> DeviceCalibration:
-    ref = resources.files("mqt.predictor") / "calibration_files" / "ionq_calibration.json"
+def parse_simple_calibration_config(device: str) -> DeviceCalibration:
+    """Parses the calibration data for the given device.
+
+    Args:
+        device (str): The name of the device.
+
+    Returns:
+        DeviceCalibration: The calibration data for the given device.
+    """
+
+    calibration_filename = device + "_calibration.json"
+    ref = resources.files("mqt.predictor") / "calibration_files" / calibration_filename
     with ref.open() as f:
-        ionq_calibration = json.load(f)
+        calibration = json.load(f)
     return {
-        "backend": "ionq",
-        "avg_1Q": ionq_calibration["fidelity"]["1Q"].get("mean"),
-        "avg_2Q": ionq_calibration["fidelity"]["2Q"].get("mean"),
+        "backend": device,
+        "avg_1Q": calibration["fidelity"]["1Q"].get("mean"),
+        "avg_2Q": calibration["fidelity"]["2Q"].get("mean"),
     }
 
 
 class OQCCalibration(DeviceCalibration):
+    """The OQCCalibration class is used to store calibration data for the OQC device."""
+
     fid_1Q: dict[str, float]
     fid_1Q_readout: dict[str, float]
     fid_2Q: dict[str, float]
 
 
 def parse_oqc_calibration_config() -> OQCCalibration:
+    """Parses the calibration data for the OQC device.
+
+    Returns:
+        OQCCalibration: The calibration data for the OQC device.
+    """
     ref = resources.files("mqt.predictor") / "calibration_files" / "oqc_lucy_calibration.json"
     with ref.open() as f:
         oqc_lucy_calibration = json.load(f)
@@ -90,12 +126,19 @@ def parse_oqc_calibration_config() -> OQCCalibration:
 
 
 class RigettiCalibration(DeviceCalibration):
+    """The RigettiCalibration class is used to store calibration data for the Rigetti Aspen M2 device."""
+
     fid_1Q: dict[str, float]
     fid_1Q_readout: dict[str, float]
     fid_2Q_CZ: dict[str, float]
 
 
 def parse_rigetti_calibration_config() -> RigettiCalibration:
+    """Parses the calibration data for the Rigetti Aspen M2 device.
+
+    Returns:
+        RigettiCalibration: The calibration data for the Rigetti Aspen M2 device.
+    """
     ref = resources.files("mqt.predictor") / "calibration_files" / "rigetti_m2_calibration.json"
     with ref.open() as f:
         rigetti_m2_calibration = json.load(f)

@@ -4,7 +4,7 @@ import logging
 import signal
 from typing import Any
 
-logger = logging.getLogger("mqtpredictor")
+logger = logging.getLogger("mqt-predictor")
 
 
 def timeout_watcher(func: Any, args: list[Any], timeout: int) -> Any:
@@ -39,6 +39,7 @@ NUM_QUBIT_INDICES_RIGETTI = 80
 
 
 def get_rigetti_qubit_dict() -> dict[str, str]:
+    """Returns a dictionary mapping the qubit indices of the Rigetti Aspen-M2 device to a sequence of numbers that does not skip index numbers."""
     mapping = {
         "32": "4",
         "39": "3",
