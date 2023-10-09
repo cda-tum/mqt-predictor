@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -441,8 +442,12 @@ def load_model(model_name: str) -> MaskablePPO:
         )
         raise RuntimeError(error_msg) from None
 
+    headers = None
+    if "GITHUB_TOKEN" in os.environ:
+        headers = {"Authorization": f"token {os.environ['GITHUB_TOKEN']}"}
+
     version_found = False
-    response = requests.get("https://api.github.com/repos/cda-tum/mqt-predictor/tags")
+    response = requests.get("https://api.github.com/repos/cda-tum/mqt-predictor/tags", headers=headers)
     available_versions = []
     if not response:
         error_msg = "Querying the GitHub API failed. One reasons could be that the limit of 60 API calls per hour and IP address is exceeded."
@@ -452,7 +457,7 @@ def load_model(model_name: str) -> MaskablePPO:
     for possible_version in available_versions:
         if version.parse(mqtpredictor_module_version) >= version.parse(possible_version):
             url = "https://api.github.com/repos/cda-tum/mqt-predictor/releases/tags/" + possible_version
-            response = requests.get(url)
+            response = requests.get(url, headers=headers)
             if not response:
                 error_msg = "Suitable trained models cannot be downloaded since the GitHub API failed. One reasons could be that the limit of 60 API calls per hour and IP address is exceeded."
                 raise RuntimeError(error_msg)
