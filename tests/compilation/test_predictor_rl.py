@@ -8,10 +8,6 @@ from qiskit import QuantumCircuit
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
 
-@pytest.mark.skipif(
-    IN_GITHUB_ACTIONS,
-    reason="Trained models are not yet available. Skipping may be reverted after release with trained models.",
-)
 @pytest.mark.parametrize(
     "figure_of_merit",
     ["expected_fidelity", "critical_depth"],
