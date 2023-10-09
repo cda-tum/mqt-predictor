@@ -170,16 +170,7 @@ predictor.train_random_forest_classifier(figure_of_merit="expected_fidelity")
 Additionally, the raw training data may be extracted and can be used for any machine learning model:
 
 ```python
-(
-    X_train,
-    X_test,
-    y_train,
-    y_test,
-    indices_train,
-    indices_test,
-    names_list,
-    scores_list,
-) = predictor.get_prepared_training_data(
+training_data = predictor.get_prepared_training_data(
     save_non_zero_indices=True, figure_of_merit="expected_fidelity"
 )
 ```
