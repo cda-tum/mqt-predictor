@@ -204,6 +204,19 @@ training_data = predictor.get_prepared_training_data(
 The MQT Predictor is based on the following publications:
 
 ```bibtex
+@MISC{quetschlich2023mqtpredictor,
+	AUTHOR      = {N. Quetschlich and L. Burgholzer and R. Wille},
+	TITLE       = {{MQT Predictor: Automatic Device Selection with Device-Specific Circuit Compilation for Quantum Computing}},
+	YEAR        = {2023},
+	EPRINT      = {2305.02337},
+	EPRINTTYPE  = {arxiv},
+}
+```
+
+which is available on arXiv:
+[![a](https://img.shields.io/static/v1?label=arXiv&message=2310.06889&color=inactive&style=flat-square)](https://arxiv.org/abs/2310.06889)
+
+```bibtex
 @INPROCEEDINGS{quetschlich2023prediction,
 	AUTHOR    = {N. Quetschlich and L. Burgholzer and R. Wille},
 	TITLE     = {{Predicting Good Quantum Circuit Compilation Options}},
