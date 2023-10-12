@@ -206,8 +206,7 @@ The MQT Predictor is based on the following publications:
 ```bibtex
 @MISC{quetschlich2023mqtpredictor,
 	AUTHOR    = {N. Quetschlich and L. Burgholzer and R. Wille},
-	TITLE     = {{MQT Predictor: Automatic Device Selection with
-Device-Specific Circuit Compilation for Quantum Computing}},
+	TITLE     = {{MQT Predictor: Automatic Device Selection with Device-Specific Circuit Compilation for Quantum Computing}},
 	YEAR      = {2023},
 	EPRINT    = {2305.02337},
     EPRINTTYPE = {arxiv},
