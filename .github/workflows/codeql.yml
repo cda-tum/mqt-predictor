@@ -26,26 +26,33 @@ jobs:
         language: [python]
 
     steps:
+      -
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip wheel setuptools setuptools_scm
+          pip install --no-build-isolation -ve .
+          echo "CODEQL_PYTHON=$(which python)" >> $GITHUB_ENV
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
           languages: ${{ matrix.language }}
-          queries: +security-and-quality
-          upload: false # disable the upload here - we will upload in a different action
-          output: sarif-results
+          setup-python-dependencies: false
+          config: |
+            queries:
+            - uses: security-and-quality
 
-      - name: filter-sarif
-        uses: advanced-security/filter-sarif@main
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
         with:
-          patterns: |
-            -**/*test*.py
-          input: sarif-results/python.sarif
-          output: sarif-results/python.sarif
-
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: sarif-results/python.sarif
+          category: "/language:${{ matrix.language }}"
