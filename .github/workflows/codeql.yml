@@ -42,3 +42,5 @@ jobs:
         uses: github/codeql-action/analyze@v2
         with:
           category: "/language:${{ matrix.language }}"
+        env:
+          CODEQL_ACTION_EXTRA_OPTIONS: '{"database": {"finalize": ["-J-Xmx2048"]}}'
