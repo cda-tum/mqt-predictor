@@ -34,13 +34,18 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           queries: +security-and-quality
+          upload: false # disable the upload here - we will upload in a different action
+          output: sarif-results
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+      - name: filter-sarif
+        uses: advanced-security/filter-sarif@main
         with:
-          category: "/language:${{ matrix.language }}"
-        env:
-          CODEQL_ACTION_EXTRA_OPTIONS: '{"database": {"finalize": ["-J-Xmx2048"]}}'
+          patterns: |
+            -**/*test*.py
+          input: sarif-results/python.sarif
+          output: sarif-results/python.sarif
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: sarif-results/python.sarif
