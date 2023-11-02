@@ -79,8 +79,8 @@ module = ["qiskit.*", "joblib.*", "sklearn.*", "matplotlib.*", "gymnasium.*", "m
 ignore_missing_imports = true
 
 [tool.ruff]
-line-length = 120
 extend-include = ["*.ipynb"]
+line-length = 120
 src = ["src"]
 unsafe-fixes = true
 
