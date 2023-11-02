@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
+
 from mqt.bench.utils import calc_qubit_index, calc_supermarq_features
 from mqt.predictor import Calibration
 from mqt.predictor.utils import (

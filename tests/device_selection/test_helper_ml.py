@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from mqt.bench import benchmark_generator
 from mqt.predictor import ml, qcompile
 

@@ -8,9 +8,6 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import requests
-from mqt.bench.qiskit_helper import get_native_gates
-from mqt.bench.utils import calc_supermarq_features, get_cmap_from_devicename
-from mqt.predictor import reward, rl
 from packaging import version
 from pytket.architecture import Architecture
 from pytket.circuit import Circuit, Node, Qubit
@@ -57,6 +54,10 @@ from qiskit.transpiler.preset_passmanagers import common
 from qiskit.transpiler.runningpassmanager import ConditionalController
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
+
+from mqt.bench.qiskit_helper import get_native_gates
+from mqt.bench.utils import calc_supermarq_features, get_cmap_from_devicename
+from mqt.predictor import reward, rl
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -448,12 +449,13 @@ def load_model(model_name: str) -> MaskablePPO:
 
     version_found = False
     response = requests.get("https://api.github.com/repos/cda-tum/mqt-predictor/tags", headers=headers)
-    available_versions = []
+
     if not response:
         error_msg = "Querying the GitHub API failed. One reasons could be that the limit of 60 API calls per hour and IP address is exceeded."
         raise RuntimeError(error_msg)
-    for elem in response.json():
-        available_versions.append(elem["name"])
+
+    available_versions = [elem["name"] for elem in response.json()]
+
     for possible_version in available_versions:
         if version.parse(mqtpredictor_module_version) >= version.parse(possible_version):
             url = "https://api.github.com/repos/cda-tum/mqt-predictor/releases/tags/" + possible_version

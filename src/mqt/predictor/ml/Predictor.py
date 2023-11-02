@@ -7,10 +7,11 @@ from typing import TYPE_CHECKING, Any, cast
 import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed, load
-from mqt.predictor import ml, reward, rl, utils
 from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
+
+from mqt.predictor import ml, reward, rl, utils
 
 if TYPE_CHECKING:
     from numpy._typing import NDArray
@@ -267,9 +268,7 @@ class Predictor:
 
         LUT = ml.helper.get_index_to_device_LUT()
         logger.debug("Checking " + str(file))
-        scores: list[float] = []
-        for _ in range(len(LUT)):
-            scores.append(-1.0)
+        scores = [-1.0 for _ in range(len(LUT))]
         all_relevant_files = path_compiled_circuits.glob(str(file).split(".")[0] + "*")
 
         for filename in all_relevant_files:
@@ -373,10 +372,7 @@ class Predictor:
         X, y, indices = np.array(X_list), np.array(y_list), np.array(range(len(y_list)))
 
         # Store all non zero feature indices
-        non_zero_indices = []
-        for i in range(len(X[0])):
-            if sum(X[:, i]) > 0:
-                non_zero_indices.append(i)
+        non_zero_indices = [i for i in range(len(X[0])) if sum(X[:, i]) > 0]
         X = X[:, non_zero_indices]
 
         if save_non_zero_indices:

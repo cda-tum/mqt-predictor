@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Final
 
 import numpy as np
+
 from mqt.bench import benchmark_generator
 from mqt.predictor import ml, reward
 

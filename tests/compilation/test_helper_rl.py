@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 import pytest
+
 from mqt.bench import get_benchmark
 from mqt.predictor import rl
 

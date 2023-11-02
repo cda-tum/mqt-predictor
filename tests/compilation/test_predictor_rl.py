@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import os
 
 import pytest
+from qiskit import QuantumCircuit
+
 from mqt.bench import get_benchmark
 from mqt.predictor import reward, rl
-from qiskit import QuantumCircuit
 
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
