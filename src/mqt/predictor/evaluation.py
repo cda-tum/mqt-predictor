@@ -142,8 +142,7 @@ def evaluate_all_sample_circuits() -> None:
         for file in list(ml.helper.get_path_training_circuits().glob("*.qasm"))
     )
     res_csv.append(list(results[0].keys()))
-    for res in results:
-        res_csv.append(list(res.values()))  # noqa: PERF401
+    res_csv.extend([list(res.values()) for res in results])
     np.savetxt(
         ml.helper.get_path_results(),
         res_csv,
