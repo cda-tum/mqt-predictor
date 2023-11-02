@@ -160,8 +160,7 @@ def evaluate_GHZ_circuits() -> None:
         delayed(evaluate_sample_circuit)(str(file)) for file in list(path.glob("*.qasm"))
     )
     res_csv.append(list(results[0].keys()))
-    for res in results:
-        res_csv.append(list(res.values()))  # noqa: PERF401
+    res_csv.extend([list(res.values()) for res in results])
     np.savetxt(
         ml.helper.get_path_results(ghz_results=True),
         res_csv,
