@@ -36,9 +36,7 @@ def get_mean_IBM_washington_cx_error() -> float:
     backend = FakeWashington().properties()
     nonfaulty_connections = [x for x in cmap if backend.gate_error("cx", x) < 1]
 
-    res: list[float] = []
-    for elem in nonfaulty_connections:
-        res.append(backend.gate_error("cx", elem))
+    res = [backend.gate_error("cx", elem) for elem in nonfaulty_connections]
 
     return cast(float, np.mean(res))
 
@@ -49,9 +47,7 @@ def get_mean_IBM_montreal_cx_error() -> float:
     backend = FakeMontreal().properties()
     nonfaulty_connections = [x for x in cmap if backend.gate_error("cx", x) < 1]
 
-    res: list[float] = []
-    for elem in nonfaulty_connections:
-        res.append(backend.gate_error("cx", elem))
+    res = [backend.gate_error("cx", elem) for elem in nonfaulty_connections]
 
     return cast(float, np.mean(res))
 

@@ -8,8 +8,6 @@ from typing import Any
 
 import numpy as np
 from joblib import Parallel, delayed
-from mqt.bench.tket_helper import get_rebase
-from mqt.predictor import Result, ml, reward, rl
 from pytket import OpType
 from pytket.architecture import Architecture
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
@@ -20,6 +18,9 @@ from pytket.passes import (
 )
 from pytket.placement import GraphPlacement
 from qiskit import QuantumCircuit, transpile
+
+from mqt.bench.tket_helper import get_rebase
+from mqt.predictor import Result, ml, reward, rl
 
 logger = logging.getLogger("mqt-predictor")
 
@@ -141,8 +142,7 @@ def evaluate_all_sample_circuits() -> None:
         for file in list(ml.helper.get_path_training_circuits().glob("*.qasm"))
     )
     res_csv.append(list(results[0].keys()))
-    for res in results:
-        res_csv.append(list(res.values()))
+    res_csv.extend([list(res.values()) for res in results])
     np.savetxt(
         ml.helper.get_path_results(),
         res_csv,
@@ -160,8 +160,7 @@ def evaluate_GHZ_circuits() -> None:
         delayed(evaluate_sample_circuit)(str(file)) for file in list(path.glob("*.qasm"))
     )
     res_csv.append(list(results[0].keys()))
-    for res in results:
-        res_csv.append(list(res.values()))
+    res_csv.extend([list(res.values()) for res in results])
     np.savetxt(
         ml.helper.get_path_results(ghz_results=True),
         res_csv,

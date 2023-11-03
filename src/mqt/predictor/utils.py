@@ -25,8 +25,8 @@ def timeout_watcher(func: Any, args: list[Any], timeout: int) -> Any:
     except TimeoutException:
         logger.debug("Calculation/Generation exceeded timeout limit for " + func.__module__ + ", " + str(args[1:]))
         return False
-    except Exception as e:
-        logger.error("Something else went wrong: " + str(e))
+    except Exception:
+        logger.exception("Something else went wrong")
         return False
     else:
         # Reset the alarm

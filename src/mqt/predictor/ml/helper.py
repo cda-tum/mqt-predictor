@@ -14,9 +14,10 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from joblib import dump
+from qiskit import QuantumCircuit
+
 from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import ml, reward, rl
-from qiskit import QuantumCircuit
 
 if TYPE_CHECKING:
     from numpy._typing import NDArray

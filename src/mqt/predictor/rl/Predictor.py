@@ -3,10 +3,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from mqt.predictor import reward, rl
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 from sb3_contrib.common.maskable.utils import get_action_masks
+
+from mqt.predictor import reward, rl
 
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit
@@ -46,7 +47,7 @@ class Predictor:
                 self.load_model()
             except Exception as e:
                 msg = "Model cannot be loaded. Try to train a local model using 'Predictor.train_model(<...>)'"
-                raise Exception(msg) from e
+                raise RuntimeError(msg) from e
 
         assert self.model
         obs, _ = self.env.reset(qc)  # type: ignore[unreachable]
@@ -61,13 +62,13 @@ class Predictor:
             action_item = self.env.action_set[action]
             used_compilation_passes.append(action_item["name"])
             obs, reward_val, terminated, truncated, info = self.env.step(action)
-            self.env.state._layout = self.env.layout
+            self.env.state._layout = self.env.layout  # noqa: SLF001
 
         if not self.env.error_occured:
             return self.env.state, used_compilation_passes
 
         msg = "Error occurred during compilation."
-        raise Exception(msg)
+        raise RuntimeError(msg)
 
     def train_model(
         self,

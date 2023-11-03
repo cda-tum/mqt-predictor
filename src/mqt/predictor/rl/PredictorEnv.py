@@ -9,12 +9,13 @@ if TYPE_CHECKING:
 import numpy as np
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete
-from mqt.predictor import reward, rl
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
 from qiskit.transpiler.runningpassmanager import TranspileLayout
+
+from mqt.predictor import reward, rl
 
 logger = logging.getLogger("mqt-predictor")
 
@@ -192,10 +193,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     else:
                         pm = PassManager(transpile_pass)
                     altered_qc = pm.run(self.state)
-                except Exception as e:
-                    logger.error(
-                        "Error in executing Qiskit transpile pass for {action} at step {i} for {filename}: {e}".format(
-                            action=action["name"], i=self.num_steps, filename=self.filename, e=e
+                except Exception:
+                    logger.exception(
+                        "Error in executing Qiskit transpile pass for {action} at step {i} for {filename}".format(
+                            action=action["name"], i=self.num_steps, filename=self.filename
                         )
                     )
 
@@ -215,10 +216,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     for elem in transpile_pass:
                         elem.apply(tket_qc)
                     altered_qc = tk_to_qiskit(tket_qc)
-                except Exception as e:
-                    logger.error(
-                        "Error in executing TKET transpile  pass for {action} at step {i} for {filename}: {e}".format(
-                            action=action["name"], i=self.num_steps, filename=self.filename, e=e
+                except Exception:
+                    logger.exception(
+                        "Error in executing TKET transpile  pass for {action} at step {i} for {filename}".format(
+                            action=action["name"], i=self.num_steps, filename=self.filename
                         )
                     )
                     self.error_occured = True
@@ -250,7 +251,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         if mapped and self.layout is not None:
             return [self.action_terminate_index, *self.actions_opt_indices]  # type: ignore[unreachable]
 
-        if self.state._layout is not None:
+        if self.state._layout is not None:  # noqa: SLF001
             return self.actions_routing_indices
 
         # No layout applied yet

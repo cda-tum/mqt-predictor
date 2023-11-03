@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 from mqt.bench import get_benchmark
@@ -16,8 +18,9 @@ def test_evaluate_sample_circuit() -> None:
             if "mqt-predictor" in compilation_setup:
                 expected_keys.append(compilation_setup + "_" + key)
             else:
-                for device in rl.helper.get_devices():
-                    expected_keys.append(compilation_setup + "_" + device["name"] + "_" + key)
+                expected_keys.extend(
+                    [compilation_setup + "_" + device["name"] + "_" + key for device in rl.helper.get_devices()]
+                )
 
     assert all(key in res for key in expected_keys)
     if Path(filename).exists():
