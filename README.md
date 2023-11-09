@@ -2,11 +2,12 @@
 [![CodeCov](https://github.com/cda-tum/mqt-predictor/actions/workflows/coverage.yml/badge.svg)](https://github.com/cda-tum/mqt-predictor/actions/workflows/coverage.yml)
 [![Deploy to PyPI](https://github.com/cda-tum/mqt-predictor/actions/workflows/deploy.yml/badge.svg)](https://github.com/cda-tum/mqt-predictor/actions/workflows/deploy.yml)
 [![codecov](https://codecov.io/gh/cda-tum/mqt-predictor/branch/main/graph/badge.svg?token=ZL5js1wjrB)](https://codecov.io/gh/cda-tum/mqt-predictor)
+[![Documentation](https://img.shields.io/readthedocs/mqt-predictor?logo=readthedocs&style=flat-square)](https://mqt.readthedocs.io/projects/predictor)
 
 <p align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/img/mqt_light.png" width="60%">
-  <img src="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/img/mqt_dark.png" width="60%">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/mqt_light.png" width="60%">
+  <img src="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/mqt_dark.png" width="60%">
 </picture>
 </p>
 
