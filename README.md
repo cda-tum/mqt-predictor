@@ -5,8 +5,8 @@
 
 <p align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/img/mqt_light.png" width="60%">
-  <img src="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/img/mqt_dark.png" width="60%">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/img/mqt_light.png" width="60%">
+  <img src="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/img/mqt_dark.png" width="60%">
 </picture>
 </p>
 
@@ -24,7 +24,7 @@ Therefore, MQT Predictor tackles this problem from two angles:
 
 <p align="center">
 <picture>
-  <img src="./img/problem.png" width="100%">
+  <img src="docs/_static/problem.png" width="100%">
 </picture>
 </p>
 
@@ -45,7 +45,7 @@ The compilation process is modelled as a Markov Decision Process and takes three
 
 <p align="center">
 <picture>
-  <img src="./img/rl.png" width="100%">
+  <img src="docs/_static/rl.png" width="100%">
 </picture>
 </p>
 
@@ -74,7 +74,7 @@ For that, the framework is trained with a set of quantum circuits and their resp
 
 <p align="center">
 <picture>
-  <img src="./img/ml.png" width="100%">
+  <img src="docs/_static/ml.png" width="100%">
 </picture>
 </p>
 
@@ -98,7 +98,7 @@ From a user's perspective, the framework is used as follows:
 
 <p align="center">
 <picture>
-  <img src="./img/mqt_predictor.png" width="100%">
+  <img src="docs/_static/mqt_predictor.png" width="100%">
 </picture>
 </p>
 
@@ -179,6 +179,7 @@ training_data = predictor.get_prepared_training_data(
 
 ```
 .
+├── docs/
 ├── notebooks/
 │ ├── evaluations/
 │ │     ├── ...
