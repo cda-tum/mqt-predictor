@@ -15,7 +15,7 @@ ROOT = Path(__file__).parent.parent.resolve()
 
 
 try:
-    version = metadata.version("mqt.bench")
+    version = metadata.version("mqt.predictor")
 except ModuleNotFoundError:
     msg = (
         "Package should be installed to produce documentation! "
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from pybtex.database import Entry
     from pybtex.richtext import HRef
 
-project = "MQT Bench"
+project = "MQT Predictor"
 author = "Chair for Design Automation, Technical University of Munich"
 language = "en"
 project_copyright = "2023, Chair for Design Automation, Technical University of Munich"
