@@ -5,8 +5,8 @@
 
 <p align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/img/mqt_light.png" width="60%">
-  <img src="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/img/mqt_dark.png" width="60%">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/img/mqt_light.png" width="60%">
+  <img src="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/img/mqt_dark.png" width="60%">
 </picture>
 </p>
 
@@ -179,6 +179,7 @@ training_data = predictor.get_prepared_training_data(
 
 ```
 .
+├── docs/
 ├── notebooks/
 │ ├── evaluations/
 │ │     ├── ...
