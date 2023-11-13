@@ -50,8 +50,12 @@ After the adjustment is finished, the following methods need to be called to gen
 
     predictor = ml.Predictor()
     predictor.generate_compiled_circuits(figure_of_merit="expected_fidelity")
-    training_data, name_list, scores_list = predictor.generate_trainingdata_from_qasm_files(figure_of_merit="expected_fidelity")
-    ml.helper.save_training_data(training_data, name_list, scores_list, figure_of_merit="expected_fidelity")
+    training_data, name_list, scores_list = predictor.generate_trainingdata_from_qasm_files(
+        figure_of_merit="expected_fidelity"
+    )
+    ml.helper.save_training_data(
+        training_data, name_list, scores_list, figure_of_merit="expected_fidelity"
+    )
 
 Now, the Random Forest classifier can be trained:
 
@@ -64,4 +68,6 @@ Additionally, the raw training data may be extracted and can be used for any mac
 
 .. code-block:: python
 
-    training_data = predictor.get_prepared_training_data(save_non_zero_indices=True, figure_of_merit="expected_fidelity")
+    training_data = predictor.get_prepared_training_data(
+        save_non_zero_indices=True, figure_of_merit="expected_fidelity"
+    )
