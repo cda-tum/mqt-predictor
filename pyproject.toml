@@ -60,14 +60,13 @@ docs = [
     "nbsphinx",
     "sphinxext-opengraph",
     "sphinx-autodoc-typehints",
-    "matplotlib",
-    "pylatexenc",
+    "qiskit[visualization]",
 ]
 
 [project.urls]
-Homepage = "https://github.com/cda-tum/mqtpredictor"
-"Bug Tracker" = "https://github.com/cda-tum/mqtpredictor/issues"
-Discussions = "https://github.com/cda-tum/mqtpredictor/discussions"
+Homepage = "https://github.com/cda-tum/mqt-predictor"
+Issues = "https://github.com/cda-tum/mqt-predictor/issues"
+Discussions = "https://github.com/cda-tum/mqt-predictor/discussions"
 Research = "https://www.cda.cit.tum.de/research/quantum/"
 
 [tool.setuptools_scm]

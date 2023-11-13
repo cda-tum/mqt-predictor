@@ -2,11 +2,12 @@
 [![CodeCov](https://github.com/cda-tum/mqt-predictor/actions/workflows/coverage.yml/badge.svg)](https://github.com/cda-tum/mqt-predictor/actions/workflows/coverage.yml)
 [![Deploy to PyPI](https://github.com/cda-tum/mqt-predictor/actions/workflows/deploy.yml/badge.svg)](https://github.com/cda-tum/mqt-predictor/actions/workflows/deploy.yml)
 [![codecov](https://codecov.io/gh/cda-tum/mqt-predictor/branch/main/graph/badge.svg?token=ZL5js1wjrB)](https://codecov.io/gh/cda-tum/mqt-predictor)
+[![Documentation](https://img.shields.io/readthedocs/mqt-predictor?logo=readthedocs&style=flat-square)](https://mqt.readthedocs.io/projects/predictor)
 
 <p align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/img/mqt_light.png" width="60%">
-  <img src="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/img/mqt_dark.png" width="60%">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/mqt_light.png" width="60%">
+  <img src="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/mqt_dark.png" width="60%">
 </picture>
 </p>
 
@@ -28,151 +29,43 @@ Therefore, MQT Predictor tackles this problem from two angles:
 </picture>
 </p>
 
-In the following, we provide a brief overview of the two approaches.
-
-## Device-specific Quantum Circuit Compiler Using Reinforcement Learning Model
-
-Compilation, fortunately, is not new per-se, since classical compilers have seen a similar trend of an increasing complexity and variety in the past.
-To not reinvent the wheel and make use of the decades of classical compiler optimization, quantum compilation is modeled in a similar fashion and classical reinforcement learning is used to predict compilation pass sequences optimizing for the chosen figure of merit.
-
-Through distinct constraints and a unifying interface, the framework supports the combination of techniques
-from different compilers and optimization tools in a single compilation flow.
-The compilation process is modelled as a Markov Decision Process and takes three inputs:
-
-1. Training circuits
-2. The targeted quantum device
-3. The figure of merit to optimize for
+For more details, please refer to:
 
 <p align="center">
-<picture>
-  <img src="docs/_static/rl.png" width="100%">
-</picture>
+  <a href="https://mqt.readthedocs.io/projects/predictor">
+  <img width=30% src="https://img.shields.io/badge/documentation-blue?style=for-the-badge&logo=read%20the%20docs" alt="Documentation" />
+  </a>
 </p>
 
-The trained reinforcement learning model then acts as a compiler and can be used to compile any quantum circuit for the targeted device.
+If you have any questions, feel free to create a [discussion](https://github.com/cda-tum/mqt-predictor/discussions) or an [issue](https://github.com/cda-tum/mqt-predictor/issues) on [GitHub](https://github.com/cda-tum/mqt-predictor).
 
-In this implementation, compilation passes from both IBM's Qiskit and Quantinuum's TKET are utilized for the RL training
-of the optimized compiler.
-We trained one RL model for each currently supported quantum device:
+MQT Predictor is part of the Munich Quantum Toolkit (MQT) developed by the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the [Technical University of Munich](https://www.tum.de/).
 
-- OQC Lucy with 8 qubits
-- IonQ Harmony with 11 qubits
-- IonQ Aria1 with 25 qubits
-- IBM Montreal with 27 qubits
-- Quantinuum H2 with 32 qubits
-- Rigetti Aspen-M2 with 80 qubits
-- IBM Washington with 127 qubits
+## Getting Started
 
-## Automatic Device Selection Using Supervised Machine Learning
-
-A naive approach to select the best quantum device for a given quantum circuit would be to compile it for all devices, e.g., using the trained RL models which act as specialized compilers for supported quantum devices.
-Afterwards, the resulting compiled circuits must be evaluated according to some figure of merit to identify the most promising device.
-However, doing this for each and every to-be-compiled quantum circuit is practically infeasible since compilation is a time-consuming task.
-
-The MQT Predictor learns from previous compilations of other quantum circuits and models the problem of determining the most promising device for a circuit and figure of merit as a statistical classification task—a task well suited for supervised machine learning.
-For that, the framework is trained with a set of quantum circuits and their respective compilation options for all supported devices for a given figure of merit:
-
-<p align="center">
-<picture>
-  <img src="docs/_static/ml.png" width="100%">
-</picture>
-</p>
-
-The trained model then acts as a predictor and can be used to predict the most suitable device for a given quantum circuit and figure of merit.
-
-For evaluation of our methodology, seven supervised machine learning classifiers have been used:
-
-- Random Forest
-- Gradient Boosting
-- Decision Tree
-- Nearest Neighbor
-- Multilayer Perceptron
-- Support Vector Machine
-- Naive Bayes
-
-In our exemplary scenario, the Random Forest classifier achieved the best performance.
-
-# The MQT Predictor framework: Automatic device selection and optimized compilation
-
-From a user's perspective, the framework is used as follows:
-
-<p align="center">
-<picture>
-  <img src="docs/_static/mqt_predictor.png" width="100%">
-</picture>
-</p>
-
-Any uncompiled quantum circuit can be provided together with the desired figure of merit.
-The framework then automatically predicts the most suitable device for the given circuit and figure of merit and compiles the circuit for the predicted device.
-The compiled circuit is returned together with the compilation information and the selected device.
-
-# Usage
-
-First, the package must be installed:
+`mqt-bench` is available via [PyPI](https://pypi.org/project/mqt.bench/).
 
 ```console
 (venv) $ pip install mqt.predictor
 ```
 
-Now a prediction can be made for any `qiskit.QuantumCircuit` object or `qasm` file:
+The following code gives an example on the usage:
 
-```python
+```python3
 from mqt.predictor import qcompile
+from mqt.bench import get_benchmark
 
-compiled_qc, compilation_info, selected_device = qcompile(
-    "qasm_file_path_or_QuantumCircuit", figure_of_merit="expected_fidelity"
-)
-```
+# get a benchmark circuit on algorithmic level representing the GHZ state with 5 qubits from [MQT Bench](https://github.com/cda-tum/mqt-bench)
+qc_uncompiled = get_benchmark(benchmark_name="dj", level="alg", circuit_size=5)
 
-Currently available figures of merit are `fidelity` and `critical_depth`.
+# compile it using the MQT Predictor
+qc_compiled, compilation_information, quantum_device = qcompile(qc_uncompiled)
 
-# Examination of all seven trained classifiers of the ML model
+# print the selected device and the compilation information
+print(quantum_device, compilation_information)
 
-To play around with all the examined models, please use the `notebooks/ml/evaluation.ipynb` Jupyter notebook.
-
-## Adjustment of training data generation process
-
-The adjustment of the following parts is possible:
-
-### Evaluation Metric
-
-To make predictions which compilation options are the best ones for a given quantum circuits, a goodness definition is needed.
-In principle, this evaluation metric can be designed to be arbitrarily complex, e.g., factoring in actual costs of executing quantum circuits on the respective platform or availability limitations for certain devices.
-However, any suitable evaluation metric should, at least, consider characteristics of the compiled quantum circuit and the respective device.
-An exemplary metric could be the overall fidelity of a compiled quantum circuit for its targeted device.
-
-### Generation of Training Data
-
-To train the model, sufficient training data must be provided as qasm files in the `./training_samples_folder`.
-We provide the training data used for the pre-trained model.
-
-After the adjustment is finished, the following methods need to be called to generate the training data:
-
-```python
-from mqt.predictor import ml
-
-predictor = ml.Predictor()
-predictor.generate_compiled_circuits(figure_of_merit="expected_fidelity")
-training_data, name_list, scores_list = predictor.generate_trainingdata_from_qasm_files(
-    figure_of_merit="expected_fidelity"
-)
-ml.helper.save_training_data(
-    training_data, name_list, scores_list, figure_of_merit="expected_fidelity"
-)
-```
-
-Now, the Random Forest classifier can be trained:
-
-```python
-predictor.train_random_forest_classifier(figure_of_merit="expected_fidelity")
-```
-
-Additionally, the raw training data may be extracted and can be used for any machine learning model:
-
-```python
-training_data = predictor.get_prepared_training_data(
-    save_non_zero_indices=True, figure_of_merit="expected_fidelity"
-)
+# draw the compiled circuit
+print(qc_compiled.draw())
 ```
 
 # Repository Structure
@@ -180,10 +73,7 @@ training_data = predictor.get_prepared_training_data(
 ```
 .
 ├── docs/
-├── notebooks/
-│ ├── evaluations/
-│ │     ├── ...
-│ └── example.ipynb
+├── evaluations/
 ├── src/
 │ ├── mqt/
 │   └── predictor/
@@ -199,44 +89,3 @@ training_data = predictor.get_prepared_training_data(
 │              ├── trained_model
 │              └── training_circuits
 ```
-
-# References
-
-The MQT Predictor is based on the following publications:
-
-```bibtex
-@MISC{quetschlich2023mqtpredictor,
-	AUTHOR      = {N. Quetschlich and L. Burgholzer and R. Wille},
-	TITLE       = {{MQT Predictor: Automatic Device Selection with Device-Specific Circuit Compilation for Quantum Computing}},
-	YEAR        = {2023},
-	EPRINT      = {2305.02337},
-	EPRINTTYPE  = {arxiv},
-}
-```
-
-which is available on arXiv:
-[![a](https://img.shields.io/static/v1?label=arXiv&message=2310.06889&color=inactive&style=flat-square)](https://arxiv.org/abs/2310.06889)
-
-```bibtex
-@INPROCEEDINGS{quetschlich2023prediction,
-	AUTHOR    = {N. Quetschlich and L. Burgholzer and R. Wille},
-	TITLE     = {{Predicting Good Quantum Circuit Compilation Options}},
-	BOOKTITLE = {IEEE International Conference on Quantum Software (QSW)},
-	YEAR      = {2023},
-}
-```
-
-which is also available on arXiv:
-[![a](https://img.shields.io/static/v1?label=arXiv&message=2210.08027&color=inactive&style=flat-square)](https://arxiv.org/abs/2210.08027)
-
-```bibtex
-@INPROCEEDINGS{quetschlich2023compileroptimization,
-  author        = {N. Quetschlich and L. Burgholzer and R. Wille},
-  title         = {{Compiler Optimization for Quantum Computing Using Reinforcement Learning}},
-  booktitle     = {{Design Automation Conference (DAC)}},
-  year          = {2023},
-}
-```
-
-which is also available on arXiv:
-[![a](https://img.shields.io/static/v1?label=arXiv&message=2212.04508&color=inactive&style=flat-square)](https://arxiv.org/abs/2212.04508)
