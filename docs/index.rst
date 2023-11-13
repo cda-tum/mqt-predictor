@@ -3,8 +3,6 @@ Welcome to MQT Predictor's documentation!
 
 MQT Predictor is a tool for Automatic Device Selection with Device-Specific Circuit Compilation for Quantum Computing developed as part of the `Munich Quantum Toolkit <https://mqt.readthedocs.io>`_ (*MQT*) by the `Chair for Design Automation <https://www.cda.cit.tum.de/>`_ at the `Technical University of Munich <https://www.tum.de>`_.
 
-
-
 From a user's perspective, the framework is used as follows:
 
 .. image:: /_static/mqt_predictor.png
@@ -17,7 +15,6 @@ The framework then automatically predicts the most suitable device for the given
 The compiled circuit is returned together with the compilation information and the selected device.
 
 If you are interested in the theory behind MQT Predictor, have a look at the publications in the :doc:`references list <References>`.
-
 
 
 ----
