@@ -68,6 +68,8 @@ print(quantum_device, compilation_information)
 print(qc_compiled.draw())
 ```
 
+**Detailed documentation and examples are available at [ReadTheDocs](https://mqt.readthedocs.io/projects/predictor).**
+
 # Repository Structure
 
 ```
