@@ -14,6 +14,13 @@ Any uncompiled quantum circuit can be provided together with the desired figure 
 The framework then automatically predicts the most suitable device for the given circuit and figure of merit and compiles the circuit for the predicted device.
 The compiled circuit is returned together with the compilation information and the selected device.
 
+The MQT Predictor framework is based on two main components:
+
+- An :doc:`Automatic Device Selection <DeviceSelection>` component that predicts the most suitable device for a given quantum circuit and figure of merit.
+- A :doc:`Device-Specific Circuit Compilation <Compilation>` component that compiles a given quantum circuit for a given device.
+
+Combining these two components, the framework can be used to automatically compile a given quantum circuit for the most suitable device optimizing a :doc:`customizable figure of merit<FigureOfMerit>`.
+
 If you are interested in the theory behind MQT Predictor, have a look at the publications in the :doc:`references list <References>`.
 
 
