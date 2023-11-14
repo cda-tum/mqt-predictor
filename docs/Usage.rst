@@ -8,7 +8,7 @@ There are two ways how to use MQT Predictor:
 Usage via pip package
 ---------------------
 
-MQT predictor is available via `PyPI <https://pypi.org/project/mqt.predictor/>`_
+MQT Predictor is available via `PyPI <https://pypi.org/project/mqt.predictor/>`_
 
 .. code-block:: console
 
