@@ -34,12 +34,13 @@ In our exemplary scenario, the Random Forest classifier achieved the best perfor
 Examination of all seven trained classifiers of the ML model
 ------------------------------------------------------------
 
-To play around with all the examined models, please use the :idf:`evaluations Jupyter notebook <evaluations/ml/evaluation.ipynb>`.
+To play around with all the examined models, please use the `Jupyter notebook <https://github.com/cda-tum/mqt-predictor/blob/main/evaluations/supervised_ml_models/evaluation.ipynb>`_.
 
 Generation of Training Data
 ---------------------------
 
-To train the model, sufficient training data must be provided as qasm files in the `./training_samples_folder`.
+To train the model, sufficient training data must be provided as qasm files in the `respective directory <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/ml/training_data/training_circuits>`_.
+`./training_samples_folder`.
 We provide the training data used for the pre-trained model.
 
 After the adjustment is finished, the following methods need to be called to generate the training data:
