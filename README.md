@@ -43,7 +43,7 @@ MQT Predictor is part of the Munich Quantum Toolkit (MQT) developed by the [Chai
 
 ## Getting Started
 
-`mqt-bench` is available via [PyPI](https://pypi.org/project/mqt.bench/).
+`mqt-predictor` is available via [PyPI](https://pypi.org/project/mqt.predictor/).
 
 ```console
 (venv) $ pip install mqt.predictor
