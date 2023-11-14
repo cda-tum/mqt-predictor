@@ -1,5 +1,5 @@
-Device Selection: Automatic Device Selection Using Supervised Machine Learning
-===============================================================================
+Automatic Device Selection
+==========================
 
 A naive approach to select the best quantum device for a given quantum circuit would be to compile it for all devices, e.g., using the trained RL models which act as specialized compilers for supported quantum devices.
 Afterwards, the resulting compiled circuits must be evaluated according to some figure of merit to identify the most promising device.

@@ -1,6 +1,5 @@
-Compilation: Device-specific Quantum Circuit Compiler Using Reinforcement Learning Model
-========================================================================================
-
+Device-specific Compilation
+===========================
 
 
 Compilation, fortunately, is not new per-se, since classical compilers have seen a similar trend of an increasing complexity and variety in the past.
