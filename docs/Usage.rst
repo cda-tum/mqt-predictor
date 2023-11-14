@@ -30,8 +30,8 @@ For that, the repository must be cloned and installed:
 
 .. code-block::
 
-   git clone https://github.com/cda-tum/MQTpredictor.git
-   cd MQTpredictor
+   git clone https://github.com/cda-tum/mqt-predictor.git
+   cd mqt-predictor
    pip install .
 
 Afterwards, the package can be used as described `above <#Usage via pip package>`_.
