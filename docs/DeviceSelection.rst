@@ -34,7 +34,7 @@ In our exemplary scenario, the Random Forest classifier achieved the best perfor
 Examination of all seven trained classifiers of the ML model
 ------------------------------------------------------------
 
-To play around with all the examined models, please use the `evaluations/ml/evaluation.ipynb` Jupyter notebook.
+To play around with all the examined models, please use the :idf:`evaluations Jupyter notebook <evaluations/ml/evaluation.ipynb>`.
 
 Generation of Training Data
 ---------------------------
