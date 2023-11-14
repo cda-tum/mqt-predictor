@@ -6,7 +6,7 @@ MQT Predictor is a tool for Automatic Device Selection with Device-Specific Circ
 From a user's perspective, the framework is used as follows:
 
 .. image:: /_static/mqt_predictor.png
-   :width: 80%
+   :width: 100%
    :alt: Illustration of the MQT Predictor framework
    :align: center
 
