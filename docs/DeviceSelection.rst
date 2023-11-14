@@ -1,11 +1,17 @@
 Automatic Device Selection
 ==========================
 
+To realize any quantum application, a suitable quantum device must be selected for the execution of the developed quantum algorithm.
+This alone is non-trivial since new quantum devices based on various underlying technologies emerge on an almost daily basis—each with their own advantages and disadvantages.
+There are hardly any practical guidelines on which device to choose based on the targeted application.
+As such, the best guess in many cases today is to simply try out many (if not all) possible devices and, afterwards, choose the best results—certainly a time- and resource-consuming endeavor that is not sustainable for the future.
+
 A naive approach to select the best quantum device for a given quantum circuit would be to compile it for all devices, e.g., using the trained RL models which act as specialized compilers for supported quantum devices.
 Afterwards, the resulting compiled circuits must be evaluated according to some figure of merit to identify the most promising device.
 However, doing this for each and every to-be-compiled quantum circuit is practically infeasible since compilation is a time-consuming task.
 
-The MQT Predictor learns from previous compilations of other quantum circuits and models the problem of determining the most promising device for a circuit and figure of merit as a statistical classification task—a task well suited for supervised machine learning.
+The MQT Predictor framework provides an easy-to-use solution to this problem by using supervised machine learning.
+It learns from previous compilations of other quantum circuits and models the problem of determining the most promising device for a circuit and figure of merit as a statistical classification task—a task well suited for supervised machine learning.
 For that, the framework is trained with based on three inputs:
 
 1. Training circuits
@@ -19,7 +25,28 @@ For that, the framework is trained with based on three inputs:
 
 The trained model then acts as a predictor and can be used to predict the most suitable device for a given quantum circuit and figure of merit.
 
-For evaluation of our methodology, seven supervised machine learning classifiers have been used:
+.. _supported-quantum-devices:
+
+Supported Quantum Devices
+-------------------------
+Currently, seven devices based on two qubit technologies are supported:
+
+- Ion Trap-based:
+    - OQC Lucy with 8 qubits
+    - IonQ Harmony with 11 qubits
+    - IonQ Aria1 with 25
+- Superconducting-based:
+    - IBM Montreal with 27 qubits
+    - Quantinuum H2 with 32 qubits
+    - Rigetti Aspen-M2 with 80 qubits
+    - IBM Washington with 127 qubits
+
+Adding further devices is straight-forward and requires only to provide its native gate-set, connectivity, and calibration data.
+
+Evaluated Machine Learning Classifiers
+--------------------------------------
+
+For the evaluation of our methodology, seven supervised machine learning classifiers have been used:
 
 - Random Forest
 - Gradient Boosting
@@ -30,17 +57,12 @@ For evaluation of our methodology, seven supervised machine learning classifiers
 - Naive Bayes
 
 In our exemplary scenario, the Random Forest classifier achieved the best performance.
-
-Examination of all seven trained classifiers of the ML model
-------------------------------------------------------------
-
 To play around with all the examined models, please use the `Jupyter notebook <https://github.com/cda-tum/mqt-predictor/blob/main/evaluations/supervised_ml_models/evaluation.ipynb>`_.
 
-Generation of Training Data
----------------------------
+Training Data
+-------------
 
 To train the model, sufficient training data must be provided as qasm files in the `respective directory <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/ml/training_data/training_circuits>`_.
-`./training_samples_folder`.
 We provide the training data used for the pre-trained model.
 
 After the adjustment is finished, the following methods need to be called to generate the training data:
