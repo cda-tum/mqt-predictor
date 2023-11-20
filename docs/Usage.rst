@@ -23,6 +23,8 @@ Currently available figures of merit are `expected_fidelity` and `critical_depth
 
 An example how `qcompile` is used can be found in the :doc:`quickstart <Quickstart>` jupyter notebook.
 
+.. _pip_usage:
+
 Usage directly via this repository
 ----------------------------------
 
@@ -34,4 +36,4 @@ For that, the repository must be cloned and installed:
    cd mqt-predictor
    pip install .
 
-Afterwards, the package can be used as described `above <#Usage via pip package>`_.
+Afterwards, the package can be used as described :ref:`above <pip_usage>`.
