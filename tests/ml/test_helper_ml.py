@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import cast
 
 from mqt.bench import benchmark_generator
-from mqt.bench.utils import qiskit_helper
+from mqt.bench import qiskit_helper
 from mqt.predictor import ml, reward
 from mqt.predictor.ml import QiskitOptions
 
