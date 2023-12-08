@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Callable, Literal, TypedDict
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
-    from pytket.passes import BasePass as PytketBasePass  # type: ignore[attr-defined]
+    from pytket.passes import BasePass as PytketBasePass
     from qiskit.transpiler.basepasses import BasePass as QiskitBasePass
 
 import numpy as np
@@ -21,9 +21,9 @@ from mqt.predictor.devices import (
 )
 from mqt.predictor.reward import calc_supermarq_features
 from packaging import version
-from pytket.architecture import Architecture  # type: ignore[attr-defined]
-from pytket.circuit import OpType  # type: ignore[attr-defined]
-from pytket.passes import (  # type: ignore[attr-defined]
+from pytket.architecture import Architecture
+from pytket.circuit import OpType
+from pytket.passes import (
     CliffordSimp,
     FullPeepholeOptimise,
     PeepholeOptimise2Q,
