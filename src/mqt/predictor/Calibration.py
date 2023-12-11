@@ -10,7 +10,7 @@ else:
 from typing import TypedDict, cast
 
 import numpy as np
-from qiskit.providers.fake_provider import FakeMontreal, FakeWashington
+from qiskit.providers.fake_provider import FakeMontreal, FakeWashington, FakeGuadalupe
 
 
 class Calibration:
@@ -20,6 +20,7 @@ class Calibration:
         try:
             self.ibm_montreal_calibration = FakeMontreal().properties()
             self.ibm_washington_calibration = FakeWashington().properties()
+            self.ibm_guadalupe_calibration = FakeGuadalupe().properties()
             self.oqc_lucy_calibration = parse_oqc_calibration_config()
             self.rigetti_m2_calibration = parse_rigetti_calibration_config()
             self.ionq_harmony_calibration = parse_simple_calibration_config("ionq_harmony")
@@ -45,6 +46,17 @@ def get_mean_IBM_montreal_cx_error() -> float:
     """Returns the mean cx error for the IBM Washington device."""
     cmap: list[list[int]] = FakeMontreal().configuration().coupling_map
     backend = FakeMontreal().properties()
+    nonfaulty_connections = [x for x in cmap if backend.gate_error("cx", x) < 1]
+
+    res = [backend.gate_error("cx", elem) for elem in nonfaulty_connections]
+
+    return cast(float, np.mean(res))
+
+
+def get_mean_IBM_guadalupe_cx_error() -> float:
+    """Returns the mean cx error for the IBM Washington device."""
+    cmap: list[list[int]] = FakeGuadalupe().configuration().coupling_map
+    backend = FakeGuadalupe().properties()
     nonfaulty_connections = [x for x in cmap if backend.gate_error("cx", x) < 1]
 
     res = [backend.gate_error("cx", elem) for elem in nonfaulty_connections]

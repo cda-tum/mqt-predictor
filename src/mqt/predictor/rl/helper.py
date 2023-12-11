@@ -295,6 +295,7 @@ def get_action_terminate() -> dict[str, Any]:
     return {"name": "terminate"}
 
 
+from qiskit.providers.fake_provider import FakeGuadalupe
 def get_devices() -> list[dict[str, Any]]:
     """Returns a list of dictionaries containing information about the devices that are available."""
     return [
@@ -309,6 +310,12 @@ def get_devices() -> list[dict[str, Any]]:
             "cmap": get_cmap_from_devicename("ibm_montreal"),
             "native_gates": get_native_gates("ibm"),
             "max_qubits": 27,
+        },
+        {
+            "name": "ibm_guadalupe",
+            "cmap": FakeGuadalupe().configuration().coupling_map,
+            "native_gates": get_native_gates("ibm"),
+            "max_qubits": 16,
         },
         {
             "name": "oqc_lucy",
@@ -352,6 +359,7 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
     Returns:
         tuple[QuantumCircuit, str]: A tuple containing the random quantum circuit and the path to the file from which it was read.
     """
+    # file_list = list(get_path_training_circuits().glob("*.qpy"))
     file_list = list(get_path_training_circuits().glob("*.qasm"))
 
     path_zip = get_path_training_circuits() / "training_data_compilation.zip"
@@ -371,11 +379,14 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
         if max_qubits and num_qubits > max_qubits:
             continue
         found_suitable_qc = True
-
+    from qiskit import qpy
     try:
         qc = QuantumCircuit.from_qasm_file(str(file_list[random_index]))
+    # print(str(file_list[random_index]))
+    # with open(str(file_list[random_index]), "rb") as qpy_file_read:
+    #     qc = qpy.load(qpy_file_read)[0]
     except Exception:
-        raise RuntimeError("Could not read QuantumCircuit from: " + str(file_list[random_index])) from None
+       raise RuntimeError("Could not read QuantumCircuit from: " + str(file_list[random_index])) from None
 
     return qc, str(file_list[random_index])
 

@@ -176,6 +176,8 @@ def calc_expected_fidelity_ibm(qc: QuantumCircuit, device_name: str) -> float:
         calibration = Calibration.Calibration().ibm_montreal_calibration
     elif device_name == "ibm_washington":
         calibration = Calibration.Calibration().ibm_washington_calibration
+    elif device_name == "ibm_guadalupe":
+        calibration = Calibration.Calibration().ibm_guadalupe_calibration
     else:
         msg = "Device not supported"
         raise ValueError(msg)
@@ -202,7 +204,7 @@ def calc_expected_fidelity_ibm(qc: QuantumCircuit, device_name: str) -> float:
                         + ", "
                         + device_name
                         + ", "
-                        + first_qubit
+                        + str(first_qubit)
                         + ", "
                         + instruction
                         + ", "
@@ -224,10 +226,13 @@ def calc_expected_fidelity_ibm(qc: QuantumCircuit, device_name: str) -> float:
                             + str(second_qubit),
                             "mean error is used instead",
                         )
+                        print("ERROR OCCURRED")
                         if device_name == "ibm_washington":
-                            specific_error = calibration.ibm_washington_cx_mean_error
+                            specific_error = Calibration.get_mean_IBM_washington_cx_error()
                         elif device_name == "ibm_montreal":
-                            specific_error = calibration.ibm_montreal_cx_mean_error
+                            specific_error = Calibration.get_mean_IBM_montreal_cx_error()
+                        elif device_name == "ibm_guadalupe":
+                            specific_error = Calibration.get_mean_IBM_guadalupe_cx_error()
                 except Exception as e:
                     raise RuntimeError(
                         "Error in IBM backend.gate_error(): "
