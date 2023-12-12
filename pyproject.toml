@@ -81,6 +81,15 @@ warn_unreachable = true
 explicit_package_bases = true
 pretty = true
 
+[tool.coverage]
+run.source = ["mqt.predictor"]
+report.exclude_also = [
+    '\.\.\.',
+    'if TYPE_CHECKING:',
+    'raise AssertionError',
+    'raise NotImplementedError',
+]
+
 [[tool.mypy.overrides]]
 module = ["pytket.*"]
 implicit_reexport = true
