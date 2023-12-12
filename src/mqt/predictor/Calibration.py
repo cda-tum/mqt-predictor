@@ -25,6 +25,8 @@ class Calibration:
             self.ionq_harmony_calibration = parse_simple_calibration_config("ionq_harmony")
             self.ionq_aria1_calibration = parse_simple_calibration_config("ionq_aria1")
             self.quantinuum_h2_calibration = parse_simple_calibration_config("quantinuum_h2")
+            self.ibm_washington_cx_mean_error = get_mean_IBM_washington_cx_error()
+            self.ibm_montreal_cx_mean_error = get_mean_IBM_montreal_cx_error()
 
         except Exception as e:
             raise RuntimeError("Error in Calibration initialization: " + str(e)) from e
