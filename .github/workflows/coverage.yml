@@ -23,7 +23,7 @@ jobs:
       - name: Install MQT Predictor
         run: pip install .[coverage]
       - name: Generate Report
-        run: pytest -v --cov=./ --cov-report=xml
+        run: pytest -v --cov --cov-config=pyproject.toml --cov-report=xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload coverage to Codecov
