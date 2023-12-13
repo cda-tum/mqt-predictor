@@ -25,7 +25,7 @@ from mqt.predictor import Result, ml, reward, rl
 logger = logging.getLogger("mqt-predictor")
 
 
-def create_qiskit_result(qc: QuantumCircuit, device: dict[str, Any] | None = None) -> Result:
+def create_qiskit_result(qc: QuantumCircuit, device: dict[str, Any]) -> Result:
     """Creates a Result object for a given benchmark and device using qiskit for compilation.
 
     Args:
@@ -35,7 +35,6 @@ def create_qiskit_result(qc: QuantumCircuit, device: dict[str, Any] | None = Non
     Returns:
         Result: Returns a Result object containing the compiled quantum circuit.
     """
-    assert device is not None
     if qc.num_qubits > device["max_qubits"]:
         return Result("qiskit_", -1, None, device["name"])
     start_time = time.time()
@@ -56,7 +55,7 @@ def create_qiskit_result(qc: QuantumCircuit, device: dict[str, Any] | None = Non
 
 def create_tket_result(
     qc: QuantumCircuit,
-    device: dict[str, Any] | None = None,
+    device: dict[str, Any],
 ) -> Result:
     """Creates a Result object for a given benchmark and device using tket for compilation.
 
@@ -67,7 +66,6 @@ def create_tket_result(
     Returns:
         Result: Returns a Result object containing the compiled quantum circuit.
     """
-    assert device is not None
     if qc.num_qubits > device["max_qubits"]:
         return Result("tket_" + device["name"], -1, None, device["name"])
     tket_qc = qiskit_to_tk(qc)
