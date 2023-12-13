@@ -31,6 +31,14 @@ def test_get_action_terminate() -> None:
 def test_get_actions_devices() -> None:
     assert len(rl.helper.get_devices()) == rl.helper.NUM_ACTIONS_DEVICES
 
+    with pytest.raises(RuntimeError):
+        rl.helper.get_device("false_input")
+
+
+def test_get_device_index_of_device_false_input() -> None:
+    with pytest.raises(RuntimeError):
+        rl.helper.get_device_index_of_device("false_input")
+
 
 def test_get_actions_mapping() -> None:
     assert len(rl.helper.get_actions_mapping()) == rl.helper.NUM_ACTIONS_MAPPING
