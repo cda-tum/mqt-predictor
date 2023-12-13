@@ -36,8 +36,8 @@ def test_create_feature_dict() -> None:
     feature_vector = ml.helper.create_feature_dict(qc)
     assert feature_vector is not None
 
-    with pytest.raises(ValueError, match="Device not supported"):
-        ml.helper.create_feature_dict("Invalid input for 'qc' parameter.")
+    with pytest.raises(ValueError, match="Invalid input for 'qc' parameter."):
+        ml.helper.create_feature_dict("false_input")
 
 
 def test_get_openqasm_gates() -> None:
