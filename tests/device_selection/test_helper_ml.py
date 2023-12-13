@@ -26,11 +26,9 @@ def test_load_training_data() -> None:
         ml.helper.load_training_data("false_input")  # type: ignore[arg-type]
 
 
-
 def test_save_training_data() -> None:
     training_data, names_list, scores_list = ml.helper.load_training_data()
     ml.helper.save_training_data(training_data, names_list, scores_list, "expected_fidelity")
-
 
 
 def test_create_feature_dict() -> None:
@@ -40,6 +38,7 @@ def test_create_feature_dict() -> None:
 
     with pytest.raises(ValueError, match="Device not supported"):
         ml.helper.create_feature_dict("Invalid input for 'qc' parameter.")
+
 
 def test_get_openqasm_gates() -> None:
     assert ml.helper.get_openqasm_gates() is not None

@@ -84,7 +84,6 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
     if qasm_path.exists():
         qasm_path.unlink()
 
-
     with pytest.raises(ValueError):
         predictor.compile_all_circuits_devicewise(
             device_name="false_input",
