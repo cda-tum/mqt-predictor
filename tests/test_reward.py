@@ -1,6 +1,10 @@
-from mqt.predictor import reward
-from qiskit import QuantumCircuit
+from __future__ import annotations
+
 import pytest
+from qiskit import QuantumCircuit
+
+from mqt.predictor import reward
+
 
 def test__false_inputs() -> None:
     with pytest.raises(ValueError):
@@ -11,6 +15,3 @@ def test__false_inputs() -> None:
 
     with pytest.raises(ValueError):
         reward.calc_expected_fidelity_ionq(QuantumCircuit(), "test_device")
-
-
-
