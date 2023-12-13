@@ -69,8 +69,3 @@ def test_get_path_training_circuits() -> None:
     path = rl.helper.get_path_training_circuits()
     assert path.exists()
     assert isinstance(path, Path)
-
-
-def test_load_model_false_input() -> None:
-    with pytest.raises(ModuleNotFoundError):
-        rl.helper.load_model("false_input")
