@@ -1,16 +1,17 @@
-from mqt.predictor import reward
-from qiskit import QuantumCircuit
+from __future__ import annotations
+
 import pytest
+from qiskit import QuantumCircuit
+
+from mqt.predictor import reward
+
 
 def test__false_inputs() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Device not supported"):
         reward.expected_fidelity(QuantumCircuit(), "test_device")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Device not supported"):
         reward.calc_expected_fidelity_ibm(QuantumCircuit(), "test_device")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Device not supported"):
         reward.calc_expected_fidelity_ionq(QuantumCircuit(), "test_device")
-
-
-
