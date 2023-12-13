@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Final
 
 import numpy as np
+import pytest
 
 from mqt.bench import benchmark_generator
 from mqt.predictor import ml, reward
@@ -82,3 +83,13 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
 
     if qasm_path.exists():
         qasm_path.unlink()
+
+
+    with pytest.raises(ValueError):
+        predictor.compile_all_circuits_devicewise(
+            device_name="false_input",
+            timeout=100,
+            figure_of_merit=figure_of_merit,
+            source_path=source_path,
+            target_path=target_path,
+        )

@@ -31,7 +31,12 @@ def test_get_action_terminate() -> None:
 def test_get_actions_devices() -> None:
     assert len(rl.helper.get_devices()) == rl.helper.NUM_ACTIONS_DEVICES
 
+    with pytest.raises(RuntimeError):
+        rl.helper.get_device("false_input")
 
+def test_get_device_index_of_device_false_input() -> None:
+    with pytest.raises(RuntimeError):
+        rl.helper.get_device_index_of_device("false_input")
 def test_get_actions_mapping() -> None:
     assert len(rl.helper.get_actions_mapping()) == rl.helper.NUM_ACTIONS_MAPPING
 
@@ -61,3 +66,7 @@ def test_get_path_training_circuits() -> None:
     path = rl.helper.get_path_training_circuits()
     assert path.exists()
     assert isinstance(path, Path)
+
+def test_load_model_false_input() -> None:
+    with pytest.raises(ModuleNotFoundError):
+        rl.helper.load_model("false_input")
