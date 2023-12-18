@@ -119,7 +119,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
     def calculate_reward(self) -> Any:
         """Calculates and returns the reward for the current state."""
         if self.reward_function == "expected_fidelity":
-            return reward.expected_fidelity(self.state, self.device["name"])
+            return reward.expected_fidelity(self.state, self.device.name)
         if self.reward_function == "critical_depth":
             return reward.crit_depth(self.state)
         error_msg = f"Reward function {self.reward_function} not supported."  # type: ignore[unreachable]
@@ -151,7 +151,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         elif qc:
             self.state = QuantumCircuit.from_qasm_file(str(qc))
         else:
-            self.state, self.filename = rl.helper.get_state_sample(self.device["max_qubits"])
+            self.state, self.filename = rl.helper.get_state_sample(self.device.num_qubits)
 
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
@@ -178,9 +178,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 action_index
                 in self.actions_layout_indices + self.actions_routing_indices + self.actions_mapping_indices
             ):
-                transpile_pass = action["transpile_pass"](self.device["cmap"])
+                transpile_pass = action["transpile_pass"](self.device.coupling_map)
             elif action_index in self.actions_synthesis_indices:
-                transpile_pass = action["transpile_pass"](self.device["native_gates"])
+                transpile_pass = action["transpile_pass"](self.device.basis_gates)
             else:
                 transpile_pass = action["transpile_pass"]
             if action["origin"] == "qiskit":
@@ -188,7 +188,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     if action["name"] == "QiskitO3":
                         pm = PassManager()
                         pm.append(
-                            action["transpile_pass"](self.device["native_gates"], CouplingMap(self.device["cmap"])),
+                            action["transpile_pass"](self.device.basis_gates, CouplingMap(self.device.coupling_map)),
                             do_while=action["do_while"],
                         )
                     else:
@@ -238,14 +238,14 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
     def determine_valid_actions_for_state(self) -> list[int]:
         """Determines and returns the valid actions for the current state."""
-        check_nat_gates = GatesInBasis(basis_gates=self.device["native_gates"])
+        check_nat_gates = GatesInBasis(basis_gates=self.device.basis_gates)
         check_nat_gates(self.state)
         only_nat_gates = check_nat_gates.property_set["all_gates_in_basis"]
 
         if not only_nat_gates:
             return self.actions_synthesis_indices + self.actions_opt_indices
 
-        check_mapping = CheckMap(coupling_map=CouplingMap(self.device["cmap"]))
+        check_mapping = CheckMap(coupling_map=CouplingMap(self.device.coupling_map))
         check_mapping(self.state)
         mapped = check_mapping.property_set["is_swap_mapped"]
 

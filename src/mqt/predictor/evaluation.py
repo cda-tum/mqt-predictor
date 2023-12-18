@@ -19,45 +19,45 @@ from pytket.passes import (
 from pytket.placement import GraphPlacement
 from qiskit import QuantumCircuit, transpile
 
-from mqt.bench.devices import get_available_devices
+from mqt.bench.devices import Device, get_available_devices
 from mqt.bench.tket_helper import get_rebase
 from mqt.predictor import Result, ml, reward, rl
 
 logger = logging.getLogger("mqt-predictor")
 
 
-def create_qiskit_result(qc: QuantumCircuit, device: dict[str, Any] | None = None) -> Result:
+def create_qiskit_result(qc: QuantumCircuit, device: Device | None = None) -> Result:
     """Creates a Result object for a given benchmark and device using qiskit for compilation.
 
     Args:
         benchmark (str): The path to the benchmark to be compiled.
-        device (dict[str, Any] | None, optional): The device to be used for compilation. Defaults to None.
+        device (Device | None, optional): The device to be used for compilation. Defaults to None.
 
     Returns:
         Result: Returns a Result object containing the compiled quantum circuit.
     """
     assert device is not None
-    if qc.num_qubits > device["max_qubits"]:
-        return Result("qiskit_", -1, None, device["name"])
+    if qc.num_qubits > device.num_qubits:
+        return Result("qiskit_", -1, None, device.name)
     start_time = time.time()
     try:
         transpiled_qc_qiskit = transpile(
             qc,
-            basis_gates=device["native_gates"],
-            coupling_map=device["cmap"],
+            basis_gates=device.basis_gates,
+            coupling_map=device.coupling_map,
             optimization_level=3,
             seed_transpiler=1,
         )
     except Exception as e:
-        logger.warning("qiskit Transpile Error occurred for: " + device["name"] + " " + str(e))
-        return Result("qiskit_" + device["name"], -1, None, device["name"])
+        logger.warning("qiskit Transpile Error occurred for: " + device.name + " " + str(e))
+        return Result("qiskit_" + device.name, -1, None, device.name)
     duration = time.time() - start_time
-    return Result("qiskit_" + device["name"], duration, transpiled_qc_qiskit, device["name"])
+    return Result("qiskit_" + device.name, duration, transpiled_qc_qiskit, device.name)
 
 
 def create_tket_result(
     qc: QuantumCircuit,
-    device: dict[str, Any] | None = None,
+    device: Device | None = None,
 ) -> Result:
     """Creates a Result object for a given benchmark and device using tket for compilation.
 
@@ -69,12 +69,12 @@ def create_tket_result(
         Result: Returns a Result object containing the compiled quantum circuit.
     """
     assert device is not None
-    if qc.num_qubits > device["max_qubits"]:
-        return Result("tket_" + device["name"], -1, None, device["name"])
+    if qc.num_qubits > device.num_qubits:
+        return Result("tket_" + device.name, -1, None, device.name)
     tket_qc = qiskit_to_tk(qc)
-    arch = Architecture(device["cmap"])
+    arch = Architecture(device.coupling_map)
 
-    native_rebase = get_rebase(device["name"].split("_")[0])
+    native_rebase = get_rebase(device.name.split("_")[0])
     assert native_rebase is not None
 
     start_time = time.time()
@@ -87,10 +87,10 @@ def create_tket_result(
         duration = time.time() - start_time
         transpiled_qc_tket = tk_to_qiskit(tket_qc)
     except Exception as e:
-        logger.warning("tket Transpile Error occurred for: " + device["name"] + " " + str(e))
-        return Result("tket_" + device["name"], -1, None, device["name"])
+        logger.warning("tket Transpile Error occurred for: " + device.name + " " + str(e))
+        return Result("tket_" + device.name, -1, None, device.name)
 
-    return Result("tket_" + device["name"], duration, transpiled_qc_tket, device["name"])
+    return Result("tket_" + device.name, duration, transpiled_qc_tket, device.name)
 
 
 def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit, filename: str) -> Result:
