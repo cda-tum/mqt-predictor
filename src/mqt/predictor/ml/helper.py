@@ -16,6 +16,7 @@ import numpy as np
 from joblib import dump
 from qiskit import QuantumCircuit
 
+from mqt.bench.devices import get_available_devices
 from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import ml, reward, rl
 
@@ -61,11 +62,11 @@ def predict_device_for_figure_of_merit(
     assert ml_predictor.clf is not None
     classes = ml_predictor.clf.classes_  # type: ignore[unreachable]
     predicted_device_index = classes[np.argsort(predicted_device_index_probs)[::-1]]
-    devices = rl.helper.get_devices()
+    devices = get_available_devices()
 
     for index in predicted_device_index:
-        if devices[index]["max_qubits"] >= qc.num_qubits:
-            return devices[index]["name"]
+        if devices[index].num_qubits >= qc.num_qubits:
+            return devices[index].name
     msg = "No suitable device found."
     raise ValueError(msg)
 
@@ -101,8 +102,8 @@ def get_path_training_circuits_compiled() -> Path:
 
 def get_index_to_device_LUT() -> dict[int, str]:
     """Returns a look-up table (LUT) that maps the index of a device to its name."""
-    devices = rl.helper.get_devices()
-    return {i: device["name"] for i, device in enumerate(devices)}
+    devices = get_available_devices()
+    return {i: device.name for i, device in enumerate(devices)}
 
 
 def get_openqasm_gates() -> list[str]:

@@ -5,6 +5,7 @@ import os
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from warnings import warn
 
 import numpy as np
 import requests
@@ -55,6 +56,7 @@ from qiskit.transpiler.runningpassmanager import ConditionalController
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
+from mqt.bench.devices import get_available_devices
 from mqt.bench.qiskit_helper import get_native_gates
 from mqt.bench.utils import calc_supermarq_features, get_cmap_from_devicename
 from mqt.predictor import reward, rl
@@ -296,7 +298,12 @@ def get_action_terminate() -> dict[str, Any]:
 
 
 def get_devices() -> list[dict[str, Any]]:
-    """Returns a list of dictionaries containing information about the devices that are available."""
+    """DEPRECATED: Returns a list of dictionaries containing information about the devices that are available."""
+    warn(
+        "This function is deprecated. Please use mqt.bench.devices.get_available_devices instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return [
         {
             "name": "ibm_washington",
@@ -531,7 +538,7 @@ class PreProcessTKETRoutingAfterQiskitLayout:
 
 
 def get_device(device_name: str) -> dict[str, Any]:
-    """Returns the device with the given name.
+    """DEPRECATED: Returns the device with the given name.
 
     Args:
         device_name (str): The name of the device to be returned.
@@ -539,6 +546,11 @@ def get_device(device_name: str) -> dict[str, Any]:
     Returns:
         dict[str, Any]: The device with the given name.
     """
+    warn(
+        "This function is deprecated. Please use mqt.bench.devices.get_device_by_name instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     devices = get_devices()
     for device in devices:
         if device["name"] == device_name:
@@ -557,9 +569,9 @@ def get_device_index_of_device(device_name: str) -> int:
     Returns:
         int: The index of the device with the given name.
     """
-    devices = get_devices()
+    devices = get_available_devices()
     for i, device in enumerate(devices):
-        if device["name"] == device_name:
+        if device.name == device_name:
             return i
 
     msg = "No suitable device found."

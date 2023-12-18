@@ -15,6 +15,7 @@ from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
 from qiskit.transpiler.runningpassmanager import TranspileLayout
 
+from mqt.bench.devices import get_device_by_name
 from mqt.predictor import reward, rl
 
 logger = logging.getLogger("mqt-predictor")
@@ -35,7 +36,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.actions_mapping_indices = []
         self.actions_opt_indices = []
         self.used_actions: list[str] = []
-        self.device = rl.helper.get_device(device_name)
+        self.device = get_device_by_name(device_name)
 
         index = 0
 

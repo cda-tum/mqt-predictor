@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from mqt.bench import get_benchmark
-from mqt.predictor import rl
+from mqt.bench.devices import get_available_devices
 from mqt.predictor.evaluation import evaluate_sample_circuit
 
 
@@ -19,7 +19,7 @@ def test_evaluate_sample_circuit() -> None:
                 expected_keys.append(compilation_setup + "_" + key)
             else:
                 expected_keys.extend(
-                    [compilation_setup + "_" + device["name"] + "_" + key for device in rl.helper.get_devices()]
+                    [compilation_setup + "_" + device["name"] + "_" + key for device in get_available_devices()]
                 )
 
     assert all(key in res for key in expected_keys)

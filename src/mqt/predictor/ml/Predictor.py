@@ -11,6 +11,7 @@ from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
+from mqt.bench.devices import get_available_devices
 from mqt.predictor import ml, reward, rl, utils
 
 if TYPE_CHECKING:
@@ -86,7 +87,7 @@ class Predictor:
             if filename.suffix != ".qasm":
                 return
 
-            for i, dev in enumerate(rl.helper.get_devices()):
+            for i, dev in enumerate(get_available_devices()):
                 target_filename = str(filename).split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(i)
                 if (Path(target_path) / (target_filename + ".qasm")).exists() or qc.num_qubits > dev["max_qubits"]:
                     continue
@@ -127,7 +128,7 @@ class Predictor:
         rl_pred = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device_name)
 
         dev_index = rl.helper.get_device_index_of_device(device_name)
-        dev_max_qubits = rl.helper.get_devices()[dev_index]["max_qubits"]
+        dev_max_qubits = get_available_devices()[dev_index]["max_qubits"]
 
         if source_path is None:
             source_path = ml.helper.get_path_training_circuits()
@@ -190,7 +191,7 @@ class Predictor:
                 device_name, timeout, figure_of_merit, source_path, target_path, logger.level
             )
             for figure_of_merit in ["expected_fidelity", "critical_depth"]
-            for device_name in [dev["name"] for dev in rl.helper.get_devices()]
+            for device_name in [dev["name"] for dev in get_available_devices()]
         )
 
     def generate_trainingdata_from_qasm_files(

@@ -19,6 +19,7 @@ from pytket.passes import (
 from pytket.placement import GraphPlacement
 from qiskit import QuantumCircuit, transpile
 
+from mqt.bench.devices import get_available_devices
 from mqt.bench.tket_helper import get_rebase
 from mqt.predictor import Result, ml, reward, rl
 
@@ -189,7 +190,7 @@ def evaluate_sample_circuit(filename: str) -> dict[str, Any]:
     results.update(create_mqtpredictor_result(qc, "expected_fidelity", filename=filename).get_dict())
     results.update(create_mqtpredictor_result(qc, "critical_depth", filename=filename).get_dict())
 
-    for _i, dev in enumerate(rl.helper.get_devices()):
+    for _i, dev in enumerate(get_available_devices()):
         results.update(create_qiskit_result(qc, dev).get_dict())
         results.update(create_tket_result(qc, dev).get_dict())
 
