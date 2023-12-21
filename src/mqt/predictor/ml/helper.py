@@ -16,13 +16,14 @@ import numpy as np
 from joblib import dump
 from qiskit import QuantumCircuit
 
-from mqt.bench.devices import get_available_devices
 from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import ml, reward, rl
 
 if TYPE_CHECKING:
     from numpy._typing import NDArray
     from sklearn.ensemble import RandomForestClassifier
+
+    from mqt.bench.devices import Device
 
 
 def qcompile(
@@ -38,15 +39,16 @@ def qcompile(
         tuple[QuantumCircuit, list[str], str] | bool: Returns a tuple containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, False is returned.
     """
 
-    device_name = predict_device_for_figure_of_merit(qc, figure_of_merit)
-    assert device_name is not None
-    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device_name)
-    return *res, device_name
+    device = predict_device_for_figure_of_merit(qc, figure_of_merit)
+    assert device is not None
+
+    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device.name)
+    return *res, device.name
 
 
 def predict_device_for_figure_of_merit(
     qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit = "expected_fidelity"
-) -> str:
+) -> Device:
     """Returns the name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
 
     Args:
@@ -54,7 +56,7 @@ def predict_device_for_figure_of_merit(
         figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
-        str : The name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
+        Device : The device with the highest predicted figure of merit that is suitable for the given quantum circuit.
     """
 
     ml_predictor = ml.Predictor()
@@ -62,11 +64,11 @@ def predict_device_for_figure_of_merit(
     assert ml_predictor.clf is not None
     classes = ml_predictor.clf.classes_  # type: ignore[unreachable]
     predicted_device_index = classes[np.argsort(predicted_device_index_probs)[::-1]]
-    devices = get_available_devices()
 
+    devices = ml_predictor.devices
     for index in predicted_device_index:
         if devices[index].num_qubits >= qc.num_qubits:
-            return devices[index].name
+            return devices[index]
     msg = "No suitable device found."
     raise ValueError(msg)
 
@@ -98,12 +100,6 @@ def get_path_training_circuits() -> Path:
 def get_path_training_circuits_compiled() -> Path:
     """Returns the path to the compiled training circuits folder."""
     return get_path_training_data() / "training_circuits_compiled"
-
-
-def get_index_to_device_LUT() -> dict[int, str]:
-    """Returns a look-up table (LUT) that maps the index of a device to its name."""
-    devices = get_available_devices()
-    return {i: device.name for i, device in enumerate(devices)}
 
 
 def get_openqasm_gates() -> list[str]:

@@ -38,7 +38,7 @@ def create_qiskit_result(qc: QuantumCircuit, device: Device | None = None) -> Re
     """
     assert device is not None
     if qc.num_qubits > device.num_qubits:
-        return Result("qiskit_", -1, None, device.name)
+        return Result("qiskit_", -1, None, device)
     start_time = time.time()
     try:
         transpiled_qc_qiskit = transpile(
@@ -50,9 +50,9 @@ def create_qiskit_result(qc: QuantumCircuit, device: Device | None = None) -> Re
         )
     except Exception as e:
         logger.warning("qiskit Transpile Error occurred for: " + device.name + " " + str(e))
-        return Result("qiskit_" + device.name, -1, None, device.name)
+        return Result("qiskit_" + device.name, -1, None, device)
     duration = time.time() - start_time
-    return Result("qiskit_" + device.name, duration, transpiled_qc_qiskit, device.name)
+    return Result("qiskit_" + device.name, duration, transpiled_qc_qiskit, device)
 
 
 def create_tket_result(
@@ -70,7 +70,7 @@ def create_tket_result(
     """
     assert device is not None
     if qc.num_qubits > device.num_qubits:
-        return Result("tket_" + device.name, -1, None, device.name)
+        return Result("tket_" + device.name, -1, None, device)
     tket_qc = qiskit_to_tk(qc)
     arch = Architecture(device.coupling_map)
 
@@ -90,12 +90,11 @@ def create_tket_result(
         logger.warning("tket Transpile Error occurred for: " + device.name + " " + str(e))
         return Result("tket_" + device.name, -1, None, device.name)
 
-    return Result("tket_" + device.name, duration, transpiled_qc_tket, device.name)
+    return Result("tket_" + device.name, duration, transpiled_qc_tket, device)
 
 
 def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit, filename: str) -> Result:
-    dev_name = ml.helper.predict_device_for_figure_of_merit(qc, figure_of_merit)
-    """ Creates a Result object for a given benchmark and figure of merit using mqt-predictor for compilation.
+    """Creates a Result object for a given benchmark and figure of merit using mqt-predictor for compilation.
 
     Args:
         benchmark (str): The path to the benchmark to be compiled.
@@ -104,8 +103,9 @@ def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figur
     Returns:
         Result: Returns a Result object containing the compiled quantum circuit.
     """
-    assert isinstance(dev_name, str)
-    dev_index = rl.helper.get_device_index_of_device(dev_name)
+    device = ml.helper.predict_device_for_figure_of_merit(qc, figure_of_merit)
+    assert isinstance(device, Device)
+    dev_index = rl.helper.get_device_index_of_device(device.name)
     target_filename = filename.split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(dev_index)
     combined_path_filename = ml.helper.get_path_training_circuits_compiled() / (target_filename + ".qasm")
     if Path(combined_path_filename).exists():
@@ -115,7 +115,7 @@ def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figur
                 "mqt-predictor_" + figure_of_merit,
                 -1,
                 qc,
-                dev_name,
+                device,
             )
     else:
         try:
@@ -126,12 +126,12 @@ def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figur
                     "mqt-predictor_" + figure_of_merit,
                     -1,
                     qc_compiled[0],
-                    dev_name,
+                    device,
                 )
 
         except Exception as e:
-            logger.warning("mqt-predictor Transpile Error occurred for: " + filename + " " + dev_name + " " + str(e))
-    return Result("mqt-predictor_" + figure_of_merit, -1, None, dev_name)
+            logger.warning("mqt-predictor Transpile Error occurred for: " + filename + " " + device.name + " " + str(e))
+    return Result("mqt-predictor_" + figure_of_merit, -1, None, device)
 
 
 def evaluate_all_sample_circuits() -> None:

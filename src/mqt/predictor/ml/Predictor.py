@@ -11,7 +11,7 @@ from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from mqt.bench.devices import get_available_devices
+from mqt.bench.devices import Device, get_available_devices
 from mqt.predictor import ml, reward, rl, utils
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ logger = logging.getLogger("mqt-predictor")
 class Predictor:
     def __init__(self, logger_level: int = logging.INFO) -> None:
         logger.setLevel(logger_level)
-
+        self.devices = get_available_devices()
         self.clf = None
 
     def set_classifier(self, clf: RandomForestClassifier) -> None:
@@ -87,12 +87,12 @@ class Predictor:
             if filename.suffix != ".qasm":
                 return
 
-            for i, dev in enumerate(get_available_devices()):
+            for i, dev in enumerate(self.devices):
                 target_filename = str(filename).split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(i)
-                if (Path(target_path) / (target_filename + ".qasm")).exists() or qc.num_qubits > dev["max_qubits"]:
+                if (Path(target_path) / (target_filename + ".qasm")).exists() or qc.num_qubits > dev.num_qubits:
                     continue
                 try:
-                    res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, dev["name"]], timeout)
+                    res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, dev.name], timeout)
                     if res:
                         compiled_qc = res[0]
                         compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
@@ -105,7 +105,7 @@ class Predictor:
 
     def compile_all_circuits_devicewise(
         self,
-        device_name: str,
+        device: Device,
         timeout: int,
         figure_of_merit: reward.figure_of_merit,
         source_path: Path | None = None,
@@ -124,11 +124,8 @@ class Predictor:
         """
         logger.setLevel(logger_level)
 
-        logger.info("Processing: " + device_name + " for " + figure_of_merit)
-        rl_pred = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device_name)
-
-        dev_index = rl.helper.get_device_index_of_device(device_name)
-        dev_max_qubits = get_available_devices()[dev_index]["max_qubits"]
+        logger.info("Processing: " + device.name + " for " + figure_of_merit)
+        rl_pred = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device.name)
 
         if source_path is None:
             source_path = ml.helper.get_path_training_circuits()
@@ -140,22 +137,23 @@ class Predictor:
             if filename.suffix != ".qasm":
                 continue
             qc = QuantumCircuit.from_qasm_file(Path(source_path) / filename)
-            if qc.num_qubits > dev_max_qubits:
+            if qc.num_qubits > device.num_qubits:
                 continue
 
+            dev_index = self.devices.index(device)
             target_filename = (
                 str(filename).split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(dev_index)
             )
             if (Path(target_path) / (target_filename + ".qasm")).exists():
                 continue
             try:
-                res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device_name, rl_pred], timeout)
+                res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device, rl_pred], timeout)
                 if res:
                     compiled_qc = res[0]
                     compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
 
             except Exception as e:
-                print(e, filename, device_name)
+                print(e, filename, device.name)
                 raise RuntimeError("Error during compilation: " + str(e)) from e
 
     def generate_compiled_circuits(
@@ -188,10 +186,10 @@ class Predictor:
 
         Parallel(n_jobs=1, verbose=100)(
             delayed(self.compile_all_circuits_devicewise)(
-                device_name, timeout, figure_of_merit, source_path, target_path, logger.level
+                device, timeout, figure_of_merit, source_path, target_path, logger.level
             )
             for figure_of_merit in ["expected_fidelity", "critical_depth"]
-            for device_name in [dev["name"] for dev in get_available_devices()]
+            for device in self.devices
         )
 
     def generate_trainingdata_from_qasm_files(
@@ -267,9 +265,8 @@ class Predictor:
         if ".qasm" not in str(file):
             raise RuntimeError("File is not a qasm file: " + str(file))
 
-        LUT = ml.helper.get_index_to_device_LUT()
         logger.debug("Checking " + str(file))
-        scores = [-1.0 for _ in range(len(LUT))]
+        scores = [-1.0 for _ in range(len(self.devices))]
         all_relevant_files = path_compiled_circuits.glob(str(file).split(".")[0] + "*")
 
         for filename in all_relevant_files:
@@ -279,16 +276,16 @@ class Predictor:
             ):
                 continue
             comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
-            device = LUT[comp_path_index]
+            device = self.devices[comp_path_index]
             qc = QuantumCircuit.from_qasm_file(filename_str)
             if figure_of_merit == "critical_depth":
                 score = reward.crit_depth(qc)
             elif figure_of_merit == "expected_fidelity":
-                score = reward.expected_fidelity(qc, device)
+                score = reward.expected_fidelity_on_device(qc, device)
             scores[comp_path_index] = score
 
         num_not_empty_entries = 0
-        for i in range(len(LUT)):
+        for i in range(len(self.devices)):
             if scores[i] != -1.0:
                 num_not_empty_entries += 1
 
@@ -445,7 +442,7 @@ class Predictor:
 
         plt.figure(figsize=(10, 5))
 
-        num_of_comp_paths = len(ml.helper.get_index_to_device_LUT())
+        num_of_comp_paths = len(self.devices)
         plt.bar(
             list(range(0, num_of_comp_paths, 1)),
             height=[res.count(i) / len(res) for i in range(1, num_of_comp_paths + 1, 1)],

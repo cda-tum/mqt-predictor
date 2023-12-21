@@ -7,6 +7,8 @@ from mqt.predictor import reward
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit
 
+    from mqt.bench.devices import Device
+
 
 class Result:
     """
@@ -16,7 +18,7 @@ class Result:
         compilation_setup (str): The setup used for compilation. Either 'mqt-predictor_<figure_of_merit>', 'qiskit' or 'tket'. For the two latter, also the device name is appended.
         compilation_time (float): The time it took to compile the benchmark.
         compiled_qc (QuantumCircuit | None): The compiled quantum circuit. If compilation failed, None is returned.
-        device (str): The device used for compilation.
+        device (Device): The device used for compilation.
 
     """
 
@@ -25,10 +27,10 @@ class Result:
         compilation_setup: str,
         compilation_time: float,
         compiled_qc: QuantumCircuit | None,
-        device: str,
+        device: Device,
     ) -> None:
         if compiled_qc is not None:
-            rew_fid = reward.expected_fidelity(compiled_qc, device)
+            rew_fid = reward.expected_fidelity_on_device(compiled_qc, device)
             rew_crit_depth = reward.crit_depth(compiled_qc)
         else:
             rew_fid = -1.0

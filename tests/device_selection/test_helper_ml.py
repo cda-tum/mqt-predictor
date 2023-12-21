@@ -1,20 +1,8 @@
 from __future__ import annotations
 
 from mqt.bench import benchmark_generator
+from mqt.bench.devices import get_available_device_names, get_available_devices
 from mqt.predictor import ml, qcompile
-
-
-def test_get_index_to_device_LUT() -> None:
-    expected = {
-        0: "ibm_washington",
-        1: "ibm_montreal",
-        2: "oqc_lucy",
-        3: "rigetti_aspen_m2",
-        4: "ionq_harmony",
-        5: "ionq_aria1",
-        6: "quantinuum_h2",
-    }
-    assert ml.helper.get_index_to_device_LUT() == expected
 
 
 def test_load_training_data() -> None:
@@ -54,15 +42,12 @@ def test_get_path_trained_model() -> None:
 
 def test_predict_device_for_figure_of_merit() -> None:
     qc = benchmark_generator.get_benchmark("ghz", 1, 5)
-    assert (
-        ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity")
-        in ml.helper.get_index_to_device_LUT().values()
-    )
+    assert ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity") in get_available_devices()
 
 
 def test_qcompile() -> None:
     qc = benchmark_generator.get_benchmark("ghz", 1, 5)
     qc_compiled, compilation_information, quantum_device = qcompile(qc)
-    assert quantum_device in ml.helper.get_index_to_device_LUT().values()
+    assert quantum_device in get_available_device_names()
     assert qc_compiled.layout is not None
     assert len(qc_compiled) > 0

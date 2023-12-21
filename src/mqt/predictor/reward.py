@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Literal, cast
+from warnings import warn
 
 import numpy as np
 
@@ -14,6 +15,8 @@ from mqt.predictor.utils import (
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit
 
+    from mqt.bench.devices import Device
+
 logger = logging.getLogger("mqt-predictor")
 
 figure_of_merit = Literal["expected_fidelity", "critical_depth"]
@@ -25,8 +28,40 @@ def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
     return cast(float, np.round(1 - supermarq_features.critical_depth, precision))
 
 
-def expected_fidelity(qc: QuantumCircuit, device_name: str, precision: int = 10) -> float:
+def expected_fidelity_on_device(qc: QuantumCircuit, device: Device, precision: int = 10) -> float:
     """Calculates the expected fidelity of a given quantum circuit on a given device.
+
+    Args:
+        qc (QuantumCircuit): The quantum circuit to be compiled.
+        device (Device): The device to be used for compilation.
+        precision (int, optional): The precision of the returned value. Defaults to 10.
+
+    Returns:
+        float: The expected fidelity of the given quantum circuit on the given device.
+    """
+    res = 1.0
+    for instruction, qargs, _cargs in qc.data:
+        gate_type = instruction.name
+        assert gate_type in device.basis_gates
+
+        if gate_type != "barrier":
+            assert len(qargs) in [1, 2]
+            first_qubit = calc_qubit_index(qargs, qc.qregs, 0)
+            if len(qargs) == 1 and gate_type != "measure":
+                specific_fidelity = device.get_single_qubit_gate_fidelity(gate_type, first_qubit)
+            elif len(qargs) == 1 and gate_type == "measure":
+                specific_fidelity = device.get_readout_fidelity(first_qubit)
+            elif len(qargs) == 2:
+                second_qubit = calc_qubit_index(qargs, qc.qregs, 1)
+                specific_fidelity = device.get_two_qubit_gate_fidelity(gate_type, first_qubit, second_qubit)
+
+            res *= specific_fidelity
+
+    return cast(float, np.round(res, precision))
+
+
+def expected_fidelity(qc: QuantumCircuit, device_name: str, precision: int = 10) -> float:
+    """DEPRECATED: Calculates the expected fidelity of a given quantum circuit on a given device.
 
     Args:
         qc (QuantumCircuit): The quantum circuit to be compiled.
@@ -36,6 +71,11 @@ def expected_fidelity(qc: QuantumCircuit, device_name: str, precision: int = 10)
     Returns:
         float: The expected fidelity of the given quantum circuit on the given device.
     """
+    warn(
+        "This function is deprecated. Please use expected_fidelity_on_device instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     if "ibm" in device_name:
         res = calc_expected_fidelity_ibm(qc, device_name)
