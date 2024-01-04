@@ -180,7 +180,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
             ):
                 transpile_pass = action["transpile_pass"](self.device["cmap"])
             elif action_index in self.actions_synthesis_indices:
-                transpile_pass = action["transpile_pass"](self.device["native_gates"])
+                if action["origin"] == "qiskit":
+                    transpile_pass = action["transpile_pass"](self.device["native_gates"])
+                elif action["origin"] == "bqskit":
+                    transpile_pass = action["transpile_pass"](self.state.num_qubits, self.device["name"].split("_")[0])
             else:
                 transpile_pass = action["transpile_pass"]
             if action["origin"] == "qiskit":
@@ -229,8 +232,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
             elif action["origin"] == "bqskit":
                 try:
                     bqskit_qc = qiskit_to_bqskit(self.state)
-                    transpile_pass(bqskit_qc)
-                    altered_qc = bqskit_to_qiskit(bqskit_qc)
+                    altered_qc = bqskit_to_qiskit(transpile_pass(bqskit_qc))
                 except Exception:
                     logger.exception(
                         "Error in executing BQSKit transpile  pass for {action} at step {i} for {filename}".format(

@@ -68,7 +68,9 @@ else:
     import importlib_metadata as metadata
     import importlib_resources as resources
 
+from bqskit import MachineModel
 from bqskit import compile as bqskit_compile
+from bqskit.ir import gates
 
 logger = logging.getLogger("mqt-predictor")
 
@@ -76,7 +78,7 @@ logger = logging.getLogger("mqt-predictor")
 NUM_ACTIONS_OPT = 14
 NUM_ACTIONS_LAYOUT = 3
 NUM_ACTIONS_ROUTING = 4
-NUM_ACTIONS_SYNTHESIS = 1
+NUM_ACTIONS_SYNTHESIS = 2
 NUM_ACTIONS_TERMINATE = 1
 NUM_ACTIONS_DEVICES = 7
 NUM_ACTIONS_MAPPING = 1
@@ -208,7 +210,7 @@ def get_actions_opt() -> list[dict[str, Any]]:
         },
         {
             "name": "BQSKitO2",
-            "transpile_pass": lambda circuit: [bqskit_compile(circuit, optimization_level=2)],
+            "transpile_pass": lambda circuit: bqskit_compile(circuit, optimization_level=2),
             "origin": "bqskit",
         },
     ]
@@ -299,6 +301,15 @@ def get_actions_synthesis() -> list[dict[str, Any]]:
             "name": "BasisTranslator",
             "transpile_pass": lambda g: [BasisTranslator(StandardEquivalenceLibrary, target_basis=g)],
             "origin": "qiskit",
+        },
+        {
+            "name": "BQSKitSynthesis",
+            "transpile_pass": lambda num_qubits, provider: lambda bqskit_circuit: bqskit_compile(
+                bqskit_circuit,
+                model=MachineModel(num_qubits, gate_set=get_BQSKit_native_gates(provider)),
+                optimization_level=2,
+            ),
+            "origin": "bqskit",
         },
     ]
 
@@ -577,3 +588,24 @@ def get_device_index_of_device(device_name: str) -> int:
 
     msg = "No suitable device found."
     raise RuntimeError(msg)
+
+
+def get_BQSKit_native_gates(provider: str) -> list[gates.Gate]:
+    """Returns the native gates of the given provider.
+
+    Args:
+        provider (str): The name of the provider.
+
+    Returns:
+        list[gates.Gate]: The native gates of the given provider.
+    """
+
+    native_gatesets = {
+        "ibm": [gates.RZGate(), gates.SXGate(), gates.XGate(), gates.CNOTGate()],
+        "rigetti": [gates.RXGate(), gates.RZGate(), gates.CZGate()],
+        "ionq": [gates.RXXGate(), gates.RZGate(), gates.RYGate(), gates.RXGate()],
+        #"oqc": [gates.RZGate(), gates.SXGate(), gates.XGate(), gates.ECR()], # to be added when ECR is available
+        "quantinuum": [gates.RZZGate(), gates.RZGate(), gates.RYGate(), gates.RXGate()],
+    }
+
+    return native_gatesets[provider]
