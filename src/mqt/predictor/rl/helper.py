@@ -207,8 +207,8 @@ def get_actions_opt() -> list[dict[str, Any]]:
             "do_while": lambda property_set: (not property_set["optimization_loop_minimum_point"]),
         },
         {
-            "name": "BQSKitO3",
-            "transpile_pass": lambda circuit: [bqskit_compile(circuit, optimization_level=3)],
+            "name": "BQSKitO2",
+            "transpile_pass": lambda circuit: [bqskit_compile(circuit, optimization_level=2)],
             "origin": "bqskit",
         },
     ]
