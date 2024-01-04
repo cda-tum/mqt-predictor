@@ -604,7 +604,7 @@ def get_BQSKit_native_gates(provider: str) -> list[gates.Gate]:
         "ibm": [gates.RZGate(), gates.SXGate(), gates.XGate(), gates.CNOTGate()],
         "rigetti": [gates.RXGate(), gates.RZGate(), gates.CZGate()],
         "ionq": [gates.RXXGate(), gates.RZGate(), gates.RYGate(), gates.RXGate()],
-        #"oqc": [gates.RZGate(), gates.SXGate(), gates.XGate(), gates.ECR()], # to be added when ECR is available
+        # "oqc": [gates.RZGate(), gates.SXGate(), gates.XGate(), gates.ECR()], # to be added when ECR is available
         "quantinuum": [gates.RZZGate(), gates.RZGate(), gates.RYGate(), gates.RXGate()],
     }
 
