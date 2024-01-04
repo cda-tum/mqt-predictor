@@ -590,7 +590,7 @@ def get_device_index_of_device(device_name: str) -> int:
     raise RuntimeError(msg)
 
 
-def get_BQSKit_native_gates(provider: str) -> list[gates.Gate]:
+def get_BQSKit_native_gates(provider: str) -> list[gates.Gate] | None:
     """Returns the native gates of the given provider.
 
     Args:
@@ -604,8 +604,11 @@ def get_BQSKit_native_gates(provider: str) -> list[gates.Gate]:
         "ibm": [gates.RZGate(), gates.SXGate(), gates.XGate(), gates.CNOTGate()],
         "rigetti": [gates.RXGate(), gates.RZGate(), gates.CZGate()],
         "ionq": [gates.RXXGate(), gates.RZGate(), gates.RYGate(), gates.RXGate()],
-        #"oqc": [gates.RZGate(), gates.SXGate(), gates.XGate(), gates.ECR()], # to be added when ECR is available
         "quantinuum": [gates.RZZGate(), gates.RZGate(), gates.RYGate(), gates.RXGate()],
     }
+
+    if provider not in native_gatesets:
+        logger.warning("No native gateset for provider " + provider + " found. No native gateset is used.")
+        return None
 
     return native_gatesets[provider]
