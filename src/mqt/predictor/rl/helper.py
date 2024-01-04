@@ -68,11 +68,12 @@ else:
     import importlib_metadata as metadata
     import importlib_resources as resources
 
+from bqskit import compile as bqskit_compile
 
 logger = logging.getLogger("mqt-predictor")
 
 
-NUM_ACTIONS_OPT = 13
+NUM_ACTIONS_OPT = 14
 NUM_ACTIONS_LAYOUT = 3
 NUM_ACTIONS_ROUTING = 4
 NUM_ACTIONS_SYNTHESIS = 1
@@ -204,6 +205,11 @@ def get_actions_opt() -> list[dict[str, Any]]:
             ],
             "origin": "qiskit",
             "do_while": lambda property_set: (not property_set["optimization_loop_minimum_point"]),
+        },
+        {
+            "name": "BQSKitO3",
+            "transpile_pass": lambda circuit: [bqskit_compile(circuit, optimization_level=3)],
+            "origin": "bqskit",
         },
     ]
 

@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 import numpy as np
+from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
@@ -83,6 +84,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
     def step(self, action: int) -> tuple[dict[str, Any], float, bool, bool, dict[Any, Any]]:
         """Executes the given action and returns the new state, the reward, whether the episode is done, whether the episode is truncated and additional information."""
         self.used_actions.append(str(self.action_set[action].get("name")))
+        print("Step: " + str(self.num_steps) + " " + str(self.action_set[action].get("name")))
         altered_qc = self.apply_action(action)
         if not altered_qc:
             return (
@@ -219,6 +221,20 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 except Exception:
                     logger.exception(
                         "Error in executing TKET transpile  pass for {action} at step {i} for {filename}".format(
+                            action=action["name"], i=self.num_steps, filename=self.filename
+                        )
+                    )
+                    self.error_occured = True
+                    return None
+
+            elif action["origin"] == "bqskit":
+                try:
+                    bqskit_qc = qiskit_to_bqskit(self.state)
+                    transpile_pass(bqskit_qc)
+                    altered_qc = bqskit_to_qiskit(bqskit_qc)
+                except Exception:
+                    logger.exception(
+                        "Error in executing BQSKit transpile  pass for {action} at step {i} for {filename}".format(
                             action=action["name"], i=self.num_steps, filename=self.filename
                         )
                     )
