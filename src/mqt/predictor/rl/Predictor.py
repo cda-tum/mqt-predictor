@@ -26,7 +26,6 @@ class Predictor:
         self.env = rl.PredictorEnv(reward_function=figure_of_merit, device_name=device_name)
         self.device_name = device_name
         self.figure_of_merit = figure_of_merit
-        self.env.action_space.seed(0)
 
     def load_model(self) -> None:
         self.model = rl.helper.load_model("model_" + self.figure_of_merit + "_" + self.device_name)
