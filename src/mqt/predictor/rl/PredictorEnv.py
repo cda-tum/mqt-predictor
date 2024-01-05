@@ -184,6 +184,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     transpile_pass = action["transpile_pass"](self.device["native_gates"])
                 elif action["origin"] == "bqskit":
                     transpile_pass = action["transpile_pass"](self.state.num_qubits, self.device["name"].split("_")[0])
+                else:
+                    error_msg = f"Origin {action['origin']} not supported."
+                    raise ValueError(error_msg)
             else:
                 transpile_pass = action["transpile_pass"]
             if action["origin"] == "qiskit":
