@@ -372,19 +372,21 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
         file_list = list(get_path_training_circuits().glob("*.qasm"))
         assert len(file_list) > 0
 
-    found_suitable_qc = False
-    while not found_suitable_qc:
-        random_index = np.random.randint(len(file_list))
-        num_qubits = int(str(file_list[random_index]).split("_")[-1].split(".")[0])
-        if max_qubits and num_qubits > max_qubits:
-            continue
-        found_suitable_qc = True
-    from qiskit import qpy
+    # found_suitable_qc = False
+    # while not found_suitable_qc:
+    #     random_index = np.random.randint(len(file_list))
+    #     num_qubits = int(str(file_list[random_index]).split("_")[-1].split(".")[0])
+    #     if max_qubits and num_qubits > max_qubits:
+    #         continue
+    #     found_suitable_qc = True
+    # from qiskit import qpy
+    random_index = np.random.randint(len(file_list))
     try:
         qc = QuantumCircuit.from_qasm_file(str(file_list[random_index]))
     # print(str(file_list[random_index]))
     # with open(str(file_list[random_index]), "rb") as qpy_file_read:
     #     qc = qpy.load(qpy_file_read)[0]
+    #     print("file: ", str(file_list[random_index]))
     except Exception:
        raise RuntimeError("Could not read QuantumCircuit from: " + str(file_list[random_index])) from None
 
