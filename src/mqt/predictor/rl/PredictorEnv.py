@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 import numpy as np
+from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
@@ -179,7 +180,13 @@ class PredictorEnv(Env):  # type: ignore[misc]
             ):
                 transpile_pass = action["transpile_pass"](self.device["cmap"])
             elif action_index in self.actions_synthesis_indices:
-                transpile_pass = action["transpile_pass"](self.device["native_gates"])
+                if action["origin"] == "qiskit":
+                    transpile_pass = action["transpile_pass"](self.device["native_gates"])
+                elif action["origin"] == "bqskit":
+                    transpile_pass = action["transpile_pass"](self.state.num_qubits, self.device["name"].split("_")[0])
+                else:
+                    error_msg = f"Origin {action['origin']} not supported."
+                    raise ValueError(error_msg)
             else:
                 transpile_pass = action["transpile_pass"]
             if action["origin"] == "qiskit":
@@ -187,7 +194,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     if action["name"] == "QiskitO3":
                         pm = PassManager()
                         pm.append(
-                            action["transpile_pass"](self.device["native_gates"], CouplingMap(self.device["cmap"])),
+                            action["transpile_pass"],
                             do_while=action["do_while"],
                         )
                     else:
@@ -219,6 +226,19 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 except Exception:
                     logger.exception(
                         "Error in executing TKET transpile  pass for {action} at step {i} for {filename}".format(
+                            action=action["name"], i=self.num_steps, filename=self.filename
+                        )
+                    )
+                    self.error_occured = True
+                    return None
+
+            elif action["origin"] == "bqskit":
+                try:
+                    bqskit_qc = qiskit_to_bqskit(self.state)
+                    altered_qc = bqskit_to_qiskit(transpile_pass(bqskit_qc))
+                except Exception:
+                    logger.exception(
+                        "Error in executing BQSKit transpile  pass for {action} at step {i} for {filename}".format(
                             action=action["name"], i=self.num_steps, filename=self.filename
                         )
                     )

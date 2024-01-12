@@ -37,7 +37,6 @@ from qiskit.transpiler.passes import (
     EnlargeWithAncilla,
     FixedPoint,
     FullAncillaAllocation,
-    GatesInBasis,
     InverseCancellation,
     MinimumPoint,
     Optimize1qGatesDecomposition,
@@ -50,8 +49,6 @@ from qiskit.transpiler.passes import (
     TrivialLayout,
     UnitarySynthesis,
 )
-from qiskit.transpiler.preset_passmanagers import common
-from qiskit.transpiler.runningpassmanager import ConditionalController
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
@@ -68,13 +65,17 @@ else:
     import importlib_metadata as metadata
     import importlib_resources as resources
 
+from bqskit import MachineModel
+from bqskit import compile as bqskit_compile
+from bqskit.ir import gates
+
 logger = logging.getLogger("mqt-predictor")
 
 
-NUM_ACTIONS_OPT = 13
+NUM_ACTIONS_OPT = 14
 NUM_ACTIONS_LAYOUT = 3
 NUM_ACTIONS_ROUTING = 4
-NUM_ACTIONS_SYNTHESIS = 1
+NUM_ACTIONS_SYNTHESIS = 2
 NUM_ACTIONS_TERMINATE = 1
 NUM_ACTIONS_DEVICES = 7
 NUM_ACTIONS_MAPPING = 1
@@ -83,8 +84,8 @@ NUM_FEATURE_VECTOR_ELEMENTS = 7
 
 def qcompile(
     qc: QuantumCircuit | str,
-    figure_of_merit: reward.figure_of_merit = "expected_fidelity",
-    device_name: str = "ibm_washington",
+    figure_of_merit: reward.figure_of_merit | None = "expected_fidelity",
+    device_name: str | None = "ibm_washington",
     predictor_singleton: rl.Predictor | None = None,
 ) -> tuple[QuantumCircuit, list[str]]:
     """Compiles a given quantum circuit to a device optimizing for the given figure of merit.
@@ -93,13 +94,19 @@ def qcompile(
         qc (QuantumCircuit | str): The quantum circuit to be compiled. If a string is given, it is assumed to be a path to a qasm file.
         figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
         device_name (str, optional): The name of the device to compile to. Defaults to "ibm_washington".
-        predictor_singleton (rl.Predictor, optional): A predictor object that is used for compilation. If None, a new predictor object is created. Defaults to None.
+        predictor_singleton (rl.Predictor, optional): A predictor object that is used for compilation to reduce compilation time when compiling multiple quantum circuits. If None, a new predictor object is created. Defaults to None.
 
     Returns:
         tuple[QuantumCircuit, list[str]] | bool: Returns a tuple containing the compiled quantum circuit and the compilation information. If compilation fails, False is returned.
     """
 
     if predictor_singleton is None:
+        if figure_of_merit is None:
+            msg = "figure_of_merit must not be None if predictor_singleton is None."
+            raise ValueError(msg)
+        if device_name is None:
+            msg = "device_name must not be None if predictor_singleton is None."
+            raise ValueError(msg)
         predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device_name)
     else:
         predictor = predictor_singleton
@@ -172,23 +179,12 @@ def get_actions_opt() -> list[dict[str, Any]]:
         },
         {
             "name": "QiskitO3",
-            "transpile_pass": lambda bgates, cmap: [
+            "transpile_pass": [
                 Collect2qBlocks(),
-                ConsolidateBlocks(basis_gates=bgates),
-                UnitarySynthesis(basis_gates=bgates, coupling_map=cmap),
-                Optimize1qGatesDecomposition(basis=bgates),
-                CommutativeCancellation(basis_gates=bgates),
-                GatesInBasis(bgates),
-                ConditionalController(
-                    [
-                        pass_
-                        for x in common.generate_translation_passmanager(
-                            target=None, basis_gates=bgates, coupling_map=cmap
-                        ).passes()
-                        for pass_ in x["passes"]
-                    ],
-                    condition=lambda property_set: not property_set["all_gates_in_basis"],
-                ),
+                ConsolidateBlocks(),
+                UnitarySynthesis(),
+                Optimize1qGatesDecomposition(),
+                CommutativeCancellation(),
                 Depth(recurse=True),
                 FixedPoint("depth"),
                 Size(recurse=True),
@@ -197,6 +193,11 @@ def get_actions_opt() -> list[dict[str, Any]]:
             ],
             "origin": "qiskit",
             "do_while": lambda property_set: (not property_set["optimization_loop_minimum_point"]),
+        },
+        {
+            "name": "BQSKitO2",
+            "transpile_pass": lambda circuit: bqskit_compile(circuit, optimization_level=2),
+            "origin": "bqskit",
         },
     ]
 
@@ -286,6 +287,15 @@ def get_actions_synthesis() -> list[dict[str, Any]]:
             "name": "BasisTranslator",
             "transpile_pass": lambda g: [BasisTranslator(StandardEquivalenceLibrary, target_basis=g)],
             "origin": "qiskit",
+        },
+        {
+            "name": "BQSKitSynthesis",
+            "transpile_pass": lambda num_qubits, provider: lambda bqskit_circuit: bqskit_compile(
+                bqskit_circuit,
+                model=MachineModel(num_qubits, gate_set=get_BQSKit_native_gates(provider)),
+                optimization_level=2,
+            ),
+            "origin": "bqskit",
         },
     ]
 
@@ -577,3 +587,27 @@ def get_device_index_of_device(device_name: str) -> int:
 
     msg = "No suitable device found."
     raise RuntimeError(msg)
+
+
+def get_BQSKit_native_gates(provider: str) -> list[gates.Gate] | None:
+    """Returns the native gates of the given provider.
+
+    Args:
+        provider (str): The name of the provider.
+
+    Returns:
+        list[gates.Gate]: The native gates of the given provider.
+    """
+
+    native_gatesets = {
+        "ibm": [gates.RZGate(), gates.SXGate(), gates.XGate(), gates.CNOTGate()],
+        "rigetti": [gates.RXGate(), gates.RZGate(), gates.CZGate()],
+        "ionq": [gates.RXXGate(), gates.RZGate(), gates.RYGate(), gates.RXGate()],
+        "quantinuum": [gates.RZZGate(), gates.RZGate(), gates.RYGate(), gates.RXGate()],
+    }
+
+    if provider not in native_gatesets:
+        logger.warning("No native gateset for provider " + provider + " found. No native gateset is used.")
+        return None
+
+    return native_gatesets[provider]

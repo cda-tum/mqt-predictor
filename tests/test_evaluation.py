@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from qiskit import QuantumCircuit
+
 from mqt.bench import get_benchmark
-from mqt.predictor import rl
-from mqt.predictor.evaluation import evaluate_sample_circuit
+from mqt.predictor import Result, rl
+from mqt.predictor.evaluation import create_qiskit_result, create_tket_result, evaluate_sample_circuit
 
 
 def test_evaluate_sample_circuit() -> None:
@@ -25,3 +27,17 @@ def test_evaluate_sample_circuit() -> None:
     assert all(key in res for key in expected_keys)
     if Path(filename).exists():
         Path(filename).unlink()
+
+
+def test_false_input() -> None:
+    res = create_tket_result(QuantumCircuit(1000), rl.helper.get_devices()[0])
+    assert isinstance(res, Result)
+    assert res.compilation_time == -1.0
+    assert res.fidelity == -1.0
+    assert res.critical_depth == -1.0
+
+    res = create_qiskit_result(QuantumCircuit(1000), rl.helper.get_devices()[0])
+    assert isinstance(res, Result)
+    assert res.compilation_time == -1.0
+    assert res.fidelity == -1.0
+    assert res.critical_depth == -1.0

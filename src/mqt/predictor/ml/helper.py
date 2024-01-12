@@ -238,7 +238,7 @@ def save_training_data(
 
 def load_training_data(
     figure_of_merit: reward.figure_of_merit = "expected_fidelity",
-) -> tuple[NDArray[np.float_], list[str], list[NDArray[np.float_]]]:
+) -> tuple[list[NDArray[np.float_]], list[str], list[NDArray[np.float_]]]:
     """Loads and returns the training data from the training data folder.
 
     Args:
