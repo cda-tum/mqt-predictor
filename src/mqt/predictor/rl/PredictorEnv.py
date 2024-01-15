@@ -37,6 +37,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.actions_opt_indices = []
         self.used_actions: list[str] = []
         self.device = rl.helper.get_device(device_name)
+        self.ideal_circuit_histogram = None
 
         index = 0
 
@@ -122,6 +123,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
             return reward.expected_fidelity(self.state, self.device["name"])
         if self.reward_function == "critical_depth":
             return reward.crit_depth(self.state)
+        if self.reward_function == "hist_intersec":
+            return reward.hist_intersection(self.ideal_circuit_histogram, self.state)
         error_msg = f"Reward function {self.reward_function} not supported."  # type: ignore[unreachable]
         raise ValueError(error_msg)
 
@@ -151,11 +154,19 @@ class PredictorEnv(Env):  # type: ignore[misc]
         elif qc:
             self.state = QuantumCircuit.from_qasm_file(str(qc))
         else:
-            self.state, self.filename = rl.helper.get_state_sample(self.device["max_qubits"])
+            self.state, self.filename = rl.helper.get_state_sample()
 
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
         self.used_actions = []
+
+        if self.reward_function == "hist_intersec":
+            from qiskit import Aer, execute
+
+            ideal_counts = (
+                execute(self.state, backend=Aer.get_backend("aer_simulator"), seed_simulator=10).result().get_counts()
+            )
+            self.ideal_circuit_histogram = ideal_counts
 
         self.layout = None
 

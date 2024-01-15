@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Literal, cast
+from typing import Literal, cast
 
 import numpy as np
+from qiskit import QuantumCircuit, execute
+from qiskit.providers.fake_provider import FakeGuadalupe
 
 from mqt.bench.utils import calc_qubit_index, calc_supermarq_features
 from mqt.predictor import Calibration
@@ -11,12 +13,28 @@ from mqt.predictor.utils import (
     get_rigetti_qubit_dict,
 )
 
-if TYPE_CHECKING:
-    from qiskit import QuantumCircuit
-
 logger = logging.getLogger("mqt-predictor")
 
-figure_of_merit = Literal["expected_fidelity", "critical_depth"]
+figure_of_merit = Literal["expected_fidelity", "critical_depth", "hist_intersec"]
+
+
+def hist_intersection(original_counts: dict[str, int], current_qc: QuantumCircuit) -> float:
+    current_counts = execute(current_qc, backend=FakeGuadalupe(), seed_simulator=10).result().get_counts()
+
+    all_keys = set(original_counts.keys()) | set(current_counts.keys())
+
+    ideal_counts_filled = {key: original_counts.get(key, 0) for key in all_keys}
+    counts_noisy_filled = {key: current_counts.get(key, 0) for key in all_keys}
+
+    assert len(ideal_counts_filled.values()) == len(counts_noisy_filled.values())
+
+    tmp_sum = 0
+    for i in range(len(ideal_counts_filled.values())):
+        tmp_sum += min(list(ideal_counts_filled.values())[i], list(counts_noisy_filled.values())[i])
+
+    res = tmp_sum / sum(original_counts.values())
+    print(res)
+    return res
 
 
 def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
@@ -228,11 +246,11 @@ def calc_expected_fidelity_ibm(qc: QuantumCircuit, device_name: str) -> float:
                         )
                         print("ERROR OCCURRED")
                         if device_name == "ibm_washington":
-                            specific_error = Calibration.get_mean_IBM_washington_cx_error()
+                            specific_error = Calibration.get_mean_ibm_washington_cx_error()
                         elif device_name == "ibm_montreal":
-                            specific_error = Calibration.get_mean_IBM_montreal_cx_error()
+                            specific_error = Calibration.get_mean_ibm_montreal_cx_error()
                         elif device_name == "ibm_guadalupe":
-                            specific_error = Calibration.get_mean_IBM_guadalupe_cx_error()
+                            specific_error = Calibration.get_mean_ibm_guadalupe_cx_error()
                 except Exception as e:
                     raise RuntimeError(
                         "Error in IBM backend.gate_error(): "

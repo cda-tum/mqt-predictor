@@ -10,7 +10,7 @@ else:
 from typing import TypedDict, cast
 
 import numpy as np
-from qiskit.providers.fake_provider import FakeMontreal, FakeWashington, FakeGuadalupe
+from qiskit.providers.fake_provider import FakeGuadalupe, FakeMontreal, FakeWashington
 
 
 class Calibration:
@@ -55,7 +55,7 @@ def get_mean_ibm_montreal_cx_error() -> float:
     return cast(float, np.mean(res))
 
 
-def get_mean_IBM_guadalupe_cx_error() -> float:
+def get_mean_ibm_guadalupe_cx_error() -> float:
     """Returns the mean cx error for the IBM Washington device."""
     cmap: list[list[int]] = FakeGuadalupe().configuration().coupling_map
     backend = FakeGuadalupe().properties()

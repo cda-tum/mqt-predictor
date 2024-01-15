@@ -102,7 +102,7 @@ class Predictor:
             gamma=0.98,
             n_steps=n_steps,
         )
-        model.learn(total_timesteps=timesteps, progress_bar=progress_bar)
+        model.learn(total_timesteps=timesteps, progress_bar=progress_bar, use_masking=True)
         model.save(
             rl.helper.get_path_trained_model() / (model_name + "_" + self.figure_of_merit + "_" + self.device_name)
         )
