@@ -3,6 +3,8 @@ from __future__ import annotations
 import sys
 from typing import Any
 
+from mqt.predictor.graph_helper import circuit_to_graph
+
 if sys.version_info < (3, 10, 0):
     import importlib_resources as resources
 else:
@@ -189,6 +191,12 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     ops_list = qc.count_ops()
     ops_list_dict = dict_to_featurevector(ops_list)
 
+    ops_list_encoding = ops_list_dict.copy()
+    ops_list_encoding["measure"] = 0  # add extra gate
+    # unique number for each gate {'measure': 0, 'cx': 1, ...}
+    for i, key in enumerate(ops_list_dict):
+        ops_list_encoding[key] = i
+
     feature_dict = {}
     for key in ops_list_dict:
         feature_dict[key] = float(ops_list_dict[key])
@@ -202,6 +210,7 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     feature_dict["entanglement_ratio"] = supermarq_features.entanglement_ratio
     feature_dict["parallelism"] = supermarq_features.parallelism
     feature_dict["liveness"] = supermarq_features.liveness
+    feature_dict["graph"] = circuit_to_graph(qc, ops_list_encoding)
     return feature_dict
 
 
@@ -228,7 +237,7 @@ def save_training_data(
         figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
     """
 
-    with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
+    with resources.as_file(get_path_training_data() / "training_data_graph") as path:
         data = np.asarray(training_data, dtype=object)
         np.save(str(path / ("training_data_" + figure_of_merit + ".npy")), data)
         data = np.asarray(names_list)
@@ -248,7 +257,7 @@ def load_training_data(
     Returns:
        tuple[NDArray[np.float_], list[str], list[NDArray[np.float_]]]: The training data, the names list and the scores list.
     """
-    with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
+    with resources.as_file(get_path_training_data() / "training_data_graph") as path:
         if (
             path.joinpath("training_data_" + figure_of_merit + ".npy").is_file()
             and path.joinpath("names_list_" + figure_of_merit + ".npy").is_file()
