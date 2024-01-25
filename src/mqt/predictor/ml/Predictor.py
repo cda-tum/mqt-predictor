@@ -16,6 +16,7 @@ from mqt.predictor import ml, reward, rl, utils
 
 if TYPE_CHECKING:
     from numpy._typing import NDArray
+    from torch_geometric.data import Data  # type: ignore[import-not-found]
 
 plt.rcParams["font.family"] = "Times New Roman"
 
@@ -365,9 +366,11 @@ class Predictor:
         scores_list: list[list[float]] = [[] for _ in range(len(raw_scores_list))]
         X_raw = list(unzipped_training_data_X)
         X_list: list[list[float]] = [[] for _ in range(len(X_raw))]
+        X_last: list[Data] = [None for _ in range(len(X_raw))]
         y_list = list(unzipped_training_data_Y)
         for i in range(len(X_raw)):
-            X_list[i] = list(X_raw[i])
+            X_list[i] = list(X_raw[i][:-1])  # all but graph
+            X_last[i] = X_raw[i][-1]  # graph feature
             scores_list[i] = list(raw_scores_list[i])
 
         X, y, indices = np.array(X_list), np.array(y_list), np.array(range(len(y_list)))
@@ -383,6 +386,8 @@ class Predictor:
                 data,
             )
 
+        # Overwrite X with graph features only
+        X = X_last  # type: ignore[assignment]
         (
             X_train,
             X_test,
@@ -390,7 +395,7 @@ class Predictor:
             y_test,
             indices_train,
             indices_test,
-        ) = train_test_split(X, y, indices, test_size=0.3, random_state=5)
+        ) = train_test_split(X, y, indices, test_size=0.5, random_state=5)
 
         return ml.helper.TrainingData(
             X_train,

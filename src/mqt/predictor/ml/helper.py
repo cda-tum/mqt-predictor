@@ -3,8 +3,6 @@ from __future__ import annotations
 import sys
 from typing import Any
 
-from mqt.predictor.graph_helper import circuit_to_graph
-
 if sys.version_info < (3, 10, 0):
     import importlib_resources as resources
 else:
@@ -21,6 +19,7 @@ from qiskit import QuantumCircuit
 from mqt.bench.devices import Device, get_available_devices
 from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import ml, reward, rl
+from mqt.predictor.graph_helper import circuit_to_graph
 
 if TYPE_CHECKING:
     from numpy._typing import NDArray
