@@ -39,6 +39,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.device = rl.helper.get_device(device_name)
         self.ideal_circuit_histogram = None
 
+        self.maxcut_adj_matrix = None
+        self.maxcut_best_value = None
+        self.maxcut_best_solution = None
+
         index = 0
 
         for elem in rl.helper.get_actions_synthesis():
@@ -85,6 +89,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
     def step(self, action: int) -> tuple[dict[str, Any], float, bool, bool, dict[Any, Any]]:
         """Executes the given action and returns the new state, the reward, whether the episode is done, whether the episode is truncated and additional information."""
         self.used_actions.append(str(self.action_set[action].get("name")))
+        print(self.state.count_ops())
+        print("step: " + str(self.num_steps) + " action: " + str(self.action_set[action].get("name")))
         altered_qc = self.apply_action(action)
         if not altered_qc:
             return (
@@ -125,6 +131,16 @@ class PredictorEnv(Env):  # type: ignore[misc]
             return reward.crit_depth(self.state)
         if self.reward_function == "hist_intersec":
             return reward.hist_intersection(self.ideal_circuit_histogram, self.state)
+        if self.reward_function == "maxcut":
+            reward_value, solution = reward.maxcut(self.state, self.maxcut_adj_matrix)
+
+            if self.maxcut_best_value is None or reward_value > self.maxcut_best_value:
+                self.maxcut_best_value = reward_value
+                self.maxcut_best_solution = solution
+                print("new best value: " + str(self.maxcut_best_value))
+                print("new best solution: " + str(self.maxcut_best_solution))
+
+            return reward_value
         error_msg = f"Reward function {self.reward_function} not supported."  # type: ignore[unreachable]
         raise ValueError(error_msg)
 
@@ -149,31 +165,41 @@ class PredictorEnv(Env):  # type: ignore[misc]
             tuple[QuantumCircuit, dict[str, Any]]: The initial state and additional information.
         """
         super().reset(seed=seed)
-        if isinstance(qc, QuantumCircuit):
-            self.state = qc
-        elif qc:
-            self.state = QuantumCircuit.from_qasm_file(str(qc))
-        else:
-            self.state, self.filename = rl.helper.get_state_sample()
 
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
         self.used_actions = []
-
-        if self.reward_function == "hist_intersec":
-            from qiskit import Aer, execute
-
-            ideal_counts = (
-                execute(self.state, backend=Aer.get_backend("aer_simulator"), seed_simulator=10).result().get_counts()
-            )
-            self.ideal_circuit_histogram = ideal_counts
-
         self.layout = None
-
         self.valid_actions = self.actions_opt_indices + self.actions_synthesis_indices
-
         self.error_occured = False
-        return rl.helper.create_feature_dict(self.state), {}
+
+        self.maxcut_adj_matrix = None
+        self.maxcut_best_value = None
+        self.maxcut_best_solution = None
+
+        print("figure_of_merit: " + str(self.reward_function))
+        if self.reward_function == "maxcut":
+            self.state, self.maxcut_adj_matrix = rl.helper.get_maxcut_ansatz_qc_and_problem_instance()
+            return rl.helper.create_feature_dict(self.state), {}
+        else:
+            if isinstance(qc, QuantumCircuit):
+                self.state = qc
+            elif qc:
+                self.state = QuantumCircuit.from_qasm_file(str(qc))
+            else:
+                self.state, self.filename = rl.helper.get_state_sample()
+
+            if self.reward_function == "hist_intersec":
+                from qiskit import Aer, execute
+
+                ideal_counts = (
+                    execute(self.state, backend=Aer.get_backend("aer_simulator"), seed_simulator=10)
+                    .result()
+                    .get_counts()
+                )
+                self.ideal_circuit_histogram = ideal_counts
+
+            return rl.helper.create_feature_dict(self.state), {}
 
     def action_masks(self) -> list[bool]:
         """Returns a list of valid actions for the current state."""
@@ -245,6 +271,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
             elif action["origin"] == "bqskit":
                 try:
+                    print(self.state.parameters)
                     bqskit_qc = qiskit_to_bqskit(self.state)
                     altered_qc = bqskit_to_qiskit(transpile_pass(bqskit_qc))
                 except Exception:

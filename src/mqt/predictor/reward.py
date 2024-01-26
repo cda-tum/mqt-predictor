@@ -15,7 +15,7 @@ from mqt.predictor.utils import (
 
 logger = logging.getLogger("mqt-predictor")
 
-figure_of_merit = Literal["expected_fidelity", "critical_depth", "hist_intersec"]
+figure_of_merit = Literal["expected_fidelity", "critical_depth", "hist_intersec", "max_cut"]
 
 
 def hist_intersection(original_counts: dict[str, int], current_qc: QuantumCircuit) -> float:
@@ -41,6 +41,36 @@ def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
     """Calculates the critical depth of a given quantum circuit."""
     supermarq_features = calc_supermarq_features(qc)
     return cast(float, np.round(1 - supermarq_features.critical_depth, precision))
+
+
+def maxcut(compiled_qc: QuantumCircuit, maxcut_adj_matrix) -> tuple[float, list[bool]]:
+    """Calculates the max cut of the considered problem."""
+
+    from qiskit.algorithms.minimum_eigensolvers import SamplingVQE
+    from qiskit.algorithms.optimizers import COBYLA
+    from qiskit.primitives import BackendSampler
+    from qiskit.providers.fake_provider import FakeMontreal
+    from qiskit_optimization.applications import Maxcut
+
+    max_cut = Maxcut(maxcut_adj_matrix)
+    qp = max_cut.to_quadratic_program()
+    qubitOp, offset = qp.to_ising()
+
+    print(qubitOp)
+    print(compiled_qc.draw())
+
+    qaoa = SamplingVQE(
+        sampler=BackendSampler(FakeMontreal(), skip_transpilation=True),
+        optimizer=COBYLA(maxiter=200),
+        ansatz=compiled_qc,
+    )
+    res = qaoa.compute_minimum_eigenvalue(qubitOp)
+    if res.best_measurement["bitstring"] == "0101":
+        return res.best_measurement["probability"], [False, True, False, True]
+    elif res.best_measurement["bitstring"] == "1010":
+        return res.best_measurement["probability"], [True, False, True, False]
+
+    return 0.0, [False, False, False, False]
 
 
 def expected_fidelity(qc: QuantumCircuit, device_name: str, precision: int = 10) -> float:
