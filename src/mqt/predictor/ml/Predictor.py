@@ -395,7 +395,7 @@ class Predictor:
             y_test,
             indices_train,
             indices_test,
-        ) = train_test_split(X, y, indices, test_size=0.5, random_state=5)
+        ) = train_test_split(X, y, indices, test_size=0.3, random_state=5)
 
         return ml.helper.TrainingData(
             X_train,

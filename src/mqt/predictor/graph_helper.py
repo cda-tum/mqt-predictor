@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import networkx as nx  # type: ignore[import-untyped]
-from qiskit.circuit import Clbit, Qubit
 from qiskit.converters import circuit_to_dag
 from qiskit.dagcircuit import DAGInNode, DAGOutNode
 from qiskit.transpiler.passes import RemoveBarriers
@@ -13,6 +12,7 @@ if TYPE_CHECKING:
     import rustworkx as rx
     import torch_geometric  # type: ignore[import-not-found]
     from qiskit import QuantumCircuit
+    from qiskit.circuit import Clbit, Qubit
 
 
 def rustworkx_to_networkx(graph: rx.PyDAG[Any, Any], ops_list_encoding: dict[str, int]) -> nx.MultiDiGraph | nx.DiGraph:
@@ -51,13 +51,13 @@ def rustworkx_to_networkx(graph: rx.PyDAG[Any, Any], ops_list_encoding: dict[str
         if not bit_dict.get(bit, False):
             bit_dict[bit] = count
             count += 1
-        bit_nr = bit_dict[bit]
+        # bit_nr = bit_dict[bit]
 
-        is_classic = 1 if isinstance(bit, Clbit) else 0
+        # is_classic = 1 if isinstance(bit, Clbit) else 0
 
         is_control = 1 if bit in control_dict.get(target, []) else 0
 
-        nx_graph.add_edge(source, target, bit_nr=bit_nr, is_classic=is_classic, is_control=is_control)
+        nx_graph.add_edge(source, target, is_control=is_control)  # , bit_nr=bit_nr, is_classic=is_classic,)
 
     return nx_graph
 

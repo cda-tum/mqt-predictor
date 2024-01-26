@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import torch  # type: ignore[import-not-found]
-from torch_geometric.data import Data, DataLoader, Dataset  # type: ignore[import-not-found]
+from torch_geometric.data import DataLoader, Dataset  # type: ignore[import-not-found]
 
 from mqt.predictor.ml.GNN import Net
 
@@ -25,13 +25,13 @@ class GNNClassifier:
         learning_rate: float = 1e-3,
         batch_size: int = 64,
         epochs: int = 10,
-        num_node_categories: int = 2,  # 42,  # distinct gate types (incl. 'id' and 'meas')
-        num_edge_categories: int = 2,  # 100,  # distinct wires (quantum + classical)
+        num_node_categories: int = 42,  # distinct gate types (incl. 'id' and 'meas')
+        num_edge_categories: int = 2,  # is_control. or 100,  #for  distinct wires (quantum + classical)
         node_embedding_dim: int = 4,  # dimension of the node embedding
         edge_embedding_dim: int = 4,  # dimension of the edge embedding
         num_layers: int = 2,  # number of nei aggregations
         hidden_dim: int = 16,  # dimension of the hidden layers
-        output_dim: int = 1,  # dimension of the output vector
+        output_dim: int = 7,  # dimension of the output vector
     ) -> None:
         self.set_params(
             optimizer=optimizer,
@@ -90,16 +90,19 @@ class GNNClassifier:
             for batch in loader:
                 self.optim.zero_grad()
                 out = self.model.forward(batch)
-                loss = torch.nn.MSELoss()(out, batch.y)
+                loss = torch.nn.MSELoss()(out.flatten(), batch.y)
                 loss.backward()
                 self.optim.step()
         return
 
-    def predict(self, data: Data) -> torch.Tensor:
+    def predict(self, dataset: Dataset) -> torch.Tensor:
         self.model.eval()
-        logits = self.model.forward(data)
-        return logits.argmax(dim=-1)
+        out = [self.model.forward(data) for data in dataset]
+        return torch.stack([o.argmax() for o in out])
 
-    def score(self, X: Data) -> float:
-        self.predict(X)
-        return 1.0
+    def score(self, dataset: Dataset) -> float:
+        pred = self.predict(dataset)
+        labels = torch.stack([data.y for data in dataset]).argmax(dim=1)
+        correct = pred.eq(labels).sum().item()
+        total = len(dataset)
+        return int(correct) / total
