@@ -3,7 +3,7 @@ from __future__ import annotations
 import torch  # type: ignore[import-not-found]
 import torch.nn as nn  # type: ignore[import-not-found]
 from torch_geometric.nn import (  # type: ignore[import-not-found]
-    GlobalAttention,
+    AttentionalAggregation,
     TransformerConv,
 )
 
@@ -32,7 +32,7 @@ class Net(torch.nn.Module):  # type: ignore[misc]
 
         self.gate_nn = torch.nn.Linear(hidden_dim, 1)
         self.nn = torch.nn.Linear(hidden_dim, output_dim)
-        self.global_attention = GlobalAttention(self.gate_nn, self.nn)
+        self.attention = AttentionalAggregation(self.gate_nn, self.nn)
 
     def forward(self, data: torch.Tensor) -> torch.Tensor:
         x, edge_index, edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
@@ -47,7 +47,7 @@ class Net(torch.nn.Module):  # type: ignore[misc]
             x = torch.nn.functional.relu(x)
 
         # Apply a readout layer to get a single vector that represents the entire graph
-        return self.global_attention(x, batch)
+        return self.attention(x, batch)
 
 
 #

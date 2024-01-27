@@ -122,7 +122,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
             return reward.expected_fidelity(self.state, self.device)
         if self.reward_function == "critical_depth":
             return reward.crit_depth(self.state)
-        error_msg = f"Reward function {self.reward_function} not supported."  # type: ignore[unreachable]
+        error_msg = f"Reward function {self.reward_function} not supported."
         raise ValueError(error_msg)
 
     def render(self) -> None:

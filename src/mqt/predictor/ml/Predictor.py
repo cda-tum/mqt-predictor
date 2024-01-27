@@ -11,7 +11,7 @@ from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from mqt.bench.devices import Device, get_available_devices
+from mqt.bench.devices import Device, get_available_devices, get_device_by_name
 from mqt.predictor import ml, reward, rl, utils
 
 if TYPE_CHECKING:
@@ -282,10 +282,24 @@ class Predictor:
             comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
             device = self.devices[comp_path_index]
             qc = QuantumCircuit.from_qasm_file(filename_str)
+
             if figure_of_merit == "critical_depth":
                 score = reward.crit_depth(qc)
             elif figure_of_merit == "expected_fidelity":
                 score = reward.expected_fidelity(qc, device)
+            elif figure_of_merit == "fidelity":  # old training data
+                num2name = {
+                    0: "ibm_washington",
+                    1: "ibm_montreal",
+                    2: "oqc_lucy",
+                    3: "rigetti_aspen_m2",
+                    4: "ionq_harmony",
+                    5: "ionq_aria1",
+                    6: "quantinuum_h2",
+                }
+                device = get_device_by_name(num2name[comp_path_index])
+                score = reward.expected_fidelity(qc, device)
+
             scores[comp_path_index] = score
 
         num_not_empty_entries = 0
