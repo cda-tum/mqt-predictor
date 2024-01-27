@@ -43,3 +43,10 @@ def test_false_input() -> None:
     assert res.compilation_time == -1.0
     assert res.fidelity == -1.0
     assert res.critical_depth == -1.0
+
+    devices[0].coupling_map = ["wrong_coupling_map"]
+    res = create_qiskit_result(QuantumCircuit(10), devices[0])
+    assert isinstance(res, Result)
+    assert res.compilation_time == -1.0
+    assert res.fidelity == -1.0
+    assert res.critical_depth == -1.0

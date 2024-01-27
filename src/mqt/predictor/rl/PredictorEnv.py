@@ -120,10 +120,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
         """Calculates and returns the reward for the current state."""
         if self.reward_function == "expected_fidelity":
             return reward.expected_fidelity(self.state, self.device)
-        if self.reward_function == "critical_depth":
-            return reward.crit_depth(self.state)
-        error_msg = f"Reward function {self.reward_function} not supported."  # type: ignore[unreachable]
-        raise ValueError(error_msg)
+        # else: can only be "critical_depth"
+        return reward.crit_depth(self.state)
 
     def render(self) -> None:
         """Renders the current state."""
