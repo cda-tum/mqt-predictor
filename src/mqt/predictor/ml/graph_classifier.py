@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import itertools
 from typing import TYPE_CHECKING
 
 import torch  # type: ignore[import-not-found]
@@ -24,6 +23,8 @@ class GNNClassifier:
     num_layers: int
     hidden_dim: int
     output_dim: int
+    dropout: float
+    batch_norm: bool
 
     def __init__(
         self,
@@ -38,6 +39,8 @@ class GNNClassifier:
         num_layers: int = 2,  # number of nei aggregations
         hidden_dim: int = 16,  # dimension of the hidden layers
         output_dim: int = 7,  # dimension of the output vector
+        dropout: float = 0.0,
+        batch_norm: bool = False,
     ) -> None:
         self.set_params(
             optimizer=optimizer,
@@ -51,6 +54,8 @@ class GNNClassifier:
             num_layers=num_layers,
             hidden_dim=hidden_dim,
             output_dim=output_dim,
+            dropout=dropout,
+            batch_norm=batch_norm,
         )
 
         # Initialize the model
@@ -62,6 +67,8 @@ class GNNClassifier:
             num_layers,
             hidden_dim,
             output_dim,
+            dropout=dropout,
+            batch_norm=batch_norm,
         )
         if optimizer == "adam":
             self.optim = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=5e-4)
@@ -83,6 +90,8 @@ class GNNClassifier:
             "num_layers": self.num_layers,
             "hidden_dim": self.hidden_dim,
             "output_dim": self.output_dim,
+            "dropout": self.dropout,
+            "batch_norm": self.batch_norm,
         }
 
     def set_params(self, **params: object) -> GNNClassifier:
@@ -115,19 +124,7 @@ class GNNClassifier:
         return int(correct) / total
 
 
-class MultiGNNClassifier:
-    optimizer: str
-    learning_rate: float
-    batch_size: int
-    epochs: int
-    num_node_categories: int
-    num_edge_categories: int
-    node_embedding_dim: int
-    edge_embedding_dim: int
-    num_layers: int
-    hidden_dim: int
-    output_dim: int
-
+class MultiGNNClassifier(GNNClassifier):
     def __init__(
         self,
         optimizer: str = "adam",
@@ -141,22 +138,26 @@ class MultiGNNClassifier:
         num_layers: int = 2,  # number of nei aggregations
         hidden_dim: int = 16,  # dimension of the hidden layers
         output_dim: int = 7,  # dimension of the output vector
+        dropout: float = 0.0,
+        batch_norm: bool = False,
     ) -> None:
-        self.set_params(
-            optimizer=optimizer,
-            learning_rate=learning_rate,
-            batch_size=batch_size,
-            epochs=epochs,
-            num_node_categories=num_node_categories,
-            num_edge_categories=num_edge_categories,
-            node_embedding_dim=node_embedding_dim,
-            edge_embedding_dim=edge_embedding_dim,
-            num_layers=num_layers,
-            hidden_dim=hidden_dim,
-            output_dim=output_dim,
+        super().__init__(
+            optimizer,
+            learning_rate,
+            batch_size,
+            epochs,
+            num_node_categories,
+            num_edge_categories,
+            node_embedding_dim,
+            edge_embedding_dim,
+            num_layers,
+            hidden_dim,
+            output_dim,
+            dropout,
+            batch_norm,
         )
 
-        # Initialize the model
+        # Initialize the models
         self.models = [
             Net(
                 num_node_categories,
@@ -166,40 +167,11 @@ class MultiGNNClassifier:
                 num_layers,
                 hidden_dim,
                 output_dim=1,
+                dropout=dropout,
+                batch_norm=batch_norm,
             )
             for _ in range(output_dim)
         ]
-
-        if optimizer == "adam":
-            self.optim = torch.optim.Adam(
-                itertools.chain(*[model.parameters() for model in self.models]), lr=learning_rate, weight_decay=5e-4
-            )
-        elif optimizer == "sgd":
-            self.optim = torch.optim.SGD(
-                itertools.chain(*[model.parameters() for model in self.models]), lr=learning_rate, momentum=0.9
-            )
-
-    def get_params(self, deep: bool = False) -> dict[str, object]:
-        if deep:
-            print("deep copy not implemented")
-        return {
-            "optimizer": self.optimizer,
-            "learning_rate": self.learning_rate,
-            "batch_size": self.batch_size,
-            "epochs": self.epochs,
-            "num_node_categories": self.num_node_categories,
-            "num_edge_categories": self.num_edge_categories,
-            "node_embedding_dim": self.node_embedding_dim,
-            "edge_embedding_dim": self.edge_embedding_dim,
-            "num_layers": self.num_layers,
-            "hidden_dim": self.hidden_dim,
-            "output_dim": self.output_dim,
-        }
-
-    def set_params(self, **params: object) -> MultiGNNClassifier:
-        for parameter, value in params.items():
-            setattr(self, parameter, value)
-        return self
 
     def fit(self, dataset: Dataset) -> None:
         for m in self.models:
@@ -209,8 +181,8 @@ class MultiGNNClassifier:
         for _ in range(self.epochs):
             for batch in loader:
                 self.optim.zero_grad()
-                out = torch.stack([model.forward(batch) for model in self.models])
-                loss = torch.nn.MSELoss()(out.flatten(), batch.y)
+                out = torch.hstack([model.forward(batch) for model in self.models])  # dim: (batch_size, len(models)=7)
+                loss = torch.nn.MSELoss()(out, batch.y.view(-1, len(self.models)))
                 loss.backward()
                 self.optim.step()
         return
@@ -225,10 +197,3 @@ class MultiGNNClassifier:
             pred.append(torch.tensor(out).argmax())
 
         return torch.stack(pred)
-
-    def score(self, dataset: Dataset) -> float:
-        pred = self.predict(dataset)
-        labels = torch.stack([data.y for data in dataset]).argmax(dim=1)
-        correct = pred.eq(labels).sum().item()
-        total = len(dataset)
-        return int(correct) / total

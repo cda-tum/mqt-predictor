@@ -21,14 +21,34 @@ class Net(torch.nn.Module):  # type: ignore[misc]
         num_layers: int,
         hidden_dim: int,
         output_dim: int,
+        dropout: float,
+        batch_norm: bool,
     ) -> None:
         super().__init__()
-        self.node_embedding = nn.Embedding(num_node_categories, node_embedding_dim)
-        self.edge_embedding = nn.Embedding(num_edge_categories, edge_embedding_dim)
+
+        self.node_embedding_dim = node_embedding_dim
+        self.edge_embedding_dim = edge_embedding_dim
+        self.dropout = dropout
+        self.batch_norm = batch_norm
+
+        if node_embedding_dim:
+            self.node_embedding = nn.Embedding(num_node_categories, node_embedding_dim)
+        if edge_embedding_dim:
+            self.edge_embedding = nn.Embedding(num_edge_categories, edge_embedding_dim)
+
+        if self.dropout > 0:
+            self.dropout_layer = torch.nn.Dropout(self.dropout)
+
+        if self.batch_norm:
+            self.batch_norm_layer = torch.nn.BatchNorm1d(hidden_dim)
 
         self.layers = []
         for _ in range(num_layers - 1):
-            self.layers.append(TransformerConv(-1, hidden_dim, edge_dim=edge_embedding_dim))
+            self.layers.append(
+                TransformerConv(
+                    -1, hidden_dim, edge_dim=edge_embedding_dim if edge_embedding_dim else num_edge_categories
+                )
+            )
 
         self.gate_nn = torch.nn.Linear(hidden_dim, 1)
         self.nn = torch.nn.Linear(hidden_dim, output_dim)
@@ -38,13 +58,20 @@ class Net(torch.nn.Module):  # type: ignore[misc]
         x, edge_index, edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
 
         # Apply the node and edge embeddings
-        x = self.node_embedding(x.int()).squeeze()
-        embedding = self.edge_embedding(edge_attr[:, 0].int())
-        edge_attr = torch.cat([embedding, edge_attr[:, 1:]], dim=1)
+        if self.node_embedding_dim:
+            x = self.node_embedding(x.int()).squeeze()
+        if self.edge_embedding_dim:
+            edge_attr = self.edge_embedding(edge_attr.int()).squeeze()
+        # embedding = self.edge_embedding(edge_attr[:, 0].int())
+        # edge_attr = torch.cat([embedding, edge_attr[:, 1:]], dim=1)
 
         for layer in self.layers:
             x = layer(x, edge_index, edge_attr)
             x = torch.nn.functional.relu(x)
+            if self.dropout > 0:
+                x = self.dropout_layer(x)
+            if self.batch_norm:
+                x = self.batch_norm_layer(x)
 
         # Apply a readout layer to get a single vector that represents the entire graph
         return self.attention(x, batch)
