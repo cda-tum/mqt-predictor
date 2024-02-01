@@ -44,7 +44,6 @@ from qiskit.transpiler.passes import (
     OptimizeCliffords,
     RemoveDiagonalGatesBeforeMeasure,
     SabreLayout,
-    SabreSwap,
     Size,
     StochasticSwap,
     TrivialLayout,
@@ -70,16 +69,6 @@ else:
 
 
 logger = logging.getLogger("mqt-predictor")
-
-
-NUM_ACTIONS_OPT = 13
-NUM_ACTIONS_LAYOUT = 3
-NUM_ACTIONS_ROUTING = 4
-NUM_ACTIONS_SYNTHESIS = 1
-NUM_ACTIONS_TERMINATE = 1
-NUM_ACTIONS_DEVICES = 7
-NUM_ACTIONS_MAPPING = 1
-NUM_FEATURE_VECTOR_ELEMENTS = 7
 
 
 def qcompile(
@@ -231,16 +220,6 @@ def get_actions_layout() -> list[dict[str, Any]]:
             ],
             "origin": "qiskit",
         },
-        {
-            "name": "SabreLayout",
-            "transpile_pass": lambda c: [
-                SabreLayout(coupling_map=CouplingMap(c), skip_routing=True),
-                FullAncillaAllocation(coupling_map=CouplingMap(c)),
-                EnlargeWithAncilla(),
-                ApplyLayout(),
-            ],
-            "origin": "qiskit",
-        },
     ]
 
 
@@ -263,11 +242,6 @@ def get_actions_routing() -> list[dict[str, Any]]:
         {
             "name": "StochasticSwap",
             "transpile_pass": lambda c: [StochasticSwap(coupling_map=CouplingMap(c))],
-            "origin": "qiskit",
-        },
-        {
-            "name": "SabreSwap",
-            "transpile_pass": lambda c: [SabreSwap(coupling_map=CouplingMap(c))],
             "origin": "qiskit",
         },
     ]
