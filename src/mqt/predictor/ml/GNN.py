@@ -2,10 +2,7 @@ from __future__ import annotations
 
 import torch  # type: ignore[import-not-found]
 import torch.nn as nn  # type: ignore[import-not-found]
-from torch_geometric.nn import (  # type: ignore[import-not-found]
-    AttentionalAggregation,
-    TransformerConv,
-)
+from torch_geometric.nn import AttentionalAggregation, TransformerConv, functional  # type: ignore[import-not-found]
 
 # import gymnasium
 # from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
@@ -24,6 +21,7 @@ class Net(torch.nn.Module):  # type: ignore[misc]
         dropout: float,
         batch_norm: bool,
         activation: str,
+        readout: str = "mean",
     ) -> None:
         super().__init__()
 
@@ -58,9 +56,14 @@ class Net(torch.nn.Module):  # type: ignore[misc]
                 )
             )
 
-        self.gate_nn = torch.nn.Linear(hidden_dim, 1)
-        self.nn = torch.nn.Linear(hidden_dim, output_dim)
-        self.attention = AttentionalAggregation(self.gate_nn, self.nn)
+        if readout == "attention":
+            self.gate_nn = torch.nn.Linear(hidden_dim, 1)
+            self.nn = torch.nn.Linear(hidden_dim, output_dim)
+            self.readout = AttentionalAggregation(self.gate_nn, self.nn)
+        elif readout == "mean":
+            self.readout = functional.global_mean_pool
+        elif readout == "max":
+            self.readout = functional.global_max_pool
 
     def forward(self, data: torch.Tensor) -> torch.Tensor:
         x, edge_index, edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
@@ -70,8 +73,6 @@ class Net(torch.nn.Module):  # type: ignore[misc]
             x = self.node_embedding(x.int()).squeeze()
         if self.edge_embedding_dim:
             edge_attr = self.edge_embedding(edge_attr.int()).squeeze()
-        # embedding = self.edge_embedding(edge_attr[:, 0].int())
-        # edge_attr = torch.cat([embedding, edge_attr[:, 1:]], dim=1)
 
         for layer in self.layers:
             x = layer(x, edge_index, edge_attr)
@@ -82,7 +83,7 @@ class Net(torch.nn.Module):  # type: ignore[misc]
                 x = self.batch_norm_layer(x)
 
         # Apply a readout layer to get a single vector that represents the entire graph
-        return self.attention(x, batch)
+        return self.readout(x, batch)
 
 
 #
