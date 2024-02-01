@@ -42,6 +42,7 @@ class GNNClassifier:
         dropout: float = 0.0,
         batch_norm: bool = False,
         activation: str = "relu",
+        readout: str = "mean",
     ) -> None:
         self.set_params(
             optimizer=optimizer,
@@ -58,6 +59,7 @@ class GNNClassifier:
             dropout=dropout,
             batch_norm=batch_norm,
             activation=activation,
+            readout=readout,
         )
 
         # Initialize the model
@@ -72,6 +74,7 @@ class GNNClassifier:
             dropout=dropout,
             batch_norm=batch_norm,
             activation=activation,
+            readout=readout,
         )
         if optimizer == "adam":
             self.optim = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=5e-4)
@@ -144,6 +147,7 @@ class MultiGNNClassifier(GNNClassifier):
         dropout: float = 0.0,
         batch_norm: bool = False,
         activation: str = "relu",
+        readout: str = "mean",
     ) -> None:
         super().__init__(
             optimizer,
@@ -160,6 +164,7 @@ class MultiGNNClassifier(GNNClassifier):
             dropout,
             batch_norm,
             activation,
+            readout,
         )
 
         # one model for each output
@@ -175,6 +180,7 @@ class MultiGNNClassifier(GNNClassifier):
                 dropout=dropout,
                 batch_norm=batch_norm,
                 activation=activation,
+                readout=readout,
             )
             for _ in range(output_dim)
         ]
