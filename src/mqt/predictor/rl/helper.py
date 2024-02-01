@@ -44,14 +44,11 @@ from qiskit.transpiler.passes import (
     OptimizeCliffords,
     RemoveDiagonalGatesBeforeMeasure,
     SabreLayout,
-    SabreSwap,
     Size,
     StochasticSwap,
     TrivialLayout,
     UnitarySynthesis,
 )
-from qiskit.transpiler.preset_passmanagers import common
-from qiskit.transpiler.runningpassmanager import ConditionalController
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
@@ -77,8 +74,6 @@ from qiskit.transpiler.preset_passmanagers import common
 from qiskit.transpiler.runningpassmanager import ConditionalController
 
 logger = logging.getLogger("mqt-predictor")
-
-
 
 
 def qcompile(
