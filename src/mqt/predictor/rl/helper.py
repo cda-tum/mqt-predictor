@@ -37,7 +37,6 @@ from qiskit.transpiler.passes import (
     EnlargeWithAncilla,
     FixedPoint,
     FullAncillaAllocation,
-    GatesInBasis,
     InverseCancellation,
     MinimumPoint,
     Optimize1qGatesDecomposition,
@@ -49,8 +48,6 @@ from qiskit.transpiler.passes import (
     TrivialLayout,
     UnitarySynthesis,
 )
-from qiskit.transpiler.preset_passmanagers import common
-from qiskit.transpiler.runningpassmanager import ConditionalController
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
@@ -67,6 +64,9 @@ else:
     import importlib_metadata as metadata
     import importlib_resources as resources
 
+
+from qiskit import QuantumRegister
+from qiskit.transpiler.layout import Layout
 
 logger = logging.getLogger("mqt-predictor")
 
@@ -488,10 +488,59 @@ def handle_downloading_model(download_url: str, model_name: str) -> None:
 
 class PreProcessTKETRoutingAfterQiskitLayout:
     """
-    Pre-processing step to route a circuit with tket after a Qiskit Layout pass has been applied.
-    The reason why we can apply the trivial layout here is that the circuit is already mapped by qiskit to the
-    device qubits and its qubits are sorted by their ascending physical qubit indices.
-    The trivial layout indices that this layout of the physical qubits is the identity mapping.
+        Pre-processing step to route a circuit with TKET after a Qiskit Layout pass has been applied.
+        The reason why we can apply the trivial layout here is that the circuit already got assigned a layout by qiskit.
+        Implicitly, Qiskit is reordering its qubits in a sequential manner, i.e., the qubit with the lowest *physical* qubit
+        first.
+
+        Assuming, the layouted circuit is given by
+
+                       ┌───┐           ░       ┌─┐
+              q_2 -> 0 ┤ H ├──■────────░───────┤M├
+                       └───┘┌─┴─┐      ░    ┌─┐└╥┘
+              q_1 -> 1 ─────┤ X ├──■───░────┤M├─╫─
+                            └───┘┌─┴─┐ ░ ┌─┐└╥┘ ║
+              q_0 -> 2 ──────────┤ X ├─░─┤M├─╫──╫─
+                                 └───┘ ░ └╥┘ ║  ║
+        ancilla_0 -> 3 ───────────────────╫──╫──╫─
+                                          ║  ║  ║
+        ancilla_1 -> 4 ───────────────────╫──╫──╫─
+                                          ║  ║  ║
+               meas: 3/═══════════════════╩══╩══╩═
+                                          0  1  2
+
+        Applying the trivial layout, we get the same qubit order as in the original circuit and can be respectively
+        routed. This results int:
+                ┌───┐           ░       ┌─┐
+           q_0: ┤ H ├──■────────░───────┤M├
+                └───┘┌─┴─┐      ░    ┌─┐└╥┘
+           q_1: ─────┤ X ├──■───░────┤M├─╫─
+                     └───┘┌─┴─┐ ░ ┌─┐└╥┘ ║
+           q_2: ──────────┤ X ├─░─┤M├─╫──╫─
+                          └───┘ ░ └╥┘ ║  ║
+           q_3: ───────────────────╫──╫──╫─
+                                   ║  ║  ║
+           q_4: ───────────────────╫──╫──╫─
+                                   ║  ║  ║
+        meas: 3/═══════════════════╩══╩══╩═
+                                   0  1  2
+
+
+        If we would not apply the trivial layout, no layout would be considered resulting, e.g., in the followiong circuit:
+                 ┌───┐         ░    ┌─┐
+       q_0: ─────┤ X ├─────■───░────┤M├───
+            ┌───┐└─┬─┘   ┌─┴─┐ ░ ┌─┐└╥┘
+       q_1: ┤ H ├──■───X─┤ X ├─░─┤M├─╫────
+            └───┘      │ └───┘ ░ └╥┘ ║ ┌─┐
+       q_2: ───────────X───────░──╫──╫─┤M├
+                               ░  ║  ║ └╥┘
+       q_3: ──────────────────────╫──╫──╫─
+                                  ║  ║  ║
+       q_4: ──────────────────────╫──╫──╫─
+                                  ║  ║  ║
+    meas: 3/══════════════════════╩══╩══╩═
+                                  0  1  2
+
     """
 
     def apply(self, circuit: Circuit) -> None:
@@ -534,3 +583,22 @@ def get_device_index_of_device(device_name: str) -> int:
 
     msg = "No suitable device found."
     raise RuntimeError(msg)
+
+
+def final_layout_pytket_to_qiskit(pytket_circuit: Circuit) -> Layout:
+    pytket_layout = pytket_circuit.qubit_readout
+    size_circuit = pytket_circuit.n_qubits
+    qiskit_layout = Layout()
+    qiskit_qreg = QuantumRegister(size_circuit, "q")
+
+    pytket_layout = dict(sorted(pytket_layout.items(), key=lambda item: item[1]))
+
+    for node, qubit_index in pytket_layout.items():
+        new_index = node.index[0]
+        qiskit_layout[new_index] = qiskit_qreg[qubit_index]
+
+    for i in range(size_circuit):
+        if i not in set(pytket_layout.values()):
+            qiskit_layout[i] = qiskit_qreg[i]
+
+    return qiskit_layout
