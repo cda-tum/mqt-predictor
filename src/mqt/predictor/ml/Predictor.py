@@ -367,13 +367,17 @@ class Predictor:
         return self.clf is not None
 
     def get_prepared_training_data(
-        self, figure_of_merit: reward.figure_of_merit, save_non_zero_indices: bool = False
+        self,
+        figure_of_merit: reward.figure_of_merit,
+        save_non_zero_indices: bool = False,
+        graph_only: bool = False,
     ) -> ml.helper.TrainingData:
         """Prepares the training data for the given figure of merit.
 
         Args:
             figure_of_merit (reward.reward_functions): The figure of merit to be used for training.
             save_non_zero_indices (bool, optional): Whether to save the non zero indices. Defaults to False.
+            graph_only (bool, optional): Whether to use only the graph feature. If false, all features except for graph are used.
 
         Returns:
             ml.helper.TrainingData: The prepared training data.
@@ -383,11 +387,13 @@ class Predictor:
         scores_list: list[list[float]] = [[] for _ in range(len(raw_scores_list))]
         X_raw = list(unzipped_training_data_X)
         X_list: list[list[float]] = [[] for _ in range(len(X_raw))]
-        X_last: list[Data] = [None for _ in range(len(X_raw))]
+        if graph_only:
+            X_graph: list[Data] = [None for _ in range(len(X_raw))]
         y_list = list(unzipped_training_data_Y)
         for i in range(len(X_raw)):
             X_list[i] = list(X_raw[i][:-1])  # all but graph
-            X_last[i] = X_raw[i][-1]  # graph feature
+            if graph_only:
+                X_graph[i] = X_raw[i][-1]  # graph feature
             scores_list[i] = list(raw_scores_list[i])
 
         X, y, indices = np.array(X_list), np.array(y_list), np.array(range(len(y_list)))
@@ -404,7 +410,8 @@ class Predictor:
             )
 
         # Overwrite X with graph features only
-        X = X_last  # type: ignore[assignment]
+        if graph_only:
+            X = X_graph  # type: ignore[assignment]
         (
             X_train,
             X_test,

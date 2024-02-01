@@ -23,6 +23,7 @@ class Net(torch.nn.Module):  # type: ignore[misc]
         output_dim: int,
         dropout: float,
         batch_norm: bool,
+        activation: str,
     ) -> None:
         super().__init__()
 
@@ -41,6 +42,13 @@ class Net(torch.nn.Module):  # type: ignore[misc]
 
         if self.batch_norm:
             self.batch_norm_layer = torch.nn.BatchNorm1d(hidden_dim)
+
+        if activation == "relu":
+            self.activation = torch.nn.functional.relu
+        elif activation == "leaky_relu":
+            self.activation = torch.nn.functional.leaky_relu
+        elif activation == "tanh":
+            self.activation = torch.nn.functional.tanh
 
         self.layers = []
         for _ in range(num_layers - 1):
@@ -67,7 +75,7 @@ class Net(torch.nn.Module):  # type: ignore[misc]
 
         for layer in self.layers:
             x = layer(x, edge_index, edge_attr)
-            x = torch.nn.functional.relu(x)
+            x = self.activation(x)
             if self.dropout > 0:
                 x = self.dropout_layer(x)
             if self.batch_norm:
