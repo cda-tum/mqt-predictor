@@ -65,7 +65,6 @@ else:
     import importlib_metadata as metadata
     import importlib_resources as resources
 
-from bqskit import MachineModel
 from bqskit import compile as bqskit_compile
 from bqskit.ir import gates
 from qiskit import QuantumRegister
@@ -199,6 +198,11 @@ def get_actions_opt() -> list[dict[str, Any]]:
             "origin": "qiskit",
             "do_while": lambda property_set: (not property_set["optimization_loop_minimum_point"]),
         },
+    ]
+
+
+def get_actions_opt_before_layout() -> list[dict[str, Any]]:
+    return [
         {
             "name": "BQSKitO2",
             "transpile_pass": lambda circuit: bqskit_compile(circuit, optimization_level=2),
@@ -277,15 +281,6 @@ def get_actions_synthesis() -> list[dict[str, Any]]:
             "name": "BasisTranslator",
             "transpile_pass": lambda g: [BasisTranslator(StandardEquivalenceLibrary, target_basis=g)],
             "origin": "qiskit",
-        },
-        {
-            "name": "BQSKitSynthesis",
-            "transpile_pass": lambda num_qubits, provider: lambda bqskit_circuit: bqskit_compile(
-                bqskit_circuit,
-                model=MachineModel(num_qubits, gate_set=get_BQSKit_native_gates(provider)),
-                optimization_level=2,
-            ),
-            "origin": "bqskit",
         },
     ]
 

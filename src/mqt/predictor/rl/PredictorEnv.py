@@ -36,6 +36,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.actions_routing_indices = []
         self.actions_mapping_indices = []
         self.actions_opt_indices = []
+        self.actions_opt_indices_before_layout = []
         self.used_actions: list[str] = []
         self.device = rl.helper.get_device(device_name)
 
@@ -57,6 +58,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
             self.action_set[index] = elem
             self.actions_opt_indices.append(index)
             index += 1
+        for elem in rl.helper.get_actions_opt_before_layout():
+            self.action_set[index] = elem
+            self.actions_opt_indices_before_layout.append(index)
+            index += 1
         for elem in rl.helper.get_actions_mapping():
             self.action_set[index] = elem
             self.actions_mapping_indices.append(index)
@@ -68,7 +73,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.reward_function = reward_function
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
-        self.layout = None
+        self.layout: TranspileLayout | None = None
         self.num_qubits_uncompiled_circuit = 0
 
         spaces = {
@@ -162,7 +167,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
         self.layout = None
 
-        self.valid_actions = self.actions_opt_indices + self.actions_synthesis_indices
+        self.valid_actions = (
+            self.actions_opt_indices + self.actions_synthesis_indices + self.actions_opt_indices_before_layout
+        )
 
         self.error_occured = False
 
@@ -201,7 +208,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         pm.append(
                             action["transpile_pass"](
                                 self.device["native_gates"],
-                                CouplingMap(self.device["cmap"]) if self.layout is not None else None,  # type: ignore[redundant-expr]
+                                CouplingMap(self.device["cmap"]) if self.layout is not None else None,
                             ),
                             do_while=action["do_while"],
                         )
@@ -227,7 +234,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         _input_qubit_count=self.num_qubits_uncompiled_circuit,
                     )
                 elif action_index in self.actions_routing_indices:
-                    self.layout.final_layout = pm.property_set["final_layout"]  # type: ignore[attr-defined]
+                    assert self.layout is not None
+                    self.layout.final_layout = pm.property_set["final_layout"]
 
             elif action["origin"] == "tket":
                 try:
@@ -239,7 +247,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     tket_qc.rename_units(qubit_map)  # type: ignore[arg-type]
                     altered_qc = tk_to_qiskit(tket_qc)
                     if action_index in self.actions_routing_indices:
-                        self.layout.final_layout = rl.helper.final_layout_pytket_to_qiskit(tket_qc)  # type: ignore[attr-defined]
+                        assert self.layout is not None
+                        self.layout.final_layout = rl.helper.final_layout_pytket_to_qiskit(tket_qc)
 
                 except Exception:
                     logger.exception(
@@ -280,17 +289,25 @@ class PredictorEnv(Env):  # type: ignore[misc]
         only_nat_gates = check_nat_gates.property_set["all_gates_in_basis"]
 
         if not only_nat_gates:
-            return self.actions_synthesis_indices + self.actions_opt_indices
+            actions = self.actions_synthesis_indices + self.actions_opt_indices
+            if self.layout is not None:
+                actions += self.actions_routing_indices
+            return actions
 
         check_mapping = CheckMap(coupling_map=CouplingMap(self.device["cmap"]))
         check_mapping(self.state)
         mapped = check_mapping.property_set["is_swap_mapped"]
 
         if mapped and self.layout is not None:
-            return [self.action_terminate_index, *self.actions_opt_indices]  # type: ignore[unreachable]
+            return [self.action_terminate_index, *self.actions_opt_indices]
 
         if self.layout is not None:
-            return self.actions_routing_indices  # type: ignore[unreachable]
+            return self.actions_routing_indices
 
         # No layout applied yet
-        return self.actions_mapping_indices + self.actions_layout_indices + self.actions_opt_indices
+        return (
+            self.actions_mapping_indices
+            + self.actions_layout_indices
+            + self.actions_opt_indices
+            + self.actions_opt_indices_before_layout
+        )
