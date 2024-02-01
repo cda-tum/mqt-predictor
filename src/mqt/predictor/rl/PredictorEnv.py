@@ -191,8 +191,12 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 try:
                     if action["name"] == "QiskitO3":
                         pm = PassManager()
+
                         pm.append(
-                            action["transpile_pass"](self.device["native_gates"]),
+                            action["transpile_pass"](
+                                self.device["native_gates"],
+                                CouplingMap(self.device["cmap"]) if self.layout is not None else None,  # type: ignore[redundant-expr]
+                            ),
                             do_while=action["do_while"],
                         )
                     else:

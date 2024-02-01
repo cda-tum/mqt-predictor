@@ -170,17 +170,19 @@ def get_actions_opt() -> list[dict[str, Any]]:
         },
         {
             "name": "QiskitO3",
-            "transpile_pass": lambda native_gate: [
+            "transpile_pass": lambda native_gate, coupling_map: [
                 Collect2qBlocks(),
                 ConsolidateBlocks(basis_gates=native_gate),
-                UnitarySynthesis(basis_gates=native_gate),
+                UnitarySynthesis(basis_gates=native_gate, coupling_map=coupling_map),
                 Optimize1qGatesDecomposition(basis=native_gate),
                 CommutativeCancellation(basis_gates=native_gate),
                 GatesInBasis(native_gate),
                 ConditionalController(
                     [
                         pass_
-                        for x in common.generate_translation_passmanager(target=None, basis_gates=native_gate).passes()
+                        for x in common.generate_translation_passmanager(
+                            target=None, basis_gates=native_gate, coupling_map=coupling_map
+                        ).passes()
                         for pass_ in x["passes"]
                     ],
                     condition=lambda property_set: not property_set["all_gates_in_basis"],
