@@ -37,6 +37,7 @@ from qiskit.transpiler.passes import (
     EnlargeWithAncilla,
     FixedPoint,
     FullAncillaAllocation,
+    GatesInBasis,
     InverseCancellation,
     MinimumPoint,
     Optimize1qGatesDecomposition,
@@ -49,6 +50,8 @@ from qiskit.transpiler.passes import (
     TrivialLayout,
     UnitarySynthesis,
 )
+from qiskit.transpiler.preset_passmanagers import common
+from qiskit.transpiler.runningpassmanager import ConditionalController
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
@@ -68,18 +71,14 @@ else:
 from bqskit import MachineModel
 from bqskit import compile as bqskit_compile
 from bqskit.ir import gates
+from qiskit import QuantumRegister
+from qiskit.transpiler.layout import Layout
+from qiskit.transpiler.preset_passmanagers import common
+from qiskit.transpiler.runningpassmanager import ConditionalController
 
 logger = logging.getLogger("mqt-predictor")
 
 
-NUM_ACTIONS_OPT = 14
-NUM_ACTIONS_LAYOUT = 3
-NUM_ACTIONS_ROUTING = 4
-NUM_ACTIONS_SYNTHESIS = 2
-NUM_ACTIONS_TERMINATE = 1
-NUM_ACTIONS_DEVICES = 7
-NUM_ACTIONS_MAPPING = 1
-NUM_FEATURE_VECTOR_ELEMENTS = 7
 
 
 def qcompile(
@@ -179,12 +178,23 @@ def get_actions_opt() -> list[dict[str, Any]]:
         },
         {
             "name": "QiskitO3",
-            "transpile_pass": [
+            "transpile_pass": lambda native_gate, coupling_map: [
                 Collect2qBlocks(),
-                ConsolidateBlocks(),
-                UnitarySynthesis(),
-                Optimize1qGatesDecomposition(),
-                CommutativeCancellation(),
+                ConsolidateBlocks(basis_gates=native_gate),
+                UnitarySynthesis(basis_gates=native_gate, coupling_map=coupling_map),
+                Optimize1qGatesDecomposition(basis=native_gate),
+                CommutativeCancellation(basis_gates=native_gate),
+                GatesInBasis(native_gate),
+                ConditionalController(
+                    [
+                        pass_
+                        for x in common.generate_translation_passmanager(
+                            target=None, basis_gates=native_gate, coupling_map=coupling_map
+                        ).passes()
+                        for pass_ in x["passes"]
+                    ],
+                    condition=lambda property_set: not property_set["all_gates_in_basis"],
+                ),
                 Depth(recurse=True),
                 FixedPoint("depth"),
                 Size(recurse=True),
@@ -225,16 +235,6 @@ def get_actions_layout() -> list[dict[str, Any]]:
             ],
             "origin": "qiskit",
         },
-        {
-            "name": "SabreLayout",
-            "transpile_pass": lambda c: [
-                SabreLayout(coupling_map=CouplingMap(c), skip_routing=True),
-                FullAncillaAllocation(coupling_map=CouplingMap(c)),
-                EnlargeWithAncilla(),
-                ApplyLayout(),
-            ],
-            "origin": "qiskit",
-        },
     ]
 
 
@@ -257,11 +257,6 @@ def get_actions_routing() -> list[dict[str, Any]]:
         {
             "name": "StochasticSwap",
             "transpile_pass": lambda c: [StochasticSwap(coupling_map=CouplingMap(c))],
-            "origin": "qiskit",
-        },
-        {
-            "name": "SabreSwap",
-            "transpile_pass": lambda c: [SabreSwap(coupling_map=CouplingMap(c))],
             "origin": "qiskit",
         },
     ]
@@ -528,10 +523,59 @@ def handle_downloading_model(download_url: str, model_name: str) -> None:
 
 class PreProcessTKETRoutingAfterQiskitLayout:
     """
-    Pre-processing step to route a circuit with tket after a Qiskit Layout pass has been applied.
-    The reason why we can apply the trivial layout here is that the circuit is already mapped by qiskit to the
-    device qubits and its qubits are sorted by their ascending physical qubit indices.
-    The trivial layout indices that this layout of the physical qubits is the identity mapping.
+        Pre-processing step to route a circuit with TKET after a Qiskit Layout pass has been applied.
+        The reason why we can apply the trivial layout here is that the circuit already got assigned a layout by qiskit.
+        Implicitly, Qiskit is reordering its qubits in a sequential manner, i.e., the qubit with the lowest *physical* qubit
+        first.
+
+        Assuming, the layouted circuit is given by
+
+                       ┌───┐           ░       ┌─┐
+              q_2 -> 0 ┤ H ├──■────────░───────┤M├
+                       └───┘┌─┴─┐      ░    ┌─┐└╥┘
+              q_1 -> 1 ─────┤ X ├──■───░────┤M├─╫─
+                            └───┘┌─┴─┐ ░ ┌─┐└╥┘ ║
+              q_0 -> 2 ──────────┤ X ├─░─┤M├─╫──╫─
+                                 └───┘ ░ └╥┘ ║  ║
+        ancilla_0 -> 3 ───────────────────╫──╫──╫─
+                                          ║  ║  ║
+        ancilla_1 -> 4 ───────────────────╫──╫──╫─
+                                          ║  ║  ║
+               meas: 3/═══════════════════╩══╩══╩═
+                                          0  1  2
+
+        Applying the trivial layout, we get the same qubit order as in the original circuit and can be respectively
+        routed. This results int:
+                ┌───┐           ░       ┌─┐
+           q_0: ┤ H ├──■────────░───────┤M├
+                └───┘┌─┴─┐      ░    ┌─┐└╥┘
+           q_1: ─────┤ X ├──■───░────┤M├─╫─
+                     └───┘┌─┴─┐ ░ ┌─┐└╥┘ ║
+           q_2: ──────────┤ X ├─░─┤M├─╫──╫─
+                          └───┘ ░ └╥┘ ║  ║
+           q_3: ───────────────────╫──╫──╫─
+                                   ║  ║  ║
+           q_4: ───────────────────╫──╫──╫─
+                                   ║  ║  ║
+        meas: 3/═══════════════════╩══╩══╩═
+                                   0  1  2
+
+
+        If we would not apply the trivial layout, no layout would be considered resulting, e.g., in the followiong circuit:
+                 ┌───┐         ░    ┌─┐
+       q_0: ─────┤ X ├─────■───░────┤M├───
+            ┌───┐└─┬─┘   ┌─┴─┐ ░ ┌─┐└╥┘
+       q_1: ┤ H ├──■───X─┤ X ├─░─┤M├─╫────
+            └───┘      │ └───┘ ░ └╥┘ ║ ┌─┐
+       q_2: ───────────X───────░──╫──╫─┤M├
+                               ░  ║  ║ └╥┘
+       q_3: ──────────────────────╫──╫──╫─
+                                  ║  ║  ║
+       q_4: ──────────────────────╫──╫──╫─
+                                  ║  ║  ║
+    meas: 3/══════════════════════╩══╩══╩═
+                                  0  1  2
+
     """
 
     def apply(self, circuit: Circuit) -> None:
@@ -598,3 +642,22 @@ def get_BQSKit_native_gates(provider: str) -> list[gates.Gate] | None:
         return None
 
     return native_gatesets[provider]
+
+
+def final_layout_pytket_to_qiskit(pytket_circuit: Circuit) -> Layout:
+    pytket_layout = pytket_circuit.qubit_readout
+    size_circuit = pytket_circuit.n_qubits
+    qiskit_layout = Layout()
+    qiskit_qreg = QuantumRegister(size_circuit, "q")
+
+    pytket_layout = dict(sorted(pytket_layout.items(), key=lambda item: item[1]))
+
+    for node, qubit_index in pytket_layout.items():
+        new_index = node.index[0]
+        qiskit_layout[new_index] = qiskit_qreg[qubit_index]
+
+    for i in range(size_circuit):
+        if i not in set(pytket_layout.values()):
+            qiskit_layout[i] = qiskit_qreg[i]
+
+    return qiskit_layout

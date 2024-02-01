@@ -10,6 +10,7 @@ import numpy as np
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete
+from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
@@ -68,6 +69,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
         self.layout = None
+        self.num_qubits_uncompiled_circuit = 0
 
         spaces = {
             "num_qubits": Discrete(128),
@@ -113,6 +115,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         if self.state.count_ops().get("unitary"):
             self.state = self.state.decompose(gates_to_decompose="unitary")
 
+        self.state._layout = self.layout  # noqa: SLF001
         obs = rl.helper.create_feature_dict(self.state)
         return obs, reward_val, done, False, {}
 
@@ -162,6 +165,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.valid_actions = self.actions_opt_indices + self.actions_synthesis_indices
 
         self.error_occured = False
+
+        self.num_qubits_uncompiled_circuit = self.state.num_qubits
         return rl.helper.create_feature_dict(self.state), {}
 
     def action_masks(self) -> list[bool]:
@@ -193,8 +198,12 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 try:
                     if action["name"] == "QiskitO3":
                         pm = PassManager()
+
                         pm.append(
-                            action["transpile_pass"],
+                            action["transpile_pass"](
+                                self.device["native_gates"],
+                                CouplingMap(self.device["cmap"]) if self.layout is not None else None,  # type: ignore[redundant-expr]
+                            ),
                             do_while=action["do_while"],
                         )
                     else:
@@ -215,14 +224,24 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         initial_layout=pm.property_set["layout"],
                         input_qubit_mapping=pm.property_set["original_qubit_indices"],
                         final_layout=pm.property_set["final_layout"],
+                        _output_qubit_list=altered_qc.qubits,
+                        _input_qubit_count=self.num_qubits_uncompiled_circuit,
                     )
+                elif action_index in self.actions_routing_indices:
+                    self.layout.final_layout = pm.property_set["final_layout"]  # type: ignore[attr-defined]
 
             elif action["origin"] == "tket":
                 try:
-                    tket_qc = qiskit_to_tk(self.state)
+                    tket_qc = qiskit_to_tk(self.state, preserve_param_uuid=True)
                     for elem in transpile_pass:
                         elem.apply(tket_qc)
+                    qbs = tket_qc.qubits
+                    qubit_map = {qbs[i]: Qubit("q", i) for i in range(len(qbs))}
+                    tket_qc.rename_units(qubit_map)  # type: ignore[arg-type]
                     altered_qc = tk_to_qiskit(tket_qc)
+                    if action_index in self.actions_routing_indices:
+                        self.layout.final_layout = rl.helper.final_layout_pytket_to_qiskit(tket_qc)  # type: ignore[attr-defined]
+
                 except Exception:
                     logger.exception(
                         "Error in executing TKET transpile  pass for {action} at step {i} for {filename}".format(
@@ -271,8 +290,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
         if mapped and self.layout is not None:
             return [self.action_terminate_index, *self.actions_opt_indices]  # type: ignore[unreachable]
 
-        if self.state._layout is not None:  # noqa: SLF001
-            return self.actions_routing_indices
+        if self.layout is not None:
+            return self.actions_routing_indices  # type: ignore[unreachable]
 
         # No layout applied yet
         return self.actions_mapping_indices + self.actions_layout_indices + self.actions_opt_indices
