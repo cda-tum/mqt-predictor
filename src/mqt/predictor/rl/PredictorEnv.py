@@ -192,7 +192,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     if action["name"] == "QiskitO3":
                         pm = PassManager()
                         pm.append(
-                            action["transpile_pass"],
+                            action["transpile_pass"](self.device["native_gates"]),
                             do_while=action["do_while"],
                         )
                     else:

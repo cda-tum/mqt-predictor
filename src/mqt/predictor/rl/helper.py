@@ -37,6 +37,7 @@ from qiskit.transpiler.passes import (
     EnlargeWithAncilla,
     FixedPoint,
     FullAncillaAllocation,
+    GatesInBasis,
     InverseCancellation,
     MinimumPoint,
     Optimize1qGatesDecomposition,
@@ -64,9 +65,10 @@ else:
     import importlib_metadata as metadata
     import importlib_resources as resources
 
-
 from qiskit import QuantumRegister
 from qiskit.transpiler.layout import Layout
+from qiskit.transpiler.preset_passmanagers import common
+from qiskit.transpiler.runningpassmanager import ConditionalController
 
 logger = logging.getLogger("mqt-predictor")
 
@@ -168,12 +170,21 @@ def get_actions_opt() -> list[dict[str, Any]]:
         },
         {
             "name": "QiskitO3",
-            "transpile_pass": [
+            "transpile_pass": lambda native_gate: [
                 Collect2qBlocks(),
-                ConsolidateBlocks(),
-                UnitarySynthesis(),
-                Optimize1qGatesDecomposition(),
-                CommutativeCancellation(),
+                ConsolidateBlocks(basis_gates=native_gate),
+                UnitarySynthesis(basis_gates=native_gate),
+                Optimize1qGatesDecomposition(basis=native_gate),
+                CommutativeCancellation(basis_gates=native_gate),
+                GatesInBasis(native_gate),
+                ConditionalController(
+                    [
+                        pass_
+                        for x in common.generate_translation_passmanager(target=None, basis_gates=native_gate).passes()
+                        for pass_ in x["passes"]
+                    ],
+                    condition=lambda property_set: not property_set["all_gates_in_basis"],
+                ),
                 Depth(recurse=True),
                 FixedPoint("depth"),
                 Size(recurse=True),
