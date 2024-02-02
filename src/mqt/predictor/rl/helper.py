@@ -696,23 +696,19 @@ def final_layout_bqskit_to_qiskit(
 
     initial_qubit_mapping = {bit: index for index, bit in enumerate(compiled_qc.qubits)}
 
-    qiskit_final_layout = {}
     counter_found = 0
 
-    print(qiskit_initial_layout)
-    print(bqskit_initial_layout)
-    print(bqskit_final_layout)
-
-    # if bqskit_initial_layout == bqskit_final_layout:
-    #     qiskit_final_layout = None
-    # else:
-    for i in range(compiled_qc.num_qubits):
-        if i in bqskit_final_layout:
-            print("in", i, bqskit_final_layout.index(i))
-            qiskit_final_layout[i] = compiled_qc.qubits[bqskit_initial_layout[bqskit_final_layout.index(i)]]
-            counter_found += 1
-        else:
-            qiskit_final_layout[i] = compiled_qc.qubits[i]
+    if bqskit_initial_layout == bqskit_final_layout:
+        qiskit_final_layout = None
+    else:
+        qiskit_final_layout = {}
+        for i in range(compiled_qc.num_qubits):
+            if i in bqskit_final_layout:
+                print("in", i, bqskit_final_layout.index(i))
+                qiskit_final_layout[i] = compiled_qc.qubits[bqskit_initial_layout[bqskit_final_layout.index(i)]]
+                counter_found += 1
+            else:
+                qiskit_final_layout[i] = compiled_qc.qubits[i]
 
     return TranspileLayout(
         initial_layout=qiskit_initial_layout,
