@@ -36,7 +36,6 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.actions_routing_indices = []
         self.actions_mapping_indices = []
         self.actions_opt_indices = []
-        self.actions_opt_indices_before_layout = []
         self.used_actions: list[str] = []
         self.device = rl.helper.get_device(device_name)
 
@@ -58,10 +57,6 @@ class PredictorEnv(Env):  # type: ignore[misc]
             self.action_set[index] = elem
             self.actions_opt_indices.append(index)
             index += 1
-        for elem in rl.helper.get_actions_opt_before_layout():
-            self.action_set[index] = elem
-            self.actions_opt_indices_before_layout.append(index)
-            index += 1
         for elem in rl.helper.get_actions_mapping():
             self.action_set[index] = elem
             self.actions_mapping_indices.append(index)
@@ -75,6 +70,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.num_steps = 0
         self.layout: TranspileLayout | None = None
         self.num_qubits_uncompiled_circuit = 0
+
+        self.has_parametrized_gates = False
 
         spaces = {
             "num_qubits": Discrete(128),
@@ -167,9 +164,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
         self.layout = None
 
-        self.valid_actions = (
-            self.actions_opt_indices + self.actions_synthesis_indices + self.actions_opt_indices_before_layout
-        )
+        self.valid_actions = self.actions_opt_indices + self.actions_synthesis_indices
 
         self.error_occured = False
 
@@ -186,21 +181,11 @@ class PredictorEnv(Env):  # type: ignore[misc]
             action = self.action_set[action_index]
             if action["name"] == "terminate":
                 return self.state
-            if (
-                action_index
-                in self.actions_layout_indices + self.actions_routing_indices + self.actions_mapping_indices
-            ):
-                transpile_pass = action["transpile_pass"](self.device["cmap"])
-            elif action_index in self.actions_synthesis_indices:
-                if action["origin"] == "qiskit":
-                    transpile_pass = action["transpile_pass"](self.device["native_gates"])
-                elif action["origin"] == "bqskit":
-                    transpile_pass = action["transpile_pass"](self.state.num_qubits, self.device["name"].split("_")[0])
-                else:
-                    error_msg = f"Origin {action['origin']} not supported."
-                    raise ValueError(error_msg)
-            else:
+            if action_index in self.actions_opt_indices:
                 transpile_pass = action["transpile_pass"]
+            else:
+                transpile_pass = action["transpile_pass"](self.device)
+
             if action["origin"] == "qiskit":
                 try:
                     if action["name"] == "QiskitO3":
@@ -248,7 +233,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     altered_qc = tk_to_qiskit(tket_qc)
                     if action_index in self.actions_routing_indices:
                         assert self.layout is not None
-                        self.layout.final_layout = rl.helper.final_layout_pytket_to_qiskit(tket_qc)
+                        self.layout.final_layout = rl.helper.final_layout_pytket_to_qiskit(tket_qc, altered_qc)
 
                 except Exception:
                     logger.exception(
@@ -262,7 +247,16 @@ class PredictorEnv(Env):  # type: ignore[misc]
             elif action["origin"] == "bqskit":
                 try:
                     bqskit_qc = qiskit_to_bqskit(self.state)
-                    altered_qc = bqskit_to_qiskit(transpile_pass(bqskit_qc))
+                    if action_index in self.actions_opt_indices or self.actions_synthesis_indices:
+                        bqskit_compiled_qc = transpile_pass(bqskit_qc)
+                        altered_qc = bqskit_to_qiskit(bqskit_compiled_qc)
+                    elif action_index in self.actions_mapping_indices:
+                        bqskit_compiled_qc, initial_layout, final_layout = transpile_pass(self.device)(bqskit_qc)
+                        altered_qc = bqskit_to_qiskit(bqskit_compiled_qc)
+                        layout = rl.helper.final_layout_bqskit_to_qiskit(
+                            initial_layout, final_layout, altered_qc, self.state
+                        )
+                        self.layout = layout
                 except Exception:
                     logger.exception(
                         "Error in executing BQSKit transpile  pass for {action} at step {i} for {filename}".format(
@@ -305,9 +299,4 @@ class PredictorEnv(Env):  # type: ignore[misc]
             return self.actions_routing_indices
 
         # No layout applied yet
-        return (
-            self.actions_mapping_indices
-            + self.actions_layout_indices
-            + self.actions_opt_indices
-            + self.actions_opt_indices_before_layout
-        )
+        return self.actions_mapping_indices + self.actions_layout_indices + self.actions_opt_indices
