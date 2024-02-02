@@ -255,7 +255,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
             elif action["origin"] == "bqskit":
                 try:
                     bqskit_qc = qiskit_to_bqskit(self.state)
-                    if action_index in self.actions_opt_indices or self.actions_synthesis_indices:
+                    if action_index in self.actions_opt_indices + self.actions_synthesis_indices:
                         bqskit_compiled_qc = transpile_pass(bqskit_qc)
                         altered_qc = bqskit_to_qiskit(bqskit_compiled_qc)
                     elif action_index in self.actions_mapping_indices:
