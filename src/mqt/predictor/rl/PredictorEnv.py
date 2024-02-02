@@ -169,11 +169,19 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.error_occured = False
 
         self.num_qubits_uncompiled_circuit = self.state.num_qubits
+        self.has_parametrized_gates = len(self.state.parameters) > 0
         return rl.helper.create_feature_dict(self.state), {}
 
     def action_masks(self) -> list[bool]:
         """Returns a list of valid actions for the current state."""
-        return [action in self.valid_actions for action in self.action_set]
+        action_mask = [action in self.valid_actions for action in self.action_set]
+        if self.has_parametrized_gates or self.layout is not None:
+            # remove all actions that are from "origin"=="bqskit" because they are not supported for parametrized gates
+            # or before layout since using BQSKit after a layout is set may result in an error
+            action_mask = [
+                action_mask[i] and self.action_set[i].get("origin") != "bqskit" for i in range(len(action_mask))
+            ]
+        return action_mask
 
     def apply_action(self, action_index: int) -> QuantumCircuit | None:
         """Applies the given action to the current state and returns the altered state."""
