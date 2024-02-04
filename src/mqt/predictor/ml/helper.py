@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 
 import networkx as nx  # type: ignore[import-untyped]
 import numpy as np
+import pyzx as zx  # type: ignore[import-not-found]
 from joblib import dump
 from qiskit import QuantumCircuit
 from qiskit.circuit import Clbit
@@ -186,6 +187,7 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     Returns:
         dict[str, Any]: The feature dictionary of the given quantum circuit.
     """
+    filename = qc
     if not isinstance(qc, QuantumCircuit):
         if len(qc) < PATH_LENGTH and Path(qc).exists():
             qc = QuantumCircuit.from_qasm_file(qc)
@@ -219,6 +221,7 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     feature_dict["parallelism"] = supermarq_features.parallelism
     feature_dict["liveness"] = supermarq_features.liveness
     feature_dict["graph"] = circuit_to_graph(qc, ops_list_encoding)
+    feature_dict["zx_graph"] = qasm_to_zx(qc.qasm(), filename)
     return feature_dict
 
 
@@ -326,6 +329,34 @@ def rustworkx_to_networkx(graph: rx.PyDAG[Any, Any], ops_list_encoding: dict[str
             nx_graph.add_edge(source, target, is_control=is_control)  # , bit_nr=bit_nr, is_classic=is_classic)
 
     return nx_graph
+
+
+def qasm_to_zx(qasm: str, filename: str) -> zx.Circuit:
+    """
+    Convert a qasm string to a zx-calculus string.
+    """
+    try:
+        qasm = qasm.replace("pi", "3.141592653589793")
+        qasm = qasm.replace("u(", "u1(")
+        qasm = qasm.replace(
+            'include "qelib1.inc";',
+            'include "qelib1.inc";\n\n'
+            "// controlled phase rotation\n"
+            "gate cp(lambda) a,b\n"
+            "{\n"
+            "u1(lambda/2) a;\n"
+            "cx a,b;\n"
+            "u1(-lambda/2) b;\n"
+            "cx a,b;\n"
+            "u1(lambda/2) b;\n"
+            "}",
+        )
+
+        return zx.Circuit.from_qasm(qasm)
+    except Exception as e:
+        print(filename)
+        print(e)
+        return zx.Circuit(0)
 
 
 def circuit_to_graph(qc: QuantumCircuit, ops_list_encoding: dict[str, int]) -> torch_geometric.data.Data:

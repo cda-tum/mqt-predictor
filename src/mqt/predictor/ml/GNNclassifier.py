@@ -29,12 +29,15 @@ class GNNClassifier:
     readout: str
     heads: int
     concat: bool
-    beta: float
+    beta: bool
     bias: bool
     root_weight: bool
+    model: str
+    jk: str
+    v2: bool
 
     def __init__(self, **kwargs: object) -> None:
-        defaults = {
+        self.defaults = {
             "optimizer": "adam",
             "learning_rate": 1e-3,
             "batch_size": 64,
@@ -52,46 +55,54 @@ class GNNClassifier:
             "readout": "mean",
             "heads": 1,
             "concat": True,
-            "beta": 1.0,
+            "beta": False,
             "bias": True,
             "root_weight": True,
+            "model": "TransformerConv",
+            "jk": "last",
+            "v2": True,
         }
 
         # Update defaults with provided kwargs
-        defaults.update(kwargs)
-        self.set_params(**defaults)
-
-        if self.optimizer == "adam":
-            self.optim = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=5e-4)
-        elif self.optimizer == "sgd":
-            self.optim = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.9)
+        self.defaults.update(kwargs)
+        self.set_params(**self.defaults)
 
     def get_params(self, deep: bool = False) -> dict[str, object]:
         if deep:
             print("deep copy not implemented")
-        return {k: v for k, v in self.__dict__.items() if not k.startswith("_") and not callable(v)}
+        return dict(self.defaults.items())
 
     def set_params(self, **params: object) -> GNNClassifier:
-        for parameter, value in params.items():
+        self.defaults.update(params)
+        for parameter, value in self.defaults.items():
             setattr(self, parameter, value)
-        self.model = Net(**params)
+
+        self.gnn = Net(**params)
+        if self.optimizer == "adam":
+            self.optim = torch.optim.Adam(self.gnn.parameters(), lr=self.learning_rate, weight_decay=5e-4)
+        elif self.optimizer == "sgd":
+            self.optim = torch.optim.SGD(self.gnn.parameters(), lr=self.learning_rate, momentum=0.9)
         return self
 
     def fit(self, dataset: Dataset) -> None:
-        self.model.train()
+        self.gnn.train()
         loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
         for _ in range(self.epochs):
             for batch in loader:
                 self.optim.zero_grad()
-                out = self.model.forward(batch)
-                loss = torch.nn.MSELoss()(out, batch.y.view(-1, self.output_dim))
+                out = self.gnn.forward(batch)
+                out = torch.nn.functional.softmax(out, dim=1)  # normalize the outputs to probabilities
+                target = torch.nn.functional.softmax(
+                    batch.y.view(-1, self.output_dim), dim=1
+                )  # normalize the targets to probabilities
+                loss = torch.nn.KLDivLoss()(out.log(), target)  # compute the KL Divergence loss
                 loss.backward()
                 self.optim.step()
         return
 
     def predict(self, dataset: Dataset) -> torch.Tensor:
-        self.model.eval()
-        out = [self.model.forward(data) for data in dataset]
+        self.gnn.eval()
+        out = [self.gnn.forward(data) for data in dataset]
         return torch.stack([o.argmax() for o in out])
 
     def score(self, dataset: Dataset) -> float:
@@ -109,7 +120,7 @@ class MultiGNNClassifier(GNNClassifier):
         self.global_output_dim = kwargs["output_dim"]
         # one model for each output
         kwargs["output_dim"] = 1
-        self.models = [Net(**kwargs) for _ in range(self.global_output_dim)]  # type: ignore[call-overload]
+        self.gnns = [Net(**kwargs) for _ in range(self.global_output_dim)]  # type: ignore[call-overload]
 
     def set_params(self, **params: object) -> MultiGNNClassifier:
         super().set_params(**params)
@@ -117,30 +128,30 @@ class MultiGNNClassifier(GNNClassifier):
         self.global_output_dim = params["output_dim"]
         # one model for each output
         params["output_dim"] = 1
-        self.models = [Net(**params) for _ in range(self.global_output_dim)]  # type: ignore[call-overload]
+        self.gnns = [Net(**params) for _ in range(self.global_output_dim)]  # type: ignore[call-overload]
         return self
 
     def fit(self, dataset: Dataset) -> None:
-        for m in self.models:
+        for m in self.gnns:
             m.train()
 
         loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
         for _ in range(self.epochs):
             for batch in loader:
                 self.optim.zero_grad()
-                out = torch.hstack([model.forward(batch) for model in self.models])  # dim: (batch_size, len(models)=7)
-                loss = torch.nn.MSELoss()(out, batch.y.view(-1, len(self.models)))
+                out = torch.hstack([gnn.forward(batch) for gnn in self.gnns])  # dim: (batch_size, len(models)=7)
+                loss = torch.nn.MSELoss()(out, batch.y.view(-1, len(self.gnns)))
                 loss.backward()
                 self.optim.step()
         return
 
     def predict(self, dataset: Dataset) -> torch.Tensor:
         pred = []
-        for m in self.models:
+        for m in self.gnns:
             m.eval()
 
         for data in dataset:
-            out = [model.forward(data) for model in self.models]
+            out = [gnn.forward(data) for gnn in self.gnns]
             pred.append(torch.tensor(out).argmax())
 
         return torch.stack(pred)

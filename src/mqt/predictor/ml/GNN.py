@@ -5,9 +5,11 @@ import torch.nn as nn  # type: ignore[import-not-found]
 import torch.nn.functional as F  # type: ignore[import-not-found]
 from torch_geometric.nn import (  # type: ignore[import-not-found]
     AttentionalAggregation,
+    Sequential,
     TransformerConv,
     global_max_pool,
     global_mean_pool,
+    models,
 )
 
 # import gymnasium
@@ -15,53 +17,46 @@ from torch_geometric.nn import (  # type: ignore[import-not-found]
 
 
 class Net(nn.Module):  # type: ignore[misc]
-    num_node_categories: int
-    num_edge_categories: int
-    node_embedding_dim: int
-    edge_embedding_dim: int
-    num_layers: int
-    hidden_dim: int
-    output_dim: int
-    dropout: float
-    batch_norm: bool
-    activation: str
-    readout: str
-    heads: int
-    concat: bool
-    beta: float
-    bias: bool
-    root_weight: bool
+    num_node_categories: int = 43
+    num_edge_categories: int = 2
+    node_embedding_dim: int | None = None
+    edge_embedding_dim: int | None = None
+    num_layers: int = 1
+    hidden_dim: int = 4
+    output_dim: int = 7
+    dropout: float = 0.0
+    batch_norm: bool = False
+    activation: str = "relu"
+    readout: str = "mean"
+    heads: int = 1
+    concat: bool = False
+    beta: bool = False
+    bias: bool = True
+    root_weight: bool = True
+    model: str = "TransformerConv"
+    jk: str = "last"
+    v2: bool = True
 
     def __init__(self, **kwargs: object) -> None:
         super().__init__()
-
-        defaults = {
-            "num_node_categories": 0,
-            "num_edge_categories": 0,
-            "node_embedding_dim": 0,
-            "edge_embedding_dim": 0,
-            "num_layers": 1,
-            "hidden_dim": 16,
-            "output_dim": 7,
-            "dropout": 0.0,
-            "batch_norm": False,
-            "activation": "relu",
-            "readout": "mean",
-            "heads": 1,
-            "concat": True,
-            "beta": 1.0,
-            "bias": True,
-            "root_weight": True,
-        }
-
-        # Update defaults with provided kwargs
-        defaults.update(kwargs)
-        self.set_params(**defaults)
+        self.set_params(**kwargs)
 
         if self.node_embedding_dim:
             self.node_embedding = nn.Embedding(self.num_node_categories, self.node_embedding_dim)
         if self.edge_embedding_dim:
             self.edge_embedding = nn.Embedding(self.num_edge_categories, self.edge_embedding_dim)
+
+        # hidden dimension accounting for multi-head concatenation
+        corrected_hidden_dim = (
+            (self.hidden_dim * self.heads if self.concat is True and self.heads > 1 else self.hidden_dim)
+            if self.model == "TransformerConv"
+            else self.hidden_dim
+        )
+
+        if self.batch_norm:
+            self.batch_norm_layer = nn.BatchNorm1d(corrected_hidden_dim)
+        else:
+            self.batch_norm_layer = lambda x, batch: x  # identity function
 
         if self.activation == "relu":
             self.activation_func = nn.ReLU()
@@ -72,26 +67,66 @@ class Net(nn.Module):  # type: ignore[misc]
         elif self.activation == "sigmoid":
             self.activation_func = nn.Sigmoid()
 
-        self.layers = []
-        for _ in range(self.num_layers):
-            self.layers.append(
-                TransformerConv(
-                    -1,
-                    self.hidden_dim,
-                    edge_dim=self.edge_embedding_dim if self.edge_embedding_dim else 1,
-                    heads=self.heads,
-                    concat=self.concat,
-                    beta=self.beta,
-                    dropout=self.dropout,
-                    bias=self.bias,
-                    root_weight=self.root_weight,
+        if self.model == "TransformerConv":
+            self.layers = []
+            for i in range(self.num_layers):
+                in_channels = (
+                    corrected_hidden_dim if i > 0 else (self.node_embedding_dim if self.node_embedding_dim else 1)
                 )
-            )
+                layer = Sequential(
+                    "x, edge_index, edge_attr, batch",
+                    [
+                        (
+                            TransformerConv(
+                                in_channels=in_channels,
+                                out_channels=self.hidden_dim,
+                                edge_dim=self.edge_embedding_dim if self.edge_embedding_dim else 1,
+                                heads=self.heads,
+                                concat=self.concat,
+                                beta=self.beta,
+                                dropout=self.dropout,
+                                bias=self.bias,
+                                root_weight=self.root_weight,
+                            ),
+                            "x, edge_index, edge_attr -> x",
+                        ),
+                        (self.batch_norm_layer, "x, batch -> x"),
+                        self.activation_func,
+                    ],
+                )
+                self.layers.append(layer)
+            last_hidden_dim = corrected_hidden_dim
 
-        last_hidden_dim = self.hidden_dim * self.heads if self.concat is True and self.heads > 1 else self.hidden_dim
+        elif self.model == "GAT":
+            self.layers = [
+                models.GAT(
+                    in_channels=self.node_embedding_dim if self.node_embedding_dim else 1,
+                    hidden_channels=self.hidden_dim,
+                    num_layers=self.num_layers,
+                    out_channels=self.output_dim,
+                    dropout=self.dropout,
+                    act=self.activation_func,
+                    norm=self.batch_norm_layer if self.batch_norm else None,
+                    edge_dim=self.edge_embedding_dim if self.edge_embedding_dim else 1,
+                    v2=True,
+                )
+            ]
+            last_hidden_dim = self.output_dim
 
-        if self.batch_norm:
-            self.batch_norm_layer = nn.BatchNorm1d(last_hidden_dim)
+        elif self.model == "GCN":
+            self.layers = [
+                models.GCN(
+                    in_channels=self.node_embedding_dim if self.node_embedding_dim else 1,
+                    hidden_channels=self.hidden_dim,
+                    num_layers=self.num_layers,
+                    out_channels=self.output_dim,
+                    dropout=self.dropout,
+                    act=self.activation_func,
+                    norm=self.batch_norm_layer if self.batch_norm else None,
+                    edge_dim=self.edge_embedding_dim if self.edge_embedding_dim else 1,
+                )
+            ]
+            last_hidden_dim = self.output_dim
 
         self.out_nn = nn.Sequential(nn.Linear(last_hidden_dim, self.output_dim), self.activation_func)
 
@@ -102,28 +137,19 @@ class Net(nn.Module):  # type: ignore[misc]
             self.gate_nn = nn.Linear(last_hidden_dim, 1)  # node-level gating
             self.pooling = AttentionalAggregation(self.gate_nn, self.out_nn)
         elif self.readout == "mean":
-            self.pooling = lambda x, batch: global_mean_pool(x, batch)
+            self.pooling = Sequential("x, batch", [(self.out_nn, "x -> x"), (global_mean_pool, "x, batch -> x")])
         elif self.readout == "max":
-            self.pooling = lambda x, batch: global_max_pool(x, batch)
+            self.pooling = Sequential("x, batch", [(self.out_nn, "x -> x"), (global_max_pool, "x, batch -> x")])
 
     def forward(self, data: torch.Tensor) -> torch.Tensor:
         x, edge_index, edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
 
         # Apply the node and edge embeddings
         x = self.node_embedding(x.int()).squeeze() if self.node_embedding_dim else x.float()
-
         edge_attr = self.edge_embedding(edge_attr.int()).squeeze() if self.edge_embedding_dim else edge_attr.float()
 
         for layer in self.layers:
-            x = layer(x, edge_index, edge_attr)
-            x = self.activation_func(x)
-
-            if self.batch_norm:
-                x = self.batch_norm_layer(x)
-
-        # Apply a readout layer to get a single vector that represents the entire graph
-        if self.readout == "mean" or self.readout == "max":
-            x = self.out_nn(x)  # in "attention" case, this is done in the pooling layer
+            x = layer(x, edge_index=edge_index, edge_attr=edge_attr, batch=batch)
 
         x = self.pooling(x, batch)
         return F.sigmoid(x)
