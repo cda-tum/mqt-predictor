@@ -25,84 +25,56 @@ class GNNClassifier:
     output_dim: int
     dropout: float
     batch_norm: bool
+    activation: str
+    readout: str
+    heads: int
+    concat: bool
+    beta: float
+    bias: bool
+    root_weight: bool
 
-    def __init__(
-        self,
-        optimizer: str = "adam",
-        learning_rate: float = 1e-3,
-        batch_size: int = 64,
-        epochs: int = 10,
-        num_node_categories: int = 42,  # distinct gate types (incl. 'id' and 'meas')
-        num_edge_categories: int = 2,  # is_control. or 100,  #for  distinct wires (quantum + classical)
-        node_embedding_dim: int = 4,  # dimension of the node embedding
-        edge_embedding_dim: int = 4,  # dimension of the edge embedding
-        num_layers: int = 2,  # number of nei aggregations
-        hidden_dim: int = 16,  # dimension of the hidden layers
-        output_dim: int = 7,  # dimension of the output vector
-        dropout: float = 0.0,
-        batch_norm: bool = False,
-        activation: str = "relu",
-        readout: str = "mean",
-    ) -> None:
-        self.set_params(
-            optimizer=optimizer,
-            learning_rate=learning_rate,
-            batch_size=batch_size,
-            epochs=epochs,
-            num_node_categories=num_node_categories,
-            num_edge_categories=num_edge_categories,
-            node_embedding_dim=node_embedding_dim,
-            edge_embedding_dim=edge_embedding_dim,
-            num_layers=num_layers,
-            hidden_dim=hidden_dim,
-            output_dim=output_dim,
-            dropout=dropout,
-            batch_norm=batch_norm,
-            activation=activation,
-            readout=readout,
-        )
+    def __init__(self, **kwargs: object) -> None:
+        defaults = {
+            "optimizer": "adam",
+            "learning_rate": 1e-3,
+            "batch_size": 64,
+            "epochs": 10,
+            "num_node_categories": 42,
+            "num_edge_categories": 2,
+            "node_embedding_dim": 4,
+            "edge_embedding_dim": 4,
+            "num_layers": 2,
+            "hidden_dim": 16,
+            "output_dim": 7,
+            "dropout": 0.0,
+            "batch_norm": False,
+            "activation": "relu",
+            "readout": "mean",
+            "heads": 1,
+            "concat": True,
+            "beta": 1.0,
+            "bias": True,
+            "root_weight": True,
+        }
 
-        # Initialize the model
-        self.model = Net(
-            num_node_categories,
-            num_edge_categories,
-            node_embedding_dim,
-            edge_embedding_dim,
-            num_layers,
-            hidden_dim,
-            output_dim,
-            dropout=dropout,
-            batch_norm=batch_norm,
-            activation=activation,
-            readout=readout,
-        )
-        if optimizer == "adam":
-            self.optim = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=5e-4)
-        elif optimizer == "sgd":
-            self.optim = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=0.9)
+        # Update defaults with provided kwargs
+        defaults.update(kwargs)
+        self.set_params(**defaults)
+
+        if self.optimizer == "adam":
+            self.optim = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=5e-4)
+        elif self.optimizer == "sgd":
+            self.optim = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.9)
 
     def get_params(self, deep: bool = False) -> dict[str, object]:
         if deep:
             print("deep copy not implemented")
-        return {
-            "optimizer": self.optimizer,
-            "learning_rate": self.learning_rate,
-            "batch_size": self.batch_size,
-            "epochs": self.epochs,
-            "num_node_categories": self.num_node_categories,
-            "num_edge_categories": self.num_edge_categories,
-            "node_embedding_dim": self.node_embedding_dim,
-            "edge_embedding_dim": self.edge_embedding_dim,
-            "num_layers": self.num_layers,
-            "hidden_dim": self.hidden_dim,
-            "output_dim": self.output_dim,
-            "dropout": self.dropout,
-            "batch_norm": self.batch_norm,
-        }
+        return {k: v for k, v in self.__dict__.items() if not k.startswith("_") and not callable(v)}
 
     def set_params(self, **params: object) -> GNNClassifier:
         for parameter, value in params.items():
             setattr(self, parameter, value)
+        self.model = Net(**params)
         return self
 
     def fit(self, dataset: Dataset) -> None:
@@ -112,7 +84,7 @@ class GNNClassifier:
             for batch in loader:
                 self.optim.zero_grad()
                 out = self.model.forward(batch)
-                loss = torch.nn.MSELoss()(out.flatten(), batch.y)
+                loss = torch.nn.MSELoss()(out, batch.y.view(-1, self.output_dim))
                 loss.backward()
                 self.optim.step()
         return
@@ -131,59 +103,22 @@ class GNNClassifier:
 
 
 class MultiGNNClassifier(GNNClassifier):
-    def __init__(
-        self,
-        optimizer: str = "adam",
-        learning_rate: float = 1e-3,
-        batch_size: int = 64,
-        epochs: int = 10,
-        num_node_categories: int = 42,  # distinct gate types (incl. 'id' and 'meas')
-        num_edge_categories: int = 2,  # is_control. or 100,  #for  distinct wires (quantum + classical)
-        node_embedding_dim: int = 4,  # dimension of the node embedding
-        edge_embedding_dim: int = 4,  # dimension of the edge embedding
-        num_layers: int = 2,  # number of nei aggregations
-        hidden_dim: int = 16,  # dimension of the hidden layers
-        output_dim: int = 7,  # dimension of the output vector
-        dropout: float = 0.0,
-        batch_norm: bool = False,
-        activation: str = "relu",
-        readout: str = "mean",
-    ) -> None:
-        super().__init__(
-            optimizer,
-            learning_rate,
-            batch_size,
-            epochs,
-            num_node_categories,
-            num_edge_categories,
-            node_embedding_dim,
-            edge_embedding_dim,
-            num_layers,
-            hidden_dim,
-            output_dim,
-            dropout,
-            batch_norm,
-            activation,
-            readout,
-        )
+    def __init__(self, **kwargs: object) -> None:
+        super().__init__(**kwargs)
 
+        self.global_output_dim = kwargs["output_dim"]
         # one model for each output
-        self.models = [
-            Net(
-                num_node_categories,
-                num_edge_categories,
-                node_embedding_dim,
-                edge_embedding_dim,
-                num_layers,
-                hidden_dim,
-                output_dim=1,
-                dropout=dropout,
-                batch_norm=batch_norm,
-                activation=activation,
-                readout=readout,
-            )
-            for _ in range(output_dim)
-        ]
+        kwargs["output_dim"] = 1
+        self.models = [Net(**kwargs) for _ in range(self.global_output_dim)]  # type: ignore[call-overload]
+
+    def set_params(self, **params: object) -> MultiGNNClassifier:
+        super().set_params(**params)
+
+        self.global_output_dim = params["output_dim"]
+        # one model for each output
+        params["output_dim"] = 1
+        self.models = [Net(**params) for _ in range(self.global_output_dim)]  # type: ignore[call-overload]
+        return self
 
     def fit(self, dataset: Dataset) -> None:
         for m in self.models:
