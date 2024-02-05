@@ -24,7 +24,8 @@ dependencies = [
     "scikit-learn>=1.3.0, <1.3.3",
     "importlib_metadata>=4.4; python_version < '3.10'",
     "importlib_resources>=5.0; python_version < '3.10'",
-    "tensorboard>=2.11.0"
+    "tensorboard>=2.11.0",
+    "bqskit>=1.1.0, <1.2.0",
 ]
 
 classifiers = [
@@ -99,7 +100,7 @@ implicit_reexport = true
 # recent versions of `gym` are typed, but stable-baselines3 pins a very old version of gym.
 # qiskit is not yet marked as typed, but is typed mostly.
 # the other libraries do not have type stubs.
-module = ["qiskit.*", "joblib.*", "sklearn.*", "matplotlib.*", "gymnasium.*", "mqt.bench.*", "sb3_contrib.*"]
+module = ["qiskit.*", "joblib.*", "sklearn.*", "matplotlib.*", "gymnasium.*", "mqt.bench.*", "sb3_contrib.*", "bqskit.*"]
 ignore_missing_imports = true
 
 [tool.ruff]

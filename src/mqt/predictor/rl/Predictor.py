@@ -23,7 +23,7 @@ class Predictor:
         logger.setLevel(logger_level)
 
         self.model = None
-        self.env = rl.PredictorEnv(figure_of_merit, device_name)
+        self.env = rl.PredictorEnv(reward_function=figure_of_merit, device_name=device_name)
         self.device_name = device_name
         self.figure_of_merit = figure_of_merit
 
@@ -50,7 +50,7 @@ class Predictor:
                 raise RuntimeError(msg) from e
 
         assert self.model
-        obs, _ = self.env.reset(qc)  # type: ignore[unreachable]
+        obs, _ = self.env.reset(qc, seed=0)  # type: ignore[unreachable]
 
         used_compilation_passes = []
         terminated = False
@@ -93,11 +93,9 @@ class Predictor:
             progress_bar = True
 
         logger.debug("Start training for: " + self.figure_of_merit + " on " + self.device_name)
-        env = rl.PredictorEnv(reward_function=self.figure_of_merit, device_name=self.device_name)
-
         model = MaskablePPO(
             MaskableMultiInputActorCriticPolicy,
-            env,
+            self.env,
             verbose=verbose,
             tensorboard_log="./" + model_name + "_" + self.figure_of_merit + "_" + self.device_name,
             gamma=0.98,
