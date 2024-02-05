@@ -177,7 +177,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         action_mask = [action in self.valid_actions for action in self.action_set]
         if self.has_parametrized_gates or self.layout is not None:
             # remove all actions that are from "origin"=="bqskit" because they are not supported for parametrized gates
-            # or before layout since using BQSKit after a layout is set may result in an error
+            # or after layout since using BQSKit after a layout is set may result in an error
             action_mask = [
                 action_mask[i] and self.action_set[i].get("origin") != "bqskit" for i in range(len(action_mask))
             ]
