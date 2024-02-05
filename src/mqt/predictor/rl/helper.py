@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import requests
+from bqskit import MachineModel
 from packaging import version
 from pytket.architecture import Architecture
 from pytket.circuit import Circuit, Node, Qubit
@@ -22,7 +23,7 @@ from pytket.placement import place_with_map
 from qiskit import QuantumCircuit
 from qiskit.circuit.equivalence_library import StandardEquivalenceLibrary
 from qiskit.circuit.library import XGate, ZGate
-from qiskit.transpiler import CouplingMap
+from qiskit.transpiler import CouplingMap, TranspileLayout
 from qiskit.transpiler.passes import (
     ApplyLayout,
     BasicSwap,
@@ -37,6 +38,7 @@ from qiskit.transpiler.passes import (
     EnlargeWithAncilla,
     FixedPoint,
     FullAncillaAllocation,
+    GatesInBasis,
     InverseCancellation,
     MinimumPoint,
     Optimize1qGatesDecomposition,
@@ -64,20 +66,16 @@ else:
     import importlib_metadata as metadata
     import importlib_resources as resources
 
+from bqskit import compile as bqskit_compile
+from bqskit.ir import gates
+from qiskit import QuantumRegister
+from qiskit.transpiler.layout import Layout
+from qiskit.transpiler.preset_passmanagers import common
+from qiskit.transpiler.runningpassmanager import ConditionalController
 from bqskit.ir import gates
 from qiskit.providers.fake_provider import FakeGuadalupe
 
 logger = logging.getLogger("mqt-predictor")
-
-
-NUM_ACTIONS_OPT = 14
-NUM_ACTIONS_LAYOUT = 3
-NUM_ACTIONS_ROUTING = 4
-NUM_ACTIONS_SYNTHESIS = 2
-NUM_ACTIONS_TERMINATE = 1
-NUM_ACTIONS_DEVICES = 7
-NUM_ACTIONS_MAPPING = 1
-NUM_FEATURE_VECTOR_ELEMENTS = 7
 
 
 def qcompile(
@@ -177,12 +175,23 @@ def get_actions_opt() -> list[dict[str, Any]]:
         },
         {
             "name": "QiskitO3",
-            "transpile_pass": [
+            "transpile_pass": lambda native_gate, coupling_map: [
                 Collect2qBlocks(),
-                ConsolidateBlocks(),
-                UnitarySynthesis(),
-                Optimize1qGatesDecomposition(),
-                CommutativeCancellation(),
+                ConsolidateBlocks(basis_gates=native_gate),
+                UnitarySynthesis(basis_gates=native_gate, coupling_map=coupling_map),
+                Optimize1qGatesDecomposition(basis=native_gate),
+                CommutativeCancellation(basis_gates=native_gate),
+                GatesInBasis(native_gate),
+                ConditionalController(
+                    [
+                        pass_
+                        for x in common.generate_translation_passmanager(
+                            target=None, basis_gates=native_gate, coupling_map=coupling_map
+                        ).passes()
+                        for pass_ in x["passes"]
+                    ],
+                    condition=lambda property_set: not property_set["all_gates_in_basis"],
+                ),
                 Depth(recurse=True),
                 FixedPoint("depth"),
                 Size(recurse=True),
@@ -192,11 +201,11 @@ def get_actions_opt() -> list[dict[str, Any]]:
             "origin": "qiskit",
             "do_while": lambda property_set: (not property_set["optimization_loop_minimum_point"]),
         },
-        # {
-        #     "name": "BQSKitO2",
-        #     "transpile_pass": lambda circuit: bqskit_compile(circuit, optimization_level=2),
-        #     "origin": "bqskit",
-        # },
+        {
+            "name": "BQSKitO2",
+            "transpile_pass": lambda circuit: bqskit_compile(circuit, optimization_level=2),
+            "origin": "bqskit",
+        },
     ]
 
 
@@ -205,9 +214,9 @@ def get_actions_layout() -> list[dict[str, Any]]:
     return [
         {
             "name": "TrivialLayout",
-            "transpile_pass": lambda c: [
-                TrivialLayout(coupling_map=CouplingMap(c)),
-                FullAncillaAllocation(coupling_map=CouplingMap(c)),
+            "transpile_pass": lambda device: [
+                TrivialLayout(coupling_map=CouplingMap(device["cmap"])),
+                FullAncillaAllocation(coupling_map=CouplingMap(device["cmap"])),
                 EnlargeWithAncilla(),
                 ApplyLayout(),
             ],
@@ -215,24 +224,14 @@ def get_actions_layout() -> list[dict[str, Any]]:
         },
         {
             "name": "DenseLayout",
-            "transpile_pass": lambda c: [
-                DenseLayout(coupling_map=CouplingMap(c)),
-                FullAncillaAllocation(coupling_map=CouplingMap(c)),
+            "transpile_pass": lambda device: [
+                DenseLayout(coupling_map=CouplingMap(device["cmap"])),
+                FullAncillaAllocation(coupling_map=CouplingMap(device["cmap"])),
                 EnlargeWithAncilla(),
                 ApplyLayout(),
             ],
             "origin": "qiskit",
         },
-        # {
-        #     "name": "SabreLayout",
-        #     "transpile_pass": lambda c: [
-        #         SabreLayout(coupling_map=CouplingMap(c), skip_routing=True),
-        #         FullAncillaAllocation(coupling_map=CouplingMap(c)),
-        #         EnlargeWithAncilla(),
-        #         ApplyLayout(),
-        #     ],
-        #     "origin": "qiskit",
-        # },
     ]
 
 
@@ -241,27 +240,22 @@ def get_actions_routing() -> list[dict[str, Any]]:
     return [
         {
             "name": "BasicSwap",
-            "transpile_pass": lambda c: [BasicSwap(coupling_map=CouplingMap(c))],
+            "transpile_pass": lambda device: [BasicSwap(coupling_map=CouplingMap(device["cmap"]))],
             "origin": "qiskit",
         },
         {
             "name": "RoutingPass",
-            "transpile_pass": lambda c: [
-                #  PreProcessTKETRoutingAfterQiskitLayout(),
-                RoutingPass(Architecture(c)),
+            "transpile_pass": lambda device: [
+                PreProcessTKETRoutingAfterQiskitLayout(),
+                RoutingPass(Architecture(device["cmap"])),
             ],
             "origin": "tket",
         },
         {
             "name": "StochasticSwap",
-            "transpile_pass": lambda c: [StochasticSwap(coupling_map=CouplingMap(c))],
+            "transpile_pass": lambda device: [StochasticSwap(coupling_map=CouplingMap(device["cmap"]))],
             "origin": "qiskit",
         },
-        # {
-        #     "name": "SabreSwap",
-        #     "transpile_pass": lambda c: [SabreSwap(coupling_map=CouplingMap(c))],
-        #     "origin": "qiskit",
-        # },
     ]
 
 
@@ -270,10 +264,24 @@ def get_actions_mapping() -> list[dict[str, Any]]:
     return [
         {
             "name": "SabreMapping",
-            "transpile_pass": lambda c: [
-                SabreLayout(coupling_map=CouplingMap(c), skip_routing=False),
+            "transpile_pass": lambda device: [
+                SabreLayout(coupling_map=CouplingMap(device["cmap"]), skip_routing=False),
             ],
             "origin": "qiskit",
+        },
+        {
+            "name": "BQSKitMapping",
+            "transpile_pass": lambda device: lambda bqskit_circuit: bqskit_compile(
+                bqskit_circuit,
+                model=MachineModel(
+                    num_qudits=device["max_qubits"],
+                    gate_set=get_BQSKit_native_gates(device),
+                    coupling_graph=[(elem[0], elem[1]) for elem in device["cmap"]],
+                ),
+                with_mapping=True,
+                optimization_level=2,
+            ),
+            "origin": "bqskit",
         },
     ]
 
@@ -283,18 +291,20 @@ def get_actions_synthesis() -> list[dict[str, Any]]:
     return [
         {
             "name": "BasisTranslator",
-            "transpile_pass": lambda g: [BasisTranslator(StandardEquivalenceLibrary, target_basis=g)],
+            "transpile_pass": lambda device: [
+                BasisTranslator(StandardEquivalenceLibrary, target_basis=device["native_gates"])
+            ],
             "origin": "qiskit",
         },
-        # {
-        #     "name": "BQSKitSynthesis",
-        #     "transpile_pass": lambda num_qubits, provider: lambda bqskit_circuit: bqskit_compile(
-        #         bqskit_circuit,
-        #         model=MachineModel(num_qubits, gate_set=get_BQSKit_native_gates(provider)),
-        #         optimization_level=2,
-        #     ),
-        #     "origin": "bqskit",
-        # },
+        {
+            "name": "BQSKitSynthesis",
+            "transpile_pass": lambda device: lambda bqskit_circuit: bqskit_compile(
+                bqskit_circuit,
+                model=MachineModel(bqskit_circuit.num_qudits, gate_set=get_BQSKit_native_gates(device)),
+                optimization_level=2,
+            ),
+            "origin": "bqskit",
+        },
     ]
 
 
@@ -357,7 +367,7 @@ def get_devices() -> list[dict[str, Any]]:
     ]
 
 
-def get_state_sample() -> tuple[QuantumCircuit, str]:
+def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str]:
     """Returns a random quantum circuit from the training circuits folder.
 
     Args:
@@ -366,7 +376,6 @@ def get_state_sample() -> tuple[QuantumCircuit, str]:
     Returns:
         tuple[QuantumCircuit, str]: A tuple containing the random quantum circuit and the path to the file from which it was read.
     """
-    # file_list = list(get_path_training_circuits().glob("*.qpy"))
     file_list = list(get_path_training_circuits().glob("*.qasm"))
 
     path_zip = get_path_training_circuits() / "training_data_compilation.zip"
@@ -379,9 +388,19 @@ def get_state_sample() -> tuple[QuantumCircuit, str]:
         file_list = list(get_path_training_circuits().glob("*.qasm"))
         assert len(file_list) > 0
 
-    random_index = np.random.randint(len(file_list))
-    qc = QuantumCircuit.from_qasm_file(str(file_list[random_index]))
-    print("Randomly selected circuit: " + str(file_list[random_index]))
+    found_suitable_qc = False
+    while not found_suitable_qc:
+        random_index = np.random.randint(len(file_list))
+        num_qubits = int(str(file_list[random_index]).split("_")[-1].split(".")[0])
+        if max_qubits and num_qubits > max_qubits:
+            continue
+        found_suitable_qc = True
+
+    try:
+        qc = QuantumCircuit.from_qasm_file(str(file_list[random_index]))
+    except Exception:
+        raise RuntimeError("Could not read QuantumCircuit from: " + str(file_list[random_index])) from None
+
     return qc, str(file_list[random_index])
 
 
@@ -549,10 +568,59 @@ def handle_downloading_model(download_url: str, model_name: str) -> None:
 
 class PreProcessTKETRoutingAfterQiskitLayout:
     """
-    Pre-processing step to route a circuit with tket after a Qiskit Layout pass has been applied.
-    The reason why we can apply the trivial layout here is that the circuit is already mapped by qiskit to the
-    device qubits and its qubits are sorted by their ascending physical qubit indices.
-    The trivial layout indices that this layout of the physical qubits is the identity mapping.
+        Pre-processing step to route a circuit with TKET after a Qiskit Layout pass has been applied.
+        The reason why we can apply the trivial layout here is that the circuit already got assigned a layout by qiskit.
+        Implicitly, Qiskit is reordering its qubits in a sequential manner, i.e., the qubit with the lowest *physical* qubit
+        first.
+
+        Assuming, the layouted circuit is given by
+
+                       ┌───┐           ░       ┌─┐
+              q_2 -> 0 ┤ H ├──■────────░───────┤M├
+                       └───┘┌─┴─┐      ░    ┌─┐└╥┘
+              q_1 -> 1 ─────┤ X ├──■───░────┤M├─╫─
+                            └───┘┌─┴─┐ ░ ┌─┐└╥┘ ║
+              q_0 -> 2 ──────────┤ X ├─░─┤M├─╫──╫─
+                                 └───┘ ░ └╥┘ ║  ║
+        ancilla_0 -> 3 ───────────────────╫──╫──╫─
+                                          ║  ║  ║
+        ancilla_1 -> 4 ───────────────────╫──╫──╫─
+                                          ║  ║  ║
+               meas: 3/═══════════════════╩══╩══╩═
+                                          0  1  2
+
+        Applying the trivial layout, we get the same qubit order as in the original circuit and can be respectively
+        routed. This results int:
+                ┌───┐           ░       ┌─┐
+           q_0: ┤ H ├──■────────░───────┤M├
+                └───┘┌─┴─┐      ░    ┌─┐└╥┘
+           q_1: ─────┤ X ├──■───░────┤M├─╫─
+                     └───┘┌─┴─┐ ░ ┌─┐└╥┘ ║
+           q_2: ──────────┤ X ├─░─┤M├─╫──╫─
+                          └───┘ ░ └╥┘ ║  ║
+           q_3: ───────────────────╫──╫──╫─
+                                   ║  ║  ║
+           q_4: ───────────────────╫──╫──╫─
+                                   ║  ║  ║
+        meas: 3/═══════════════════╩══╩══╩═
+                                   0  1  2
+
+
+        If we would not apply the trivial layout, no layout would be considered resulting, e.g., in the followiong circuit:
+                 ┌───┐         ░    ┌─┐
+       q_0: ─────┤ X ├─────■───░────┤M├───
+            ┌───┐└─┬─┘   ┌─┴─┐ ░ ┌─┐└╥┘
+       q_1: ┤ H ├──■───X─┤ X ├─░─┤M├─╫────
+            └───┘      │ └───┘ ░ └╥┘ ║ ┌─┐
+       q_2: ───────────X───────░──╫──╫─┤M├
+                               ░  ║  ║ └╥┘
+       q_3: ──────────────────────╫──╫──╫─
+                                  ║  ║  ║
+       q_4: ──────────────────────╫──╫──╫─
+                                  ║  ║  ║
+    meas: 3/══════════════════════╩══╩══╩═
+                                  0  1  2
+
     """
 
     def apply(self, circuit: Circuit) -> None:
@@ -597,15 +665,16 @@ def get_device_index_of_device(device_name: str) -> int:
     raise RuntimeError(msg)
 
 
-def get_BQSKit_native_gates(provider: str) -> list[gates.Gate] | None:
-    """Returns the native gates of the given provider.
+def get_BQSKit_native_gates(device: dict[str, Any]) -> list[gates.Gate] | None:
+    """Returns the native gates of the given device.
 
     Args:
-        provider (str): The name of the provider.
+        device: The device for which the native gates are returned.
 
     Returns:
         list[gates.Gate]: The native gates of the given provider.
     """
+    provider = device["name"].split("_")[0]
 
     native_gatesets = {
         "ibm": [gates.RZGate(), gates.SXGate(), gates.XGate(), gates.CNOTGate()],
@@ -619,3 +688,60 @@ def get_BQSKit_native_gates(provider: str) -> list[gates.Gate] | None:
         return None
 
     return native_gatesets[provider]
+
+
+def final_layout_pytket_to_qiskit(pytket_circuit: Circuit, qiskit_ciruit: QuantumCircuit) -> Layout:
+    pytket_layout = pytket_circuit.qubit_readout
+    size_circuit = pytket_circuit.n_qubits
+    qiskit_layout = {}
+    qiskit_qreg = qiskit_ciruit.qregs[0]
+
+    pytket_layout = dict(sorted(pytket_layout.items(), key=lambda item: item[1]))
+
+    for node, qubit_index in pytket_layout.items():
+        qiskit_layout[node.index[0]] = qiskit_qreg[qubit_index]
+
+    for i in range(size_circuit):
+        if i not in set(pytket_layout.values()):
+            qiskit_layout[i] = qiskit_qreg[i]
+
+    return Layout(input_dict=qiskit_layout)
+
+
+def final_layout_bqskit_to_qiskit(
+    bqskit_initial_layout: list[int],
+    bqskit_final_layout: list[int],
+    compiled_qc: QuantumCircuit,
+    initial_qc: QuantumCircuit,
+) -> TranspileLayout:
+    # BQSKit provides an initial layout as a list[int] where each virtual qubit is mapped to a physical qubit
+    # similarly, it provides a final layout as a list[int] representing where each virtual qubit is mapped to at the end
+    # of the circuit
+
+    ancilla = QuantumRegister(compiled_qc.num_qubits - initial_qc.num_qubits, "ancilla")
+    qiskit_initial_layout = {}
+    for i in range(compiled_qc.num_qubits):
+        if i in bqskit_initial_layout:
+            qiskit_initial_layout[i] = initial_qc.qubits[bqskit_initial_layout.index(i)]
+        else:
+            qiskit_initial_layout[i] = ancilla[i - initial_qc.num_qubits]
+
+    initial_qubit_mapping = {bit: index for index, bit in enumerate(compiled_qc.qubits)}
+
+    if bqskit_initial_layout == bqskit_final_layout:
+        qiskit_final_layout = None
+    else:
+        qiskit_final_layout = {}
+        for i in range(compiled_qc.num_qubits):
+            if i in bqskit_final_layout:
+                qiskit_final_layout[i] = compiled_qc.qubits[bqskit_initial_layout[bqskit_final_layout.index(i)]]
+            else:
+                qiskit_final_layout[i] = compiled_qc.qubits[i]
+
+    return TranspileLayout(
+        initial_layout=Layout(input_dict=qiskit_initial_layout),
+        input_qubit_mapping=initial_qubit_mapping,
+        final_layout=Layout(input_dict=qiskit_final_layout) if qiskit_final_layout else None,
+        _output_qubit_list=compiled_qc.qubits,
+        _input_qubit_count=initial_qc.num_qubits,
+    )

@@ -10,6 +10,7 @@ import numpy as np
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete
+from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
@@ -80,7 +81,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.reward_function = reward_function
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
-        self.layout = None
+        self.layout: TranspileLayout | None = None
+        self.num_qubits_uncompiled_circuit = 0
+
+        self.has_parametrized_gates = False
 
         spaces = {
             "num_qubits": Discrete(128),
@@ -123,15 +127,11 @@ class PredictorEnv(Env):  # type: ignore[misc]
             reward_val = 0
             done = False
 
-        # print(self.state.qregs)
-        # if self.layout is not None:
-        #     print(self.layout)
-
         # in case the Qiskit.QuantumCircuit has unitary or u gates in it, decompose them (because otherwise qiskit will throw an error when applying the BasisTranslator
         if self.state.count_ops().get("unitary"):
             self.state = self.state.decompose(gates_to_decompose="unitary")
 
-        self.state._layout = self.layout
+        self.state._layout = self.layout  # noqa: SLF001
         obs = rl.helper.create_feature_dict(self.state)
         return obs, reward_val, done, False, {}
 
@@ -188,6 +188,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.maxcut_adj_matrix = None
         self.maxcut_best_value = None
         self.maxcut_best_solution = None
+        self.num_qubits_uncompiled_circuit = self.state.num_qubits
+        self.has_parametrized_gates = len(self.state.parameters) > 0
 
         print("figure_of_merit: " + str(self.reward_function))
         if self.reward_function == "maxcut":
@@ -215,36 +217,35 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
     def action_masks(self) -> list[bool]:
         """Returns a list of valid actions for the current state."""
-        return [action in self.valid_actions for action in self.action_set]
+        action_mask = [action in self.valid_actions for action in self.action_set]
+        if self.has_parametrized_gates or self.layout is not None:
+            # remove all actions that are from "origin"=="bqskit" because they are not supported for parametrized gates
+            # or after layout since using BQSKit after a layout is set may result in an error
+            action_mask = [
+                action_mask[i] and self.action_set[i].get("origin") != "bqskit" for i in range(len(action_mask))
+            ]
+        return action_mask
 
     def apply_action(self, action_index: int) -> QuantumCircuit | None:
         """Applies the given action to the current state and returns the altered state."""
         if action_index in self.action_set:
             action = self.action_set[action_index]
             if action["name"] == "terminate":
-                self.state._layout = self.layout
                 return self.state
-            if (
-                action_index
-                in self.actions_layout_indices + self.actions_routing_indices + self.actions_mapping_indices
-            ):
-                transpile_pass = action["transpile_pass"](self.device["cmap"])
-            elif action_index in self.actions_synthesis_indices:
-                if action["origin"] == "qiskit":
-                    transpile_pass = action["transpile_pass"](self.device["native_gates"])
-                elif action["origin"] == "bqskit":
-                    transpile_pass = action["transpile_pass"](self.state.num_qubits, self.device["name"].split("_")[0])
-                else:
-                    error_msg = f"Origin {action['origin']} not supported."
-                    raise ValueError(error_msg)
-            else:
+            if action_index in self.actions_opt_indices:
                 transpile_pass = action["transpile_pass"]
+            else:
+                transpile_pass = action["transpile_pass"](self.device)
+
             if action["origin"] == "qiskit":
                 try:
                     if action["name"] == "QiskitO3":
                         pm = PassManager()
                         pm.append(
-                            action["transpile_pass"],
+                            action["transpile_pass"](
+                                self.device["native_gates"],
+                                CouplingMap(self.device["cmap"]) if self.layout is not None else None,
+                            ),
                             do_while=action["do_while"],
                         )
                     else:
@@ -266,18 +267,25 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         input_qubit_mapping=pm.property_set["original_qubit_indices"],
                         final_layout=pm.property_set["final_layout"],
                         _output_qubit_list=altered_qc.qubits,
-                        _input_qubit_count=4,
+                        _input_qubit_count=self.num_qubits_uncompiled_circuit,
                     )
                 elif action_index in self.actions_routing_indices:
-                    assert pm.property_set["final_layout"]
+                    assert self.layout is not None
                     self.layout.final_layout = pm.property_set["final_layout"]
 
             elif action["origin"] == "tket":
                 try:
-                    tket_qc = qiskit_to_tk(self.state)
+                    tket_qc = qiskit_to_tk(self.state, preserve_param_uuid=True)
                     for elem in transpile_pass:
                         elem.apply(tket_qc)
+                    qbs = tket_qc.qubits
+                    qubit_map = {qbs[i]: Qubit("q", i) for i in range(len(qbs))}
+                    tket_qc.rename_units(qubit_map)  # type: ignore[arg-type]
                     altered_qc = tk_to_qiskit(tket_qc)
+                    if action_index in self.actions_routing_indices:
+                        assert self.layout is not None
+                        self.layout.final_layout = rl.helper.final_layout_pytket_to_qiskit(tket_qc, altered_qc)
+
                 except Exception:
                     logger.exception(
                         "Error in executing TKET transpile  pass for {action} at step {i} for {filename}".format(
@@ -289,9 +297,17 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
             elif action["origin"] == "bqskit":
                 try:
-                    print(self.state.parameters)
                     bqskit_qc = qiskit_to_bqskit(self.state)
-                    altered_qc = bqskit_to_qiskit(transpile_pass(bqskit_qc))
+                    if action_index in self.actions_opt_indices + self.actions_synthesis_indices:
+                        bqskit_compiled_qc = transpile_pass(bqskit_qc)
+                        altered_qc = bqskit_to_qiskit(bqskit_compiled_qc)
+                    elif action_index in self.actions_mapping_indices:
+                        bqskit_compiled_qc, initial_layout, final_layout = transpile_pass(bqskit_qc)
+                        altered_qc = bqskit_to_qiskit(bqskit_compiled_qc)
+                        layout = rl.helper.final_layout_bqskit_to_qiskit(
+                            initial_layout, final_layout, altered_qc, self.state
+                        )
+                        self.layout = layout
                 except Exception:
                     logger.exception(
                         "Error in executing BQSKit transpile  pass for {action} at step {i} for {filename}".format(
@@ -318,14 +334,17 @@ class PredictorEnv(Env):  # type: ignore[misc]
         only_nat_gates = check_nat_gates.property_set["all_gates_in_basis"]
 
         if not only_nat_gates:
-            return self.actions_synthesis_indices + self.actions_opt_indices
+            actions = self.actions_synthesis_indices + self.actions_opt_indices
+            if self.layout is not None:
+                actions += self.actions_routing_indices
+            return actions
 
         check_mapping = CheckMap(coupling_map=CouplingMap(self.device["cmap"]))
         check_mapping(self.state)
         mapped = check_mapping.property_set["is_swap_mapped"]
 
         if mapped and self.layout is not None:
-            return [self.action_terminate_index, *self.actions_opt_indices]  # type: ignore[unreachable]
+            return [self.action_terminate_index, *self.actions_opt_indices]
 
         if self.layout is not None:
             return self.actions_routing_indices
