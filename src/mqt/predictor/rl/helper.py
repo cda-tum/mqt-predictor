@@ -273,7 +273,7 @@ def get_actions_mapping() -> list[dict[str, Any]]:
                 bqskit_circuit,
                 model=MachineModel(
                     num_qudits=device["max_qubits"],
-                    gate_set=get_BQSKit_native_gates(device["name"].split("_")[0]),
+                    gate_set=get_BQSKit_native_gates(device),
                     coupling_graph=[(elem[0], elem[1]) for elem in device["cmap"]],
                 ),
                 with_mapping=True,
@@ -298,9 +298,7 @@ def get_actions_synthesis() -> list[dict[str, Any]]:
             "name": "BQSKitSynthesis",
             "transpile_pass": lambda device: lambda bqskit_circuit: bqskit_compile(
                 bqskit_circuit,
-                model=MachineModel(
-                    bqskit_circuit.num_qudits, gate_set=get_BQSKit_native_gates(device["name"].split("_")[0])
-                ),
+                model=MachineModel(bqskit_circuit.num_qudits, gate_set=get_BQSKit_native_gates(device)),
                 optimization_level=2,
             ),
             "origin": "bqskit",
@@ -633,15 +631,16 @@ def get_device_index_of_device(device_name: str) -> int:
     raise RuntimeError(msg)
 
 
-def get_BQSKit_native_gates(provider: str) -> list[gates.Gate] | None:
-    """Returns the native gates of the given provider.
+def get_BQSKit_native_gates(device: dict[str, Any]) -> list[gates.Gate] | None:
+    """Returns the native gates of the given device.
 
     Args:
-        provider (str): The name of the provider.
+        device: The device for which the native gates are returned.
 
     Returns:
         list[gates.Gate]: The native gates of the given provider.
     """
+    provider = device["name"].split("_")[0]
 
     native_gatesets = {
         "ibm": [gates.RZGate(), gates.SXGate(), gates.XGate(), gates.CNOTGate()],
