@@ -49,26 +49,51 @@ def maxcut(compiled_qc: QuantumCircuit, maxcut_adj_matrix) -> tuple[float, list[
     from qiskit.algorithms.minimum_eigensolvers import SamplingVQE
     from qiskit.algorithms.optimizers import COBYLA
     from qiskit.primitives import BackendSampler
-    from qiskit.providers.fake_provider import FakeMontreal
+    from qiskit.providers.fake_provider import FakeQuito
     from qiskit_optimization.applications import Maxcut
 
     max_cut = Maxcut(maxcut_adj_matrix)
     qp = max_cut.to_quadratic_program()
     qubitOp, offset = qp.to_ising()
 
-    print(qubitOp)
-    print(compiled_qc.draw())
+    backend = FakeQuito()
 
     qaoa = SamplingVQE(
-        sampler=BackendSampler(FakeMontreal(), skip_transpilation=True),
+        sampler=BackendSampler(backend, skip_transpilation=True),
         optimizer=COBYLA(maxiter=200),
         ansatz=compiled_qc,
     )
-    res = qaoa.compute_minimum_eigenvalue(qubitOp)
-    if res.best_measurement["bitstring"] == "0101":
-        return res.best_measurement["probability"], [False, True, False, True]
-    elif res.best_measurement["bitstring"] == "1010":
-        return res.best_measurement["probability"], [True, False, True, False]
+
+    adjusted_qubitOp = qubitOp.apply_layout(compiled_qc.layout)
+
+    print(adjusted_qubitOp, compiled_qc.layout)
+
+    return 0.0, [False, False, False, False]
+    res = qaoa.compute_minimum_eigenvalue(adjusted_qubitOp)
+
+    layout = (
+        compiled_qc._layout.final_layout if compiled_qc._layout.final_layout else compiled_qc._layout.initial_layout
+    )
+    mapping = {}
+    for index in range(adjusted_qubitOp.num_qubits):
+        mapping[index] = layout.get_physical_bits()[index].index
+
+    solutions = []
+    for solution in ["0101", "1010"]:
+        new_solution = ""
+        for index in range(qubitOp.num_qubits):
+            new_solution += solution[mapping[index]]
+
+        if len(solution) < adjusted_qubitOp.num_qubits:
+            for index in range(adjusted_qubitOp.num_qubits - len(solution)):
+                new_solution += "0"
+            solutions.append(new_solution)
+        else:
+            solutions.append(new_solution)
+    print(res.best_measurement, solutions)
+    if res.best_measurement["bitstring"] in solutions:
+        print("SUCCESS")
+        return res.best_measurement["probability"], []
 
     return 0.0, [False, False, False, False]
 

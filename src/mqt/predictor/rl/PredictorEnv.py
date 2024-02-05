@@ -36,7 +36,15 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.actions_mapping_indices = []
         self.actions_opt_indices = []
         self.used_actions: list[str] = []
-        self.device = rl.helper.get_device(device_name)
+
+        from qiskit.providers.fake_provider import FakeQuito
+
+        self.device = {
+            "name": "ibm_quito",
+            "cmap": FakeQuito().configuration().coupling_map,
+            "native_gates": rl.helper.get_native_gates("ibm"),
+            "max_qubits": 5,
+        }
         self.ideal_circuit_histogram = None
 
         self.maxcut_adj_matrix = None
@@ -89,7 +97,6 @@ class PredictorEnv(Env):  # type: ignore[misc]
     def step(self, action: int) -> tuple[dict[str, Any], float, bool, bool, dict[Any, Any]]:
         """Executes the given action and returns the new state, the reward, whether the episode is done, whether the episode is truncated and additional information."""
         self.used_actions.append(str(self.action_set[action].get("name")))
-        print(self.state.count_ops())
         print("step: " + str(self.num_steps) + " action: " + str(self.action_set[action].get("name")))
         altered_qc = self.apply_action(action)
         if not altered_qc:
@@ -116,10 +123,15 @@ class PredictorEnv(Env):  # type: ignore[misc]
             reward_val = 0
             done = False
 
+        # print(self.state.qregs)
+        # if self.layout is not None:
+        #     print(self.layout)
+
         # in case the Qiskit.QuantumCircuit has unitary or u gates in it, decompose them (because otherwise qiskit will throw an error when applying the BasisTranslator
         if self.state.count_ops().get("unitary"):
             self.state = self.state.decompose(gates_to_decompose="unitary")
 
+        self.state._layout = self.layout
         obs = rl.helper.create_feature_dict(self.state)
         return obs, reward_val, done, False, {}
 
@@ -210,6 +222,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         if action_index in self.action_set:
             action = self.action_set[action_index]
             if action["name"] == "terminate":
+                self.state._layout = self.layout
                 return self.state
             if (
                 action_index
@@ -252,7 +265,12 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         initial_layout=pm.property_set["layout"],
                         input_qubit_mapping=pm.property_set["original_qubit_indices"],
                         final_layout=pm.property_set["final_layout"],
+                        _output_qubit_list=altered_qc.qubits,
+                        _input_qubit_count=4,
                     )
+                elif action_index in self.actions_routing_indices:
+                    assert pm.property_set["final_layout"]
+                    self.layout.final_layout = pm.property_set["final_layout"]
 
             elif action["origin"] == "tket":
                 try:
@@ -309,7 +327,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         if mapped and self.layout is not None:
             return [self.action_terminate_index, *self.actions_opt_indices]  # type: ignore[unreachable]
 
-        if self.state._layout is not None:  # noqa: SLF001
+        if self.layout is not None:
             return self.actions_routing_indices
 
         # No layout applied yet

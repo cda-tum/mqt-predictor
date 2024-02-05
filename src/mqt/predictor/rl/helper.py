@@ -43,7 +43,6 @@ from qiskit.transpiler.passes import (
     OptimizeCliffords,
     RemoveDiagonalGatesBeforeMeasure,
     SabreLayout,
-    SabreSwap,
     Size,
     StochasticSwap,
     TrivialLayout,
@@ -224,16 +223,16 @@ def get_actions_layout() -> list[dict[str, Any]]:
             ],
             "origin": "qiskit",
         },
-        {
-            "name": "SabreLayout",
-            "transpile_pass": lambda c: [
-                SabreLayout(coupling_map=CouplingMap(c), skip_routing=True),
-                FullAncillaAllocation(coupling_map=CouplingMap(c)),
-                EnlargeWithAncilla(),
-                ApplyLayout(),
-            ],
-            "origin": "qiskit",
-        },
+        # {
+        #     "name": "SabreLayout",
+        #     "transpile_pass": lambda c: [
+        #         SabreLayout(coupling_map=CouplingMap(c), skip_routing=True),
+        #         FullAncillaAllocation(coupling_map=CouplingMap(c)),
+        #         EnlargeWithAncilla(),
+        #         ApplyLayout(),
+        #     ],
+        #     "origin": "qiskit",
+        # },
     ]
 
 
@@ -248,7 +247,7 @@ def get_actions_routing() -> list[dict[str, Any]]:
         {
             "name": "RoutingPass",
             "transpile_pass": lambda c: [
-                PreProcessTKETRoutingAfterQiskitLayout(),
+                #  PreProcessTKETRoutingAfterQiskitLayout(),
                 RoutingPass(Architecture(c)),
             ],
             "origin": "tket",
@@ -258,11 +257,11 @@ def get_actions_routing() -> list[dict[str, Any]]:
             "transpile_pass": lambda c: [StochasticSwap(coupling_map=CouplingMap(c))],
             "origin": "qiskit",
         },
-        {
-            "name": "SabreSwap",
-            "transpile_pass": lambda c: [SabreSwap(coupling_map=CouplingMap(c))],
-            "origin": "qiskit",
-        },
+        # {
+        #     "name": "SabreSwap",
+        #     "transpile_pass": lambda c: [SabreSwap(coupling_map=CouplingMap(c))],
+        #     "origin": "qiskit",
+        # },
     ]
 
 
