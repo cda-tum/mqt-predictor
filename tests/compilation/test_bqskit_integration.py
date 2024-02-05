@@ -5,7 +5,8 @@ from typing import Any, cast
 import pytest
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from qiskit import QuantumCircuit
-from qiskit.transpiler.passes import GatesInBasis
+from qiskit.transpiler import CouplingMap
+from qiskit.transpiler.passes import CheckMap, GatesInBasis
 
 from mqt.predictor.rl import helper
 
@@ -67,9 +68,12 @@ def test_BQSKitMapping_action() -> None:
 
     assert action_BQSKitMapping is not None
 
-    qc = QuantumCircuit(2)
+    qc = QuantumCircuit(5)
     qc.h(0)
     qc.cx(0, 1)
+    qc.cx(0, 2)
+    qc.cx(0, 3)
+    qc.cx(0, 4)
 
     device = helper.get_devices()[1]
     bqskit_qc = qiskit_to_bqskit(qc)
@@ -79,3 +83,8 @@ def test_BQSKitMapping_action() -> None:
 
     assert altered_qc != qc
     assert layout is not None
+
+    check_mapping = CheckMap(coupling_map=CouplingMap(device["cmap"]))
+    check_mapping(altered_qc)
+    mapped = check_mapping.property_set["is_swap_mapped"]
+    assert mapped
