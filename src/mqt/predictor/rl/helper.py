@@ -659,20 +659,19 @@ def get_BQSKit_native_gates(device: dict[str, Any]) -> list[gates.Gate] | None:
 def final_layout_pytket_to_qiskit(pytket_circuit: Circuit, qiskit_ciruit: QuantumCircuit) -> Layout:
     pytket_layout = pytket_circuit.qubit_readout
     size_circuit = pytket_circuit.n_qubits
-    qiskit_layout = Layout()
+    qiskit_layout = {}
     qiskit_qreg = qiskit_ciruit.qregs[0]
 
     pytket_layout = dict(sorted(pytket_layout.items(), key=lambda item: item[1]))
 
     for node, qubit_index in pytket_layout.items():
-        new_index = node.index[0]
-        qiskit_layout[new_index] = qiskit_qreg[qubit_index]
+        qiskit_layout[node.index[0]] = qiskit_qreg[qubit_index]
 
     for i in range(size_circuit):
         if i not in set(pytket_layout.values()):
             qiskit_layout[i] = qiskit_qreg[i]
 
-    return qiskit_layout
+    return Layout(input_dict=qiskit_layout)
 
 
 def final_layout_bqskit_to_qiskit(
@@ -706,9 +705,9 @@ def final_layout_bqskit_to_qiskit(
                 qiskit_final_layout[i] = compiled_qc.qubits[i]
 
     return TranspileLayout(
-        initial_layout=qiskit_initial_layout,
+        initial_layout=Layout(input_dict=qiskit_initial_layout),
         input_qubit_mapping=initial_qubit_mapping,
-        final_layout=qiskit_final_layout,
+        final_layout=Layout(input_dict=qiskit_final_layout) if qiskit_final_layout else None,
         _output_qubit_list=compiled_qc.qubits,
         _input_qubit_count=initial_qc.num_qubits,
     )
