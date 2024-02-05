@@ -259,7 +259,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         bqskit_compiled_qc = transpile_pass(bqskit_qc)
                         altered_qc = bqskit_to_qiskit(bqskit_compiled_qc)
                     elif action_index in self.actions_mapping_indices:
-                        bqskit_compiled_qc, initial_layout, final_layout = transpile_pass(self.device)(bqskit_qc)
+                        bqskit_compiled_qc, initial_layout, final_layout = transpile_pass(bqskit_qc)
                         altered_qc = bqskit_to_qiskit(bqskit_compiled_qc)
                         layout = rl.helper.final_layout_bqskit_to_qiskit(
                             initial_layout, final_layout, altered_qc, self.state
