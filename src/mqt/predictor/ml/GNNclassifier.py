@@ -91,11 +91,8 @@ class GNNClassifier:
             for batch in loader:
                 self.optim.zero_grad()
                 out = self.gnn.forward(batch)
-                out = torch.nn.functional.softmax(out, dim=1)  # normalize the outputs to probabilities
-                target = torch.nn.functional.softmax(
-                    batch.y.view(-1, self.output_dim), dim=1
-                )  # normalize the targets to probabilities
-                loss = torch.nn.KLDivLoss()(out.log(), target)  # compute the KL Divergence loss
+                target = batch.y.view(-1, self.output_dim)
+                loss = torch.nn.MSELoss()(out, target)  # compute the MSE loss
                 loss.backward()
                 self.optim.step()
         return
@@ -140,7 +137,8 @@ class MultiGNNClassifier(GNNClassifier):
             for batch in loader:
                 self.optim.zero_grad()
                 out = torch.hstack([gnn.forward(batch) for gnn in self.gnns])  # dim: (batch_size, len(models)=7)
-                loss = torch.nn.MSELoss()(out, batch.y.view(-1, len(self.gnns)))
+                target = batch.y.view(-1, self.output_dim)
+                loss = torch.nn.MSELoss()(out, target)  # compute the MSE loss
                 loss.backward()
                 self.optim.step()
         return

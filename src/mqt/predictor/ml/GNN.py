@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import torch  # type: ignore[import-not-found]
 import torch.nn as nn  # type: ignore[import-not-found]
-import torch.nn.functional as F  # type: ignore[import-not-found]
 from torch_geometric.nn import (  # type: ignore[import-not-found]
     AttentionalAggregation,
     Sequential,
@@ -56,7 +55,7 @@ class Net(nn.Module):  # type: ignore[misc]
         if self.batch_norm:
             self.batch_norm_layer = nn.BatchNorm1d(corrected_hidden_dim)
         else:
-            self.batch_norm_layer = lambda x, batch: x  # identity function
+            self.batch_norm_layer = lambda x, batch: x  # noqa: ARG005
 
         if self.activation == "relu":
             self.activation_func = nn.ReLU()
@@ -151,8 +150,7 @@ class Net(nn.Module):  # type: ignore[misc]
         for layer in self.layers:
             x = layer(x, edge_index=edge_index, edge_attr=edge_attr, batch=batch)
 
-        x = self.pooling(x, batch)
-        return F.sigmoid(x)
+        return self.pooling(x, batch)
 
     def set_params(self, **params: object) -> None:
         for parameter, value in params.items():

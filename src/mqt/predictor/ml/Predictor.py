@@ -299,6 +299,8 @@ class Predictor:
                         6: "quantinuum_h2",
                     }
                     device = get_device_by_name(num2name[comp_path_index])
+                    if comp_path_index == 3:  # translate rigetti_aspen_m2 coupling map
+                        device.coupling_map = [[(e[0] + 40) % 80, (e[1] + 40) % 80] for e in device.coupling_map]
                     score = reward.expected_fidelity(qc, device)
 
                 scores[comp_path_index] = score
