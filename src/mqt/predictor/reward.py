@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
-from qiskit import QuantumCircuit, execute
-from qiskit.providers.fake_provider import FakeGuadalupe
 
 from mqt.bench.utils import calc_qubit_index, calc_supermarq_features
 from mqt.predictor import Calibration
@@ -13,28 +11,16 @@ from mqt.predictor.utils import (
     get_rigetti_qubit_dict,
 )
 
+if TYPE_CHECKING:
+    from qiskit import QuantumCircuit
+
+import quark
+from qiskit.providers.aer import AerSimulator
+from qiskit.providers.fake_provider import FakeGuadalupeV2, FakeQuitoV2
+
 logger = logging.getLogger("mqt-predictor")
 
-figure_of_merit = Literal["expected_fidelity", "critical_depth", "hist_intersec", "max_cut"]
-
-
-def hist_intersection(original_counts: dict[str, int], current_qc: QuantumCircuit) -> float:
-    current_counts = execute(current_qc, backend=FakeGuadalupe(), seed_simulator=10).result().get_counts()
-
-    all_keys = set(original_counts.keys()) | set(current_counts.keys())
-
-    ideal_counts_filled = {key: original_counts.get(key, 0) for key in all_keys}
-    counts_noisy_filled = {key: current_counts.get(key, 0) for key in all_keys}
-
-    assert len(ideal_counts_filled.values()) == len(counts_noisy_filled.values())
-
-    tmp_sum = 0
-    for i in range(len(ideal_counts_filled.values())):
-        tmp_sum += min(list(ideal_counts_filled.values())[i], list(counts_noisy_filled.values())[i])
-
-    res = tmp_sum / sum(original_counts.values())
-    print(res)
-    return res
+figure_of_merit = Literal["expected_fidelity", "critical_depth", "max_cut", "KL"]
 
 
 def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
@@ -43,59 +29,23 @@ def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
     return cast(float, np.round(1 - supermarq_features.critical_depth, precision))
 
 
-def maxcut(compiled_qc: QuantumCircuit, maxcut_adj_matrix) -> tuple[float, list[bool]]:
-    """Calculates the max cut of the considered problem."""
+def KL(compiled_qc: QuantumCircuit, num_initial_qubits: int, device_name: str, precision: int = 10) -> float:
+    if device_name == "ibm_guadalupe":
+        backend = AerSimulator.from_backend(FakeGuadalupeV2())
+    elif device_name == "ibm_quito":
+        backend = AerSimulator.from_backend(FakeQuitoV2())
+    else:
+        error_msg = "Device not supported"
+        raise ValueError(error_msg)
+    backend.set_options(device="CPU")
+    if sum(compiled_qc.count_ops().values()) > 70:
+        return 0
+    print("Training QCBM with:", compiled_qc.count_ops())
+    compiled_qc._global_phase = 0  # noqa: SLF001
+    qcbm = quark.QCBM(n_qubits=num_initial_qubits)
+    best_KL = 1 - qcbm.train(circuit=compiled_qc, backend=backend)
 
-    from qiskit.algorithms.minimum_eigensolvers import SamplingVQE
-    from qiskit.algorithms.optimizers import COBYLA
-    from qiskit.primitives import BackendSampler
-    from qiskit.providers.fake_provider import FakeQuito
-    from qiskit_optimization.applications import Maxcut
-
-    max_cut = Maxcut(maxcut_adj_matrix)
-    qp = max_cut.to_quadratic_program()
-    qubitOp, offset = qp.to_ising()
-
-    backend = FakeQuito()
-
-    qaoa = SamplingVQE(
-        sampler=BackendSampler(backend, skip_transpilation=True),
-        optimizer=COBYLA(maxiter=200),
-        ansatz=compiled_qc,
-    )
-
-    adjusted_qubitOp = qubitOp.apply_layout(compiled_qc.layout)
-
-    print(adjusted_qubitOp, compiled_qc.layout)
-
-    return 0.0, [False, False, False, False]
-    res = qaoa.compute_minimum_eigenvalue(adjusted_qubitOp)
-
-    layout = (
-        compiled_qc._layout.final_layout if compiled_qc._layout.final_layout else compiled_qc._layout.initial_layout
-    )
-    mapping = {}
-    for index in range(adjusted_qubitOp.num_qubits):
-        mapping[index] = layout.get_physical_bits()[index].index
-
-    solutions = []
-    for solution in ["0101", "1010"]:
-        new_solution = ""
-        for index in range(qubitOp.num_qubits):
-            new_solution += solution[mapping[index]]
-
-        if len(solution) < adjusted_qubitOp.num_qubits:
-            for index in range(adjusted_qubitOp.num_qubits - len(solution)):
-                new_solution += "0"
-            solutions.append(new_solution)
-        else:
-            solutions.append(new_solution)
-    print(res.best_measurement, solutions)
-    if res.best_measurement["bitstring"] in solutions:
-        print("SUCCESS")
-        return res.best_measurement["probability"], []
-
-    return 0.0, [False, False, False, False]
+    return cast(float, np.round(best_KL, precision))
 
 
 def expected_fidelity(qc: QuantumCircuit, device_name: str, precision: int = 10) -> float:

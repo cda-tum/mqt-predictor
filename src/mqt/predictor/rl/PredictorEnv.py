@@ -7,16 +7,19 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 import numpy as np
+import quark
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete
 from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
+from qiskit.providers.fake_provider import FakeQuito
 from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
 from qiskit.transpiler.runningpassmanager import TranspileLayout
 
+from mqt.bench.qiskit_helper import get_native_gates
 from mqt.predictor import reward, rl
 
 logger = logging.getLogger("mqt-predictor")
@@ -38,19 +41,16 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.actions_opt_indices = []
         self.used_actions: list[str] = []
 
-        from qiskit.providers.fake_provider import FakeQuito
-
-        self.device = {
-            "name": "ibm_quito",
-            "cmap": FakeQuito().configuration().coupling_map,
-            "native_gates": rl.helper.get_native_gates("ibm"),
-            "max_qubits": 5,
-        }
-        self.ideal_circuit_histogram = None
-
-        self.maxcut_adj_matrix = None
-        self.maxcut_best_value = None
-        self.maxcut_best_solution = None
+        print("Device name: " + device_name)
+        if device_name == "ibm_quito":
+            self.device = {
+                "name": "ibm_quito",
+                "cmap": FakeQuito().configuration().coupling_map,
+                "native_gates": get_native_gates(gate_set_name="ibm"),
+                "max_qubits": 5,
+            }
+        else:
+            self.device = rl.helper.get_device(device_name)
 
         index = 0
 
@@ -82,9 +82,6 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
         self.layout: TranspileLayout | None = None
-        self.num_qubits_uncompiled_circuit = 0
-
-        self.has_parametrized_gates = False
 
         spaces = {
             "num_qubits": Discrete(128),
@@ -98,12 +95,17 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.observation_space = Dict(spaces)
         self.filename = ""
 
+        self.state: QuantumCircuit = quark.generate_circuit(n_qubits=4 if device_name == "ibm_quito" else 8)
+        self.initial_uncompiled_circuit = self.state.copy()
+        self.has_parametrized_gates = len(self.state.parameters) > 0
+        self.num_qubits_uncompiled_circuit = self.state.num_qubits
+        self.best_KL: float = 0.0
+
     def step(self, action: int) -> tuple[dict[str, Any], float, bool, bool, dict[Any, Any]]:
         """Executes the given action and returns the new state, the reward, whether the episode is done, whether the episode is truncated and additional information."""
         self.used_actions.append(str(self.action_set[action].get("name")))
-        print("step: " + str(self.num_steps) + " action: " + str(self.action_set[action].get("name")))
         altered_qc = self.apply_action(action)
-        if not altered_qc:
+        if not altered_qc or sum(altered_qc.count_ops().values()) > 300:
             return (
                 rl.helper.create_feature_dict(self.state),
                 0,
@@ -112,8 +114,13 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 {},
             )
 
-        self.state: QuantumCircuit = altered_qc
+        self.state = altered_qc
         self.num_steps += 1
+
+        # print(
+        #     "step: " + str(self.num_steps) + " action: " + str(self.action_set[action].get("name")),
+        #     self.state.count_ops(),
+        # )
 
         self.valid_actions = self.determine_valid_actions_for_state()
         if len(self.valid_actions) == 0:
@@ -141,19 +148,15 @@ class PredictorEnv(Env):  # type: ignore[misc]
             return reward.expected_fidelity(self.state, self.device["name"])
         if self.reward_function == "critical_depth":
             return reward.crit_depth(self.state)
-        if self.reward_function == "hist_intersec":
-            return reward.hist_intersection(self.ideal_circuit_histogram, self.state)
-        if self.reward_function == "maxcut":
-            reward_value, solution = reward.maxcut(self.state, self.maxcut_adj_matrix)
+        if self.reward_function == "KL":
+            new_KL_value = reward.KL(self.state, self.num_qubits_uncompiled_circuit, self.device["name"])
+            print("Current best value: " + str(self.best_KL))
+            print("New value: " + str(new_KL_value))
+            if new_KL_value > self.best_KL:
+                self.best_KL = new_KL_value
 
-            if self.maxcut_best_value is None or reward_value > self.maxcut_best_value:
-                self.maxcut_best_value = reward_value
-                self.maxcut_best_solution = solution
-                print("new best value: " + str(self.maxcut_best_value))
-                print("new best solution: " + str(self.maxcut_best_solution))
-
-            return reward_value
-        error_msg = f"Reward function {self.reward_function} not supported."  # type: ignore[unreachable]
+            return new_KL_value
+        error_msg = f"Reward function {self.reward_function} not supported."
         raise ValueError(error_msg)
 
     def render(self) -> None:
@@ -185,16 +188,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.valid_actions = self.actions_opt_indices + self.actions_synthesis_indices
         self.error_occured = False
 
-        self.maxcut_adj_matrix = None
-        self.maxcut_best_value = None
-        self.maxcut_best_solution = None
-        self.num_qubits_uncompiled_circuit = self.state.num_qubits
-        self.has_parametrized_gates = len(self.state.parameters) > 0
-
-        print("figure_of_merit: " + str(self.reward_function))
-        if self.reward_function == "maxcut":
-            self.state, self.maxcut_adj_matrix = rl.helper.get_maxcut_ansatz_qc_and_problem_instance()
-            return rl.helper.create_feature_dict(self.state), {}
+        if self.reward_function == "KL":
+            self.state = self.initial_uncompiled_circuit
         else:
             if isinstance(qc, QuantumCircuit):
                 self.state = qc
@@ -203,21 +198,16 @@ class PredictorEnv(Env):  # type: ignore[misc]
             else:
                 self.state, self.filename = rl.helper.get_state_sample()
 
-            if self.reward_function == "hist_intersec":
-                from qiskit import Aer, execute
-
-                ideal_counts = (
-                    execute(self.state, backend=Aer.get_backend("aer_simulator"), seed_simulator=10)
-                    .result()
-                    .get_counts()
-                )
-                self.ideal_circuit_histogram = ideal_counts
-
-            return rl.helper.create_feature_dict(self.state), {}
+        return rl.helper.create_feature_dict(self.state), {}
 
     def action_masks(self) -> list[bool]:
         """Returns a list of valid actions for the current state."""
         action_mask = [action in self.valid_actions for action in self.action_set]
+
+        if self.layout is not None:
+            action_mask = [
+                action_mask[i] and self.action_set[i].get("origin") != "tket" for i in range(len(action_mask))
+            ]
         if self.has_parametrized_gates or self.layout is not None:
             # remove all actions that are from "origin"=="bqskit" because they are not supported for parametrized gates
             # or after layout since using BQSKit after a layout is set may result in an error
@@ -275,7 +265,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
             elif action["origin"] == "tket":
                 try:
-                    tket_qc = qiskit_to_tk(self.state, preserve_param_uuid=True)
+                    tket_qc = qiskit_to_tk(self.state)
                     for elem in transpile_pass:
                         elem.apply(tket_qc)
                     qbs = tket_qc.qubits

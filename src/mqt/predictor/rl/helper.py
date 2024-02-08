@@ -69,11 +69,10 @@ else:
 from bqskit import compile as bqskit_compile
 from bqskit.ir import gates
 from qiskit import QuantumRegister
+from qiskit.providers.fake_provider import FakeGuadalupe
 from qiskit.transpiler.layout import Layout
 from qiskit.transpiler.preset_passmanagers import common
 from qiskit.transpiler.runningpassmanager import ConditionalController
-from bqskit.ir import gates
-from qiskit.providers.fake_provider import FakeGuadalupe
 
 logger = logging.getLogger("mqt-predictor")
 
@@ -402,32 +401,6 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
         raise RuntimeError("Could not read QuantumCircuit from: " + str(file_list[random_index])) from None
 
     return qc, str(file_list[random_index])
-
-
-def get_maxcut_instance():
-    import networkx as nx
-
-    n = 4  # Number of nodes in graph
-    G = nx.Graph()
-    G.add_nodes_from(np.arange(0, n, 1))
-    elist = [(0, 1, 1.0), (0, 2, 1.0), (0, 3, 1.0), (1, 2, 1.0), (2, 3, 1.0)]
-    G.add_weighted_edges_from(elist)
-
-    w = np.zeros([n, n])
-    for i in range(n):
-        for j in range(n):
-            temp = G.get_edge_data(i, j, default=0)
-            if temp != 0:
-                w[i, j] = temp["weight"]
-    return w
-
-
-def get_maxcut_ansatz_qc_and_problem_instance() -> tuple[QuantumCircuit, np.ndarray]:
-    import converter
-
-    maxcut_adj_matrix = get_maxcut_instance()
-    qc = converter.get_qaoa_qc(4, 1, maxcut_adj_matrix)
-    return qc, maxcut_adj_matrix
 
 
 def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float_]]:
