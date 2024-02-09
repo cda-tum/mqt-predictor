@@ -47,7 +47,7 @@ def test_BQSKitSynthesis_action(device: dict[str, Any]) -> None:
     check_nat_gates(qc)
     assert not check_nat_gates.property_set["all_gates_in_basis"]
 
-    transpile_pass = action_BQSKitSynthesis["transpile_pass"](qc.num_qubits, device["name"].split("_")[0])
+    transpile_pass = action_BQSKitSynthesis["transpile_pass"](device)
     bqskit_qc = qiskit_to_bqskit(qc)
     altered_qc = bqskit_to_qiskit(transpile_pass(bqskit_qc))
 
