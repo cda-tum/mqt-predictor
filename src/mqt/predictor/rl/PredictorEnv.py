@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from pathlib import Path
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import quark
@@ -101,11 +99,23 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.num_qubits_uncompiled_circuit = self.state.num_qubits
         self.best_KL: float = 0.0
 
+        # create text file where the KL reward values and the number of gates are written to every time the reward is calculated
+        # the filename should contain the date and time of the start of the training
+        # the file should be created in the same directory as the trained model
+        from datetime import datetime
+
+        self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        with Path(str(self.timestamp) + "_KL_values.txt").open() as file:
+            file.write("KL values and number of gates\n")
+
     def step(self, action: int) -> tuple[dict[str, Any], float, bool, bool, dict[Any, Any]]:
         """Executes the given action and returns the new state, the reward, whether the episode is done, whether the episode is truncated and additional information."""
         self.used_actions.append(str(self.action_set[action].get("name")))
         altered_qc = self.apply_action(action)
-        if not altered_qc or sum(altered_qc.count_ops().values()) > 300:
+        if (
+            not altered_qc
+            or sum(altered_qc.count_ops().values()) > sum(self.initial_uncompiled_circuit.count_ops().values()) * 10
+        ):
             return (
                 rl.helper.create_feature_dict(self.state),
                 0,
@@ -149,9 +159,19 @@ class PredictorEnv(Env):  # type: ignore[misc]
         if self.reward_function == "critical_depth":
             return reward.crit_depth(self.state)
         if self.reward_function == "KL":
-            new_KL_value = reward.KL(self.state, self.num_qubits_uncompiled_circuit, self.device["name"])
+            new_KL_value = reward.KL(
+                self.state,
+                sum(self.initial_uncompiled_circuit.count_ops().values()),
+                self.num_qubits_uncompiled_circuit,
+                self.device["name"],
+            )
             print("Current best value: " + str(self.best_KL))
             print("New value: " + str(new_KL_value))
+
+            if new_KL_value > 0.0:
+                with Path(self.timestamp).open(mode="a") as file:
+                    file.write(str(new_KL_value) + " " + str(self.state.count_ops()) + "\n")
+
             if new_KL_value > self.best_KL:
                 self.best_KL = new_KL_value
 
