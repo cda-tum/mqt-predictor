@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 import requests
@@ -49,6 +49,7 @@ from qiskit.transpiler.passes import (
     StochasticSwap,
     TrivialLayout,
     UnitarySynthesis,
+    VF2Layout,
 )
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
@@ -231,16 +232,26 @@ def get_actions_layout() -> list[dict[str, Any]]:
             ],
             "origin": "qiskit",
         },
-        # {
-        #     "name": "VF2Layout",
-        #     "transpile_pass": lambda device: [
-        #         VF2Layout(coupling_map=CouplingMap(device["cmap"]), properties=get_ibm_backend_properties_by_device_name(device["name"])),
-        #         FullAncillaAllocation(coupling_map=CouplingMap(device["cmap"])) ,
-        #         EnlargeWithAncilla(),
-        #         ApplyLayout(),
-        #     ],
-        #     "origin": "qiskit",
-        # },
+        {
+            "name": "VF2Layout",
+            "transpile_pass": lambda device: [
+                VF2Layout(
+                    coupling_map=CouplingMap(device["cmap"]),
+                    properties=get_ibm_backend_properties_by_device_name(device["name"]),
+                ),
+            ],
+            "origin": "qiskit",
+        },
+    ]
+
+
+def get_layout_postprocessing_qiskit_pass() -> (
+    Callable[[dict[str, Any]], list[FullAncillaAllocation | EnlargeWithAncilla | ApplyLayout]]
+):
+    return lambda device: [
+        FullAncillaAllocation(coupling_map=CouplingMap(device["cmap"])),
+        EnlargeWithAncilla(),
+        ApplyLayout(),
     ]
 
 

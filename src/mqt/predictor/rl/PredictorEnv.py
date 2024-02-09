@@ -260,14 +260,16 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     self.error_occured = True
                     return None
                 if action_index in self.actions_layout_indices + self.actions_mapping_indices:
-                    assert pm.property_set["layout"]
-                    self.layout = TranspileLayout(
-                        initial_layout=pm.property_set["layout"],
-                        input_qubit_mapping=pm.property_set["original_qubit_indices"],
-                        final_layout=pm.property_set["final_layout"],
-                        _output_qubit_list=altered_qc.qubits,
-                        _input_qubit_count=self.num_qubits_uncompiled_circuit,
-                    )
+                    if self.action_set[action_index].get("name") != "VF2Layout":
+                        assert pm.property_set["layout"]
+                    if pm.property_set["layout"]:
+                        self.layout = TranspileLayout(
+                            initial_layout=pm.property_set["layout"],
+                            input_qubit_mapping=pm.property_set["original_qubit_indices"],
+                            final_layout=pm.property_set["final_layout"],
+                            _output_qubit_list=altered_qc.qubits,
+                            _input_qubit_count=self.num_qubits_uncompiled_circuit,
+                        )
                 elif action_index in self.actions_routing_indices:
                     assert self.layout is not None
                     self.layout.final_layout = pm.property_set["final_layout"]
