@@ -366,6 +366,12 @@ def get_devices() -> list[dict[str, Any]]:
             "max_qubits": 16,
         },
         {
+            "name": "ibm_quito",
+            "cmap": FakeQuito().configuration().coupling_map,
+            "native_gates": get_native_gates("ibm"),
+            "max_qubits": 5,
+        },
+        {
             "name": "oqc_lucy",
             "cmap": get_cmap_from_devicename("oqc_lucy"),
             "native_gates": get_native_gates("oqc"),

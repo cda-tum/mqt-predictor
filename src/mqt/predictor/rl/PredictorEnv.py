@@ -12,12 +12,10 @@ from gymnasium.spaces import Box, Dict, Discrete
 from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
-from qiskit.providers.fake_provider import FakeQuito
 from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
 from qiskit.transpiler.runningpassmanager import TranspileLayout
 
-from mqt.bench.qiskit_helper import get_native_gates
 from mqt.predictor import reward, rl
 
 logger = logging.getLogger("mqt-predictor")
@@ -39,16 +37,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.actions_opt_indices = []
         self.used_actions: list[str] = []
 
-        print("Device name: " + device_name)
-        if device_name == "ibm_quito":
-            self.device = {
-                "name": "ibm_quito",
-                "cmap": FakeQuito().configuration().coupling_map,
-                "native_gates": get_native_gates(gate_set_name="ibm"),
-                "max_qubits": 5,
-            }
-        else:
-            self.device = rl.helper.get_device(device_name)
+        self.device = rl.helper.get_device(device_name)
 
         index = 0
 

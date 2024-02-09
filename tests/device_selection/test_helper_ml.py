@@ -10,11 +10,13 @@ def test_get_index_to_device_LUT() -> None:
     expected = {
         0: "ibm_washington",
         1: "ibm_montreal",
-        2: "oqc_lucy",
-        3: "rigetti_aspen_m2",
-        4: "ionq_harmony",
-        5: "ionq_aria1",
-        6: "quantinuum_h2",
+        2: "ibm_guadalupe",
+        3: "ibm_quito",
+        4: "oqc_lucy",
+        5: "rigetti_aspen_m2",
+        6: "ionq_harmony",
+        7: "ionq_aria1",
+        8: "quantinuum_h2",
     }
     assert ml.helper.get_index_to_device_LUT() == expected
 
