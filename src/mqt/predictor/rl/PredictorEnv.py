@@ -105,7 +105,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         from datetime import datetime
 
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        with Path(str(self.timestamp) + "_KL_values.txt").open() as file:
+        with Path(str(self.timestamp) + "_KL_values.txt").open(mode="w+") as file:
             file.write("KL values and number of gates\n")
 
     def step(self, action: int) -> tuple[dict[str, Any], float, bool, bool, dict[Any, Any]]:
