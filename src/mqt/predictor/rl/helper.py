@@ -69,7 +69,7 @@ else:
 from bqskit import compile as bqskit_compile
 from bqskit.ir import gates
 from qiskit import QuantumRegister
-from qiskit.providers.fake_provider import FakeGuadalupe
+from qiskit.providers.fake_provider import FakeGuadalupe, FakeMontreal, FakeQuito, FakeWashington
 from qiskit.transpiler.layout import Layout
 from qiskit.transpiler.preset_passmanagers import common
 from qiskit.transpiler.runningpassmanager import ConditionalController
@@ -231,7 +231,39 @@ def get_actions_layout() -> list[dict[str, Any]]:
             ],
             "origin": "qiskit",
         },
+        # {
+        #     "name": "VF2Layout",
+        #     "transpile_pass": lambda device: [
+        #         VF2Layout(coupling_map=CouplingMap(device["cmap"]), properties=get_ibm_backend_properties_by_device_name(device["name"])),
+        #         FullAncillaAllocation(coupling_map=CouplingMap(device["cmap"])) ,
+        #         EnlargeWithAncilla(),
+        #         ApplyLayout(),
+        #     ],
+        #     "origin": "qiskit",
+        # },
     ]
+
+
+def get_ibm_backend_properties_by_device_name(device_name: str) -> Any:
+    """Returns the IBM backend name for the given device name.
+
+    Args:
+        device_name (str): The name of the device for which the IBM backend name is returned.
+
+    Returns:
+        str: The IBM backend name for the given device name.
+    """
+    if "ibm" not in device_name:
+        return None
+    if device_name == "ibm_washington":
+        return FakeWashington().properties()
+    if device_name == "ibm_montreal":
+        return FakeMontreal().properties()
+    if device_name == "ibm_guadalupe":
+        return FakeGuadalupe().properties()
+    if device_name == "ibm_quito":
+        return FakeQuito().properties()
+    return None
 
 
 def get_actions_routing() -> list[dict[str, Any]]:
