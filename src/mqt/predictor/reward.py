@@ -40,9 +40,9 @@ def KL(
         error_msg = "Device not supported"
         raise ValueError(error_msg)
     backend.set_options(device="CPU")
-    if sum(compiled_qc.count_ops().values()) > initial_gate_count * 3:
+    if sum(compiled_qc.count_ops().values()) > initial_gate_count * 7:
         return 0
-    print("Training QCBM with:", compiled_qc.count_ops())
+    print("Training QCBM with:", compiled_qc.count_ops(), "initial gate count:", initial_gate_count)
     compiled_qc._global_phase = 0  # noqa: SLF001
     qcbm = quark.QCBM(n_qubits=num_initial_qubits)
     best_KL = 1 - qcbm.train(circuit=compiled_qc, backend=backend)

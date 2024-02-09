@@ -103,7 +103,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         altered_qc = self.apply_action(action)
         if (
             not altered_qc
-            or sum(altered_qc.count_ops().values()) > sum(self.initial_uncompiled_circuit.count_ops().values()) * 10
+            or sum(altered_qc.count_ops().values()) > sum(self.initial_uncompiled_circuit.count_ops().values()) * 15
         ):
             return (
                 rl.helper.create_feature_dict(self.state),
