@@ -37,6 +37,7 @@ class GNNClassifier:
     jk: str
     v2: bool
     output_mask: torch.Tensor
+    zx: bool
 
     def __init__(self, **kwargs: object) -> None:
         self.defaults = {
@@ -64,6 +65,7 @@ class GNNClassifier:
             "jk": "last",
             "v2": True,
             "output_mask": torch.tensor([True, True, True, True, True, True, True]),
+            "zx": False,
         }
 
         # Update defaults with provided kwargs
@@ -81,7 +83,7 @@ class GNNClassifier:
             setattr(self, parameter, value)
 
         # define the model
-        self.gnn = Net(**params)
+        self.gnn = Net(**self.defaults)
 
         # define the optimizer
         if self.optimizer == "adam":
