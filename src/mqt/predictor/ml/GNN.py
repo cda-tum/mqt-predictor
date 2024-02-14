@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import torch  # type: ignore[import-not-found]
-import torch.nn as nn  # type: ignore[import-not-found]
-from torch.nn import functional as F  # type: ignore[import-not-found]
-from torch_geometric.nn import (  # type: ignore[import-not-found]
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from torch_geometric.nn import (
     AttentionalAggregation,
     Sequential,
     TransformerConv,
@@ -151,7 +151,7 @@ class Net(nn.Module):  # type: ignore[misc]
         self.mu_layer = nn.Linear(last_hidden_dim, self.output_dim)
         self.logstd_layer = nn.Linear(last_hidden_dim, self.output_dim)
 
-    def forward(self, data: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, data: torch.Tensor) -> torch.Tensor:
         x, edge_index, edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
 
         # Apply the node and edge embeddings

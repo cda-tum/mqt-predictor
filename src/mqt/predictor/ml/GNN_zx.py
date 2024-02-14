@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import torch  # type: ignore[import-not-found]
-import torch.nn as nn  # type: ignore[import-not-found]
-from torch.nn import functional as F  # type: ignore[import-not-found]
-from torch_geometric.nn import (  # type: ignore[import-not-found]
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from torch_geometric.nn import (
     AttentionalAggregation,
     Sequential,
     TransformerConv,
@@ -11,9 +11,6 @@ from torch_geometric.nn import (  # type: ignore[import-not-found]
     global_mean_pool,
     models,
 )
-
-# import gymnasium
-# from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 
 class Net(nn.Module):  # type: ignore[misc]
@@ -141,7 +138,7 @@ class Net(nn.Module):  # type: ignore[misc]
         elif self.readout == "max":
             self.pooling = Sequential("x, batch", [(self.out_nn, "x -> x"), (global_max_pool, "x, batch -> x")])
 
-    def forward(self, data: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, data: torch.Tensor) -> torch.Tensor:
         x, edge_index, batch = data.x, data.edge_index, data.batch
 
         # Apply the node embedding

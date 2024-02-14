@@ -99,7 +99,7 @@ implicit_reexport = true
 # recent versions of `gym` are typed, but stable-baselines3 pins a very old version of gym.
 # qiskit is not yet marked as typed, but is typed mostly.
 # the other libraries do not have type stubs.
-module = ["qiskit.*", "joblib.*", "sklearn.*", "matplotlib.*", "gymnasium.*", "mqt.bench.*", "sb3_contrib.*"]
+module = ["qiskit.*", "joblib.*", "sklearn.*", "matplotlib.*", "gymnasium.*", "mqt.bench.*", "sb3_contrib.*", "torch_geometric.*", "torch.*", "pyzx.*"]
 ignore_missing_imports = true
 
 [tool.ruff]

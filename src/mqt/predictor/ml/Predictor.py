@@ -16,7 +16,7 @@ from mqt.predictor import ml, reward, rl, utils
 
 if TYPE_CHECKING:
     from numpy._typing import NDArray
-    from torch_geometric.data import Data  # type: ignore[import-not-found]
+    from torch_geometric.data import Data
 
 plt.rcParams["font.family"] = "Times New Roman"
 
@@ -232,7 +232,7 @@ class Predictor:
                 figure_of_merit,
                 logger.level,
             )
-            for filename in path_uncompiled_circuits.glob("*.qasm")  # type: ignore[union-attr]
+            for filename in path_uncompiled_circuits.glob("*.qasm")
         )
         for sample in results:
             training_sample, circuit_name, scores = sample
@@ -400,7 +400,7 @@ class Predictor:
         y, indices = np.array(y_list), np.array(range(len(y_list)))
 
         if graph_only:
-            X = X_graph
+            X: Any = X_graph
         else:
             X = np.array(X_list)
             # Store all non zero feature indices

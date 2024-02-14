@@ -15,14 +15,14 @@ from typing import TYPE_CHECKING
 
 import networkx as nx  # type: ignore[import-untyped]
 import numpy as np
-import pyzx as zx  # type: ignore[import-not-found]
+import pyzx as zx
 from joblib import dump
 from qiskit import QuantumCircuit
 from qiskit.circuit import Clbit
 from qiskit.converters import circuit_to_dag
 from qiskit.dagcircuit import DAGInNode, DAGOutNode
 from qiskit.transpiler.passes import RemoveBarriers
-from torch_geometric.utils import from_networkx  # type: ignore[import-not-found]
+from torch_geometric.utils import from_networkx
 
 from mqt.bench.devices import Device, get_available_devices
 from mqt.bench.utils import calc_supermarq_features
@@ -30,7 +30,7 @@ from mqt.predictor import ml, reward, rl
 
 if TYPE_CHECKING:
     import rustworkx as rx
-    import torch_geometric  # type: ignore[import-not-found]
+    import torch_geometric
     from numpy._typing import NDArray
     from qiskit.circuit import Qubit
     from sklearn.ensemble import RandomForestClassifier
@@ -292,7 +292,7 @@ def load_training_data(
         return training_data, names_list, scores_list
 
 
-def rustworkx_to_networkx(graph: rx.PyDAG[Any, Any], ops_list_encoding: dict[str, int]) -> nx.MultiDiGraph | nx.DiGraph:
+def rustworkx_to_networkx(graph: rx.PyDAG[Any, Any], ops_list_encoding: dict[str, int]) -> nx.DiGraph:
     """
     Convert a rustworkx DAG to a networkx graph.
     """
@@ -339,7 +339,7 @@ def rustworkx_to_networkx(graph: rx.PyDAG[Any, Any], ops_list_encoding: dict[str
     return nx_graph
 
 
-def zx_to_networkx(zx_graph):
+def zx_to_networkx(zx_graph: zx.graph.BaseGraph) -> nx.DiGraph:
     # create a networkx graph
     nx_graph = nx.DiGraph()
 
@@ -366,7 +366,7 @@ def substitute_cp_and_cu1_gate(qasm: str) -> str:
     """
 
     # Function to replace cp gate with custom gate definition
-    def replace_cp_gate(match):
+    def replace_cp_gate(match: re.Match[str]) -> str:
         phase, qubit1, qubit2 = match.groups()
         if "/" in phase:
             numerator, denominator = phase.split("/")
@@ -394,7 +394,7 @@ def substitute_cp_and_cu1_gate(qasm: str) -> str:
 
 
 def format_u1_gate(qasm: str) -> str:
-    def format_u1(match):
+    def format_u1(match: re.Match[str]) -> str:
         phase = match.group(1)
         return f"u1({phase})"
 
@@ -402,7 +402,7 @@ def format_u1_gate(qasm: str) -> str:
 
 
 def replace_swap_gate(qasm: str) -> str:
-    def format_swap(match):
+    def format_swap(match: re.Match[str]) -> str:
         qubit1 = match.group(1)
         qubit2 = match.group(2)
         return f"cx {qubit1},{qubit2}; cx {qubit2},{qubit1}; cx {qubit1},{qubit2};"

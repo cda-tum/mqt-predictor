@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import torch  # type: ignore[import-not-found]
+import torch
 from torch import nn
-from torch_geometric.loader import DataLoader  # type: ignore[import-not-found]
+from torch_geometric.loader import DataLoader
 
 from mqt.predictor.ml.GNN import Net
 
 if TYPE_CHECKING:
-    from torch_geometric.data import Dataset  # type: ignore[import-not-found]
+    from torch_geometric.data import Dataset
 
 
 class GNNClassifier:
