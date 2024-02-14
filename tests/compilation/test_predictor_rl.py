@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import pytest
 from qiskit import QuantumCircuit
 
-from mqt.bench import get_benchmark
+from mqt.bench import benchmark_generator, get_benchmark
 from mqt.predictor import reward, rl
 
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
@@ -20,6 +21,14 @@ def test_qcompile_with_pretrained_models(figure_of_merit: reward.figure_of_merit
     qc_compiled, compilation_information = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name="ionq_harmony")
     assert isinstance(qc_compiled, QuantumCircuit)
     assert compilation_information is not None
+
+
+def test_predictor_env_reset_from_string() -> None:
+    predictor = rl.Predictor(figure_of_merit="expected_fidelity", device_name="ionq_harmony")
+    qasm_path = Path("test.qasm")
+    qc = benchmark_generator.get_benchmark("dj", 1, 3)
+    qc.qasm(filename=str(qasm_path))
+    assert predictor.env.reset(qc=qasm_path)
 
 
 @pytest.mark.parametrize(

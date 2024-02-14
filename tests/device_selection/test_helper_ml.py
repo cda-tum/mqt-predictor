@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from mqt.bench import benchmark_generator
-from mqt.bench.devices import get_available_device_names
+from mqt.bench.devices import get_available_device_names, get_available_devices
 from mqt.predictor import ml, qcompile
 
 
@@ -56,6 +56,15 @@ def test_get_path_trained_model() -> None:
 def test_predict_device_for_figure_of_merit() -> None:
     qc = benchmark_generator.get_benchmark("ghz", 1, 5)
     assert ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity") in get_available_device_names()
+
+    with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
+        ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
+
+    devices = get_available_devices()
+    for d in devices:
+        d.num_qubits = 0
+    with pytest.raises(ValueError, match="No suitable device found."):
+        ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity", devices)
 
 
 def test_qcompile() -> None:
