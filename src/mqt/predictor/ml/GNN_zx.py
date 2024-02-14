@@ -44,7 +44,7 @@ class Net(nn.Module):  # type: ignore[misc]
         if self.node_embedding_dim and self.node_embedding_dim > 1:
             self.node_embedding = nn.Embedding(self.num_node_categories, self.node_embedding_dim)
 
-        if self.node_embedding_dim and self.node_embedding_dim == 1:
+        if self.node_embedding_dim and self.node_embedding_dim == 1:  # one-hot encoding
             self.node_embedding = lambda x: F.one_hot(x, num_classes=self.num_node_categories).float()
             self.node_embedding_dim = self.num_node_categories
 
@@ -141,13 +141,10 @@ class Net(nn.Module):  # type: ignore[misc]
         elif self.readout == "max":
             self.pooling = Sequential("x, batch", [(self.out_nn, "x -> x"), (global_max_pool, "x, batch -> x")])
 
-        self.mu_layer = nn.Linear(last_hidden_dim, self.output_dim)
-        self.logstd_layer = nn.Linear(last_hidden_dim, self.output_dim)
-
     def forward(self, data: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        x, edge_index, _edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
+        x, edge_index, batch = data.x, data.edge_index, data.batch
 
-        # Apply the node and edge embeddings
+        # Apply the node embedding
         if self.node_embedding_dim:
             x_0 = self.node_embedding(x[:, 0].long()).squeeze()
             x_1 = x[:, 1].float().unsqueeze(1)

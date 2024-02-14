@@ -199,15 +199,25 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
 
     ops_list = qc.count_ops()
     ops_list_dict = dict_to_featurevector(ops_list)
-
-    # operations/gates encoding for graph feature creation
-    ops_list_encoding = ops_list_dict.copy()
-    ops_list_encoding["measure"] = len(ops_list_encoding)  # add extra gate
-    # unique number for each gate {'measure': 0, 'cx': 1, ...}
-    for i, key in enumerate(ops_list_dict):
-        ops_list_encoding[key] = i
-
     feature_dict = {}
+
+    try:
+        # operations/gates encoding for graph feature creation
+        ops_list_encoding = ops_list_dict.copy()
+        ops_list_encoding["measure"] = len(ops_list_encoding)  # add extra gate
+        # unique number for each gate {'measure': 0, 'cx': 1, ...}
+        for i, key in enumerate(ops_list_dict):
+            ops_list_encoding[key] = i
+
+        feature_dict["graph"] = circuit_to_graph(qc, ops_list_encoding)
+    except Exception:
+        feature_dict["graph"] = None
+
+    try:
+        feature_dict["zx_graph"] = qasm_to_zx(qc.qasm())
+    except Exception:  # e.g. zx-calculus not supported for all circuits
+        feature_dict["zx_graph"] = None
+
     for key in ops_list_dict:
         feature_dict[key] = float(ops_list_dict[key])
 
@@ -220,8 +230,6 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     feature_dict["entanglement_ratio"] = supermarq_features.entanglement_ratio
     feature_dict["parallelism"] = supermarq_features.parallelism
     feature_dict["liveness"] = supermarq_features.liveness
-    feature_dict["graph"] = circuit_to_graph(qc, ops_list_encoding)
-    feature_dict["zx_graph"] = qasm_to_zx(qc.qasm())
     return feature_dict
 
 

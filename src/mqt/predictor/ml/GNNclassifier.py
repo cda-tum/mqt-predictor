@@ -98,8 +98,9 @@ class GNNClassifier:
             for batch in loader:
                 self.optim.zero_grad()
                 out = self.gnn.forward(batch)
-                target = batch.y.view(-1, self.output_dim)
-                loss = torch.nn.MSELoss()(out, target)  # compute the MSE loss
+                target = batch.y.view(-1, len(self.output_mask))
+                masked_target = target[:, self.output_mask]
+                loss = torch.nn.MSELoss()(out, masked_target)  # compute the MSE loss
                 loss.backward()
                 self.optim.step()
         return
@@ -111,7 +112,7 @@ class GNNClassifier:
 
     def score(self, dataset: Dataset) -> float:
         pred = self.predict(dataset)
-        labels = torch.stack([data.y for data in dataset]).argmax(dim=1)
+        labels = torch.stack([data.y for data in dataset])[:, self.output_mask].argmax(dim=1)
         correct = pred.eq(labels).sum().item()
         total = len(dataset)
         return int(correct) / total

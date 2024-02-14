@@ -33,7 +33,7 @@ class Net(nn.Module):  # type: ignore[misc]
     beta: bool = False
     bias: bool = True
     root_weight: bool = True
-    model: str = "TransformerConv"
+    model: str = "GCN"
     jk: str = "last"
     v2: bool = True
 
@@ -46,10 +46,10 @@ class Net(nn.Module):  # type: ignore[misc]
         if self.edge_embedding_dim and self.edge_embedding_dim > 1:
             self.edge_embedding = nn.Embedding(self.num_edge_categories, self.edge_embedding_dim)
 
-        if self.node_embedding_dim and self.node_embedding_dim == 1:
+        if self.node_embedding_dim and self.node_embedding_dim == 1:  # one-hot encoding
             self.node_embedding = lambda x: F.one_hot(x, num_classes=self.num_node_categories).float()
             self.node_embedding_dim = self.num_node_categories
-        if self.edge_embedding_dim and self.edge_embedding_dim == 1:
+        if self.edge_embedding_dim and self.edge_embedding_dim == 1:  # one-hot encoding
             self.edge_embedding = lambda x: F.one_hot(x, num_classes=self.num_edge_categories).float()
             self.edge_embedding_dim = self.num_edge_categories
 
@@ -115,7 +115,7 @@ class Net(nn.Module):  # type: ignore[misc]
                     act=self.activation_func,
                     norm=self.batch_norm_layer if self.batch_norm else None,
                     edge_dim=self.edge_embedding_dim if self.edge_embedding_dim else 1,
-                    v2=True,
+                    v2=self.v2,
                 )
             ]
             last_hidden_dim = self.output_dim

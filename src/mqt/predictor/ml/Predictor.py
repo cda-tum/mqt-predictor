@@ -313,11 +313,7 @@ class Predictor:
         if num_not_empty_entries == 0:
             logger.warning("no compiled circuits found for:" + str(file))
 
-        try:
-            feature_vec = ml.helper.create_feature_dict(str(path_uncompiled_circuit / file))
-        except Exception as e:
-            print(e, file)
-            return (([], -1), "", scores)
+        feature_vec = ml.helper.create_feature_dict(str(path_uncompiled_circuit / file))
 
         training_sample = (list(feature_vec.values()), np.argmax(scores))
         circuit_name = str(file).split(".")[0]
@@ -392,41 +388,32 @@ class Predictor:
         scores_list: list[list[float]] = [[] for _ in range(len(raw_scores_list))]
         X_raw = list(unzipped_training_data_X)
         X_list: list[list[float]] = [[] for _ in range(len(X_raw))]
-        if graph_only:
-            X_graph: list[Data] = [None for _ in range(len(X_raw))]
+        X_graph: list[list[Data]] = [[] for _ in range(len(X_raw))]
         y_list = list(unzipped_training_data_Y)
         for i in range(len(X_raw)):
-            if not X_raw[i]:
-                continue
-            X_list[i] = list(X_raw[i][:-2])  # all but graphs
             if graph_only:
-                X_graph[i] = X_raw[i][-1]  # graph feature
+                X_graph[i] = list(X_raw[i][:2])  # only graphs
+            else:
+                X_list[i] = list(X_raw[i][2:])  # all but graphs
             scores_list[i] = list(raw_scores_list[i])
 
-        # remove all empty (erroneous) files
-        X_list = [x for x, raw in zip(X_list, X_raw) if raw]
-        y_list = [y for y, raw in zip(y_list, X_raw) if raw]
-        names_list = [name for name, raw in zip(names_list, X_raw) if raw]
-        scores_list = [score for score, raw in zip(scores_list, X_raw) if raw]
+        y, indices = np.array(y_list), np.array(range(len(y_list)))
+
         if graph_only:
-            X_graph = [x for x, raw in zip(X_graph, X_raw) if raw]
+            X = X_graph
+        else:
+            X = np.array(X_list)
+            # Store all non zero feature indices
+            non_zero_indices = [i for i in range(len(X[0])) if sum(X[:, i]) > 0]
+            X = X[:, non_zero_indices]
 
-        X, y, indices = np.array(X_list), np.array(y_list), np.array(range(len(y_list)))
+            if save_non_zero_indices:
+                data = np.asarray(non_zero_indices)
+                np.save(
+                    ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True),
+                    data,
+                )
 
-        # Store all non zero feature indices
-        non_zero_indices = [i for i in range(len(X[0])) if sum(X[:, i]) > 0]
-        X = X[:, non_zero_indices]
-
-        if save_non_zero_indices:
-            data = np.asarray(non_zero_indices)
-            np.save(
-                ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True),
-                data,
-            )
-
-        # Overwrite X with graph features only
-        if graph_only:
-            X = X_graph  # type: ignore[assignment]
         (
             X_train,
             X_test,
