@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import torch  # type: ignore[import-not-found]
+from torch import nn
 from torch_geometric.loader import DataLoader  # type: ignore[import-not-found]
 
 from mqt.predictor.ml.GNN import Net
@@ -35,6 +36,7 @@ class GNNClassifier:
     model: str
     jk: str
     v2: bool
+    output_mask: torch.Tensor
 
     def __init__(self, **kwargs: object) -> None:
         self.defaults = {
@@ -58,14 +60,14 @@ class GNNClassifier:
             "beta": False,
             "bias": True,
             "root_weight": True,
-            "model": "TransformerConv",
+            "model": "GCN",
             "jk": "last",
             "v2": True,
+            "output_mask": torch.tensor([True, True, True, True, True, True, True]),
         }
 
         # Update defaults with provided kwargs
-        self.defaults.update(kwargs)
-        self.set_params(**self.defaults)
+        self.set_params(**kwargs)
 
     def get_params(self, deep: bool = False) -> dict[str, object]:
         if deep:
@@ -73,15 +75,20 @@ class GNNClassifier:
         return dict(self.defaults.items())
 
     def set_params(self, **params: object) -> GNNClassifier:
+        # Update defaults with provided kwargs
         self.defaults.update(params)
         for parameter, value in self.defaults.items():
             setattr(self, parameter, value)
 
+        # define the model
         self.gnn = Net(**params)
+
+        # define the optimizer
         if self.optimizer == "adam":
             self.optim = torch.optim.Adam(self.gnn.parameters(), lr=self.learning_rate, weight_decay=5e-4)
         elif self.optimizer == "sgd":
             self.optim = torch.optim.SGD(self.gnn.parameters(), lr=self.learning_rate, momentum=0.9)
+
         return self
 
     def fit(self, dataset: Dataset) -> None:
@@ -114,18 +121,23 @@ class MultiGNNClassifier(GNNClassifier):
     def __init__(self, **kwargs: object) -> None:
         super().__init__(**kwargs)
 
-        self.global_output_dim = kwargs["output_dim"]
-        # one model for each output
-        kwargs["output_dim"] = 1
-        self.gnns = [Net(**kwargs) for _ in range(self.global_output_dim)]  # type: ignore[call-overload]
-
     def set_params(self, **params: object) -> MultiGNNClassifier:
-        super().set_params(**params)
+        # Update defaults with provided kwargs
+        self.defaults.update(params)
+        for parameter, value in self.defaults.items():
+            setattr(self, parameter, value)
 
-        self.global_output_dim = params["output_dim"]
-        # one model for each output
+        # define a model for each output
+        global_output_dim = params.get("output_dim", self.defaults["output_dim"])
         params["output_dim"] = 1
-        self.gnns = [Net(**params) for _ in range(self.global_output_dim)]  # type: ignore[call-overload]
+        self.gnns = nn.ModuleList([Net(**params) for _ in range(global_output_dim)])  # type: ignore[call-overload]
+
+        # define the optimizer
+        if self.optimizer == "adam":
+            self.optim = torch.optim.Adam(self.gnns.parameters(), lr=self.learning_rate, weight_decay=5e-4)
+        elif self.optimizer == "sgd":
+            self.optim = torch.optim.SGD(self.gnns.parameters(), lr=self.learning_rate, momentum=0.9)
+
         return self
 
     def fit(self, dataset: Dataset) -> None:
@@ -137,8 +149,9 @@ class MultiGNNClassifier(GNNClassifier):
             for batch in loader:
                 self.optim.zero_grad()
                 out = torch.hstack([gnn.forward(batch) for gnn in self.gnns])  # dim: (batch_size, len(models)=7)
-                target = batch.y.view(-1, self.output_dim)
-                loss = torch.nn.MSELoss()(out, target)  # compute the MSE loss
+                target = batch.y.view(-1, len(self.output_mask))
+                masked_target = target[:, self.output_mask]
+                loss = torch.nn.MSELoss()(out, masked_target)  # compute the MSE loss
                 loss.backward()
                 self.optim.step()
         return

@@ -33,7 +33,7 @@ class Net(nn.Module):  # type: ignore[misc]
     beta: bool = False
     bias: bool = True
     root_weight: bool = True
-    model: str = "TransformerConv"
+    model: str = "GCN"
     jk: str = "last"
     v2: bool = True
 
@@ -43,15 +43,10 @@ class Net(nn.Module):  # type: ignore[misc]
 
         if self.node_embedding_dim and self.node_embedding_dim > 1:
             self.node_embedding = nn.Embedding(self.num_node_categories, self.node_embedding_dim)
-        if self.edge_embedding_dim and self.edge_embedding_dim > 1:
-            self.edge_embedding = nn.Embedding(self.num_edge_categories, self.edge_embedding_dim)
 
         if self.node_embedding_dim and self.node_embedding_dim == 1:
             self.node_embedding = lambda x: F.one_hot(x, num_classes=self.num_node_categories).float()
             self.node_embedding_dim = self.num_node_categories
-        if self.edge_embedding_dim and self.edge_embedding_dim == 1:
-            self.edge_embedding = lambda x: F.one_hot(x, num_classes=self.num_edge_categories).float()
-            self.edge_embedding_dim = self.num_edge_categories
 
         # hidden dimension accounting for multi-head concatenation
         corrected_hidden_dim = (
@@ -74,12 +69,12 @@ class Net(nn.Module):  # type: ignore[misc]
         elif self.activation == "sigmoid":
             self.activation_func = nn.Sigmoid()
 
+        in_dim = (self.node_embedding_dim, 1) if self.node_embedding_dim else (2,)
+
         if self.model == "TransformerConv":
             self.layers = []
             for i in range(self.num_layers):
-                in_channels = (
-                    corrected_hidden_dim if i > 0 else (self.node_embedding_dim if self.node_embedding_dim else 1)
-                )
+                in_channels = corrected_hidden_dim if i > 0 else in_dim
                 layer = Sequential(
                     "x, edge_index, edge_attr, batch",
                     [
@@ -87,7 +82,6 @@ class Net(nn.Module):  # type: ignore[misc]
                             TransformerConv(
                                 in_channels=in_channels,
                                 out_channels=self.hidden_dim,
-                                edge_dim=self.edge_embedding_dim if self.edge_embedding_dim else 1,
                                 heads=self.heads,
                                 concat=self.concat,
                                 beta=self.beta,
@@ -114,7 +108,6 @@ class Net(nn.Module):  # type: ignore[misc]
                     dropout=self.dropout,
                     act=self.activation_func,
                     norm=self.batch_norm_layer if self.batch_norm else None,
-                    edge_dim=self.edge_embedding_dim if self.edge_embedding_dim else 1,
                     v2=True,
                 )
             ]
@@ -152,67 +145,19 @@ class Net(nn.Module):  # type: ignore[misc]
         self.logstd_layer = nn.Linear(last_hidden_dim, self.output_dim)
 
     def forward(self, data: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        x, edge_index, edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
+        x, edge_index, _edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
 
         # Apply the node and edge embeddings
-        x = self.node_embedding(x.long()).squeeze() if self.node_embedding_dim else x.float()
-        edge_attr = self.edge_embedding(edge_attr.long()).squeeze() if self.edge_embedding_dim else edge_attr.float()
+        if self.node_embedding_dim:
+            x_0 = self.node_embedding(x[:, 0].long()).squeeze()
+            x_1 = x[:, 1].float().unsqueeze(1)
+            x = torch.hstack((x_0, x_1))
 
         for layer in self.layers:
-            x = layer(x, edge_index=edge_index, edge_attr=edge_attr, batch=batch)
+            x = layer(x, edge_index=edge_index, batch=batch)
 
         return self.pooling(x, batch)
 
     def set_params(self, **params: object) -> None:
         for parameter, value in params.items():
             setattr(self, parameter, value)
-
-
-#
-# class GraphFeaturesExtractor(BaseFeaturesExtractor):
-#    def __init__(self, observation_space: gymnasium.spaces.Graph, features_dim: int = 64):
-#        super(GraphFeaturesExtractor, self).__init__(observation_space, features_dim)
-#
-#        num_node_categories = 10 # distinct gate types (incl. 'id' and 'meas')
-#        num_edge_categories = 10 # distinct wires (quantum + classical)
-#        node_embedding_dim = 4 # dimension of the node embedding
-#        edge_embedding_dim = 4 # dimension of the edge embedding
-#        num_layers = 2 # number of neighbor aggregations
-#        hidden_dim = 16 # dimension of the hidden layers
-#        output_dim = 3 # dimension of the output vector
-#
-#        self.node_embedding = nn.Embedding(num_node_categories, node_embedding_dim)
-#        self.edge_embedding = nn.Embedding(num_edge_categories, edge_embedding_dim)
-#
-#        self.layers = []
-#        for _ in range(num_layers):
-#            self.layers.append(TransformerConv(-1, hidden_dim, edge_dim=edge_embedding_dim+2))
-#
-#        self.gate_nn = nn.Linear(hidden_dim, 1)
-#        self.nn = nn.Linear(hidden_dim, output_dim)
-#        self.global_attention = GlobalAttention(self.gate_nn, self.nn)
-#
-#
-#    def forward(self, data: torch.Tensor) -> torch.Tensor:
-#        x, edge_index, edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
-#
-#        # Apply the node and edge embeddings
-#        x = self.node_embedding(x).squeeze()
-#        embedding = self.edge_embedding(edge_attr[:, 0])
-#        edge_attr = torch.cat([embedding, edge_attr[:, 1:]], dim=1)
-#
-#        for layer in self.layers:
-#            x = layer(x, edge_index, edge_attr)
-#            x = nn.functional.relu(x)
-#
-#        # Apply a readout layer to get a single vector that represents the entire graph
-#        x = self.global_attention(x, batch)
-#
-#        return x
-#
-# class GraphMaskableActorCriticPolicy(MaskableActorCriticPolicy):
-#    def __init__(self, observation_space, action_space, lr_schedule, **kwargs):
-#        super(GraphMaskableActorCriticPolicy, self).__init__(observation_space, action_space, lr_schedule,
-#                                                             features_extractor_class=GraphFeaturesExtractor, **kwargs)
-#
-#

@@ -232,7 +232,7 @@ class Predictor:
                 figure_of_merit,
                 logger.level,
             )
-            for filename in path_uncompiled_circuits.glob("*.qasm")
+            for filename in path_uncompiled_circuits.glob("*.qasm")  # type: ignore[union-attr]
         )
         for sample in results:
             training_sample, circuit_name, scores = sample
@@ -299,8 +299,6 @@ class Predictor:
                         6: "quantinuum_h2",
                     }
                     device = get_device_by_name(num2name[comp_path_index])
-                    if comp_path_index == 3:  # translate rigetti_aspen_m2 coupling map
-                        device.coupling_map = [[(e[0] + 40) % 80, (e[1] + 40) % 80] for e in device.coupling_map]
                     score = reward.expected_fidelity(qc, device)
 
                 scores[comp_path_index] = score
@@ -315,7 +313,12 @@ class Predictor:
         if num_not_empty_entries == 0:
             logger.warning("no compiled circuits found for:" + str(file))
 
-        feature_vec = ml.helper.create_feature_dict(str(path_uncompiled_circuit / file))
+        try:
+            feature_vec = ml.helper.create_feature_dict(str(path_uncompiled_circuit / file))
+        except Exception as e:
+            print(e, file)
+            return (([], -1), "", scores)
+
         training_sample = (list(feature_vec.values()), np.argmax(scores))
         circuit_name = str(file).split(".")[0]
         return (training_sample, circuit_name, scores)
@@ -393,10 +396,20 @@ class Predictor:
             X_graph: list[Data] = [None for _ in range(len(X_raw))]
         y_list = list(unzipped_training_data_Y)
         for i in range(len(X_raw)):
-            X_list[i] = list(X_raw[i][:-1])  # all but graph
+            if not X_raw[i]:
+                continue
+            X_list[i] = list(X_raw[i][:-2])  # all but graphs
             if graph_only:
                 X_graph[i] = X_raw[i][-1]  # graph feature
             scores_list[i] = list(raw_scores_list[i])
+
+        # remove all empty (erroneous) files
+        X_list = [x for x, raw in zip(X_list, X_raw) if raw]
+        y_list = [y for y, raw in zip(y_list, X_raw) if raw]
+        names_list = [name for name, raw in zip(names_list, X_raw) if raw]
+        scores_list = [score for score, raw in zip(scores_list, X_raw) if raw]
+        if graph_only:
+            X_graph = [x for x, raw in zip(X_graph, X_raw) if raw]
 
         X, y, indices = np.array(X_list), np.array(y_list), np.array(range(len(y_list)))
 

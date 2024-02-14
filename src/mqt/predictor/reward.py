@@ -41,6 +41,8 @@ def expected_fidelity(qc: QuantumCircuit, device: Device, precision: int = 10) -
         if gate_type != "barrier":
             assert len(qargs) in [1, 2]
             first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
+            if device.name == "rigetti_aspen_m2":
+                first_qubit_idx = (first_qubit_idx + 40) % 80
 
             if len(qargs) == 1:
                 if gate_type == "measure":
@@ -49,6 +51,8 @@ def expected_fidelity(qc: QuantumCircuit, device: Device, precision: int = 10) -
                     specific_fidelity = device.get_single_qubit_gate_fidelity(gate_type, first_qubit_idx)
             else:
                 second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
+                if device.name == "rigetti_aspen_m2":
+                    second_qubit_idx = (second_qubit_idx + 40) % 80
                 specific_fidelity = device.get_two_qubit_gate_fidelity(gate_type, first_qubit_idx, second_qubit_idx)
 
             res *= specific_fidelity

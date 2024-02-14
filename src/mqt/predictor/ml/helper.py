@@ -8,6 +8,7 @@ if sys.version_info < (3, 10, 0):
 else:
     from importlib import resources  # type: ignore[no-redef]
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -187,7 +188,6 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     Returns:
         dict[str, Any]: The feature dictionary of the given quantum circuit.
     """
-    filename = qc
     if not isinstance(qc, QuantumCircuit):
         if len(qc) < PATH_LENGTH and Path(qc).exists():
             qc = QuantumCircuit.from_qasm_file(qc)
@@ -221,7 +221,7 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     feature_dict["parallelism"] = supermarq_features.parallelism
     feature_dict["liveness"] = supermarq_features.liveness
     feature_dict["graph"] = circuit_to_graph(qc, ops_list_encoding)
-    feature_dict["zx_graph"] = qasm_to_zx(qc.qasm(), filename)
+    feature_dict["zx_graph"] = qasm_to_zx(qc.qasm())
     return feature_dict
 
 
@@ -331,32 +331,103 @@ def rustworkx_to_networkx(graph: rx.PyDAG[Any, Any], ops_list_encoding: dict[str
     return nx_graph
 
 
-def qasm_to_zx(qasm: str, filename: str) -> zx.Circuit:
+def zx_to_networkx(zx_graph):
+    # create a networkx graph
+    nx_graph = nx.DiGraph()
+
+    # Add nodes to the NetworkX graph
+    for idx in zx_graph.vertices():
+        t = zx_graph.type(idx)
+        phase = float(zx_graph.phase(idx))
+
+        nx_graph.add_node(idx, gate=t, phase=phase)
+
+    # Add edges to the NetworkX graph
+    for e in zx_graph.edges():
+        source, target = e
+        t = zx_graph.edge_type(e)
+
+        nx_graph.add_edge(source, target, wire=t)
+
+    return nx_graph
+
+
+def substitute_cp_and_cu1_gate(qasm: str) -> str:
+    """
+    Substitute all occurrences of the cp gate in a qasm string with a custom gate definition.
+    """
+
+    # Function to replace cp gate with custom gate definition
+    def replace_cp_gate(match):
+        phase, qubit1, qubit2 = match.groups()
+        if "/" in phase:
+            numerator, denominator = phase.split("/")
+            new_denominator = str(int(denominator) * 2)
+            phase_2 = numerator + "/" + new_denominator
+        else:
+            phase_2 = phase + "/2"
+
+        # rz is same as u1 up to a global phase
+        return (
+            f"rz({phase_2}) {qubit2};\n"
+            f"cx {qubit1},{qubit2};\n"
+            f"rz(-{phase_2}) {qubit2};\n"
+            f"cx {qubit1},{qubit2};\n"
+            f"rz({phase_2}) {qubit2};\n"
+        )
+
+    # Replace all occurrences of the cp gate with the custom gate definition
+    # cp is same as cu1
+    qasm = re.sub(r"cp\((.+?)\) (.+?),(.+?);", replace_cp_gate, qasm)
+    # Replace all occurrences of the cp gate with the custom gate definition
+    qasm = re.sub(r"cu1\((.+?)\) (.+?),(.+?);", replace_cp_gate, qasm)
+
+    return qasm.replace("--", "")
+
+
+def format_u1_gate(qasm: str) -> str:
+    def format_u1(match):
+        phase = match.group(1)
+        return f"u1({phase})"
+
+    return re.sub(r"u\(0,0,(.+?)\)", format_u1, qasm)
+
+
+def replace_swap_gate(qasm: str) -> str:
+    def format_swap(match):
+        qubit1 = match.group(1)
+        qubit2 = match.group(2)
+        return f"cx {qubit1},{qubit2}; cx {qubit2},{qubit1}; cx {qubit1},{qubit2};"
+
+    return re.sub(r"swap (.+?),(.+?);", format_swap, qasm)
+
+
+def qasm_to_zx(qasm: str) -> zx.Circuit:
     """
     Convert a qasm string to a zx-calculus string.
     """
-    try:
-        qasm = qasm.replace("pi", "3.141592653589793")
-        qasm = qasm.replace("u(", "u1(")
-        qasm = qasm.replace(
-            'include "qelib1.inc";',
-            'include "qelib1.inc";\n\n'
-            "// controlled phase rotation\n"
-            "gate cp(lambda) a,b\n"
-            "{\n"
-            "u1(lambda/2) a;\n"
-            "cx a,b;\n"
-            "u1(-lambda/2) b;\n"
-            "cx a,b;\n"
-            "u1(lambda/2) b;\n"
-            "}",
-        )
+    qasm = substitute_cp_and_cu1_gate(qasm)
+    qasm = format_u1_gate(qasm)
+    qasm = replace_swap_gate(qasm)
+    qasm = qasm.replace("u1(", "rz(")
+    qasm = qasm.replace("p(", "rz(")
 
-        return zx.Circuit.from_qasm(qasm)
+    try:
+        zx_circ = zx.Circuit.from_qasm(qasm)
+        zx_graph = zx_circ.to_graph()
+
+        nx_graph = zx_to_networkx(zx_graph)
+
+        #### Postprocessing ###
+        # Remove root and leaf nodes (in and out nodes)
+        nodes_to_remove = [node for node, degree in nx_graph.degree() if degree < 1]
+        nx_graph.remove_nodes_from(nodes_to_remove)
+
+        # Convert to torch_geometric data
+        return from_networkx(nx_graph, group_node_attrs=all, group_edge_attrs=all)
     except Exception as e:
-        print(filename)
-        print(e)
-        return zx.Circuit(0)
+        msg = f"Error in qasm_to_zx: {e}"
+        raise ValueError(msg) from e
 
 
 def circuit_to_graph(qc: QuantumCircuit, ops_list_encoding: dict[str, int]) -> torch_geometric.data.Data:
