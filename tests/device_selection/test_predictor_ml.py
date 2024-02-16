@@ -6,6 +6,7 @@ from typing import Final
 import numpy as np
 
 from mqt.bench import benchmark_generator
+from mqt.bench.devices import get_available_devices
 from mqt.predictor import ml, reward
 
 
@@ -21,10 +22,11 @@ def test_predict() -> None:
     assert predictor.clf is not None
     classes = predictor.clf.classes_  # type: ignore[unreachable]
     predicted_device_indices = classes[np.argsort(predictions)[::-1]]
-    assert all(0 <= i < len(ml.helper.get_index_to_device_LUT()) for i in predicted_device_indices)
+    devices = get_available_devices()
+    assert all(0 <= i < len(devices) for i in predicted_device_indices)
     predictions = predictor.predict_probs(qc.qasm(), figure_of_merit=figure_of_merit)
     predicted_device_indices = classes[np.argsort(predictions)[::-1]]
-    assert all(0 <= i < len(ml.helper.get_index_to_device_LUT()) for i in predicted_device_indices)
+    assert all(0 <= i < len(devices) for i in predicted_device_indices)
     Path(filename).unlink()
 
 

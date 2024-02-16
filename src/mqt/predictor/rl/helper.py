@@ -55,8 +55,7 @@ from qiskit.transpiler.runningpassmanager import ConditionalController
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
-from mqt.bench.qiskit_helper import get_native_gates
-from mqt.bench.utils import calc_supermarq_features, get_cmap_from_devicename
+from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import reward, rl
 
 if TYPE_CHECKING:
@@ -302,54 +301,6 @@ def get_action_terminate() -> dict[str, Any]:
     return {"name": "terminate"}
 
 
-def get_devices() -> list[dict[str, Any]]:
-    """Returns a list of dictionaries containing information about the devices that are available."""
-    return [
-        {
-            "name": "ibm_washington",
-            "cmap": get_cmap_from_devicename("ibm_washington"),
-            "native_gates": get_native_gates("ibm"),
-            "max_qubits": 127,
-        },
-        {
-            "name": "ibm_montreal",
-            "cmap": get_cmap_from_devicename("ibm_montreal"),
-            "native_gates": get_native_gates("ibm"),
-            "max_qubits": 27,
-        },
-        {
-            "name": "oqc_lucy",
-            "cmap": get_cmap_from_devicename("oqc_lucy"),
-            "native_gates": get_native_gates("oqc"),
-            "max_qubits": 8,
-        },
-        {
-            "name": "rigetti_aspen_m2",
-            "cmap": get_cmap_from_devicename("rigetti_aspen_m2"),
-            "native_gates": get_native_gates("rigetti"),
-            "max_qubits": 80,
-        },
-        {
-            "name": "ionq_harmony",
-            "cmap": get_cmap_from_devicename("ionq_harmony"),
-            "native_gates": get_native_gates("ionq"),
-            "max_qubits": 11,
-        },
-        {
-            "name": "ionq_aria1",
-            "cmap": get_cmap_from_devicename("ionq_aria1"),
-            "native_gates": get_native_gates("ionq"),
-            "max_qubits": 25,
-        },
-        {
-            "name": "quantinuum_h2",
-            "cmap": get_cmap_from_devicename("quantinuum_h2"),
-            "native_gates": get_native_gates("quantinuum"),
-            "max_qubits": 32,
-        },
-    ]
-
-
 def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str]:
     """Returns a random quantum circuit from the training circuits folder.
 
@@ -535,39 +486,3 @@ class PreProcessTKETRoutingAfterQiskitLayout:
         """Applies the pre-processing step to route a circuit with tket after a Qiskit Layout pass has been applied."""
         mapping = {Qubit(i): Node(i) for i in range(circuit.n_qubits)}
         place_with_map(circuit=circuit, qmap=mapping)
-
-
-def get_device(device_name: str) -> dict[str, Any]:
-    """Returns the device with the given name.
-
-    Args:
-        device_name (str): The name of the device to be returned.
-
-    Returns:
-        dict[str, Any]: The device with the given name.
-    """
-    devices = get_devices()
-    for device in devices:
-        if device["name"] == device_name:
-            return device
-
-    msg = "No suitable device found."
-    raise RuntimeError(msg)
-
-
-def get_device_index_of_device(device_name: str) -> int:
-    """Returns the index of the device with the given name.
-
-    Args:
-        device_name (str): The name of the device to be returned.
-
-    Returns:
-        int: The index of the device with the given name.
-    """
-    devices = get_devices()
-    for i, device in enumerate(devices):
-        if device["name"] == device_name:
-            return i
-
-    msg = "No suitable device found."
-    raise RuntimeError(msg)

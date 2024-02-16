@@ -11,10 +11,12 @@ from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
+from mqt.bench.devices import Device, get_available_devices, get_device_by_name
 from mqt.predictor import ml, reward, rl, utils
 
 if TYPE_CHECKING:
     from numpy._typing import NDArray
+    from torch_geometric.data import Data
 
 plt.rcParams["font.family"] = "Times New Roman"
 
@@ -22,10 +24,11 @@ logger = logging.getLogger("mqt-predictor")
 
 
 class Predictor:
-    def __init__(self, logger_level: int = logging.INFO) -> None:
+    def __init__(self, logger_level: int = logging.INFO, devices: list[Device] | None = None) -> None:
         logger.setLevel(logger_level)
 
         self.clf = None
+        self.devices = devices if devices else get_available_devices()
 
     def set_classifier(self, clf: RandomForestClassifier) -> None:
         """Sets the classifier to the given classifier"""
@@ -86,12 +89,12 @@ class Predictor:
             if filename.suffix != ".qasm":
                 return
 
-            for i, dev in enumerate(rl.helper.get_devices()):
+            for i, dev in enumerate(self.devices):
                 target_filename = str(filename).split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(i)
-                if (Path(target_path) / (target_filename + ".qasm")).exists() or qc.num_qubits > dev["max_qubits"]:
+                if (Path(target_path) / (target_filename + ".qasm")).exists() or qc.num_qubits > dev.num_qubits:
                     continue
                 try:
-                    res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, dev["name"]], timeout)
+                    res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, dev.name], timeout)
                     if res:
                         compiled_qc = res[0]
                         compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
@@ -126,8 +129,8 @@ class Predictor:
         logger.info("Processing: " + device_name + " for " + figure_of_merit)
         rl_pred = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device_name)
 
-        dev_index = rl.helper.get_device_index_of_device(device_name)
-        dev_max_qubits = rl.helper.get_devices()[dev_index]["max_qubits"]
+        dev_index = next((i for i, dev in enumerate(self.devices) if dev.name == device_name), None)
+        dev_max_qubits = self.devices[dev_index].num_qubits
 
         if source_path is None:
             source_path = ml.helper.get_path_training_circuits()
@@ -190,7 +193,7 @@ class Predictor:
                 device_name, timeout, figure_of_merit, source_path, target_path, logger.level
             )
             for figure_of_merit in ["expected_fidelity", "critical_depth"]
-            for device_name in [dev["name"] for dev in rl.helper.get_devices()]
+            for device_name in [dev.name for dev in self.devices]
         )
 
     def generate_trainingdata_from_qasm_files(
@@ -266,28 +269,44 @@ class Predictor:
         if ".qasm" not in str(file):
             raise RuntimeError("File is not a qasm file: " + str(file))
 
-        LUT = ml.helper.get_index_to_device_LUT()
         logger.debug("Checking " + str(file))
-        scores = [-1.0 for _ in range(len(LUT))]
+        scores = [-1.0 for _ in range(len(self.devices))]
         all_relevant_files = path_compiled_circuits.glob(str(file).split(".")[0] + "*")
 
         for filename in all_relevant_files:
-            filename_str = str(filename)
-            if (str(file).split(".")[0] + "_" + figure_of_merit + "_") not in filename_str and filename_str.endswith(
-                ".qasm"
-            ):
-                continue
-            comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
-            device = LUT[comp_path_index]
-            qc = QuantumCircuit.from_qasm_file(filename_str)
-            if figure_of_merit == "critical_depth":
-                score = reward.crit_depth(qc)
-            elif figure_of_merit == "expected_fidelity":
-                score = reward.expected_fidelity(qc, device)
-            scores[comp_path_index] = score
+            try:
+                filename_str = str(filename)
+                if (
+                    str(file).split(".")[0] + "_" + figure_of_merit + "_"
+                ) not in filename_str and filename_str.endswith(".qasm"):
+                    continue
+                comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
+                device = self.devices[comp_path_index]
+                qc = QuantumCircuit.from_qasm_file(filename_str)
+
+                if figure_of_merit == "critical_depth":
+                    score = reward.crit_depth(qc)
+                elif figure_of_merit == "expected_fidelity":
+                    score = reward.expected_fidelity(qc, device)
+                elif figure_of_merit == "fidelity":  # old training data
+                    num2name = {
+                        0: "ibm_washington",
+                        1: "ibm_montreal",
+                        2: "oqc_lucy",
+                        3: "rigetti_aspen_m2",
+                        4: "ionq_harmony",
+                        5: "ionq_aria1",
+                        6: "quantinuum_h2",
+                    }
+                    device = get_device_by_name(num2name[comp_path_index])
+                    score = reward.expected_fidelity(qc, device)
+
+                scores[comp_path_index] = score
+            except Exception as ex:  # rigetti_aspen_m2 coupling map error
+                print(filename, ex)
 
         num_not_empty_entries = 0
-        for i in range(len(LUT)):
+        for i in range(len(self.devices)):
             if scores[i] != -1.0:
                 num_not_empty_entries += 1
 
@@ -295,6 +314,7 @@ class Predictor:
             logger.warning("no compiled circuits found for:" + str(file))
 
         feature_vec = ml.helper.create_feature_dict(str(path_uncompiled_circuit / file))
+
         training_sample = (list(feature_vec.values()), np.argmax(scores))
         circuit_name = str(file).split(".")[0]
         return (training_sample, circuit_name, scores)
@@ -348,13 +368,17 @@ class Predictor:
         return self.clf is not None
 
     def get_prepared_training_data(
-        self, figure_of_merit: reward.figure_of_merit, save_non_zero_indices: bool = False
+        self,
+        figure_of_merit: reward.figure_of_merit,
+        save_non_zero_indices: bool = False,
+        graph_only: bool = False,
     ) -> ml.helper.TrainingData:
         """Prepares the training data for the given figure of merit.
 
         Args:
             figure_of_merit (reward.reward_functions): The figure of merit to be used for training.
             save_non_zero_indices (bool, optional): Whether to save the non zero indices. Defaults to False.
+            graph_only (bool, optional): Whether to use only the graph feature. If false, all features except for graph are used.
 
         Returns:
             ml.helper.TrainingData: The prepared training data.
@@ -364,23 +388,31 @@ class Predictor:
         scores_list: list[list[float]] = [[] for _ in range(len(raw_scores_list))]
         X_raw = list(unzipped_training_data_X)
         X_list: list[list[float]] = [[] for _ in range(len(X_raw))]
+        X_graph: list[list[Data]] = [[] for _ in range(len(X_raw))]
         y_list = list(unzipped_training_data_Y)
         for i in range(len(X_raw)):
-            X_list[i] = list(X_raw[i])
+            if graph_only:
+                X_graph[i] = list(X_raw[i][:2])  # only graphs
+            else:
+                X_list[i] = list(X_raw[i][2:])  # all but graphs
             scores_list[i] = list(raw_scores_list[i])
 
-        X, y, indices = np.array(X_list), np.array(y_list), np.array(range(len(y_list)))
+        y, indices = np.array(y_list), np.array(range(len(y_list)))
 
-        # Store all non zero feature indices
-        non_zero_indices = [i for i in range(len(X[0])) if sum(X[:, i]) > 0]
-        X = X[:, non_zero_indices]
+        if graph_only:
+            X: Any = X_graph
+        else:
+            X = np.array(X_list)
+            # Store all non zero feature indices
+            non_zero_indices = [i for i in range(len(X[0])) if sum(X[:, i]) > 0]
+            X = X[:, non_zero_indices]
 
-        if save_non_zero_indices:
-            data = np.asarray(non_zero_indices)
-            np.save(
-                ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True),
-                data,
-            )
+            if save_non_zero_indices:
+                data = np.asarray(non_zero_indices)
+                np.save(
+                    ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True),
+                    data,
+                )
 
         (
             X_train,
@@ -444,7 +476,7 @@ class Predictor:
 
         plt.figure(figsize=(10, 5))
 
-        num_of_comp_paths = len(ml.helper.get_index_to_device_LUT())
+        num_of_comp_paths = len(self.devices)
         plt.bar(
             list(range(0, num_of_comp_paths, 1)),
             height=[res.count(i) / len(res) for i in range(1, num_of_comp_paths + 1, 1)],
