@@ -179,11 +179,12 @@ def dict_to_featurevector(gate_dict: dict[str, int]) -> dict[str, int]:
 PATH_LENGTH = 260
 
 
-def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
+def create_feature_dict(qc: str | QuantumCircuit, graph_features: bool=False) -> dict[str, Any]:
     """Creates and returns a feature dictionary for a given quantum circuit.
 
     Args:
         qc (str | QuantumCircuit): The quantum circuit to be compiled.
+        graph_features (bool): Whether to include graph features in the feature dictionary.
 
     Returns:
         dict[str, Any]: The feature dictionary of the given quantum circuit.
@@ -201,22 +202,21 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     ops_list_dict = dict_to_featurevector(ops_list)
     feature_dict = {}
 
-    try:
-        # operations/gates encoding for graph feature creation
-        ops_list_encoding = ops_list_dict.copy()
-        ops_list_encoding["measure"] = len(ops_list_encoding)  # add extra gate
-        # unique number for each gate {'measure': 0, 'cx': 1, ...}
-        for i, key in enumerate(ops_list_dict):
-            ops_list_encoding[key] = i
-
-        feature_dict["graph"] = circuit_to_graph(qc, ops_list_encoding)
-    except Exception:
-        feature_dict["graph"] = None
-
-    try:
-        feature_dict["zx_graph"] = qasm_to_zx(qc.qasm())
-    except Exception:  # e.g. zx-calculus not supported for all circuits
-        feature_dict["zx_graph"] = None
+    if graph_features:
+        try:
+            # operations/gates encoding for graph feature creation
+            ops_list_encoding = ops_list_dict.copy()
+            ops_list_encoding["measure"] = len(ops_list_encoding)  # add extra gate
+            # unique number for each gate {'measure': 0, 'cx': 1, ...}
+            for i, key in enumerate(ops_list_dict):
+                ops_list_encoding[key] = i
+            feature_dict["graph"] = circuit_to_graph(qc, ops_list_encoding)
+        except Exception:
+            feature_dict["graph"] = None
+        try:
+            feature_dict["zx_graph"] = qasm_to_zx(qc.qasm())
+        except Exception:  # e.g. zx-calculus not supported for all circuits
+            feature_dict["zx_graph"] = None
 
     for key in ops_list_dict:
         feature_dict[key] = float(ops_list_dict[key])
