@@ -52,10 +52,10 @@ class Net(nn.Module):  # type: ignore[misc]
             self.edge_embedding_dim = self.num_edge_categories
 
         # hidden dimension accounting for multi-head concatenation
-        if self.model == "TransformerConv" and self.concat is True: 
+        if self.model == "TransformerConv" and self.concat is True:
             inner_hidden_dim = self.hidden_dim * self.heads
         else:
-            inner_hidden_dim =self.hidden_dim
+            inner_hidden_dim = self.hidden_dim
 
         if self.batch_norm:
             self.batch_norm_layer = nn.BatchNorm1d(inner_hidden_dim)
@@ -71,18 +71,15 @@ class Net(nn.Module):  # type: ignore[misc]
         elif self.activation == "sigmoid":
             self.activation_func = nn.Sigmoid()
 
-        if self.zx:
-            edge_dim = None
-        else:
-            edge_dim = self.edge_embedding_dim if self.edge_embedding_dim else 1
+        edge_dim = None if self.zx else self.edge_embedding_dim if self.edge_embedding_dim else 1
 
         if self.model == "TransformerConv":
             self.layers = []
             for i in range(self.num_layers):
                 if i == 0 and not self.zx:
-                    in_channels = self.node_embedding_dim if self.node_embedding_dim else 1 # gate
+                    in_channels = self.node_embedding_dim if self.node_embedding_dim else 1  # gate
                 if i == 0 and self.zx:
-                    in_channels = self.node_embedding_dim if self.node_embedding_dim else 2 # gate + phase
+                    in_channels = self.node_embedding_dim if self.node_embedding_dim else 2  # gate + phase
                 if i > 0:
                     in_channels = inner_hidden_dim
                 layer = Sequential(
@@ -153,19 +150,24 @@ class Net(nn.Module):  # type: ignore[misc]
         elif self.readout == "max":
             self.pooling = Sequential("x, batch", [(self.out_nn, "x -> x"), (global_max_pool, "x, batch -> x")])
 
-
     def forward(self, data: torch.Tensor) -> torch.Tensor:
         x, edge_index, edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
 
         # Apply the node and edge embeddings
         if self.zx:
-            x_0 = self.node_embedding(x[:, 0].long()).squeeze() if self.node_embedding_dim else x[:, 0].float().unsqueeze(1)
+            x_0 = (
+                self.node_embedding(x[:, 0].long()).squeeze()
+                if self.node_embedding_dim
+                else x[:, 0].float().unsqueeze(1)
+            )
             x_1 = x[:, 1].float().unsqueeze(1)
             x = torch.hstack((x_0, x_1))
-        
+
         if not self.zx:
             x = self.node_embedding(x.long()).squeeze() if self.node_embedding_dim else x.float()
-            edge_attr = self.edge_embedding(edge_attr.long()).squeeze() if self.edge_embedding_dim else edge_attr.float()
+            edge_attr = (
+                self.edge_embedding(edge_attr.long()).squeeze() if self.edge_embedding_dim else edge_attr.float()
+            )
 
         for layer in self.layers:
             x = layer(x, edge_index=edge_index, edge_attr=edge_attr if not self.zx else None, batch=batch)
