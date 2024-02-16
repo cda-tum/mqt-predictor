@@ -14,7 +14,7 @@ def test_evaluate_sample_circuit() -> None:
     qc = get_benchmark("ghz", 1, 3)
     filename = "test_3.qasm"
     qc.qasm(filename=filename)
-    res = evaluate_sample_circuit(filename, get_available_devices())
+    res = evaluate_sample_circuit(filename)
     expected_keys = []
     for compilation_setup in ["qiskit", "tket", "mqt-predictor_expected_fidelity", "mqt-predictor_critical_depth"]:
         for key in ["time", "expected_fidelity", "critical_depth"]:

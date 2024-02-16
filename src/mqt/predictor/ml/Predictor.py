@@ -11,7 +11,7 @@ from qiskit import QuantumCircuit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from mqt.bench.devices import Device, get_available_devices
+from mqt.bench.devices import get_available_device_names, get_available_devices
 from mqt.predictor import ml, reward, rl, utils
 
 if TYPE_CHECKING:
@@ -23,11 +23,11 @@ logger = logging.getLogger("mqt-predictor")
 
 
 class Predictor:
-    def __init__(self, logger_level: int = logging.INFO, devices: list[Device] | None = None) -> None:
+    def __init__(self, logger_level: int = logging.INFO) -> None:
         logger.setLevel(logger_level)
 
         self.clf = None
-        self.devices = devices if devices else get_available_devices()
+        self.devices = get_available_devices()
 
     def set_classifier(self, clf: RandomForestClassifier) -> None:
         """Sets the classifier to the given classifier"""
@@ -128,7 +128,7 @@ class Predictor:
         logger.info("Processing: " + device_name + " for " + figure_of_merit)
         rl_pred = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device_name)
 
-        dev_index = next((i for i, dev in enumerate(self.devices) if dev.name == device_name), None)
+        dev_index = get_available_device_names().index(device_name)
         dev_max_qubits = self.devices[dev_index].num_qubits
 
         if source_path is None:

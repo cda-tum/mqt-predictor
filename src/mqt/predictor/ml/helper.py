@@ -16,7 +16,6 @@ import numpy as np
 from joblib import dump
 from qiskit import QuantumCircuit
 
-from mqt.bench.devices import Device, get_available_devices
 from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import ml, reward, rl
 
@@ -24,11 +23,12 @@ if TYPE_CHECKING:
     from numpy._typing import NDArray
     from sklearn.ensemble import RandomForestClassifier
 
+    from mqt.bench.devices import Device
+
 
 def qcompile(
     qc: QuantumCircuit,
     figure_of_merit: reward.figure_of_merit = "expected_fidelity",
-    devices: list[Device] | None = None,
 ) -> tuple[QuantumCircuit, list[str], str]:
     """Compiles a given quantum circuit to a device with the highest predicted figure of merit.
 
@@ -40,39 +40,33 @@ def qcompile(
         tuple[QuantumCircuit, list[str], str] | bool: Returns a tuple containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, False is returned.
     """
 
-    device_name = predict_device_for_figure_of_merit(qc, figure_of_merit, devices)
-    assert device_name is not None
-    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device_name)
-    return *res, device_name
+    device = predict_device_for_figure_of_merit(qc, figure_of_merit)
+    assert device is not None
+    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device.name)
+    return *res, device.name
 
 
 def predict_device_for_figure_of_merit(
-    qc: QuantumCircuit,
-    figure_of_merit: reward.figure_of_merit = "expected_fidelity",
-    devices: list[Device] | None = None,
-) -> str:
+    qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit = "expected_fidelity"
+) -> Device:
     """Returns the name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
 
     Args:
         qc (QuantumCircuit): The quantum circuit to be compiled.
         figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
-        devices ([Device], optional): The devices to be considered for compilation.
 
     Returns:
-        str : The name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
+        Device : The device with the highest predicted figure of merit that is suitable for the given quantum circuit.
     """
-    if devices is None:
-        devices = get_available_devices()
-
-    ml_predictor = ml.Predictor(devices=devices)
+    ml_predictor = ml.Predictor()
     predicted_device_index_probs = ml_predictor.predict_probs(qc, figure_of_merit)
     assert ml_predictor.clf is not None
     classes = ml_predictor.clf.classes_  # type: ignore[unreachable]
     predicted_device_index = classes[np.argsort(predicted_device_index_probs)[::-1]]
 
     for index in predicted_device_index:
-        if devices[index].num_qubits >= qc.num_qubits:
-            return devices[index].name
+        if ml_predictor.devices[index].num_qubits >= qc.num_qubits:
+            return ml_predictor.devices[index]
     msg = "No suitable device found."
     raise ValueError(msg)
 

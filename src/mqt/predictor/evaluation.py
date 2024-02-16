@@ -19,7 +19,7 @@ from pytket.passes import (
 from pytket.placement import GraphPlacement
 from qiskit import QuantumCircuit, transpile
 
-from mqt.bench.devices import Device, get_available_devices
+from mqt.bench.devices import Device, get_available_device_names, get_available_devices
 from mqt.bench.tket_helper import get_rebase
 from mqt.predictor import Result, ml, reward
 
@@ -91,24 +91,20 @@ def create_tket_result(
     return Result("tket_" + device.name, duration, transpiled_qc_tket, device)
 
 
-def create_mqtpredictor_result(
-    qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit, filename: str, devices: list[Device]
-) -> Result:
+def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit, filename: str) -> Result:
     """Creates a Result object for a given benchmark and figure of merit using mqt-predictor for compilation.
 
     Args:
         qc (QuantumCircuit): The quantum circuit to be compiled.
         figure_of_merit (reward.reward_functions): The figure of merit to be used for compilation.
         filename (str): The path to the benchmark to be compiled.
-        devices (list[Device]): The devices to be used for compilation.
 
 
     Returns:
         Result: Returns a Result object containing the compiled quantum circuit.
     """
-    dev_name = ml.helper.predict_device_for_figure_of_merit(qc, figure_of_merit, devices)
-    assert isinstance(dev_name, str)
-    dev_index = next((i for i, dev in enumerate(devices) if dev.name == dev_name), -1)
+    device = ml.helper.predict_device_for_figure_of_merit(qc, figure_of_merit)
+    dev_index = get_available_device_names().index(device.name)
     target_filename = filename.split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(dev_index)
     combined_path_filename = ml.helper.get_path_training_circuits_compiled() / (target_filename + ".qasm")
     if Path(combined_path_filename).exists():
@@ -118,32 +114,31 @@ def create_mqtpredictor_result(
                 "mqt-predictor_" + figure_of_merit,
                 -1,
                 qc,
-                devices[dev_index],
+                device,
             )
     else:
         try:
-            qc_compiled = ml.qcompile(qc, figure_of_merit=figure_of_merit, devices=devices)
+            qc_compiled = ml.qcompile(qc, figure_of_merit=figure_of_merit)
             if qc_compiled:
                 assert isinstance(qc_compiled, tuple)
                 return Result(
                     "mqt-predictor_" + figure_of_merit,
                     -1,
                     qc_compiled[0],
-                    devices[dev_index],
+                    device,
                 )
 
         except Exception as e:
-            logger.warning("mqt-predictor Transpile Error occurred for: " + filename + " " + dev_name + " " + str(e))
-    return Result("mqt-predictor_" + figure_of_merit, -1, None, devices[dev_index])
+            logger.warning("mqt-predictor Transpile Error occurred for: " + filename + " " + device.name + " " + str(e))
+    return Result("mqt-predictor_" + figure_of_merit, -1, None, device)
 
 
 def evaluate_all_sample_circuits() -> None:
     """Evaluates all sample circuits and saves the results to a csv file."""
     res_csv = []
-    devices = get_available_devices()
 
     results = Parallel(n_jobs=-1, verbose=3, backend="threading")(
-        delayed(evaluate_sample_circuit)(str(file), devices)
+        delayed(evaluate_sample_circuit)(str(file))
         for file in list(ml.helper.get_path_training_circuits().glob("*.qasm"))
     )
     res_csv.append(list(results[0].keys()))
@@ -159,11 +154,10 @@ def evaluate_all_sample_circuits() -> None:
 def evaluate_GHZ_circuits() -> None:
     """Evaluates all GHZ circuits and saves the results to a csv file."""
     res_csv = []
-    devices = get_available_devices()
 
     path = Path(str(resources.files("mqt.predictor"))) / "ml" / "training_data" / "ghz"
     results = Parallel(n_jobs=-1, verbose=3, backend="threading")(
-        delayed(evaluate_sample_circuit)(str(file), devices) for file in list(path.glob("*.qasm"))
+        delayed(evaluate_sample_circuit)(str(file)) for file in list(path.glob("*.qasm"))
     )
     res_csv.append(list(results[0].keys()))
     res_csv.extend([list(res.values()) for res in results])
@@ -175,7 +169,7 @@ def evaluate_GHZ_circuits() -> None:
     )
 
 
-def evaluate_sample_circuit(filename: str, devices: list[Device]) -> dict[str, Any]:
+def evaluate_sample_circuit(filename: str) -> dict[str, Any]:
     """Evaluates a given sample circuit and returns the results as a dictionary.
 
     Args:
@@ -193,10 +187,10 @@ def evaluate_sample_circuit(filename: str, devices: list[Device]) -> dict[str, A
         "num_qubits": str(Path(filename).stem).replace("_", " ").split(" ")[-1],
     }
     qc = QuantumCircuit.from_qasm_file(filename)
-    results.update(create_mqtpredictor_result(qc, "expected_fidelity", filename=filename, devices=devices).get_dict())
-    results.update(create_mqtpredictor_result(qc, "critical_depth", filename=filename, devices=devices).get_dict())
+    results.update(create_mqtpredictor_result(qc, "expected_fidelity", filename=filename).get_dict())
+    results.update(create_mqtpredictor_result(qc, "critical_depth", filename=filename).get_dict())
 
-    for _, dev in enumerate(devices):
+    for dev in get_available_devices():
         results.update(create_qiskit_result(qc, dev).get_dict())
         results.update(create_tket_result(qc, dev).get_dict())
 
