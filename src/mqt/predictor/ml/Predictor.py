@@ -361,7 +361,7 @@ class Predictor:
             ml.helper.TrainingData: The prepared training data.
         """
         training_data, names_list, raw_scores_list = ml.helper.load_training_data(figure_of_merit)
-        unzipped_training_data_X, unzipped_training_data_Y = zip(*training_data)
+        unzipped_training_data_X, unzipped_training_data_Y = zip(*training_data, strict=False)
         scores_list: list[list[float]] = [[] for _ in range(len(raw_scores_list))]
         X_raw = list(unzipped_training_data_X)
         X_list: list[list[float]] = [[] for _ in range(len(X_raw))]
@@ -504,7 +504,7 @@ class Predictor:
             qubit_list_sorted,
             scores_filtered_sorted_accordingly,
             y_pred_sorted_accordingly,
-        ) = zip(*sorted(zip(names_list_num_qubits, scores_filtered, y_pred)))
+        ) = zip(*sorted(zip(names_list_num_qubits, scores_filtered, y_pred, strict=False)), strict=False)
         plt.figure(figsize=(17, 8))
         for i in range(len(names_list_num_qubits)):
             tmp_res = scores_filtered_sorted_accordingly[i]

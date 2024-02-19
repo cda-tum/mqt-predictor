@@ -1,16 +1,9 @@
 from __future__ import annotations
 
-import sys
-from typing import Any
-
-if sys.version_info < (3, 10, 0):
-    import importlib_resources as resources
-else:
-    from importlib import resources  # type: ignore[no-redef]
-
 from dataclasses import dataclass
+from importlib import resources  # type: ignore[no-redef]
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from joblib import dump
