@@ -1,20 +1,19 @@
+from __future__ import annotations
 
-from cma import CMAEvolutionStrategy
+import argparse
+from itertools import combinations
+
 import numpy as np
-from qiskit_ibm_runtime.fake_provider import *
-
+from cma import CMAEvolutionStrategy
 from qiskit import QuantumCircuit
 from qiskit.circuit import Parameter
 from qiskit.compiler import transpile
-from qiskit.providers.fake_provider import FakeGuadalupeV2, FakeQuitoV2
 from qiskit.providers.aer import AerSimulator
-
-from itertools import combinations
+from qiskit.providers.fake_provider import FakeGuadalupeV2, FakeQuitoV2
 from scipy.special import binom
 
 
-def generate_circuit(n_qubits:int, depth:int=1, n_registers:int=2) -> QuantumCircuit:
-
+def generate_circuit(n_qubits: int, depth: int = 1, n_registers: int = 2) -> QuantumCircuit:
     circuit = QuantumCircuit(n_qubits, n_qubits)
     param_counter = 0
 
@@ -40,8 +39,8 @@ def generate_circuit(n_qubits:int, depth:int=1, n_registers:int=2) -> QuantumCir
 
         k = 3 * n + shift
         for i, j in combinations(range(n), 2):
-            for l in range(n_registers):
-                circuit.rxx(Parameter(f"x_{param_counter:03d}"), l * n + i, l * n + j)
+            for m in range(n_registers):
+                circuit.rxx(Parameter(f"x_{param_counter:03d}"), m * n + i, m * n + j)
                 param_counter += 1
 
             k += 1
@@ -52,21 +51,14 @@ def generate_circuit(n_qubits:int, depth:int=1, n_registers:int=2) -> QuantumCir
 
     return circuit
 
-class QCBM():
+
+class QCBM:
     """
-    This module optmizes the paramters of quantum circuit using CMA-ES. 
+    This module optimizes the parameters of quantum circuit using CMA-ES.
     This training method is referred to as quantum circuit born machine (QCBM).
     """
 
-    def __init__(
-            self,
-            n_qubits: int,
-            shots=10000,
-            population_size=5,
-            max_evaluations=2500,
-            sigma=0.5
-            ):
-
+    def __init__(self, n_qubits: int, shots=10000, population_size=5, max_evaluations=2500, sigma=0.5):
         self.target = self.get_target(n_qubits)
         self.n_shots = shots
         self.max_evaluations = max_evaluations
@@ -75,7 +67,6 @@ class QCBM():
         self.n_qubits = n_qubits
 
     def train(self, circuit, backend) -> float:
-
         execute_circuit = self.get_execute_circuit(circuit, backend)
 
         n_params = circuit.num_parameters
@@ -83,11 +74,11 @@ class QCBM():
 
         # Hyperparameters for the optimizer
         options = {
-            'bounds': [n_params * [-np.pi], n_params * [np.pi]],
-            'maxfevals': self.max_evaluations,
-            'popsize': self.population_size,
-            'verbose': -3,
-            'tolfun': 0.01
+            "bounds": [n_params * [-np.pi], n_params * [np.pi]],
+            "maxfevals": self.max_evaluations,
+            "popsize": self.population_size,
+            "verbose": -3,
+            "tolfun": 0.01,
         }
 
         # Instantiate the optimizer
@@ -96,7 +87,7 @@ class QCBM():
         while not es.stop():
             # Sample five (corresponding to population size) possible solutions from covariance matrix
             solutions = es.ask()
-            epoch = es.result[4]
+            es.result[4]
             # Get five (corresponding to population size) pmfs (probability mass functions), that correspond to five different sets of parameter distributions
             pmfs_model = execute_circuit(solutions, self.n_shots)
 
@@ -110,7 +101,8 @@ class QCBM():
             # if epoch % 20 == 0:
             #     print(f"Epoch={epoch} | KL={min(loss_epoch)}")
 
-            if min(loss_epoch) < best_kl: best_kl = min(loss_epoch)
+            if min(loss_epoch) < best_kl:
+                best_kl = min(loss_epoch)
 
         # Return the lowest KL divergence (Figure of merit)
         return best_kl
@@ -121,7 +113,6 @@ class QCBM():
         return np.sum(self.target * np.log(self.target / pmf_model), axis=1)
 
     def get_execute_circuit(self, circuit_transpiled, backend):
-
         def execute_circuit(solutions, num_shots=None):
             # Execute the circuit and returns the probability mass function
 
@@ -130,10 +121,12 @@ class QCBM():
             # samples_dictionary = [jobs.result().get_counts(circuit).int_outcomes() for circuit in all_circuits]
 
             from joblib import Parallel, delayed
+
             sample_dicts = Parallel(n_jobs=-1, verbose=0)(
-                delayed(self.generate_result)(circuit_transpiled.assign_parameters(solution), num_shots, i, backend) for i, solution in enumerate(solutions)
+                delayed(self.generate_result)(circuit_transpiled.assign_parameters(solution), num_shots, i, backend)
+                for i, solution in enumerate(solutions)
             )
-            if any(sample_dicts) == False:
+            if any(sample_dicts) is False:
                 return None
 
             samples_dictionary = []
@@ -142,7 +135,7 @@ class QCBM():
 
             samples = []
             for result in samples_dictionary:
-                target_iter = np.zeros(2 ** self.n_qubits)
+                target_iter = np.zeros(2**self.n_qubits)
                 result_keys = list(result.keys())
                 result_vals = list(result.values())
                 target_iter[result_keys] = result_vals
@@ -150,8 +143,7 @@ class QCBM():
                 samples.append(target_iter)
 
             samples = np.asarray(samples)
-            pmfs = samples / num_shots
-            return pmfs
+            return samples / num_shots
 
         return execute_circuit
 
@@ -162,7 +154,7 @@ class QCBM():
         grid = np.zeros((side_dimension, side_dimension))
         for i in range(side_dimension):
             grid[i, i] = 1
-            grid[i, side_dimension-1-i] = 1
+            grid[i, side_dimension - 1 - i] = 1
 
         grid = 1 - grid
         grid += 1e-8
@@ -170,14 +162,12 @@ class QCBM():
 
         return grid.flatten()
 
-
     def generate_result(self, qc, num_shots, index, backend):
         job = backend.run(qc, shots=num_shots)
         samples_dictionary = job.result().get_counts(qc).int_outcomes()
-        return {index:samples_dictionary}
+        return {index: samples_dictionary}
 
 
-import argparse
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run QCBM")
 
@@ -186,20 +176,16 @@ if __name__ == "__main__":
     n_qubits = args.num_qubits
 
     if n_qubits % 2 != 0:
-        raise ValueError("Number of qubits must be even")
+        msg = "Number of qubits must be even"
+        raise ValueError(msg)
     circuit = generate_circuit(n_qubits=n_qubits)
     qcbm = QCBM(n_qubits=n_qubits)
 
-
-    if n_qubits < 5:
-        fake_backend = FakeQuitoV2()
-    else:
-        fake_backend = FakeGuadalupeV2()
+    fake_backend = FakeQuitoV2() if n_qubits < 5 else FakeGuadalupeV2()
 
     backend = AerSimulator.from_backend(fake_backend)
 
     num_runs = 25
-
 
     # print("Optimization Level 3 without backend information")
     # res = []
@@ -209,7 +195,6 @@ if __name__ == "__main__":
     #     best_KL = qcbm.train(circuit=compiled_circuit, backend=backend)
     #     res.append(best_KL)
     # print(f"AVG KL={np.average(res)}, STD KL={np.std(res)}, BEST KL={np.min(res)}")
-
 
     print("Optimization Level 3 with backend information")
     res = []
@@ -222,4 +207,3 @@ if __name__ == "__main__":
         res.append(best_KL)
 
     print(f"AVG KL={np.average(res)}, STD KL={np.std(res)}, BEST KL={np.min(res)}")
-
