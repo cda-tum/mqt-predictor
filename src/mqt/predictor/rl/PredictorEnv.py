@@ -25,9 +25,14 @@ class PredictorEnv(Env):  # type: ignore[misc]
     """Predictor environment for reinforcement learning."""
 
     def __init__(
-        self, reward_function: reward.figure_of_merit = "expected_fidelity", device_name: str = "ibm_washington"
+        self,
+        reward_function: reward.figure_of_merit = "expected_fidelity",
+        device_name: str = "ibm_washington",
+        num_qubits: int = 4,
     ):
         logger.info("Init env: " + reward_function)
+        logger.info("Device: " + device_name)
+        logger.info("Num qubits: " + str(num_qubits))
 
         self.action_set = {}
         self.actions_synthesis_indices = []
@@ -82,15 +87,21 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.observation_space = Dict(spaces)
         self.filename = ""
 
-        self.state: QuantumCircuit = quark.generate_circuit(n_qubits=4 if device_name == "ibm_quito" else 8)
+        self.state: QuantumCircuit = quark.generate_circuit(n_qubits=num_qubits)
+
+        from qiskit import transpile
+
+        baseline_compiled_qc = transpile(
+            self.state, coupling_map=self.device["cmap"], basis_gates=self.device["native_gates"], optimization_level=3
+        )
+        print("Baseline Gate Counts: ", baseline_compiled_qc.count_ops())
+        self.max_cx_count = baseline_compiled_qc.count_ops().get("cx", 0) * 1.1
         self.initial_uncompiled_circuit = self.state.copy()
         self.has_parametrized_gates = len(self.state.parameters) > 0
         self.num_qubits_uncompiled_circuit = self.state.num_qubits
         self.best_KL: float = 0.0
+        self.best_compilation_sequence: list[str] = []
 
-        # create text file where the KL reward values and the number of gates are written to every time the reward is calculated
-        # the filename should contain the date and time of the start of the training
-        # the file should be created in the same directory as the trained model
         from datetime import datetime
 
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -151,18 +162,21 @@ class PredictorEnv(Env):  # type: ignore[misc]
             new_KL_value = reward.KL(
                 self.state,
                 sum(self.initial_uncompiled_circuit.count_ops().values()),
+                self.max_cx_count,
                 self.num_qubits_uncompiled_circuit,
                 self.device["name"],
             )
             print("Current best value: " + str(self.best_KL))
+            print("Current best compilation sequence: " + str(self.best_compilation_sequence))
             print("New value: " + str(new_KL_value))
 
             if new_KL_value > 0.0:
-                with Path(self.timestamp).open(mode="a") as file:
+                with Path(self.timestamp + "_KL_values.txt").open(mode="a") as file:
                     file.write(str(new_KL_value) + " " + str(self.state.count_ops()) + "\n")
 
             if new_KL_value > self.best_KL:
                 self.best_KL = new_KL_value
+                self.best_compilation_sequence = self.used_actions
 
             return new_KL_value
         error_msg = f"Reward function {self.reward_function} not supported."
