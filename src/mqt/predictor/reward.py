@@ -30,7 +30,12 @@ def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
 
 
 def KL(
-    compiled_qc: QuantumCircuit, initial_gate_count: int, num_initial_qubits: int, device_name: str, precision: int = 10
+    compiled_qc: QuantumCircuit,
+    initial_gate_count: int,
+    max_cx_count: int,
+    num_initial_qubits: int,
+    device_name: str,
+    precision: int = 10,
 ) -> float:
     if device_name == "ibm_guadalupe":
         backend = AerSimulator.from_backend(FakeGuadalupeV2())
@@ -40,7 +45,7 @@ def KL(
         error_msg = "Device not supported"
         raise ValueError(error_msg)
     backend.set_options(device="CPU")
-    if sum(compiled_qc.count_ops().values()) > initial_gate_count * 7:
+    if sum(compiled_qc.count_ops().values()) > initial_gate_count * 6 or compiled_qc.count_ops()["cx"] > max_cx_count:
         return 0
     print("Training QCBM with:", compiled_qc.count_ops(), "initial gate count:", initial_gate_count)
     compiled_qc._global_phase = 0  # noqa: SLF001
