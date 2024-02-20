@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from importlib import resources  # type: ignore[no-redef]
+from importlib import resources
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -34,7 +34,6 @@ def qcompile(
     """
 
     device = predict_device_for_figure_of_merit(qc, figure_of_merit)
-    assert device is not None
     res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device.name)
     return *res, device.name
 
