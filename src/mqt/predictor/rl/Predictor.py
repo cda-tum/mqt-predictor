@@ -23,8 +23,8 @@ class Predictor:
         self,
         figure_of_merit: reward.figure_of_merit,
         device_name: str,
-        logger_level: int = logging.INFO,
         num_qubits: int = 4,
+        logger_level: int = logging.INFO,
     ) -> None:
         logger.setLevel(logger_level)
 

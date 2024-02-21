@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +14,7 @@ from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
-from qiskit.transpiler.passes import CheckMap, GatesInBasis
+from qiskit.transpiler.passes import ApplyLayout, CheckMap, GatesInBasis
 from qiskit.transpiler.runningpassmanager import TranspileLayout
 
 from mqt.predictor import reward, rl
@@ -40,6 +41,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.actions_routing_indices = []
         self.actions_mapping_indices = []
         self.actions_opt_indices = []
+        self.actions_final_optimization_indices = []
         self.used_actions: list[str] = []
 
         self.device = rl.helper.get_device(device_name)
@@ -66,6 +68,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
             self.action_set[index] = elem
             self.actions_mapping_indices.append(index)
             index += 1
+        for elem in rl.helper.get_actions_final_optimization():
+            self.action_set[index] = elem
+            self.actions_final_optimization_indices.append(index)
+            index += 1
 
         self.action_set[index] = rl.helper.get_action_terminate()
         self.action_terminate_index = index
@@ -87,7 +93,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.observation_space = Dict(spaces)
         self.filename = ""
 
-        self.state: QuantumCircuit = quark.generate_circuit(n_qubits=num_qubits)
+        if reward_function == "KL":
+            self.state: QuantumCircuit = quark.generate_circuit(n_qubits=num_qubits)
+        else:
+            self.state, self.filename = rl.helper.get_state_sample()
 
         from qiskit import transpile
 
@@ -101,8 +110,6 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.num_qubits_uncompiled_circuit = self.state.num_qubits
         self.best_KL: float = 0.0
         self.best_compilation_sequence: list[str] = []
-
-        from datetime import datetime
 
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         with Path(str(self.timestamp) + "_KL_values.txt").open(mode="w+") as file:
@@ -261,6 +268,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
                             ),
                             do_while=action["do_while"],
                         )
+                    elif action["name"] == "VF2PostLayout":
+                        print("VF2PostLayout")
+                        pm = PassManager(transpile_pass)
                     else:
                         pm = PassManager(transpile_pass)
                     altered_qc = pm.run(self.state)
@@ -273,9 +283,36 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
                     self.error_occured = True
                     return None
-                if action_index in self.actions_layout_indices + self.actions_mapping_indices:
-                    if self.action_set[action_index].get("name") != "VF2Layout":
+                if (
+                    action_index
+                    in self.actions_layout_indices
+                    + self.actions_mapping_indices
+                    + self.actions_final_optimization_indices
+                ):
+                    if action["name"] == "VF2Layout":
+                        if pm.property_set["layout"]:
+                            initial_layout = pm.property_set["layout"]
+                            original_qubit_indices = pm.property_set["original_qubit_indices"]
+                            final_layout = pm.property_set["final_layout"]
+                            postprocessing_action = rl.helper.get_layout_postprocessing_qiskit_pass()(self.device)
+                            pm = PassManager(postprocessing_action)
+                            pm.property_set["layout"] = initial_layout
+                            pm.property_set["original_qubit_indices"] = original_qubit_indices
+                            pm.property_set["final_layout"] = final_layout
+                            altered_qc = pm.run(altered_qc)
+                    elif action["name"] == "VF2PostLayout":
+                        assert pm.property_set["VF2PostLayout_stop_reason"] is not None
+                        post_layout = pm.property_set["post_layout"]
+                        if post_layout:
+                            pm = PassManager(ApplyLayout())
+                            pm.property_set["layout"] = self.layout.initial_layout
+                            pm.property_set["original_qubit_indices"] = self.layout.input_qubit_mapping
+                            pm.property_set["final_layout"] = self.layout.final_layout
+                            pm.property_set["post_layout"] = post_layout
+                            altered_qc = pm.run(altered_qc)
+                    else:
                         assert pm.property_set["layout"]
+
                     if pm.property_set["layout"]:
                         self.layout = TranspileLayout(
                             initial_layout=pm.property_set["layout"],
@@ -359,7 +396,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         mapped = check_mapping.property_set["is_swap_mapped"]
 
         if mapped and self.layout is not None:
-            return [self.action_terminate_index, *self.actions_opt_indices]
+            return [self.action_terminate_index, *self.actions_opt_indices, *self.actions_final_optimization_indices]
 
         if self.layout is not None:
             return self.actions_routing_indices

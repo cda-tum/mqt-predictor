@@ -50,6 +50,7 @@ from qiskit.transpiler.passes import (
     TrivialLayout,
     UnitarySynthesis,
     VF2Layout,
+    VF2PostLayout,
 )
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
@@ -108,6 +109,20 @@ def qcompile(
         predictor = predictor_singleton
 
     return predictor.compile_as_predicted(qc)
+
+
+def get_actions_final_optimization() -> list[dict[str, Any]]:
+    """Returns a list of dictionaries containing information about the optimization passes that are available."""
+    return [
+        {
+            "name": "VF2PostLayout",
+            "transpile_pass": lambda device: VF2PostLayout(
+                coupling_map=CouplingMap(device["cmap"]),
+                properties=get_ibm_backend_properties_by_device_name(device["name"]),
+            ),
+            "origin": "qiskit",
+        }
+    ]
 
 
 def get_actions_opt() -> list[dict[str, Any]]:
