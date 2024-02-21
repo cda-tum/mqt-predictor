@@ -22,6 +22,7 @@ from pytket.placement import place_with_map
 from qiskit import QuantumCircuit
 from qiskit.circuit.equivalence_library import StandardEquivalenceLibrary
 from qiskit.circuit.library import XGate, ZGate
+from qiskit.converters import circuit_to_dag
 from qiskit.transpiler import CouplingMap
 from qiskit.transpiler.passes import (
     ApplyLayout,
@@ -56,7 +57,7 @@ from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
 from mqt.bench.utils import calc_supermarq_features
-from mqt.predictor import reward, rl
+from mqt.predictor import ml, reward, rl
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -338,6 +339,58 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
     return qc, str(file_list[random_index])
 
 
+def encode_circuit(qc: QuantumCircuit) -> NDArray[np.int_]:
+    # Define a mapping from gate names to integers
+    ml_feats = ml.helper.create_feature_dict(qc)
+    gate_dict = {x: i for i, x in enumerate(ml_feats.keys())}
+    gate_dict["ctr"] = len(gate_dict.keys())
+    gate_dict["measure"] = len(gate_dict.keys())
+
+    # Get the number of qubits in the circuit
+    num_qubits, max_depth = 11, 1000
+    matrix = np.zeros((num_qubits, max_depth))
+    dag = circuit_to_dag(qc)
+    dag.remove_all_ops_named("barrier")
+
+    layers = list(dag.multigraph_layers())
+    qubits = {}
+    for idx, qubit_line in enumerate(layers[0]):
+        qubits[qubit_line.wire.index] = idx
+
+    num_qubits = len(qubits.keys())
+
+    """
+    Each element of layers after the first one contains a list of operations
+    that act on the circuit simultaneously
+    """
+
+    labels = np.zeros_like(matrix, dtype=np.int8)
+
+    for idx, tensor_op in enumerate(layers[1:-1]):
+        for node in tensor_op:
+            try:
+                operation_name = node.op.name
+            except Exception:
+                continue
+            if node.op.num_qubits == 1:
+                q_indx = node.qargs[0].index
+                labels[q_indx, idx] = gate_dict[operation_name]
+            else:
+                for qdx, qubit in enumerate(node.qargs):
+                    first_qubit = qubit.index
+                    if qdx == len(node.qargs) - 1:  # target qubit
+                        labels[first_qubit, idx] = gate_dict[operation_name]
+                    else:  # control qubits
+                        labels[first_qubit, idx] = gate_dict["ctr"]
+
+    # shift idle layers to the left
+    for col in range(labels.shape[1], len(layers)):
+        if np.sum(labels[:, col]) == 0:
+            labels[:, col:-1] = labels[:, col + 1 :]
+
+    return np.expand_dims(labels, axis=0)
+
+
 def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float_]]:
     """Creates a feature dictionary for a given quantum circuit.
 
@@ -360,6 +413,7 @@ def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float_
     feature_dict["entanglement_ratio"] = np.array([supermarq_features.entanglement_ratio], dtype=np.float32)
     feature_dict["parallelism"] = np.array([supermarq_features.parallelism], dtype=np.float32)
     feature_dict["liveness"] = np.array([supermarq_features.liveness], dtype=np.float32)
+    feature_dict["circuit"] = encode_circuit(qc)
 
     return feature_dict
 

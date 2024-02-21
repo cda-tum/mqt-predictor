@@ -8,6 +8,7 @@ from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPo
 from sb3_contrib.common.maskable.utils import get_action_masks
 
 from mqt.predictor import reward, rl
+from mqt.predictor.rl.torch_layers import CustomCombinedExtractor
 
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit
@@ -95,7 +96,10 @@ class Predictor:
 
         logger.debug("Start training for: " + self.figure_of_merit + " on " + self.device_name)
         env = rl.PredictorEnv(reward_function=self.figure_of_merit, device_name=self.device_name)
-
+        policy_kwargs = {
+            "features_extractor_class": CustomCombinedExtractor,
+            "features_extractor_kwargs": {"cnn_output_dim": 64, "normalized_image": False},
+        }
         model = MaskablePPO(
             MaskableMultiInputActorCriticPolicy,
             env,
@@ -103,6 +107,7 @@ class Predictor:
             tensorboard_log="./" + model_name + "_" + self.figure_of_merit + "_" + self.device_name,
             gamma=0.98,
             n_steps=n_steps,
+            policy_kwargs=policy_kwargs,
         )
         model.learn(total_timesteps=timesteps, progress_bar=progress_bar)
         model.save(

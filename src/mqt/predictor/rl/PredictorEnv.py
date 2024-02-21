@@ -69,6 +69,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.num_steps = 0
         self.layout = None
 
+        qubit_num, max_depth = 11, 1000
+
         spaces = {
             "num_qubits": Discrete(128),
             "depth": Discrete(1000000),
@@ -77,6 +79,16 @@ class PredictorEnv(Env):  # type: ignore[misc]
             "entanglement_ratio": Box(low=0, high=1, shape=(1,), dtype=np.float32),
             "parallelism": Box(low=0, high=1, shape=(1,), dtype=np.float32),
             "liveness": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            "circuit": Box(
+                low=0,
+                high=50,
+                shape=(
+                    1,
+                    qubit_num,
+                    max_depth,
+                ),
+                dtype=np.int8,
+            ),
         }
         self.observation_space = Dict(spaces)
         self.filename = ""

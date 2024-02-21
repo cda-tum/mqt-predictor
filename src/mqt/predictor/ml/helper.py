@@ -179,7 +179,7 @@ def dict_to_featurevector(gate_dict: dict[str, int]) -> dict[str, int]:
 PATH_LENGTH = 260
 
 
-def create_feature_dict(qc: str | QuantumCircuit, graph_features: bool=False) -> dict[str, Any]:
+def create_feature_dict(qc: str | QuantumCircuit, graph_features: bool = False) -> dict[str, Any]:
     """Creates and returns a feature dictionary for a given quantum circuit.
 
     Args:
