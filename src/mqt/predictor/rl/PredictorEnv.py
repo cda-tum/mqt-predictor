@@ -268,9 +268,6 @@ class PredictorEnv(Env):  # type: ignore[misc]
                             ),
                             do_while=action["do_while"],
                         )
-                    elif action["name"] == "VF2PostLayout":
-                        print("VF2PostLayout")
-                        pm = PassManager(transpile_pass)
                     else:
                         pm = PassManager(transpile_pass)
                     altered_qc = pm.run(self.state)
