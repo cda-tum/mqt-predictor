@@ -348,47 +348,38 @@ def encode_circuit(qc: QuantumCircuit) -> NDArray[np.int_]:
 
     # Get the number of qubits in the circuit
     num_qubits, max_depth = 11, 1000
-    matrix = np.zeros((num_qubits, max_depth))
+    matrix = np.zeros((num_qubits, max_depth), dtype=np.int8)
+
+    # Convert the circuit to a DAG and prepare the layers (wo barriers)
     dag = circuit_to_dag(qc)
     dag.remove_all_ops_named("barrier")
-
     layers = list(dag.multigraph_layers())
-    qubits = {}
-    for idx, qubit_line in enumerate(layers[0]):
-        qubits[qubit_line.wire.index] = idx
 
-    num_qubits = len(qubits.keys())
+    # Create a look-up table for qubit indices (needed for multiple registers)
+    q_idx_LUT = {qubit: idx for idx, qubit in enumerate(dag.qubits)}
 
-    """
-    Each element of layers after the first one contains a list of operations
-    that act on the circuit simultaneously
-    """
-
-    labels = np.zeros_like(matrix, dtype=np.int8)
-
-    for idx, tensor_op in enumerate(layers[1:-1]):
+    for l_idx, tensor_op in enumerate(layers[1:-1]):
         for node in tensor_op:
             try:
                 operation_name = node.op.name
             except Exception:
                 continue
-            if node.op.num_qubits == 1:
-                q_indx = node.qargs[0].index
-                labels[q_indx, idx] = gate_dict[operation_name]
-            else:
-                for qdx, qubit in enumerate(node.qargs):
-                    first_qubit = qubit.index
-                    if qdx == len(node.qargs) - 1:  # target qubit
-                        labels[first_qubit, idx] = gate_dict[operation_name]
-                    else:  # control qubits
-                        labels[first_qubit, idx] = gate_dict["ctr"]
+            if node.op.num_qubits == 1: # single qubit gate
+                q_idx = q_idx_LUT[node.qargs[0]]
+                matrix[q_idx, l_idx] = gate_dict[operation_name]
+            else: # multi qubit gate
+                for qubit in node.qargs[:-1]:
+                    q_idx = q_idx_LUT[qubit] # control qubits
+                    matrix[q_idx, l_idx] = gate_dict["ctr"]
+                q_idx = q_idx_LUT[node.qargs[-1]] # target qubit
+                matrix[q_idx, l_idx] = gate_dict[operation_name]
 
     # shift idle layers to the left
-    for col in range(labels.shape[1], len(layers)):
-        if np.sum(labels[:, col]) == 0:
-            labels[:, col:-1] = labels[:, col + 1 :]
+    for col in range(matrix.shape[1], len(layers)):
+        if np.sum(matrix[:, col]) == 0:
+            matrix[:, col:-1] = matrix[:, col + 1 :]
 
-    return np.expand_dims(labels, axis=0)
+    return np.expand_dims(matrix, axis=0)
 
 
 def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float_]]:
