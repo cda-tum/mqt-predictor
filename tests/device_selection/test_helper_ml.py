@@ -61,7 +61,6 @@ def test_predict_device_for_figure_of_merit() -> None:
         ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
 
 
-
 def test_qcompile() -> None:
     qc = benchmark_generator.get_benchmark("ghz", 1, 5)
     qc_compiled, compilation_information, quantum_device = qcompile(qc)
