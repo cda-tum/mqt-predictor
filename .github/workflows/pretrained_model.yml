@@ -20,7 +20,7 @@ jobs:
           python-version: "3.10"
       - name: Install MQT Predictor
         run: pip install .[test]
-      - name: Generate Report
+      - name: Run Pre-Trained Models
         run: pytest -v tests/compilation/test_pretrained_models.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
