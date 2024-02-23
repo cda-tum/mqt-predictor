@@ -1,10 +1,10 @@
 from __future__ import annotations
+
 import pytest
 from qiskit import QuantumCircuit
 
 from mqt.bench import get_benchmark
 from mqt.predictor import reward, rl
-
 
 
 @pytest.mark.parametrize(
