@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from qiskit import QuantumCircuit
 
-from mqt.bench import benchmark_generator, get_benchmark
+from mqt.bench import get_benchmark
 from mqt.bench.devices import get_available_device_names
 from mqt.predictor import qcompile, reward, rl
 from mqt.predictor.evaluation import evaluate_sample_circuit
@@ -28,7 +28,7 @@ def test_qcompile_with_pretrained_models(figure_of_merit: reward.figure_of_merit
 
 
 def test_qcompile() -> None:
-    qc = benchmark_generator.get_benchmark("ghz", 1, 5)
+    qc = get_benchmark("ghz", 1, 5)
     qc_compiled, compilation_information, quantum_device = qcompile(qc)
     assert quantum_device in get_available_device_names()
     assert qc_compiled.layout is not None
