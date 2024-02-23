@@ -40,10 +40,6 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
     assert isinstance(qc_compiled, QuantumCircuit)
     assert compilation_information is not None
 
-    model_path = rl.helper.get_path_trained_model()
-    if model_path.exists():
-        Path(model_path / ("model_" + figure_of_merit + "_" + device + ".zip")).unlink()
-
 
 def test_qcompile_with_false_input() -> None:
     qc = get_benchmark("dj", 1, 5)

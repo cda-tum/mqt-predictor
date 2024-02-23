@@ -69,14 +69,15 @@ def create_tket_result(
     """
     if qc.num_qubits > device.num_qubits:
         return Result("tket_" + device.name, -1, None, device)
-    tket_qc = qiskit_to_tk(qc)
-    arch = Architecture(device.coupling_map)
-
-    native_rebase = get_rebase(device.basis_gates)
-    assert native_rebase is not None
-
-    start_time = time.time()
     try:
+        tket_qc = qiskit_to_tk(qc)
+        arch = Architecture(device.coupling_map)
+
+        native_rebase = get_rebase(device.basis_gates)
+        assert native_rebase is not None
+
+        start_time = time.time()
+
         native_rebase.apply(tket_qc)
         FullPeepholeOptimise(target_2qb_gate=OpType.TK2).apply(tket_qc)
         PlacementPass(GraphPlacement(arch)).apply(tket_qc)
