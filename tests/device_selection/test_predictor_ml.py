@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Final
 
 import numpy as np
 
@@ -14,7 +13,7 @@ def test_predict() -> None:
     path = ml.helper.get_path_trained_model(figure_of_merit="expected_fidelity")
     assert path.is_file()
     filename = "test_qasm.qasm"
-    figure_of_merit: Final = "expected_fidelity"
+    figure_of_merit: reward.figure_of_merit = "expected_fidelity"
     qc = benchmark_generator.get_benchmark("dj", 1, 8)
     qc.qasm(filename=filename)
     predictor = ml.Predictor()

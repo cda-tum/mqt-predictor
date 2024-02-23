@@ -54,6 +54,6 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
 def test_qcompile_with_false_input() -> None:
     qc = get_benchmark("dj", 1, 5)
     with pytest.raises(ValueError, match="figure_of_merit must not be None if predictor_singleton is None."):
-        rl.helper.qcompile(qc, None, "ibm_washington")
+        rl.helper.qcompile(qc, None, "quantinuum_h2")
     with pytest.raises(ValueError, match="device_name must not be None if predictor_singleton is None."):
         rl.helper.qcompile(qc, "expected_fidelity", None)
