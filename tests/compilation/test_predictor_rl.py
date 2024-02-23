@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest
@@ -9,14 +8,14 @@ from qiskit import QuantumCircuit
 from mqt.bench import get_benchmark
 from mqt.predictor import reward, rl
 
-IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
-
 
 @pytest.mark.parametrize(
     "figure_of_merit",
     ["expected_fidelity", "critical_depth"],
 )
 def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
+    """Test the qcompile function with a newly trained model."""
+    """ Important: Those trained models are used in later tests and must not be deleted. """
     device = "ionq_harmony"
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
     predictor.train_model(
