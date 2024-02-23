@@ -36,19 +36,24 @@ def test_predictor_env_reset_from_string() -> None:
     ["expected_fidelity", "critical_depth"],
 )
 def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
-    predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name="ionq_harmony")
+    device = "ionq_harmony"
+    predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
     predictor.train_model(
         timesteps=100,
         test=True,
     )
 
     qc = get_benchmark("ghz", 1, 5)
-    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name="ionq_harmony")
+    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
     assert type(res) == tuple
     qc_compiled, compilation_information = res
 
     assert isinstance(qc_compiled, QuantumCircuit)
     assert compilation_information is not None
+
+    model_path = rl.helper.get_path_trained_model()
+    if model_path.exists():
+        Path(model_path / ("model_" + figure_of_merit + "_" + device + ".zip")).unlink()
 
 
 def test_qcompile_with_false_input() -> None:
