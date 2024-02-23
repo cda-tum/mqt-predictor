@@ -70,7 +70,11 @@ def create_tket_result(
     if qc.num_qubits > device.num_qubits:
         return Result("tket_" + device.name, -1, None, device)
     tket_qc = qiskit_to_tk(qc)
-    arch = Architecture(device.coupling_map)
+    try:
+        arch = Architecture(device.coupling_map)
+    except Exception as e:
+        logger.warning("tket initialize couling map error occurred for: " + device.name + " " + str(e))
+        return Result("tket_" + device.name, -1, None, device)
 
     native_rebase = get_rebase(device.basis_gates)
     assert native_rebase is not None

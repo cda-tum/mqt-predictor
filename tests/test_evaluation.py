@@ -50,3 +50,9 @@ def test_false_input() -> None:
     assert res.compilation_time == -1.0
     assert res.fidelity == -1.0
     assert res.critical_depth == -1.0
+
+    res = create_tket_result(QuantumCircuit(10), devices[0])
+    assert isinstance(res, Result)
+    assert res.compilation_time == -1.0
+    assert res.fidelity == -1.0
+    assert res.critical_depth == -1.0
