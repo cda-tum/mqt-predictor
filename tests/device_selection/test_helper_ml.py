@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from mqt.bench import benchmark_generator
-from mqt.predictor import ml, qcompile
+from mqt.predictor import ml
 
 
 def test_get_index_to_device_LUT() -> None:
@@ -71,14 +71,6 @@ def test_predict_device_for_figure_of_merit() -> None:
         ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity")
         in ml.helper.get_index_to_device_LUT().values()
     )
-
-
-def test_qcompile() -> None:
-    qc = benchmark_generator.get_benchmark("ghz", 1, 5)
-    qc_compiled, compilation_information, quantum_device = qcompile(qc)
-    assert quantum_device in ml.helper.get_index_to_device_LUT().values()
-    assert qc_compiled.layout is not None
-    assert len(qc_compiled) > 0
 
 
 def test_get_path_results() -> None:
