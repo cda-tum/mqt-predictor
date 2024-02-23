@@ -11,8 +11,6 @@ from mqt.predictor import reward, rl
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
 
-# only run test when executed on GitHub runner
-@pytest.mark.skipif(not IN_GITHUB_ACTIONS, reason="Only run this test when executed on GitHub runner")
 @pytest.mark.parametrize(
     "figure_of_merit",
     ["expected_fidelity", "critical_depth"],

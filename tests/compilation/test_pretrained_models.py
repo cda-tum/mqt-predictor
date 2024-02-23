@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+import os
+
 import pytest
 from qiskit import QuantumCircuit
 
 from mqt.bench import get_benchmark
 from mqt.predictor import reward, rl
 
+# only run test when executed on GitHub runner
+IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
+
+@pytest.mark.skipif(not IN_GITHUB_ACTIONS, reason="Only run this test on GitHub runner")
 @pytest.mark.parametrize(
     "figure_of_merit",
     ["expected_fidelity", "critical_depth"],
