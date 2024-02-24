@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 
@@ -27,6 +28,30 @@ def test_predict() -> None:
     predicted_device_indices = classes[np.argsort(predictions)[::-1]]
     assert all(0 <= i < len(devices) for i in predicted_device_indices)
     Path(filename).unlink()
+
+
+def test_calc_performance_measures() -> None:
+    predictor = ml.Predictor()
+    figure_of_merit: Literal["expected_fidelity"] = "expected_fidelity"
+
+    training_data = predictor.get_prepared_training_data(figure_of_merit=figure_of_merit, save_non_zero_indices=True)
+
+    y_test = training_data.y_test
+    indices_test = training_data.indices_test
+    names_list = training_data.names_list
+    scores_list = training_data.scores_list
+
+    assert len(y_test) > 0
+    assert len(indices_test) > 0
+    assert len(names_list) > 0
+    assert len(scores_list) > 0
+
+    scores_filtered = [scores_list[i] for i in indices_test]
+    [names_list[i] for i in indices_test]
+
+    res, relative_scores = predictor.calc_performance_measures(scores_filtered, y_test, y_test)
+    assert all(res)
+    assert not any(relative_scores)
 
 
 def test_train_random_forest_classifier() -> None:
