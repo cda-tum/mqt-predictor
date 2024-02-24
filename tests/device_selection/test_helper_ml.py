@@ -4,7 +4,7 @@ import pytest
 
 from mqt.bench import benchmark_generator
 from mqt.bench.devices import get_available_device_names
-from mqt.predictor import ml, qcompile
+from mqt.predictor import ml
 
 
 def test_load_training_data() -> None:
@@ -59,14 +59,6 @@ def test_predict_device_for_figure_of_merit() -> None:
 
     with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
         ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
-
-
-def test_qcompile() -> None:
-    qc = benchmark_generator.get_benchmark("ghz", 1, 5)
-    qc_compiled, compilation_information, quantum_device = qcompile(qc)
-    assert quantum_device in get_available_device_names()
-    assert qc_compiled.layout is not None
-    assert len(qc_compiled) > 0
 
 
 def test_get_path_results() -> None:

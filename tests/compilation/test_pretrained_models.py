@@ -47,7 +47,7 @@ def test_evaluate_sample_circuit() -> None:
                 expected_keys.append(compilation_setup + "_" + key)
             else:
                 expected_keys.extend(
-                    [compilation_setup + "_" + device["name"] + "_" + key for device in rl.helper.get_devices()]
+                    [compilation_setup + "_" + name + "_" + key for name in get_available_device_names()]
                 )
 
     assert all(key in res for key in expected_keys)
