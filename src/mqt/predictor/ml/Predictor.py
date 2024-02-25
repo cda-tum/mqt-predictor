@@ -433,13 +433,16 @@ class Predictor:
 
         return res, relative_scores
 
-    def plot_eval_histogram(self, res: list[int], filename: str = "histogram", color: str = "#21918c") -> None:
+    def plot_eval_histogram(
+        self, res: list[int], filename: str = "histogram", color: str = "#21918c", show_plot: bool = True
+    ) -> None:
         """Method to generate the histogram for the evaluation scores
 
         Args:
             res (list[int]): The ranks of the predictions
             filename (str, optional): The filename of the histogram. Defaults to "histogram".
             color (str, optional): The color of the histogram. Defaults to "#21918c".
+            show_plot (bool, optional): Whether to show the plot. Defaults to True. False for testing purposes.
 
         """
 
@@ -470,7 +473,8 @@ class Predictor:
         if not result_path.is_dir():
             result_path.mkdir()
         plt.savefig(result_path / (filename + ".pdf"), bbox_inches="tight")
-        plt.show()
+        if show_plot:
+            plt.show()
 
     def plot_eval_all_detailed_compact_normed(
         self,

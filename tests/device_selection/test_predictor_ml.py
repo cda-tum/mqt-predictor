@@ -30,7 +30,7 @@ def test_predict() -> None:
     Path(filename).unlink()
 
 
-def test_calc_performance_measures() -> None:
+def test_performance_measures() -> None:
     predictor = ml.Predictor()
     figure_of_merit: Literal["expected_fidelity"] = "expected_fidelity"
 
@@ -47,11 +47,24 @@ def test_calc_performance_measures() -> None:
     assert len(scores_list) > 0
 
     scores_filtered = [scores_list[i] for i in indices_test]
-    [names_list[i] for i in indices_test]
+    names_filtered = [names_list[i] for i in indices_test]
 
+    # Test calc_performance_measures
     res, relative_scores = predictor.calc_performance_measures(scores_filtered, y_test, y_test)
     assert all(res)
     assert not any(relative_scores)
+
+    # Test plot_eval_histogram
+    predictor.plot_eval_histogram(res, show_plot=False)
+    histogram_path = Path("results/histogram.pdf")
+    assert histogram_path.is_file(), "File does not exist"
+    histogram_path.unlink()
+
+    # Test plot_eval_all_detailed_compact_normed
+    predictor.plot_eval_all_detailed_compact_normed(names_filtered, scores_filtered, y_test, y_test)
+    result_path = Path("results/y_pred_eval_normed.pdf")
+    assert result_path.is_file(), "File does not exist"
+    result_path.unlink()
 
 
 def test_train_random_forest_classifier() -> None:
