@@ -191,6 +191,12 @@ class PredictorEnv(Env):  # type: ignore[misc]
             action_mask = [
                 action_mask[i] and self.action_set[i].get("origin") != "bqskit" for i in range(len(action_mask))
             ]
+
+        # only allow VF2PostLayout if "ibm" is in the device name
+        if "ibm" not in self.device.name:
+            action_mask = [
+                action_mask[i] and self.action_set[i].get("name") != "VF2PostLayout" for i in range(len(action_mask))
+            ]
         return action_mask
 
     def apply_action(self, action_index: int) -> QuantumCircuit | None:
