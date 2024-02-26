@@ -54,14 +54,14 @@ def test_performance_measures() -> None:
     assert all(res)
     assert not any(relative_scores)
 
-    # Test plot_eval_histogram
-    predictor.plot_eval_histogram(res, show_plot=False)
+    # Test generate_eval_histogram
+    predictor.generate_eval_histogram(res, show_plot=False)
     histogram_path = Path("results/histogram.pdf")
     assert histogram_path.is_file(), "File does not exist"
     histogram_path.unlink()
 
-    # Test plot_eval_all_detailed_compact_normed
-    predictor.plot_eval_all_detailed_compact_normed(names_filtered, scores_filtered, y_test, y_test)
+    # Test generate_eval_all_datapoints
+    predictor.generate_eval_all_datapoints(names_filtered, scores_filtered, y_test, y_test)
     result_path = Path("results/y_pred_eval_normed.pdf")
     assert result_path.is_file(), "File does not exist"
     result_path.unlink()

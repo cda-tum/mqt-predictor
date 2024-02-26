@@ -334,13 +334,13 @@ class Predictor:
         if visualize_results:
             y_pred = np.array(list(clf.predict(training_data.X_test)))
             res, _ = self.calc_performance_measures(scores_filtered, y_pred, training_data.y_test)
-            self.plot_eval_histogram(res, filename="RandomForestClassifier")
+            self.generate_eval_histogram(res, filename="RandomForestClassifier")
 
             logger.info("Best Accuracy: " + str(clf.best_score_))
             top3 = (res.count(1) + res.count(2) + res.count(3)) / len(res)
             logger.info("Top 3: " + str(top3))
             logger.info("Feature Importance: " + str(clf.best_estimator_.feature_importances_))
-            self.plot_eval_all_detailed_compact_normed(names_filtered, scores_filtered, y_pred, training_data.y_test)
+            self.generate_eval_all_datapoints(names_filtered, scores_filtered, y_pred, training_data.y_test)
 
         self.set_classifier(clf.best_estimator_)
         ml.helper.save_classifier(clf.best_estimator_, figure_of_merit)
@@ -433,7 +433,7 @@ class Predictor:
 
         return res, relative_scores
 
-    def plot_eval_histogram(
+    def generate_eval_histogram(
         self, res: list[int], filename: str = "histogram", color: str = "#21918c", show_plot: bool = True
     ) -> None:
         """Method to generate the histogram for the evaluation scores
@@ -476,7 +476,7 @@ class Predictor:
         if show_plot:
             plt.show()
 
-    def plot_eval_all_detailed_compact_normed(
+    def generate_eval_all_datapoints(
         self,
         names_list: list[Any],
         scores_filtered: list[Any],
