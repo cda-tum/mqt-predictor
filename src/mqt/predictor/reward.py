@@ -36,7 +36,7 @@ def KL(
     num_initial_qubits: int,
     device_name: str,
     precision: int = 10,
-) -> float:
+) -> tuple[float, list[float]]:
     if device_name == "ibm_guadalupe":
         backend = AerSimulator.from_backend(FakeGuadalupeV2())
     elif device_name == "ibm_quito":
@@ -46,13 +46,14 @@ def KL(
         raise ValueError(error_msg)
     backend.set_options(device="CPU")
     if sum(compiled_qc.count_ops().values()) > initial_gate_count * 6 or compiled_qc.count_ops()["cx"] > max_cx_count:
-        return 0
+        return 0, []
     print("Training QCBM with:", compiled_qc.count_ops(), "initial gate count:", initial_gate_count)
     compiled_qc._global_phase = 0  # noqa: SLF001
     qcbm = quark.QCBM(n_qubits=num_initial_qubits)
-    best_KL = 1 - qcbm.train(circuit=compiled_qc, backend=backend)
+    best_KL, evaluation_data = qcbm.train(circuit=compiled_qc, backend=backend)
+    reward = 1 - best_KL
 
-    return cast(float, np.round(best_KL, precision))
+    return cast(float, np.round(reward, precision)), evaluation_data
 
 
 def expected_fidelity(qc: QuantumCircuit, device_name: str, precision: int = 10) -> float:

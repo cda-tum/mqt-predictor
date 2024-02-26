@@ -166,7 +166,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         if self.reward_function == "critical_depth":
             return reward.crit_depth(self.state)
         if self.reward_function == "KL":
-            new_KL_value = reward.KL(
+            new_KL_value, evaluation_data = reward.KL(
                 self.state,
                 sum(self.initial_uncompiled_circuit.count_ops().values()),
                 self.max_cx_count,
@@ -184,6 +184,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
             if new_KL_value > self.best_KL:
                 self.best_KL = new_KL_value
                 self.best_compilation_sequence = self.used_actions
+                with Path(self.timestamp + "_KL_values.txt").open(mode="a") as file:
+                    file.write(str(evaluation_data) + "\n")
 
             return new_KL_value
         error_msg = f"Reward function {self.reward_function} not supported."
@@ -302,6 +304,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         post_layout = pm.property_set["post_layout"]
                         if post_layout:
                             pm = PassManager(ApplyLayout())
+                            assert self.layout is not None
                             pm.property_set["layout"] = self.layout.initial_layout
                             pm.property_set["original_qubit_indices"] = self.layout.input_qubit_mapping
                             pm.property_set["final_layout"] = self.layout.final_layout

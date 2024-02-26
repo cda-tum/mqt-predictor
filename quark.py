@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from itertools import combinations
 
+import matplotlib.pyplot as plt
 import numpy as np
 from cma import CMAEvolutionStrategy
 from qiskit import QuantumCircuit
@@ -66,8 +67,9 @@ class QCBM:
         self.sigma = sigma
         self.n_qubits = n_qubits
 
-    def train(self, circuit, backend) -> float:
+    def train(self, circuit, backend) -> tuple[float, list[float]]:
         execute_circuit = self.get_execute_circuit(circuit, backend)
+        evolution_data = []
 
         n_params = circuit.num_parameters
         x0 = (np.random.rand(n_params) - 0.5) * np.pi
@@ -101,11 +103,12 @@ class QCBM:
             # if epoch % 20 == 0:
             #     print(f"Epoch={epoch} | KL={min(loss_epoch)}")
 
+            evolution_data.append(min(loss_epoch))
             if min(loss_epoch) < best_kl:
                 best_kl = min(loss_epoch)
 
         # Return the lowest KL divergence (Figure of merit)
-        return best_kl
+        return best_kl, evolution_data
 
     def kl_divergence(self, pmf_model):
         # Loss function bwteen target and model distribution
@@ -185,7 +188,7 @@ if __name__ == "__main__":
 
     backend = AerSimulator.from_backend(fake_backend)
 
-    num_runs = 25
+    num_runs = 1
 
     # print("Optimization Level 3 without backend information")
     # res = []
@@ -203,7 +206,9 @@ if __name__ == "__main__":
         compiled_circuit = transpile(circuit, backend=fake_backend, optimization_level=3)
         print(compiled_circuit.count_ops())
         print(compiled_circuit.count_ops(), sum(compiled_circuit.count_ops().values()))
-        best_KL = qcbm.train(circuit=compiled_circuit.copy(), backend=backend)
+        best_KL, evolution_data = qcbm.train(circuit=compiled_circuit.copy(), backend=backend)
+        plt.plot(evolution_data)
+        plt.show()
         res.append(best_KL)
 
     print(f"AVG KL={np.average(res)}, STD KL={np.std(res)}, BEST KL={np.min(res)}")
