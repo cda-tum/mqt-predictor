@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import cast
 
 import pytest
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
+from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
 from qiskit.transpiler.runningpassmanager import TranspileLayout
 
+from mqt.bench.devices import Device, get_available_devices, get_device_by_name
 from mqt.predictor.rl import helper
 
 
@@ -32,8 +34,8 @@ def test_BQSKitO2_action() -> None:
     assert optimized_qc != qc
 
 
-@pytest.mark.parametrize("device", helper.get_devices(), ids=lambda device: cast(str, device["name"]))
-def test_BQSKitSynthesis_action(device: dict[str, Any]) -> None:
+@pytest.mark.parametrize("device", get_available_devices(), ids=lambda device: cast(str, device.name))
+def test_BQSKitSynthesis_action(device: Device) -> None:
     """Test the BQSKitSynthesis action for all devices."""
     action_BQSKitSynthesis = None
     for action in helper.get_actions_synthesis():
@@ -46,7 +48,7 @@ def test_BQSKitSynthesis_action(device: dict[str, Any]) -> None:
     qc.h(0)
     qc.cx(0, 1)
 
-    check_nat_gates = GatesInBasis(basis_gates=device["native_gates"])
+    check_nat_gates = GatesInBasis(basis_gates=device.basis_gates)
     check_nat_gates(qc)
     assert not check_nat_gates.property_set["all_gates_in_basis"]
 
@@ -54,10 +56,10 @@ def test_BQSKitSynthesis_action(device: dict[str, Any]) -> None:
     bqskit_qc = qiskit_to_bqskit(qc)
     native_gates_qc = bqskit_to_qiskit(transpile_pass(bqskit_qc))
 
-    check_nat_gates = GatesInBasis(basis_gates=device["native_gates"])
+    check_nat_gates = GatesInBasis(basis_gates=device.basis_gates)
     check_nat_gates(native_gates_qc)
     only_nat_gates = check_nat_gates.property_set["all_gates_in_basis"]
-    if "oqc" not in device["name"]:
+    if "oqc" not in device.name:
         assert only_nat_gates
 
 
@@ -77,7 +79,7 @@ def test_BQSKitMapping_action_swaps_necessary() -> None:
     qc.cx(0, 3)
     qc.cx(0, 4)
 
-    device = helper.get_devices()[1]
+    device = get_device_by_name("ibm_montreal")
     bqskit_qc = qiskit_to_bqskit(qc)
     bqskit_qc_mapped, input_mapping, output_mapping = action_BQSKitMapping["transpile_pass"](device)(bqskit_qc)
     mapped_qc = bqskit_to_qiskit(bqskit_qc_mapped)
@@ -89,18 +91,18 @@ def test_BQSKitMapping_action_swaps_necessary() -> None:
 
 
 def check_mapped_circuit(
-    initial_qc: QuantumCircuit, mapped_qc: QuantumCircuit, device: dict[str, Any], layout: TranspileLayout
+    initial_qc: QuantumCircuit, mapped_qc: QuantumCircuit, device: Device, layout: TranspileLayout
 ) -> None:
     # check if the altered circuit is correctly mapped to the device
-    check_mapping = CheckMap(coupling_map=CouplingMap(device["cmap"]))
+    check_mapping = CheckMap(coupling_map=CouplingMap(device.coupling_map))
     check_mapping(mapped_qc)
     mapped = check_mapping.property_set["is_swap_mapped"]
     assert mapped
     assert mapped_qc != initial_qc
     assert layout is not None
-    assert len(layout.initial_layout) == device["max_qubits"]
+    assert len(layout.initial_layout) == device.num_qubits
     if layout.final_layout is not None:
-        assert len(layout.final_layout) == device["max_qubits"]
+        assert len(layout.final_layout) == device.num_qubits
 
     # each qubit of the initial layout is part of the initial quantum circuit and the register name is correctly set
     for assigned_physical_qubit in layout.initial_layout._p2v.values():  # noqa: SLF001
@@ -114,7 +116,7 @@ def check_mapped_circuit(
             assert initial_qc.find_bit(assigned_physical_qubit).registers[0][0].name == "q"
         # assigned_physical_qubit is an ancilla qubit
         else:
-            assert qreg.size == device["max_qubits"] - initial_qc.num_qubits
+            assert qreg.size == device.num_qubits - initial_qc.num_qubits
     # each qubit of the final layout is part of the mapped quantum circuit and the register name is correctly set
     if layout.final_layout is not None:
         for assigned_physical_qubit in layout.final_layout._p2v.values():  # noqa: SLF001
@@ -138,7 +140,7 @@ def test_BQSKitMapping_action_no_swaps_necessary() -> None:
     qc_no_swap_needed.h(0)
     qc_no_swap_needed.cx(0, 1)
 
-    device = helper.get_devices()[1]
+    device = get_device_by_name("ibm_montreal")
 
     bqskit_qc = qiskit_to_bqskit(qc_no_swap_needed)
     bqskit_qc_mapped, input_mapping, output_mapping = action_BQSKitMapping["transpile_pass"](device)(bqskit_qc)
@@ -161,7 +163,7 @@ def test_TKET_routing() -> None:
     qc.cx(0, 3)
     qc.cx(0, 4)
 
-    device = helper.get_devices()[1]
+    device = get_device_by_name("ibm_montreal")
 
     layout_action = helper.get_actions_layout()[0]
     transpile_pass = layout_action["transpile_pass"](device)
@@ -179,7 +181,6 @@ def test_TKET_routing() -> None:
     tket_qc = qiskit_to_tk(layouted_qc, preserve_param_uuid=True)
     for elem in routing_action["transpile_pass"](device):
         elem.apply(tket_qc)
-    from pytket.circuit import Qubit
 
     qbs = tket_qc.qubits
     qubit_map = {qbs[i]: Qubit("q", i) for i in range(len(qbs))}

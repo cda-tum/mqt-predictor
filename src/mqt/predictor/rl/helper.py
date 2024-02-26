@@ -49,6 +49,8 @@ from qiskit.transpiler.passes import (
     StochasticSwap,
     TrivialLayout,
     UnitarySynthesis,
+    VF2Layout,
+    VF2PostLayout,
 )
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
@@ -57,7 +59,12 @@ from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import reward, rl
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from numpy.typing import NDArray
+
+    from mqt.bench.devices import Device
+
 
 if TYPE_CHECKING or sys.version_info >= (3, 10, 0):
     from importlib import metadata, resources
@@ -68,6 +75,7 @@ else:
 from bqskit import compile as bqskit_compile
 from bqskit.ir import gates
 from qiskit import QuantumRegister
+from qiskit.providers.fake_provider import FakeGuadalupe, FakeMontreal, FakeQuito, FakeWashington
 from qiskit.transpiler.layout import Layout
 from qiskit.transpiler.preset_passmanagers import common
 from qiskit.transpiler.runningpassmanager import ConditionalController
@@ -206,14 +214,28 @@ def get_actions_opt() -> list[dict[str, Any]]:
     ]
 
 
+def get_actions_final_optimization() -> list[dict[str, Any]]:
+    """Returns a list of dictionaries containing information about the optimization passes that are available."""
+    return [
+        {
+            "name": "VF2PostLayout",
+            "transpile_pass": lambda device: VF2PostLayout(
+                coupling_map=CouplingMap(device.coupling_map),
+                properties=get_ibm_backend_properties_by_device_name(device.name),
+            ),
+            "origin": "qiskit",
+        }
+    ]
+
+
 def get_actions_layout() -> list[dict[str, Any]]:
     """Returns a list of dictionaries containing information about the layout passes that are available."""
     return [
         {
             "name": "TrivialLayout",
             "transpile_pass": lambda device: [
-                TrivialLayout(coupling_map=CouplingMap(device["cmap"])),
-                FullAncillaAllocation(coupling_map=CouplingMap(device["cmap"])),
+                TrivialLayout(coupling_map=CouplingMap(device.coupling_map)),
+                FullAncillaAllocation(coupling_map=CouplingMap(device.coupling_map)),
                 EnlargeWithAncilla(),
                 ApplyLayout(),
             ],
@@ -222,10 +244,20 @@ def get_actions_layout() -> list[dict[str, Any]]:
         {
             "name": "DenseLayout",
             "transpile_pass": lambda device: [
-                DenseLayout(coupling_map=CouplingMap(device["cmap"])),
-                FullAncillaAllocation(coupling_map=CouplingMap(device["cmap"])),
+                DenseLayout(coupling_map=CouplingMap(device.coupling_map)),
+                FullAncillaAllocation(coupling_map=CouplingMap(device.coupling_map)),
                 EnlargeWithAncilla(),
                 ApplyLayout(),
+            ],
+            "origin": "qiskit",
+        },
+        {
+            "name": "VF2Layout",
+            "transpile_pass": lambda device: [
+                VF2Layout(
+                    coupling_map=CouplingMap(device.coupling_map),
+                    properties=get_ibm_backend_properties_by_device_name(device.name),
+                ),
             ],
             "origin": "qiskit",
         },
@@ -237,20 +269,20 @@ def get_actions_routing() -> list[dict[str, Any]]:
     return [
         {
             "name": "BasicSwap",
-            "transpile_pass": lambda device: [BasicSwap(coupling_map=CouplingMap(device["cmap"]))],
+            "transpile_pass": lambda device: [BasicSwap(coupling_map=CouplingMap(device.coupling_map))],
             "origin": "qiskit",
         },
         {
             "name": "RoutingPass",
             "transpile_pass": lambda device: [
                 PreProcessTKETRoutingAfterQiskitLayout(),
-                RoutingPass(Architecture(device["cmap"])),
+                RoutingPass(Architecture(device.coupling_map)),
             ],
             "origin": "tket",
         },
         {
             "name": "StochasticSwap",
-            "transpile_pass": lambda device: [StochasticSwap(coupling_map=CouplingMap(device["cmap"]))],
+            "transpile_pass": lambda device: [StochasticSwap(coupling_map=CouplingMap(device.coupling_map))],
             "origin": "qiskit",
         },
     ]
@@ -262,7 +294,7 @@ def get_actions_mapping() -> list[dict[str, Any]]:
         {
             "name": "SabreMapping",
             "transpile_pass": lambda device: [
-                SabreLayout(coupling_map=CouplingMap(device["cmap"]), skip_routing=False),
+                SabreLayout(coupling_map=CouplingMap(device.coupling_map), skip_routing=False),
             ],
             "origin": "qiskit",
         },
@@ -271,9 +303,9 @@ def get_actions_mapping() -> list[dict[str, Any]]:
             "transpile_pass": lambda device: lambda bqskit_circuit: bqskit_compile(
                 bqskit_circuit,
                 model=MachineModel(
-                    num_qudits=device["max_qubits"],
+                    num_qudits=device.num_qubits,
                     gate_set=get_BQSKit_native_gates(device),
-                    coupling_graph=[(elem[0], elem[1]) for elem in device["cmap"]],
+                    coupling_graph=[(elem[0], elem[1]) for elem in device.coupling_map],
                 ),
                 with_mapping=True,
                 optimization_level=2,
@@ -289,7 +321,7 @@ def get_actions_synthesis() -> list[dict[str, Any]]:
         {
             "name": "BasisTranslator",
             "transpile_pass": lambda device: [
-                BasisTranslator(StandardEquivalenceLibrary, target_basis=device["native_gates"])
+                BasisTranslator(StandardEquivalenceLibrary, target_basis=device.basis_gates)
             ],
             "origin": "qiskit",
         },
@@ -546,7 +578,7 @@ class PreProcessTKETRoutingAfterQiskitLayout:
         place_with_map(circuit=circuit, qmap=mapping)
 
 
-def get_BQSKit_native_gates(device: dict[str, Any]) -> list[gates.Gate] | None:
+def get_BQSKit_native_gates(device: Device) -> list[gates.Gate] | None:
     """Returns the native gates of the given device.
 
     Args:
@@ -555,7 +587,7 @@ def get_BQSKit_native_gates(device: dict[str, Any]) -> list[gates.Gate] | None:
     Returns:
         list[gates.Gate]: The native gates of the given provider.
     """
-    provider = device["name"].split("_")[0]
+    provider = device.name.split("_")[0]
 
     native_gatesets = {
         "ibm": [gates.RZGate(), gates.SXGate(), gates.XGate(), gates.CNOTGate()],
@@ -626,3 +658,35 @@ def final_layout_bqskit_to_qiskit(
         _output_qubit_list=compiled_qc.qubits,
         _input_qubit_count=initial_qc.num_qubits,
     )
+
+
+def get_ibm_backend_properties_by_device_name(device_name: str) -> Any:
+    """Returns the IBM backend name for the given device name.
+
+    Args:
+        device_name (str): The name of the device for which the IBM backend name is returned.
+
+    Returns:
+        str: The IBM backend name for the given device name.
+    """
+    if "ibm" not in device_name:
+        return None
+    if device_name == "ibm_washington":
+        return FakeWashington().properties()
+    if device_name == "ibm_montreal":
+        return FakeMontreal().properties()
+    if device_name == "ibm_guadalupe":
+        return FakeGuadalupe().properties()
+    if device_name == "ibm_quito":
+        return FakeQuito().properties()
+    return None
+
+
+def get_layout_postprocessing_qiskit_pass() -> (
+    Callable[[Device], list[FullAncillaAllocation | EnlargeWithAncilla | ApplyLayout]]
+):
+    return lambda device: [
+        FullAncillaAllocation(coupling_map=CouplingMap(device.coupling_map)),
+        EnlargeWithAncilla(),
+        ApplyLayout(),
+    ]

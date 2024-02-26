@@ -14,7 +14,7 @@ from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
-from qiskit.transpiler.passes import CheckMap, GatesInBasis
+from qiskit.transpiler.passes import ApplyLayout, CheckMap, GatesInBasis
 from qiskit.transpiler.runningpassmanager import TranspileLayout
 
 from mqt.bench.devices import get_device_by_name
@@ -37,6 +37,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.actions_routing_indices = []
         self.actions_mapping_indices = []
         self.actions_opt_indices = []
+        self.actions_final_optimization_indices = []
         self.used_actions: list[str] = []
         self.device = get_device_by_name(device_name)
 
@@ -61,6 +62,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
         for elem in rl.helper.get_actions_mapping():
             self.action_set[index] = elem
             self.actions_mapping_indices.append(index)
+            index += 1
+        for elem in rl.helper.get_actions_final_optimization():
+            self.action_set[index] = elem
+            self.actions_final_optimization_indices.append(index)
             index += 1
 
         self.action_set[index] = rl.helper.get_action_terminate()
@@ -174,6 +179,13 @@ class PredictorEnv(Env):  # type: ignore[misc]
     def action_masks(self) -> list[bool]:
         """Returns a list of valid actions for the current state."""
         action_mask = [action in self.valid_actions for action in self.action_set]
+
+        # it is not clear how tket will handle the layout, so we remove all actions that are from "origin"=="tket" if a layout is set
+        if self.layout is not None:
+            action_mask = [
+                action_mask[i] and self.action_set[i].get("origin") != "tket" for i in range(len(action_mask))
+            ]
+
         if self.has_parametrized_gates or self.layout is not None:
             # remove all actions that are from "origin"=="bqskit" because they are not supported for parametrized gates
             # or after layout since using BQSKit after a layout is set may result in an error
@@ -199,8 +211,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         pm = PassManager()
                         pm.append(
                             action["transpile_pass"](
-                                self.device["native_gates"],
-                                CouplingMap(self.device["cmap"]) if self.layout is not None else None,
+                                self.device.basis_gates,
+                                CouplingMap(self.device.coupling_map) if self.layout is not None else None,
                             ),
                             do_while=action["do_while"],
                         )
@@ -216,15 +228,46 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
                     self.error_occured = True
                     return None
-                if action_index in self.actions_layout_indices + self.actions_mapping_indices:
-                    assert pm.property_set["layout"]
-                    self.layout = TranspileLayout(
-                        initial_layout=pm.property_set["layout"],
-                        input_qubit_mapping=pm.property_set["original_qubit_indices"],
-                        final_layout=pm.property_set["final_layout"],
-                        _output_qubit_list=altered_qc.qubits,
-                        _input_qubit_count=self.num_qubits_uncompiled_circuit,
-                    )
+                if (
+                    action_index
+                    in self.actions_layout_indices
+                    + self.actions_mapping_indices
+                    + self.actions_final_optimization_indices
+                ):
+                    if action["name"] == "VF2Layout":
+                        if pm.property_set["layout"]:
+                            initial_layout = pm.property_set["layout"]
+                            original_qubit_indices = pm.property_set["original_qubit_indices"]
+                            final_layout = pm.property_set["final_layout"]
+                            postprocessing_action = rl.helper.get_layout_postprocessing_qiskit_pass()(self.device)
+                            pm = PassManager(postprocessing_action)
+                            pm.property_set["layout"] = initial_layout
+                            pm.property_set["original_qubit_indices"] = original_qubit_indices
+                            pm.property_set["final_layout"] = final_layout
+                            altered_qc = pm.run(altered_qc)
+                    elif action["name"] == "VF2PostLayout":
+                        assert pm.property_set["VF2PostLayout_stop_reason"] is not None
+                        post_layout = pm.property_set["post_layout"]
+                        if post_layout:
+                            pm = PassManager(ApplyLayout())
+                            assert self.layout is not None
+                            pm.property_set["layout"] = self.layout.initial_layout
+                            pm.property_set["original_qubit_indices"] = self.layout.input_qubit_mapping
+                            pm.property_set["final_layout"] = self.layout.final_layout
+                            pm.property_set["post_layout"] = post_layout
+                            altered_qc = pm.run(altered_qc)
+                    else:
+                        assert pm.property_set["layout"]
+
+                    if pm.property_set["layout"]:
+                        self.layout = TranspileLayout(
+                            initial_layout=pm.property_set["layout"],
+                            input_qubit_mapping=pm.property_set["original_qubit_indices"],
+                            final_layout=pm.property_set["final_layout"],
+                            _output_qubit_list=altered_qc.qubits,
+                            _input_qubit_count=self.num_qubits_uncompiled_circuit,
+                        )
+
                 elif action_index in self.actions_routing_indices:
                     assert self.layout is not None
                     self.layout.final_layout = pm.property_set["final_layout"]
@@ -266,7 +309,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         self.layout = layout
                 except Exception:
                     logger.exception(
-                        "Error in executing BQSKit transpile  pass for {action} at step {i} for {filename}".format(
+                        "Error in executing BQSKit transpile pass for {action} at step {i} for {filename}".format(
                             action=action["name"], i=self.num_steps, filename=self.filename
                         )
                     )

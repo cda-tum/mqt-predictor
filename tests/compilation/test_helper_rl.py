@@ -3,28 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 from mqt.bench import get_benchmark
 from mqt.predictor import rl
-
-
-def test_get_device_false_input() -> None:
-    with pytest.raises(RuntimeError):
-        rl.helper.get_device("false_input")
-
-
-def test_get_device_index_of_device_false_input() -> None:
-    with pytest.raises(RuntimeError):
-        rl.helper.get_device_index_of_device("false_input")
-
-
-@pytest.mark.parametrize(
-    "device",
-    ["ibm_washington", "ibm_montreal", "rigetti_aspen_m2", "oqc_lucy", "ionq_harmony", "ionq_aria1", "quantinuum_h2"],
-)
-def test_get_device(device: str) -> None:
-    assert rl.helper.get_device(device) is not None
 
 
 def test_create_feature_dict() -> None:
