@@ -10,6 +10,16 @@ from mqt.bench.devices import get_available_devices
 from mqt.predictor import ml, reward
 
 
+def test_train_random_forest_classifier() -> None:
+    """Test the training of a random forest classifier. This test must be executed prior to any prediction to make sure
+    the model is trained using the latest scikit-learn version."""
+    predictor = ml.Predictor()
+    assert predictor.clf is None
+    predictor.train_random_forest_classifier(visualize_results=False)
+
+    assert predictor.clf is not None
+
+
 def test_predict() -> None:
     path = ml.helper.get_path_trained_model(figure_of_merit="expected_fidelity")
     assert path.is_file()
@@ -65,14 +75,6 @@ def test_performance_measures() -> None:
     result_path = Path("results/y_pred_eval_normed.pdf")
     assert result_path.is_file(), "File does not exist"
     result_path.unlink()
-
-
-def test_train_random_forest_classifier() -> None:
-    predictor = ml.Predictor()
-    assert predictor.clf is None
-    predictor.train_random_forest_classifier(visualize_results=False)
-
-    assert predictor.clf is not None
 
 
 def test_compile_all_circuits_for_dev_and_fom() -> None:
