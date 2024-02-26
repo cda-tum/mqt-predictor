@@ -23,7 +23,7 @@ from pytket.placement import place_with_map
 from qiskit import QuantumCircuit
 from qiskit.circuit.equivalence_library import StandardEquivalenceLibrary
 from qiskit.circuit.library import XGate, ZGate
-from qiskit.transpiler import CouplingMap, TranspileLayout
+from qiskit.transpiler import CouplingMap, Layout, PassManager, TranspileLayout
 from qiskit.transpiler.passes import (
     ApplyLayout,
     BasicSwap,
@@ -76,7 +76,6 @@ from bqskit import compile as bqskit_compile
 from bqskit.ir import gates
 from qiskit import QuantumRegister
 from qiskit.providers.fake_provider import FakeGuadalupe, FakeMontreal, FakeQuito, FakeWashington
-from qiskit.transpiler.layout import Layout
 from qiskit.transpiler.preset_passmanagers import common
 from qiskit.transpiler.runningpassmanager import ConditionalController
 
@@ -690,3 +689,34 @@ def get_layout_postprocessing_qiskit_pass() -> (
         EnlargeWithAncilla(),
         ApplyLayout(),
     ]
+
+
+def postprocess_VF2Layout(
+    qc: QuantumCircuit,
+    initial_layout: Layout,
+    original_qubit_indices: dict[QuantumRegister, int],
+    final_layout: Layout,
+    device: Device,
+) -> tuple[QuantumCircuit, PassManager]:
+    """Postprocesses the given quantum circuit with the given layout and returns the altered quantum circuit and the respective PassManager."""
+    postprocessing_action = rl.helper.get_layout_postprocessing_qiskit_pass()(device)
+    pm = PassManager(postprocessing_action)
+    pm.property_set["layout"] = initial_layout
+    pm.property_set["original_qubit_indices"] = original_qubit_indices
+    pm.property_set["final_layout"] = final_layout
+    altered_qc = pm.run(qc)
+    return altered_qc, pm
+
+
+def postprocess_VF2PostLayout(
+    qc: QuantumCircuit, post_layout: Layout, layout_before: TranspileLayout
+) -> tuple[QuantumCircuit, PassManager]:
+    """Postprocesses the given quantum circuit with the post_layout and returns the altered quantum circuit and the respective PassManager."""
+    pm = PassManager(ApplyLayout())
+    assert layout_before is not None
+    pm.property_set["layout"] = layout_before.initial_layout
+    pm.property_set["original_qubit_indices"] = layout_before.input_qubit_mapping
+    pm.property_set["final_layout"] = layout_before.final_layout
+    pm.property_set["post_layout"] = post_layout
+    altered_qc = pm.run(qc)
+    return altered_qc, pm
