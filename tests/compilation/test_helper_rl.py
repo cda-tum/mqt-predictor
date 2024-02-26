@@ -31,7 +31,7 @@ def test_create_feature_dict() -> None:
     qc = get_benchmark("dj", 1, 5)
     features = rl.helper.create_feature_dict(qc)
     for feature in features.values():
-        assert isinstance(feature, (np.ndarray, int))
+        assert isinstance(feature, np.ndarray | int)
 
 
 def test_get_path_trained_model() -> None:

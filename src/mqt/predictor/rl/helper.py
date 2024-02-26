@@ -545,6 +545,7 @@ class PreProcessTKETRoutingAfterQiskitLayout:
         mapping = {Qubit(i): Node(i) for i in range(circuit.n_qubits)}
         place_with_map(circuit=circuit, qmap=mapping)
 
+
 def get_BQSKit_native_gates(device: dict[str, Any]) -> list[gates.Gate] | None:
     """Returns the native gates of the given device.
 

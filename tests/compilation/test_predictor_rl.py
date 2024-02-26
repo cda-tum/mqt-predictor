@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-
 from pathlib import Path
+
 import pytest
 from qiskit import QuantumCircuit
 
@@ -15,7 +15,6 @@ def test_predictor_env_reset_from_string() -> None:
     qc = get_benchmark("dj", 1, 3)
     qc.qasm(filename=str(qasm_path))
     assert predictor.env.reset(qc=qasm_path)[0] == rl.helper.create_feature_dict(qc)
-
 
 
 @pytest.mark.parametrize(
