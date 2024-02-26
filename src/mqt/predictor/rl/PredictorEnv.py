@@ -113,7 +113,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         with Path(str(self.timestamp) + "_KL_values.txt").open(mode="w+") as file:
-            file.write("KL values and number of gates\n")
+            file.write("KL values and number of gates for\n")
+            file.write("Device: " + str(self.device["name"]) + "\n")
+            file.write("Reward function: " + str(self.reward_function) + "\n")
+            file.write("Number of qubits: " + str(self.num_qubits_uncompiled_circuit) + "\n")
 
     def step(self, action: int) -> tuple[dict[str, Any], float, bool, bool, dict[Any, Any]]:
         """Executes the given action and returns the new state, the reward, whether the episode is done, whether the episode is truncated and additional information."""
