@@ -17,6 +17,7 @@ from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
 from qiskit.transpiler.runningpassmanager import TranspileLayout
 
+from mqt.bench.devices import get_device_by_name
 from mqt.predictor import reward, rl
 
 logger = logging.getLogger("mqt-predictor")
@@ -37,7 +38,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.actions_mapping_indices = []
         self.actions_opt_indices = []
         self.used_actions: list[str] = []
-        self.device = rl.helper.get_device(device_name)
+        self.device = get_device_by_name(device_name)
 
         index = 0
 
@@ -124,11 +125,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
     def calculate_reward(self) -> Any:
         """Calculates and returns the reward for the current state."""
         if self.reward_function == "expected_fidelity":
-            return reward.expected_fidelity(self.state, self.device["name"])
-        if self.reward_function == "critical_depth":
-            return reward.crit_depth(self.state)
-        error_msg = f"Reward function {self.reward_function} not supported."  # type: ignore[unreachable]
-        raise ValueError(error_msg)
+            return reward.expected_fidelity(self.state, self.device)
+        # else: can only be "critical_depth"
+        return reward.crit_depth(self.state)
 
     def render(self) -> None:
         """Renders the current state."""
@@ -156,7 +155,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         elif qc:
             self.state = QuantumCircuit.from_qasm_file(str(qc))
         else:
-            self.state, self.filename = rl.helper.get_state_sample(self.device["max_qubits"])
+            self.state, self.filename = rl.helper.get_state_sample(self.device.num_qubits)
 
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
@@ -286,7 +285,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
     def determine_valid_actions_for_state(self) -> list[int]:
         """Determines and returns the valid actions for the current state."""
-        check_nat_gates = GatesInBasis(basis_gates=self.device["native_gates"])
+        check_nat_gates = GatesInBasis(basis_gates=self.device.basis_gates)
         check_nat_gates(self.state)
         only_nat_gates = check_nat_gates.property_set["all_gates_in_basis"]
 
@@ -296,7 +295,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 actions += self.actions_routing_indices
             return actions
 
-        check_mapping = CheckMap(coupling_map=CouplingMap(self.device["cmap"]))
+        check_mapping = CheckMap(coupling_map=CouplingMap(self.device.coupling_map))
         check_mapping(self.state)
         mapped = check_mapping.property_set["is_swap_mapped"]
 

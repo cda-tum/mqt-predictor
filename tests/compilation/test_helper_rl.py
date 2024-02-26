@@ -24,7 +24,7 @@ def test_get_device_index_of_device_false_input() -> None:
     ["ibm_washington", "ibm_montreal", "rigetti_aspen_m2", "oqc_lucy", "ionq_harmony", "ionq_aria1", "quantinuum_h2"],
 )
 def test_get_device(device: str) -> None:
-    assert rl.helper.get_device(device)
+    assert rl.helper.get_device(device) is not None
 
 
 def test_create_feature_dict() -> None:
