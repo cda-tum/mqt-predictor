@@ -318,6 +318,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         return altered_qc
 
     def postprocess_VF2PostLayout(self, qc: QuantumCircuit, post_layout: Layout) -> tuple[QuantumCircuit, PassManager]:
+        """Postprocesses the given quantum circuit with the post_layout and returns the altered quantum circuit and the respective PassManager."""
         pm = PassManager(ApplyLayout())
         assert self.layout is not None
         pm.property_set["layout"] = self.layout.initial_layout
@@ -334,6 +335,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         original_qubit_indices: dict[QuantumRegister, int],
         final_layout: TranspileLayout,
     ) -> tuple[QuantumCircuit, PassManager]:
+        """Postprocesses the given quantum circuit with the given layout and returns the altered quantum circuit and the respective PassManager."""
         postprocessing_action = rl.helper.get_layout_postprocessing_qiskit_pass()(self.device)
         pm = PassManager(postprocessing_action)
         pm.property_set["layout"] = initial_layout
