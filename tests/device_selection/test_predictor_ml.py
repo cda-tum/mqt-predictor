@@ -4,10 +4,29 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
+import pytest
 
 from mqt.bench import benchmark_generator
-from mqt.bench.devices import get_available_devices
+from mqt.bench.devices import get_available_device_names, get_available_devices
 from mqt.predictor import ml, reward
+
+
+def test_train_random_forest_classifier() -> None:
+    """Test the training of a random forest classifier. This test must be executed prior to any prediction to make sure
+    the model is trained using the latest scikit-learn version."""
+    predictor = ml.Predictor()
+    assert predictor.clf is None
+    predictor.train_random_forest_classifier(visualize_results=False)
+
+    assert predictor.clf is not None
+
+
+def test_predict_device_for_figure_of_merit() -> None:
+    qc = benchmark_generator.get_benchmark("ghz", 1, 5)
+    assert ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity").name in get_available_device_names()
+
+    with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
+        ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
 
 
 def test_predict() -> None:
@@ -65,14 +84,6 @@ def test_performance_measures() -> None:
     result_path = Path("results/y_pred_eval_normed.pdf")
     assert result_path.is_file(), "File does not exist"
     result_path.unlink()
-
-
-def test_train_random_forest_classifier() -> None:
-    predictor = ml.Predictor()
-    assert predictor.clf is None
-    predictor.train_random_forest_classifier(visualize_results=False)
-
-    assert predictor.clf is not None
 
 
 def test_compile_all_circuits_for_dev_and_fom() -> None:

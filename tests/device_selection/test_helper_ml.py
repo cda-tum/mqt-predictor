@@ -3,7 +3,6 @@ from __future__ import annotations
 import pytest
 
 from mqt.bench import benchmark_generator
-from mqt.bench.devices import get_available_device_names
 from mqt.predictor import ml
 
 
@@ -51,14 +50,6 @@ def test_get_path_trained_model() -> None:
     for figure_of_merit in ["expected_fidelity", "critical_depth"]:
         path = ml.helper.get_path_trained_model(figure_of_merit=figure_of_merit)
         assert path.exists()
-
-
-def test_predict_device_for_figure_of_merit() -> None:
-    qc = benchmark_generator.get_benchmark("ghz", 1, 5)
-    assert ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity").name in get_available_device_names()
-
-    with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
-        ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
 
 
 def test_get_path_results() -> None:

@@ -38,6 +38,7 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
     qc_compiled, compilation_information = res
 
     assert isinstance(qc_compiled, QuantumCircuit)
+    assert qc_compiled.layout is not None
     assert compilation_information is not None
 
 
