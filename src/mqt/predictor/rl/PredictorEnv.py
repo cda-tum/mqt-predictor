@@ -241,7 +241,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 ):
                     if action["name"] == "VF2Layout":
                         if pm.property_set["layout"]:
-                            altered_qc, pm = self.postprocess_VF2Layout(
+                            altered_qc, pm = rl.helper.postprocess_VF2Layout(
                                 altered_qc,
                                 pm.property_set["layout"],
                                 pm.property_set["original_qubit_indices"],
@@ -252,7 +252,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         assert pm.property_set["VF2PostLayout_stop_reason"] is not None
                         post_layout = pm.property_set["post_layout"]
                         if post_layout:
-                            altered_qc, pm = self.postprocess_VF2PostLayout(altered_qc, post_layout, self.layout)
+                            altered_qc, pm = rl.helper.postprocess_VF2PostLayout(altered_qc, post_layout, self.layout)
                     else:
                         assert pm.property_set["layout"]
 
