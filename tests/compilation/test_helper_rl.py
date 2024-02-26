@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 from qiskit import transpile
 from qiskit.transpiler import PassManager
+from qiskit.transpiler.passes.layout.vf2_post_layout import VF2PostLayoutStopReason
 
 from mqt.bench import get_benchmark
 from mqt.bench.devices import get_device_by_name
@@ -32,7 +33,6 @@ def test_get_path_training_circuits() -> None:
 
 def test_VF2_layout_and_postlayout() -> None:
     qc = get_benchmark("ghz", 1, 3)
-    # qc_transpiled = transpile(qc, basis_gates=dev.basis_gates, coupling_map=dev.coupling_map)
 
     for dev in [get_device_by_name("ibm_montreal"), get_device_by_name("ionq_harmony")]:
         layout_pass = None
@@ -41,13 +41,26 @@ def test_VF2_layout_and_postlayout() -> None:
                 layout_pass = layout_action["transpile_pass"](dev)
                 break
         pm = PassManager(layout_pass)
-        pm.run(qc)
+        altered_qc = pm.run(qc)
+        assert len(altered_qc.layout.initial_layout) == 3
         assert pm.property_set["VF2Layout_stop_reason"] is not None
-
-    qc_transpiled = transpile(qc, basis_gates=dev.basis_gates, coupling_map=dev.coupling_map)
-    assert qc_transpiled.layout is not None
+        layouted_qc, pm = rl.helper.postprocess_VF2Layout(
+            altered_qc,
+            pm.property_set["layout"],
+            pm.property_set["original_qubit_indices"],
+            pm.property_set["final_layout"],
+            dev,
+        )
+        assert len(layouted_qc.layout.initial_layout) == dev.num_qubits
 
     dev_success = get_device_by_name("ibm_montreal")
+    qc_transpiled = transpile(
+        qc, basis_gates=dev_success.basis_gates, coupling_map=dev_success.coupling_map, optimization_level=0
+    )
+    assert qc_transpiled.layout is not None
+
+    initial_layout_before = qc_transpiled.layout.initial_layout
+
     post_layout_pass = None
     for layout_action in rl.helper.get_actions_final_optimization():
         if layout_action["name"] == "VF2PostLayout":
@@ -55,5 +68,15 @@ def test_VF2_layout_and_postlayout() -> None:
             break
 
     pm = PassManager(post_layout_pass)
-    pm.run(qc_transpiled)
+    altered_qc = pm.run(qc_transpiled)
+
     assert pm.property_set["VF2PostLayout_stop_reason"] is not None
+    assert pm.property_set["VF2PostLayout_stop_reason"] == VF2PostLayoutStopReason.SOLUTION_FOUND
+
+    assert len(layouted_qc.layout.initial_layout) == dev.num_qubits
+    layouted_qc, pm = rl.helper.postprocess_VF2PostLayout(
+        altered_qc, pm.property_set["post_layout"], qc_transpiled.layout
+    )
+    initial_layout_after = layouted_qc.layout.initial_layout
+
+    assert initial_layout_before != initial_layout_after
