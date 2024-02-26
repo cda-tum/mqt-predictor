@@ -4,9 +4,10 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
+import pytest
 
 from mqt.bench import benchmark_generator
-from mqt.bench.devices import get_available_devices
+from mqt.bench.devices import get_available_device_names, get_available_devices
 from mqt.predictor import ml, reward
 
 
@@ -18,6 +19,14 @@ def test_train_random_forest_classifier() -> None:
     predictor.train_random_forest_classifier(visualize_results=False)
 
     assert predictor.clf is not None
+
+
+def test_predict_device_for_figure_of_merit() -> None:
+    qc = benchmark_generator.get_benchmark("ghz", 1, 5)
+    assert ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity").name in get_available_device_names()
+
+    with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
+        ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
 
 
 def test_predict() -> None:
