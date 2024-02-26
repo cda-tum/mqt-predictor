@@ -3,20 +3,8 @@ from __future__ import annotations
 import pytest
 
 from mqt.bench import benchmark_generator
+from mqt.bench.devices import get_available_device_names
 from mqt.predictor import ml
-
-
-def test_get_index_to_device_LUT() -> None:
-    expected = {
-        0: "ibm_washington",
-        1: "ibm_montreal",
-        2: "oqc_lucy",
-        3: "rigetti_aspen_m2",
-        4: "ionq_harmony",
-        5: "ionq_aria1",
-        6: "quantinuum_h2",
-    }
-    assert ml.helper.get_index_to_device_LUT() == expected
 
 
 def test_load_training_data() -> None:
@@ -67,10 +55,10 @@ def test_get_path_trained_model() -> None:
 
 def test_predict_device_for_figure_of_merit() -> None:
     qc = benchmark_generator.get_benchmark("ghz", 1, 5)
-    assert (
-        ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity")
-        in ml.helper.get_index_to_device_LUT().values()
-    )
+    assert ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity").name in get_available_device_names()
+
+    with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
+        ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
 
 
 def test_get_path_results() -> None:

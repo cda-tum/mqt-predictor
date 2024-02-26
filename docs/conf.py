@@ -74,7 +74,7 @@ intersphinx_mapping = {
     "mqt": ("https://mqt.readthedocs.io/en/latest/", None),
 }
 
-nbsphinx_execute = "auto"
+nbsphinx_execute = "never"
 highlight_language = "python3"
 nbsphinx_execute_arguments = [
     "--InlineBackend.figure_formats={'svg', 'pdf'}",

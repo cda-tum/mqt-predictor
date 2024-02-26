@@ -9,6 +9,14 @@ from mqt.bench import get_benchmark
 from mqt.predictor import reward, rl
 
 
+def test_predictor_env_reset_from_string() -> None:
+    predictor = rl.Predictor(figure_of_merit="expected_fidelity", device_name="ionq_harmony")
+    qasm_path = Path("test.qasm")
+    qc = get_benchmark("dj", 1, 3)
+    qc.qasm(filename=str(qasm_path))
+    assert predictor.env.reset(qc=qasm_path)[0] == rl.helper.create_feature_dict(qc)
+
+
 @pytest.mark.parametrize(
     "figure_of_merit",
     ["expected_fidelity", "critical_depth"],
@@ -31,10 +39,6 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
 
     assert isinstance(qc_compiled, QuantumCircuit)
     assert compilation_information is not None
-
-    model_path = rl.helper.get_path_trained_model()
-    if model_path.exists():
-        Path(model_path / ("model_" + figure_of_merit + "_" + device + ".zip")).unlink()
 
 
 def test_qcompile_with_false_input() -> None:

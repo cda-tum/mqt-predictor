@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 
 from mqt.bench import benchmark_generator
+from mqt.bench.devices import get_available_devices
 from mqt.predictor import ml, reward
 
 
@@ -20,11 +22,49 @@ def test_predict() -> None:
     assert predictor.clf is not None
     classes = predictor.clf.classes_  # type: ignore[unreachable]
     predicted_device_indices = classes[np.argsort(predictions)[::-1]]
-    assert all(0 <= i < len(ml.helper.get_index_to_device_LUT()) for i in predicted_device_indices)
+    devices = get_available_devices()
+    assert all(0 <= i < len(devices) for i in predicted_device_indices)
     predictions = predictor.predict_probs(qc.qasm(), figure_of_merit=figure_of_merit)
     predicted_device_indices = classes[np.argsort(predictions)[::-1]]
-    assert all(0 <= i < len(ml.helper.get_index_to_device_LUT()) for i in predicted_device_indices)
+    assert all(0 <= i < len(devices) for i in predicted_device_indices)
     Path(filename).unlink()
+
+
+def test_performance_measures() -> None:
+    predictor = ml.Predictor()
+    figure_of_merit: Literal["expected_fidelity"] = "expected_fidelity"
+
+    training_data = predictor.get_prepared_training_data(figure_of_merit=figure_of_merit, save_non_zero_indices=True)
+
+    y_test = training_data.y_test
+    indices_test = training_data.indices_test
+    names_list = training_data.names_list
+    scores_list = training_data.scores_list
+
+    assert len(y_test) > 0
+    assert len(indices_test) > 0
+    assert len(names_list) > 0
+    assert len(scores_list) > 0
+
+    scores_filtered = [scores_list[i] for i in indices_test]
+    names_filtered = [names_list[i] for i in indices_test]
+
+    # Test calc_performance_measures
+    res, relative_scores = predictor.calc_performance_measures(scores_filtered, y_test, y_test)
+    assert all(res)
+    assert not any(relative_scores)
+
+    # Test generate_eval_histogram
+    predictor.generate_eval_histogram(res, show_plot=False)
+    histogram_path = Path("results/histogram.pdf")
+    assert histogram_path.is_file(), "File does not exist"
+    histogram_path.unlink()
+
+    # Test generate_eval_all_datapoints
+    predictor.generate_eval_all_datapoints(names_filtered, scores_filtered, y_test, y_test)
+    result_path = Path("results/y_pred_eval_normed.pdf")
+    assert result_path.is_file(), "File does not exist"
+    result_path.unlink()
 
 
 def test_train_random_forest_classifier() -> None:
