@@ -12,10 +12,10 @@ from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete
 from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
-from qiskit import QuantumCircuit
+from qiskit import QuantumCircuit, QuantumRegister
 from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import ApplyLayout, CheckMap, GatesInBasis
-from qiskit.transpiler.runningpassmanager import TranspileLayout
+from qiskit.transpiler.runningpassmanager import Layout, TranspileLayout
 
 from mqt.bench.devices import get_device_by_name
 from mqt.predictor import reward, rl
@@ -236,26 +236,17 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 ):
                     if action["name"] == "VF2Layout":
                         if pm.property_set["layout"]:
-                            initial_layout = pm.property_set["layout"]
-                            original_qubit_indices = pm.property_set["original_qubit_indices"]
-                            final_layout = pm.property_set["final_layout"]
-                            postprocessing_action = rl.helper.get_layout_postprocessing_qiskit_pass()(self.device)
-                            pm = PassManager(postprocessing_action)
-                            pm.property_set["layout"] = initial_layout
-                            pm.property_set["original_qubit_indices"] = original_qubit_indices
-                            pm.property_set["final_layout"] = final_layout
-                            altered_qc = pm.run(altered_qc)
+                            altered_qc, pm = self.postprocess_VF2Layout(
+                                altered_qc,
+                                pm.property_set["layout"],
+                                pm.property_set["original_qubit_indices"],
+                                pm.property_set["final_layout"],
+                            )
                     elif action["name"] == "VF2PostLayout":
                         assert pm.property_set["VF2PostLayout_stop_reason"] is not None
                         post_layout = pm.property_set["post_layout"]
                         if post_layout:
-                            pm = PassManager(ApplyLayout())
-                            assert self.layout is not None
-                            pm.property_set["layout"] = self.layout.initial_layout
-                            pm.property_set["original_qubit_indices"] = self.layout.input_qubit_mapping
-                            pm.property_set["final_layout"] = self.layout.final_layout
-                            pm.property_set["post_layout"] = post_layout
-                            altered_qc = pm.run(altered_qc)
+                            altered_qc, pm = self.postprocess_VF2PostLayout(altered_qc, post_layout)
                     else:
                         assert pm.property_set["layout"]
 
@@ -325,6 +316,31 @@ class PredictorEnv(Env):  # type: ignore[misc]
             raise ValueError(error_msg)
 
         return altered_qc
+
+    def postprocess_VF2PostLayout(self, qc: QuantumCircuit, post_layout: Layout) -> tuple[QuantumCircuit, PassManager]:
+        pm = PassManager(ApplyLayout())
+        assert self.layout is not None
+        pm.property_set["layout"] = self.layout.initial_layout
+        pm.property_set["original_qubit_indices"] = self.layout.input_qubit_mapping
+        pm.property_set["final_layout"] = self.layout.final_layout
+        pm.property_set["post_layout"] = post_layout
+        altered_qc = pm.run(qc)
+        return altered_qc, pm
+
+    def postprocess_VF2Layout(
+        self,
+        qc: QuantumCircuit,
+        initial_layout: TranspileLayout,
+        original_qubit_indices: dict[QuantumRegister, int],
+        final_layout: TranspileLayout,
+    ) -> tuple[QuantumCircuit, PassManager]:
+        postprocessing_action = rl.helper.get_layout_postprocessing_qiskit_pass()(self.device)
+        pm = PassManager(postprocessing_action)
+        pm.property_set["layout"] = initial_layout
+        pm.property_set["original_qubit_indices"] = original_qubit_indices
+        pm.property_set["final_layout"] = final_layout
+        altered_qc = pm.run(qc)
+        return altered_qc, pm
 
     def determine_valid_actions_for_state(self) -> list[int]:
         """Determines and returns the valid actions for the current state."""
