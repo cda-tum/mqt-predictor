@@ -59,7 +59,15 @@ class QCBM:
     This training method is referred to as quantum circuit born machine (QCBM).
     """
 
-    def __init__(self, n_qubits: int, shots=10000, population_size=5, max_evaluations=2500, sigma=0.5):
+    def __init__(self, n_qubits: int, shots=10000, population_size=5, sigma=0.5):
+        if n_qubits <= 4:
+            max_evaluations = 750
+        elif n_qubits <= 6:
+            max_evaluations = 1000
+        # elif n_qubits <= 8:
+        #     max_evaluations = 2000
+        else:
+            max_evaluations = 2500
         self.target = self.get_target(n_qubits)
         self.n_shots = shots
         self.max_evaluations = max_evaluations
@@ -188,7 +196,7 @@ if __name__ == "__main__":
 
     backend = AerSimulator.from_backend(fake_backend)
 
-    num_runs = 1
+    num_runs = 10
 
     # print("Optimization Level 3 without backend information")
     # res = []
@@ -201,14 +209,16 @@ if __name__ == "__main__":
 
     print("Optimization Level 3 with backend information")
     res = []
+    all_eval_data = []
     for i in range(num_runs):
         print("Run", i)
         compiled_circuit = transpile(circuit, backend=fake_backend, optimization_level=3)
         print(compiled_circuit.count_ops())
         print(compiled_circuit.count_ops(), sum(compiled_circuit.count_ops().values()))
         best_KL, evolution_data = qcbm.train(circuit=compiled_circuit.copy(), backend=backend)
-        plt.plot(evolution_data)
+        all_eval_data.append(evolution_data)
         plt.show()
         res.append(best_KL)
 
     print(f"AVG KL={np.average(res)}, STD KL={np.std(res)}, BEST KL={np.min(res)}")
+    np.savetxt(f"all_eval_data_{fake_backend.name}_{num_runs}_runs_{n_qubits}_qubits.txt", all_eval_data)

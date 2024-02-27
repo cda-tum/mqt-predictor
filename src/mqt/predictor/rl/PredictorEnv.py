@@ -104,7 +104,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
             self.state, coupling_map=self.device["cmap"], basis_gates=self.device["native_gates"], optimization_level=3
         )
         print("Baseline Gate Counts: ", baseline_compiled_qc.count_ops())
-        self.max_cx_count = baseline_compiled_qc.count_ops().get("cx", 0) * 1.1
+        self.max_cx_count = baseline_compiled_qc.count_ops().get("cx", 0)
         self.initial_uncompiled_circuit = self.state.copy()
         self.has_parametrized_gates = len(self.state.parameters) > 0
         self.num_qubits_uncompiled_circuit = self.state.num_qubits
