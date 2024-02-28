@@ -51,9 +51,15 @@ def KL(
         return 0, []
     print("Training QCBM with:", compiled_qc.count_ops(), "initial gate count:", initial_gate_count)
     compiled_qc._global_phase = 0  # noqa: SLF001
-    qcbm = quark.QCBM(n_qubits=num_initial_qubits)
-    best_KL, evaluation_data = qcbm.train(circuit=compiled_qc, backend=backend)
-    reward = 1 - best_KL
+    all_res = []
+    all_eval_data = []
+    for _ in range(3):
+        qcbm = quark.QCBM(n_qubits=num_initial_qubits)
+        best_KL, evaluation_data = qcbm.train(circuit=compiled_qc, backend=backend)
+        all_res.append(best_KL)
+        all_eval_data.append(evaluation_data)
+    reward = 1 - np.min(all_res)
+    evaluation_data = all_eval_data[np.argmin(all_res)]
 
     return cast(float, np.round(reward, precision)), evaluation_data
 
