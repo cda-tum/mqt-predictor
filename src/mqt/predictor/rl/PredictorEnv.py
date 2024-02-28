@@ -177,7 +177,6 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 self.device["name"],
             )
             print("Current best value: " + str(self.best_KL))
-            print("Current best compilation sequence: " + str(self.best_compilation_sequence))
             print("New value: " + str(new_KL_value))
 
             if new_KL_value > 0.0:
@@ -189,6 +188,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 self.best_compilation_sequence = self.used_actions
                 with Path(self.timestamp + "_KL_values.txt").open(mode="a") as file:
                     file.write(str(evaluation_data) + "\n")
+                    file.write(str(self.best_compilation_sequence) + "\n")
 
             return new_KL_value
         error_msg = f"Reward function {self.reward_function} not supported."

@@ -71,7 +71,7 @@ else:
 from bqskit import compile as bqskit_compile
 from bqskit.ir import gates
 from qiskit import QuantumRegister
-from qiskit.providers.fake_provider import FakeGuadalupe, FakeMontreal, FakeQuito, FakeWashington
+from qiskit.providers.fake_provider import FakeGuadalupe, FakeMontreal, FakeNairobi, FakeQuito, FakeWashington
 from qiskit.transpiler.layout import Layout
 from qiskit.transpiler.preset_passmanagers import common
 from qiskit.transpiler.runningpassmanager import ConditionalController
@@ -289,6 +289,8 @@ def get_ibm_backend_properties_by_device_name(device_name: str) -> Any:
         return FakeGuadalupe().properties()
     if device_name == "ibm_quito":
         return FakeQuito().properties()
+    if device_name == "ibm_nairobi":
+        return FakeNairobi().properties()
     return None
 
 
@@ -396,6 +398,12 @@ def get_devices() -> list[dict[str, Any]]:
             "cmap": FakeQuito().configuration().coupling_map,
             "native_gates": get_native_gates("ibm"),
             "max_qubits": 5,
+        },
+        {
+            "name": "ibm_nairobi",
+            "cmap": FakeNairobi().configuration().coupling_map,
+            "native_gates": get_native_gates("ibm"),
+            "max_qubits": 7,
         },
         {
             "name": "oqc_lucy",

@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 import quark
 from qiskit.providers.aer import AerSimulator
-from qiskit.providers.fake_provider import FakeGuadalupeV2, FakeQuitoV2
+from qiskit.providers.fake_provider import FakeGuadalupeV2, FakeNairobiV2, FakeQuitoV2
 
 logger = logging.getLogger("mqt-predictor")
 
@@ -41,6 +41,8 @@ def KL(
         backend = AerSimulator.from_backend(FakeGuadalupeV2())
     elif device_name == "ibm_quito":
         backend = AerSimulator.from_backend(FakeQuitoV2())
+    elif device_name == "ibm_nairobi":
+        backend = AerSimulator.from_backend(FakeNairobiV2())
     else:
         error_msg = "Device not supported"
         raise ValueError(error_msg)

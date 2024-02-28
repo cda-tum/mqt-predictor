@@ -10,7 +10,7 @@ from qiskit import QuantumCircuit
 from qiskit.circuit import Parameter
 from qiskit.compiler import transpile
 from qiskit.providers.aer import AerSimulator
-from qiskit.providers.fake_provider import FakeGuadalupeV2, FakeQuitoV2
+from qiskit.providers.fake_provider import FakeGuadalupeV2, FakeNairobiV2, FakeQuitoV2
 from scipy.special import binom
 
 
@@ -88,7 +88,7 @@ class QCBM:
             "maxfevals": self.max_evaluations,
             "popsize": self.population_size,
             "verbose": -3,
-            "tolfun": 0.01,
+            "tolfun": 0.0001,
         }
 
         # Instantiate the optimizer
@@ -183,8 +183,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run QCBM")
 
     parser.add_argument("--num_qubits", type=int, default=4)
+    parser.add_argument("--opt", type=int, default=3)
     args = parser.parse_args()
     n_qubits = args.num_qubits
+    opt_level = args.opt
 
     if n_qubits % 2 != 0:
         msg = "Number of qubits must be even"
@@ -192,27 +194,23 @@ if __name__ == "__main__":
     circuit = generate_circuit(n_qubits=n_qubits)
     qcbm = QCBM(n_qubits=n_qubits)
 
-    fake_backend = FakeQuitoV2() if n_qubits < 5 else FakeGuadalupeV2()
+    if n_qubits <= 5:
+        fake_backend = FakeQuitoV2()
+    elif n_qubits <= 7:
+        fake_backend = FakeNairobiV2()
+    else:
+        fake_backend = FakeGuadalupeV2()
 
     backend = AerSimulator.from_backend(fake_backend)
 
     num_runs = 10
 
-    # print("Optimization Level 3 without backend information")
-    # res = []
-    # for _ in range(num_runs):
-    #     compiled_circuit = transpile(circuit, basis_gates=["rz", "x", "sx", "cx"], coupling_map=fake_backend.coupling_map, optimization_level=3)
-    #     print(compiled_circuit.count_ops(), sum(compiled_circuit.count_ops().values()))
-    #     best_KL = qcbm.train(circuit=compiled_circuit, backend=backend)
-    #     res.append(best_KL)
-    # print(f"AVG KL={np.average(res)}, STD KL={np.std(res)}, BEST KL={np.min(res)}")
-
-    print("Optimization Level 3 with backend information")
+    print(f"Optimization Level {opt_level} with backend information for {n_qubits} qubits")
     res = []
     all_eval_data = []
     for i in range(num_runs):
         print("Run", i)
-        compiled_circuit = transpile(circuit, backend=fake_backend, optimization_level=3)
+        compiled_circuit = transpile(circuit, backend=fake_backend, optimization_level=opt_level)
         print(compiled_circuit.count_ops())
         print(compiled_circuit.count_ops(), sum(compiled_circuit.count_ops().values()))
         best_KL, evolution_data = qcbm.train(circuit=compiled_circuit.copy(), backend=backend)
@@ -221,4 +219,4 @@ if __name__ == "__main__":
         res.append(best_KL)
 
     print(f"AVG KL={np.average(res)}, STD KL={np.std(res)}, BEST KL={np.min(res)}")
-    np.savetxt(f"all_eval_data_{fake_backend.name}_{num_runs}_runs_{n_qubits}_qubits.txt", all_eval_data)
+    np.savetxt(f"O{opt_level}/all_eval_data_{fake_backend.name}_{n_qubits}_qubits.txt", np.array(all_eval_data))
