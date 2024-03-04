@@ -104,7 +104,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
             self.state, coupling_map=self.device["cmap"], basis_gates=self.device["native_gates"], optimization_level=3
         )
         print("Baseline Gate Counts: ", baseline_compiled_qc.count_ops())
-        self.max_cx_count = baseline_compiled_qc.count_ops().get("cx", 0)
+        self.max_cx_count = baseline_compiled_qc.count_ops().get("cx", 0) * 1.1
         self.initial_uncompiled_circuit = self.state.copy()
         self.has_parametrized_gates = len(self.state.parameters) > 0
         self.num_qubits_uncompiled_circuit = self.state.num_qubits
@@ -112,7 +112,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.best_compilation_sequence: list[str] = []
 
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        with Path(str(self.timestamp) + "_KL_values.txt").open(mode="w+") as file:
+        with Path(
+            f"results/mqt_predictor_{self.num_qubits_uncompiled_circuit}_qubits_" + str(self.timestamp) + ".txt"
+        ).open(mode="w+") as file:
             file.write("KL values and number of gates for\n")
             file.write("Device: " + str(self.device["name"]) + "\n")
             file.write("Reward function: " + str(self.reward_function) + "\n")
@@ -180,14 +182,18 @@ class PredictorEnv(Env):  # type: ignore[misc]
             print("New value: " + str(new_KL_value))
 
             if new_KL_value > 0.0:
-                with Path(self.timestamp + "_KL_values.txt").open(mode="a") as file:
+                with Path(
+                    f"results/mqt_predictor_{self.num_qubits_uncompiled_circuit}_qubits_" + str(self.timestamp) + ".txt"
+                ).open(mode="a") as file:
                     file.write(str(new_KL_value) + " " + str(self.state.count_ops()) + "\n")
 
             if new_KL_value > self.best_KL:
                 self.best_KL = new_KL_value
                 self.best_compilation_sequence = self.used_actions
-                with Path(self.timestamp + "_KL_values.txt").open(mode="a") as file:
-                    file.write(str(evaluation_data) + "\n")
+                with Path(
+                    f"results/mqt_predictor_{self.num_qubits_uncompiled_circuit}_qubits_" + str(self.timestamp) + ".txt"
+                ).open(mode="a") as file:
+                    file.write("evaluation_data:" + str(evaluation_data) + "\n")
                     file.write(str(self.best_compilation_sequence) + "\n")
 
             return new_KL_value
