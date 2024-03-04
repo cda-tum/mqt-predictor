@@ -53,7 +53,7 @@ def KL(
     compiled_qc._global_phase = 0  # noqa: SLF001
     all_res = []
     all_eval_data = []
-    for _ in range(3):
+    for _ in range(5):
         qcbm = quark.QCBM(n_qubits=num_initial_qubits)
         best_KL, evaluation_data = qcbm.train(circuit=compiled_qc, backend=backend)
         all_res.append(best_KL)
