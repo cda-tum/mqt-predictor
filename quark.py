@@ -184,8 +184,10 @@ if __name__ == "__main__":
 
     parser.add_argument("--num_qubits", type=int, default=4)
     parser.add_argument("--opt", type=int, default=3)
+    parser.add_argument("--num_runs", type=int, default=10)
     args = parser.parse_args()
     n_qubits = args.num_qubits
+    num_runs = args.num_runs
     opt_level = args.opt
 
     if n_qubits % 2 != 0:
@@ -203,15 +205,12 @@ if __name__ == "__main__":
 
     backend = AerSimulator.from_backend(fake_backend)
 
-    num_runs = 10
-
     print(f"Optimization Level {opt_level} with backend information for {n_qubits} qubits")
     res = []
     all_eval_data = []
     for i in range(num_runs):
         print("Run", i)
         compiled_circuit = transpile(circuit, backend=fake_backend, optimization_level=opt_level)
-        print(compiled_circuit.count_ops())
         print(compiled_circuit.count_ops(), sum(compiled_circuit.count_ops().values()))
         best_KL, evolution_data = qcbm.train(circuit=compiled_circuit.copy(), backend=backend)
         all_eval_data.append(evolution_data)
