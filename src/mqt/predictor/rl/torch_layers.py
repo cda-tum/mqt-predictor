@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING
 from stable_baselines3.common.preprocessing import get_flattened_obs_dim
 
 if TYPE_CHECKING:
+    from gymnasium import spaces
     from gymnasium.spaces import Dict
     from stable_baselines3.common.type_aliases import TensorDict
 
-
 import torch as th
 import torch.nn as nn
-from gymnasium import spaces
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+from torch.nn import functional as F
 
 logger = logging.getLogger("mqt-predictor")
 PATH_LENGTH = 260
@@ -41,7 +41,6 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):  # type: ignore[misc]
         cnn_output_dim: int = 256,
         normalized_image: bool = False,
     ) -> None:
-        # TODO we do not know features-dim here before going over all the items, so put something there. This is dirty!
         super().__init__(observation_space, features_dim=1)
 
         extractors: Dict[str, nn.Module] = {}
@@ -91,29 +90,24 @@ class CustomCNN(BaseFeaturesExtractor):  # type: ignore[misc]
         features_dim: int = 512,
         normalized_image: bool = False,
     ) -> None:
-        assert isinstance(observation_space, spaces.Box), (
-            "NatureCNN must be used with a gym.spaces.Box ",
-            f"observation space, not {observation_space}",
-        )
         super().__init__(observation_space, features_dim)
 
         if normalized_image:
             print("Normalized image is not supported yet.")
-
-        # We assume CxHxW images (channels first)
-        # Re-ordering will be done by pre-preprocessing or wrapper
-        n_input_channels = observation_space.shape[0]
-        self.cnn = nn.Sequential(
-            nn.Conv2d(n_input_channels, 32, kernel_size=4, stride=1, padding=0),
-            nn.ReLU(),
-            nn.Flatten(),
+        hidden_dim = 256
+        num_layers = 2
+        qubit_num, n_input_channels = 11, 1
+        self.cnn = nn.Conv2d(n_input_channels, 32, kernel_size=3, stride=1, padding=1)
+        self.lstm = nn.LSTM(
+            input_size=32 * qubit_num * qubit_num, hidden_size=hidden_dim, num_layers=num_layers, batch_first=True
         )
+        self.linear = nn.Linear(hidden_dim, features_dim)
 
-        # Compute shape by doing one forward pass
-        with th.no_grad():
-            n_flatten = self.cnn(th.as_tensor(observation_space.sample()[None]).float()).shape[1]
+    def forward(self, x: th.Tensor) -> th.Tensor:
+        batch_size, seq_len, C, H, W = x.size()
+        cnn_input = x.view(batch_size * seq_len, C, H, W)
+        cnn_out = self.cnn(cnn_input.float())
+        cnn_out = F.relu(cnn_out.view(batch_size, seq_len, -1))
 
-        self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
-
-    def forward(self, observations: th.Tensor) -> th.Tensor:
-        return self.linear(self.cnn(observations))
+        lstm_out, _ = self.lstm(cnn_out)
+        return self.linear(lstm_out[:, -1, :])

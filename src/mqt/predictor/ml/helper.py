@@ -230,6 +230,11 @@ def create_feature_dict(qc: str | QuantumCircuit, graph_features: bool = False) 
     feature_dict["entanglement_ratio"] = supermarq_features.entanglement_ratio
     feature_dict["parallelism"] = supermarq_features.parallelism
     feature_dict["liveness"] = supermarq_features.liveness
+    feature_dict["directed_program_communication"] = supermarq_features.directed_program_communication
+    feature_dict["gate_coverage"] = supermarq_features.directed_critical_depth
+    feature_dict["singleQ_gates_per_layer"] = supermarq_features.singleQ_gates_per_layer
+    feature_dict["multiQ_gates_per_layer"] = supermarq_features.multiQ_gates_per_layer
+    feature_dict["my_critical_depth"] = supermarq_features.my_critical_depth
     return feature_dict
 
 

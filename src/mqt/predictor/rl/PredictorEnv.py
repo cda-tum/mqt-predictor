@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 import numpy as np
 from gymnasium import Env
-from gymnasium.spaces import Box, Dict, Discrete
+from gymnasium.spaces import Box, Dict, Discrete, Sequence
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
@@ -25,7 +25,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
     """Predictor environment for reinforcement learning."""
 
     def __init__(
-        self, reward_function: reward.figure_of_merit = "expected_fidelity", device_name: str = "ibm_washington"
+        self, reward_function: reward.figure_of_merit = "expected_fidelity", device_name: str = "ionq_harmony"
     ):
         logger.info("Init env: " + reward_function)
 
@@ -69,7 +69,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.num_steps = 0
         self.layout = None
 
-        qubit_num, max_depth = 11, 1000
+        qubit_num, _max_depth = self.device.num_qubits, 10000
 
         spaces = {
             "num_qubits": Discrete(128),
@@ -79,15 +79,17 @@ class PredictorEnv(Env):  # type: ignore[misc]
             "entanglement_ratio": Box(low=0, high=1, shape=(1,), dtype=np.float32),
             "parallelism": Box(low=0, high=1, shape=(1,), dtype=np.float32),
             "liveness": Box(low=0, high=1, shape=(1,), dtype=np.float32),
-            "circuit": Box(
-                low=0,
-                high=50,
-                shape=(
-                    1,
-                    qubit_num,
-                    max_depth,
+            "circuit": Sequence(
+                Box(
+                    low=0,
+                    high=50,
+                    shape=(
+                        1,
+                        qubit_num,
+                        qubit_num,
+                    ),
+                    dtype=np.int_,
                 ),
-                dtype=np.int8,
             ),
         }
         self.observation_space = Dict(spaces)

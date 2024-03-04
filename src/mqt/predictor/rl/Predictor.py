@@ -99,6 +99,7 @@ class Predictor:
         policy_kwargs = {
             "features_extractor_class": CustomCombinedExtractor,
             "features_extractor_kwargs": {"cnn_output_dim": 64, "normalized_image": False},
+            "share_features_extractor": True,
         }
         model = MaskablePPO(
             MaskableMultiInputActorCriticPolicy,
