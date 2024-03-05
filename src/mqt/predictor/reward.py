@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 import quark
 from qiskit.providers.aer import AerSimulator
-from qiskit.providers.fake_provider import FakeGuadalupeV2, FakeNairobiV2, FakeQuitoV2
+from qiskit.providers.fake_provider import FakeGuadalupeV2, FakeMontrealV2, FakeNairobiV2, FakeQuitoV2, FakeTorontoV2
 
 logger = logging.getLogger("mqt-predictor")
 
@@ -43,6 +43,10 @@ def KL(
         backend = AerSimulator.from_backend(FakeQuitoV2())
     elif device_name == "ibm_nairobi":
         backend = AerSimulator.from_backend(FakeNairobiV2())
+    elif device_name == "ibm_toronto":
+        backend = AerSimulator.from_backend(FakeTorontoV2())
+    elif device_name == "ibm_montreal":
+        backend = AerSimulator.from_backend(FakeMontrealV2())
     else:
         error_msg = "Device not supported"
         raise ValueError(error_msg)
@@ -53,7 +57,7 @@ def KL(
     compiled_qc._global_phase = 0  # noqa: SLF001
     all_res = []
     all_eval_data = []
-    for _ in range(5):
+    for _ in range(3):
         qcbm = quark.QCBM(n_qubits=num_initial_qubits)
         best_KL, evaluation_data = qcbm.train(circuit=compiled_qc, backend=backend)
         all_res.append(best_KL)
