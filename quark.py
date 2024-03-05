@@ -10,7 +10,7 @@ from qiskit import QuantumCircuit
 from qiskit.circuit import Parameter
 from qiskit.compiler import transpile
 from qiskit.providers.aer import AerSimulator
-from qiskit.providers.fake_provider import FakeGuadalupeV2, FakeNairobiV2, FakeQuitoV2
+from qiskit.providers.fake_provider import FakeGuadalupeV2, FakeMontrealV2, FakeNairobiV2, FakeQuitoV2
 from scipy.special import binom
 
 
@@ -97,6 +97,7 @@ class QCBM:
         while not es.stop():
             # Sample five (corresponding to population size) possible solutions from covariance matrix
             solutions = es.ask()
+
             es.result[4]
             # Get five (corresponding to population size) pmfs (probability mass functions), that correspond to five different sets of parameter distributions
             pmfs_model = execute_circuit(solutions, self.n_shots)
@@ -203,9 +204,13 @@ if __name__ == "__main__":
     else:
         fake_backend = FakeGuadalupeV2()
 
+        fake_backend = FakeMontrealV2()
+
     backend = AerSimulator.from_backend(fake_backend)
 
-    print(f"Optimization Level {opt_level} with backend information for {n_qubits} qubits")
+    print(
+        f"Optimization Level {opt_level} with backend information for {n_qubits} qubits on {fake_backend.name} backend."
+    )
     res = []
     all_eval_data = []
     for i in range(num_runs):
@@ -218,4 +223,4 @@ if __name__ == "__main__":
         res.append(best_KL)
 
     print(f"AVG KL={np.average(res)}, STD KL={np.std(res)}, BEST KL={np.min(res)}")
-    np.savetxt(f"O{opt_level}/all_eval_data_{fake_backend.name}_{n_qubits}_qubits.txt", np.array(all_eval_data))
+    np.savetxt(f"results/O{opt_level}/all_eval_data_{fake_backend.name}_{n_qubits}_qubits.txt", np.array(all_eval_data))
