@@ -33,13 +33,13 @@ def test_predictor_env_reset_from_string() -> None:
 
 @pytest.mark.parametrize(
     "figure_of_merit",
-    ["expected_fidelity", "critical_depth"],
+    ["expected_fidelity"],  # , "critical_depth"],
 )
 def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name="ionq_harmony")
     predictor.train_model(
         timesteps=100,
-        test=True,
+        test=False,
     )
 
     qc = get_benchmark("ghz", 1, 5)

@@ -339,7 +339,7 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
     return qc, str(file_list[random_index])
 
 
-def encode_circuit(qc: QuantumCircuit) -> list[NDArray[np.int_]]:
+def encode_circuit(qc: QuantumCircuit) -> NDArray[np.int_]:
     # Define a mapping from gate names to integers
     gate_dict = {x: i for i, x in enumerate(ml.helper.get_openqasm_gates())}
     gate_dict["ctr"] = len(gate_dict.keys())
@@ -379,7 +379,7 @@ def encode_circuit(qc: QuantumCircuit) -> list[NDArray[np.int_]]:
                     layer[0, q_idx, control] = gate_dict["ctr"]
         matrix.append(layer)  # [:, :, i] = layer
 
-    return matrix  # add only one channel for CNN
+    return np.array(matrix)
 
 
 def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float_]]:

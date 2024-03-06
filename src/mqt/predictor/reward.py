@@ -5,7 +5,10 @@ from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
 
-from mqt.bench.utils import calc_qubit_index, calc_supermarq_features
+if TYPE_CHECKING:
+    from qiskit.circuit import QuantumRegister, Qubit
+
+from mqt.bench.utils import calc_supermarq_features
 
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit
@@ -15,6 +18,17 @@ if TYPE_CHECKING:
 logger = logging.getLogger("mqt-predictor")
 
 figure_of_merit = Literal["expected_fidelity", "critical_depth", "fidelity"]
+
+
+def calc_qubit_index(qargs: list[Qubit], qregs: list[QuantumRegister], index: int) -> int:
+    offset = 0
+    for reg in qregs:
+        if qargs[index] not in reg:
+            offset += reg.size
+        else:
+            return int(offset + reg.index(qargs[index]))
+    error_msg = f"Global qubit index for local qubit {index} index not found."
+    raise ValueError(error_msg)
 
 
 def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:

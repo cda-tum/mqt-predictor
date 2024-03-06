@@ -89,7 +89,7 @@ class Predictor:
 
         if test:
             n_steps = 100
-            progress_bar = False
+            progress_bar = True
         else:
             n_steps = 2048
             progress_bar = True

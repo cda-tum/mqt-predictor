@@ -51,3 +51,4 @@ venv.bak/
 
 .ruff_cache/
 .mypy_cache/
+model_expected_fidelity_ionq_harmony/*

@@ -103,11 +103,24 @@ class CustomCNN(BaseFeaturesExtractor):  # type: ignore[misc]
         )
         self.linear = nn.Linear(hidden_dim, features_dim)
 
-    def forward(self, x: th.Tensor) -> th.Tensor:
-        batch_size, seq_len, C, H, W = x.size()
-        cnn_input = x.view(batch_size * seq_len, C, H, W)
-        cnn_out = self.cnn(cnn_input.float())
-        cnn_out = F.relu(cnn_out.view(batch_size, seq_len, -1))
+    def forward(self, x: list[th.Tensor]) -> th.Tensor:
+        cnn_outs, lengths = [], []
+        for sample in x:
+            seq_len, C, H, W = sample.size()
+            cnn_out = self.cnn(sample.float())
+            cnn_out = F.relu(cnn_out.view(seq_len, -1))
+            cnn_outs.append(cnn_out)
+            lengths.append(seq_len)
 
-        lstm_out, _ = self.lstm(cnn_out)
+        # Sort sequences by length in descending order
+        lengths, perm_idx = th.tensor(lengths).sort(0, descending=True)
+        cnn_outs = [cnn_outs[i] for i in perm_idx]
+
+        # Pack sequences
+        packed_input = nn.utils.rnn.pack_sequence(cnn_outs, enforce_sorted=True)
+
+        # Pass through LSTM
+        packed_output, _ = self.lstm(packed_input)
+        lstm_out, _ = nn.utils.rnn.pad_packed_sequence(packed_output, batch_first=True)
+
         return self.linear(lstm_out[:, -1, :])
