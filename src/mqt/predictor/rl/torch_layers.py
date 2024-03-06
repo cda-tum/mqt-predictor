@@ -95,20 +95,20 @@ class CustomCNN(BaseFeaturesExtractor):  # type: ignore[misc]
         if normalized_image:
             print("Normalized image is not supported yet.")
         hidden_dim = 256
-        num_layers = 2
+        num_layers = 1
         qubit_num, n_input_channels = 11, 1
-        self.cnn = nn.Conv2d(n_input_channels, 32, kernel_size=3, stride=1, padding=1)
+        self.cnn = nn.Conv2d(n_input_channels, out_channels=32, kernel_size=3, stride=1, padding=1)
         self.lstm = nn.LSTM(
             input_size=32 * qubit_num * qubit_num, hidden_size=hidden_dim, num_layers=num_layers, batch_first=True
         )
         self.linear = nn.Linear(hidden_dim, features_dim)
 
-    def forward(self, x: list[th.Tensor]) -> th.Tensor:
+    def forward(self, x: list[th.Tensor] | th.Tensor) -> th.Tensor:
         cnn_outs, lengths = [], []
-        for sample in x:
+        for sample in x: # sample in batch
             seq_len, C, H, W = sample.size()
-            cnn_out = self.cnn(sample.float())
-            cnn_out = F.relu(cnn_out.view(seq_len, -1))
+            cnn_out = self.cnn(sample.float()) # batch, channel, height, width
+            cnn_out = F.relu(cnn_out.view(seq_len, -1)) # seq_len, out_channels * height * width
             cnn_outs.append(cnn_out)
             lengths.append(seq_len)
 

@@ -33,13 +33,13 @@ def test_predictor_env_reset_from_string() -> None:
 
 @pytest.mark.parametrize(
     "figure_of_merit",
-    ["expected_fidelity"],  # , "critical_depth"],
+    ["expected_fidelity" , "critical_depth"],
 )
 def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name="ionq_harmony")
     predictor.train_model(
         timesteps=100,
-        test=False,
+        test=True,
     )
 
     qc = get_benchmark("ghz", 1, 5)
@@ -57,3 +57,12 @@ def test_qcompile_with_false_input() -> None:
         rl.helper.qcompile(qc, None, "ibm_washington")
     with pytest.raises(ValueError, match="device_name must not be None if predictor_singleton is None."):
         rl.helper.qcompile(qc, "expected_fidelity", None)
+
+
+def test_train_RL() -> None:
+    predictor = rl.Predictor(figure_of_merit="expected_fidelity", device_name="ionq_harmony")
+    predictor.train_model(
+        timesteps=10, # number of episodes
+        test=True,
+    )
+    return
