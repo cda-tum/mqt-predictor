@@ -28,10 +28,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self,
         reward_function: reward.figure_of_merit = "expected_fidelity",
         device_name: str = "ionq_harmony",
-        features: list[str] | None = None,
+        features: list[str] | str = "all",
     ):
-        if features is None:
-            features = ["all"]
         logger.info("Init env: " + reward_function)
 
         self.action_set = {}
@@ -100,7 +98,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 ),
             ),
         }
-        self.observation_space = Dict({k: v for k, v in spaces.items() if (features == ["all"] or k in features)})
+        self.observation_space = Dict({k: v for k, v in spaces.items() if ("all" in features or k in features)})
         self.features = features
         self.filename = ""
 
@@ -185,7 +183,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.valid_actions = self.actions_opt_indices + self.actions_synthesis_indices
 
         self.error_occured = False
-        return rl.helper.create_feature_dict(self.state), {}
+        return rl.helper.create_feature_dict(self.state, self.features), {}
 
     def action_masks(self) -> list[bool]:
         """Returns a list of valid actions for the current state."""

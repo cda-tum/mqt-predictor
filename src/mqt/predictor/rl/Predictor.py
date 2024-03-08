@@ -20,11 +20,18 @@ PATH_LENGTH = 260
 class Predictor:
     """The Predictor class is used to train a reinforcement learning model for a given figure of merit and device such that it acts as a compiler."""
 
-    def __init__(self, figure_of_merit: reward.figure_of_merit, device_name: str, logger_level: int = logging.INFO):
+    def __init__(
+        self,
+        figure_of_merit: reward.figure_of_merit,
+        device_name: str,
+        logger_level: int = logging.INFO,
+        features: list[str] | str = "all",
+    ):
         logger.setLevel(logger_level)
 
         self.model = None
-        self.env = rl.PredictorEnv(figure_of_merit, device_name)
+        self.features = features
+        self.env = rl.PredictorEnv(figure_of_merit, device_name, features)
         self.device_name = device_name
         self.figure_of_merit = figure_of_merit
 
@@ -95,7 +102,9 @@ class Predictor:
             progress_bar = True
 
         logger.debug("Start training for: " + self.figure_of_merit + " on " + self.device_name)
-        env = rl.PredictorEnv(reward_function=self.figure_of_merit, device_name=self.device_name)
+        env = rl.PredictorEnv(
+            reward_function=self.figure_of_merit, device_name=self.device_name, features=self.features
+        )
         policy_kwargs = {
             "features_extractor_class": CustomCombinedExtractor,
             "features_extractor_kwargs": {"cnn_output_dim": 64, "normalized_image": False},

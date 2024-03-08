@@ -382,7 +382,7 @@ def encode_circuit(qc: QuantumCircuit) -> NDArray[np.int_]:
     return np.array(matrix)
 
 
-def create_feature_dict(qc: QuantumCircuit, features: list[str] | None = None) -> dict[str, int | NDArray[np.float_]]:
+def create_feature_dict(qc: QuantumCircuit, features: list[str] | str = "all") -> dict[str, int | NDArray[np.float_]]:
     """Creates a feature dictionary for a given quantum circuit.
 
     Args:
@@ -391,9 +391,6 @@ def create_feature_dict(qc: QuantumCircuit, features: list[str] | None = None) -
     Returns:
         dict[str, Any]: The feature dictionary for the given quantum circuit.
     """
-
-    if features is None:
-        features = ["all"]
     feature_dict = {
         "num_qubits": qc.num_qubits,
         "depth": qc.depth(),
@@ -411,9 +408,9 @@ def create_feature_dict(qc: QuantumCircuit, features: list[str] | None = None) -
     )
     feature_dict["singleQ_gates_per_layer"] = np.array([supermarq_features.singleQ_gates_per_layer], dtype=np.float32)
     feature_dict["multiQ_gates_per_layer"] = np.array([supermarq_features.multiQ_gates_per_layer], dtype=np.float32)
-    feature_dict["circuit"] = encode_circuit(qc) if (features is ["all"] or "circuit" in features) else None
+    feature_dict["circuit"] = encode_circuit(qc) if ("all" in features or "circuit" in features) else None
 
-    return {k: v for k, v in feature_dict.items() if (features is ["all"] or k in features)}
+    return {k: v for k, v in feature_dict.items() if ("all" in features or k in features)}
 
 
 def get_path_training_data() -> Path:
