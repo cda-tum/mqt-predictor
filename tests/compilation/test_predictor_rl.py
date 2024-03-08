@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from qiskit import QuantumCircuit
+from sb3_contrib import MaskablePPO
 
 from mqt.bench import benchmark_generator, get_benchmark
 from mqt.predictor import reward, rl
@@ -33,7 +34,7 @@ def test_predictor_env_reset_from_string() -> None:
 
 @pytest.mark.parametrize(
     "figure_of_merit",
-    ["expected_fidelity" , "critical_depth"],
+    ["expected_fidelity", "critical_depth"],
 )
 def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name="ionq_harmony")
@@ -59,10 +60,11 @@ def test_qcompile_with_false_input() -> None:
         rl.helper.qcompile(qc, "expected_fidelity", None)
 
 
-def test_train_RL() -> None:
+def test_trained_rl_model() -> None:
     predictor = rl.Predictor(figure_of_merit="expected_fidelity", device_name="ionq_harmony")
-    predictor.train_model(
-        timesteps=10, # number of episodes
-        test=True,
+    predictor.model = MaskablePPO.load(
+        "/home/ubuntu/mqt/mqt-predictor/model_expected_fidelity_ionq_harmony/rl_model_2000_steps.zip"
     )
+    qc = get_benchmark("ghz", 1, 5)
+    compiled_qc, used_passes = predictor.compile_as_predicted(qc)
     return

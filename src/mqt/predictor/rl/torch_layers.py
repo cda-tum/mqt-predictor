@@ -105,10 +105,14 @@ class CustomCNN(BaseFeaturesExtractor):  # type: ignore[misc]
 
     def forward(self, x: list[th.Tensor] | th.Tensor) -> th.Tensor:
         cnn_outs, lengths = [], []
-        for sample in x: # sample in batch
-            seq_len, C, H, W = sample.size()
-            cnn_out = self.cnn(sample.float()) # batch, channel, height, width
-            cnn_out = F.relu(cnn_out.view(seq_len, -1)) # seq_len, out_channels * height * width
+        for sample in x:  # sample in batch
+            try:
+                seq_len, C, H, W = sample.shape
+                cnn_out = self.cnn(sample.float())  # batch, channel, height, width
+            except Exception as e:
+                msg = "Sample shape is not (seq_len, C, H, W)."
+                raise ValueError(msg) from e
+            cnn_out = F.relu(cnn_out.view(seq_len, -1))  # seq_len, out_channels * height * width
             cnn_outs.append(cnn_out)
             lengths.append(seq_len)
 

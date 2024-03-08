@@ -25,8 +25,13 @@ class PredictorEnv(Env):  # type: ignore[misc]
     """Predictor environment for reinforcement learning."""
 
     def __init__(
-        self, reward_function: reward.figure_of_merit = "expected_fidelity", device_name: str = "ionq_harmony"
+        self,
+        reward_function: reward.figure_of_merit = "expected_fidelity",
+        device_name: str = "ionq_harmony",
+        features: list[str] | None = None,
     ):
+        if features is None:
+            features = ["all"]
         logger.info("Init env: " + reward_function)
 
         self.action_set = {}
@@ -79,6 +84,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
             "entanglement_ratio": Box(low=0, high=1, shape=(1,), dtype=np.float32),
             "parallelism": Box(low=0, high=1, shape=(1,), dtype=np.float32),
             "liveness": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            "directed_program_communication": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            "singleQ_gates_per_layer": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            "multiQ_gates_per_layer": Box(low=0, high=1, shape=(1,), dtype=np.float32),
             "circuit": Sequence(
                 Box(
                     low=0,
@@ -92,7 +100,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 ),
             ),
         }
-        self.observation_space = Dict(spaces)
+        self.observation_space = Dict({k: v for k, v in spaces.items() if (features == ["all"] or k in features)})
+        self.features = features
         self.filename = ""
 
     def step(self, action: int) -> tuple[dict[str, Any], float, bool, bool, dict[Any, Any]]:
@@ -101,7 +110,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         altered_qc = self.apply_action(action)
         if not altered_qc:
             return (
-                rl.helper.create_feature_dict(self.state),
+                rl.helper.create_feature_dict(self.state, self.features),
                 0,
                 True,
                 False,
@@ -127,7 +136,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         if self.state.count_ops().get("unitary"):
             self.state = self.state.decompose(gates_to_decompose="unitary")
 
-        obs = rl.helper.create_feature_dict(self.state)
+        obs = rl.helper.create_feature_dict(self.state, self.features)
         return obs, reward_val, done, False, {}
 
     def calculate_reward(self) -> Any:
