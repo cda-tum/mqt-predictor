@@ -10,7 +10,7 @@ from qiskit import QuantumCircuit
 from qiskit.circuit import Parameter
 from qiskit.compiler import transpile
 from qiskit.providers.aer import AerSimulator
-from qiskit.providers.fake_provider import FakeGuadalupeV2, FakeMontrealV2, FakeNairobiV2, FakeQuitoV2
+from qiskit.providers.fake_provider import FakeMontrealV2, FakeNairobiV2, FakeQuitoV2
 from scipy.special import binom
 
 
@@ -98,7 +98,7 @@ class QCBM:
             # Sample five (corresponding to population size) possible solutions from covariance matrix
             solutions = es.ask()
 
-            es.result[4]
+            # epoch = es.result[4]
             # Get five (corresponding to population size) pmfs (probability mass functions), that correspond to five different sets of parameter distributions
             pmfs_model = execute_circuit(solutions, self.n_shots)
 
@@ -202,8 +202,6 @@ if __name__ == "__main__":
     elif n_qubits <= 7:
         fake_backend = FakeNairobiV2()
     else:
-        fake_backend = FakeGuadalupeV2()
-
         fake_backend = FakeMontrealV2()
 
     backend = AerSimulator.from_backend(fake_backend)
