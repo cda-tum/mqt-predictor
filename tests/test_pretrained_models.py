@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from qiskit import QuantumCircuit
+from qiskit.qasm2 import dump
 
 from mqt.bench import get_benchmark
 from mqt.bench.devices import get_available_device_names
@@ -40,7 +41,8 @@ def test_qcompile() -> None:
 def test_evaluate_sample_circuit() -> None:
     qc = get_benchmark("ghz", 1, 3)
     filename = "test_3.qasm"
-    qc.qasm(filename=filename)
+    with Path(filename).open("w") as f:
+        dump(qc, f)
     res = evaluate_sample_circuit(filename)
     expected_keys = []
     for compilation_setup in ["qiskit", "tket", "mqt-predictor_expected_fidelity", "mqt-predictor_critical_depth"]:

@@ -9,7 +9,7 @@ from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
-from qiskit.transpiler.runningpassmanager import TranspileLayout
+from qiskit.transpiler.passmanager import TranspileLayout
 
 from mqt.bench.devices import Device, get_available_devices, get_device_by_name
 from mqt.predictor.rl import helper
@@ -106,7 +106,7 @@ def check_mapped_circuit(
 
     # each qubit of the initial layout is part of the initial quantum circuit and the register name is correctly set
     for assigned_physical_qubit in layout.initial_layout._p2v.values():  # noqa: SLF001
-        qreg = assigned_physical_qubit.register
+        qreg = assigned_physical_qubit._register
         assert qreg.name in {"q", "ancilla"}
 
         # assigned_physical_qubit is part of the original quantum circuit

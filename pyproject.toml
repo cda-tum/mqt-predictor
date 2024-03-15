@@ -11,7 +11,7 @@ description = "MQT Predictor - A MQT tool for Determining Good Quantum Circuit C
 readme = "README.md"
 authors = [
     { name = "Nils Quetschlich", email = "nils.quetschlich@tum.de" },
-    { name = "Lukas Burgholzer", email = "lukas.burgholzer@jku.at"},
+    { name = "Lukas Burgholzer", email = "lukas.burgholzer@tum.de"},
 ]
 keywords = ["MQT",  "quantum computing", "compilation", "machine learning", "prediction"]
 license = { file = "LICENSE" }

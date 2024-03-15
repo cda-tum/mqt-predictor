@@ -5,6 +5,7 @@ from typing import Literal
 
 import numpy as np
 import pytest
+from qiskit.qasm2 import dump, dumps
 
 from mqt.bench import benchmark_generator
 from mqt.bench.devices import get_available_device_names, get_available_devices
@@ -35,7 +36,8 @@ def test_predict() -> None:
     filename = "test_qasm.qasm"
     figure_of_merit: reward.figure_of_merit = "expected_fidelity"
     qc = benchmark_generator.get_benchmark("dj", 1, 8)
-    qc.qasm(filename=filename)
+    with Path(filename).open("w") as f:
+        dump(qc, f)
     predictor = ml.Predictor()
     predictions = predictor.predict_probs(filename, figure_of_merit=figure_of_merit)
     assert predictor.clf is not None
@@ -43,7 +45,7 @@ def test_predict() -> None:
     predicted_device_indices = classes[np.argsort(predictions)[::-1]]
     devices = get_available_devices()
     assert all(0 <= i < len(devices) for i in predicted_device_indices)
-    predictions = predictor.predict_probs(qc.qasm(), figure_of_merit=figure_of_merit)
+    predictions = predictor.predict_probs(dumps(qc), figure_of_merit=figure_of_merit)
     predicted_device_indices = classes[np.argsort(predictions)[::-1]]
     assert all(0 <= i < len(devices) for i in predicted_device_indices)
     Path(filename).unlink()
@@ -96,7 +98,8 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
 
     qc = benchmark_generator.get_benchmark("dj", 1, 3)
     qasm_path = Path("test.qasm")
-    qc.qasm(filename=str(qasm_path))
+    with Path(qasm_path).open("w") as f:
+        dump(qc, f)
     predictor.compile_all_circuits_devicewise(
         device_name="ionq_harmony",
         timeout=100,

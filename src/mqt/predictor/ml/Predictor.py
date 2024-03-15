@@ -14,6 +14,8 @@ from sklearn.model_selection import GridSearchCV, train_test_split
 from mqt.bench.devices import get_available_device_names, get_available_devices
 from mqt.predictor import ml, reward, rl, utils
 
+from qiskit.qasm2 import dump
+
 if TYPE_CHECKING:
     from numpy._typing import NDArray
 
@@ -96,7 +98,8 @@ class Predictor:
                     res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, dev.name], timeout)
                     if res:
                         compiled_qc = res[0]
-                        compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
+                        with Path(target_path / (target_filename + ".qasm")).open("w") as f:
+                            dump(compiled_qc, f)
 
                 except Exception as e:
                     print(e, filename, "inner")
@@ -153,7 +156,8 @@ class Predictor:
                 res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device_name, rl_pred], timeout)
                 if res:
                     compiled_qc = res[0]
-                    compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
+                    with Path(target_path / (target_filename + ".qasm")).open("w") as f:
+                        dump(compiled_qc, f)
 
             except Exception as e:
                 print(e, filename, device_name)

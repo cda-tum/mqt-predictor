@@ -16,6 +16,8 @@ from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager, TranspileLayout
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
 
+from qiskit.passmanager.flow_controllers import DoWhileController
+
 from mqt.bench.devices import get_device_by_name
 from mqt.predictor import reward, rl
 
@@ -215,11 +217,12 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     if action["name"] == "QiskitO3":
                         pm = PassManager()
                         pm.append(
+                            DoWhileController(
                             action["transpile_pass"](
                                 self.device.basis_gates,
                                 CouplingMap(self.device.coupling_map) if self.layout is not None else None,
                             ),
-                            do_while=action["do_while"],
+                            do_while=action["do_while"]),
                         )
                     else:
                         pm = PassManager(transpile_pass)
@@ -239,16 +242,17 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     + self.actions_mapping_indices
                     + self.actions_final_optimization_indices
                 ):
-                    if action["name"] == "VF2Layout":
-                        if pm.property_set["layout"]:
-                            altered_qc, pm = rl.helper.postprocess_VF2Layout(
-                                altered_qc,
-                                pm.property_set["layout"],
-                                pm.property_set["original_qubit_indices"],
-                                pm.property_set["final_layout"],
-                                self.device,
-                            )
-                    elif action["name"] == "VF2PostLayout":
+                    # if action["name"] == "VF2Layout":
+                    #     if pm.property_set["layout"]:
+                    #         altered_qc, pm = rl.helper.postprocess_VF2Layout(
+                    #             altered_qc,
+                    #             pm.property_set["layout"],
+                    #             pm.property_set["original_qubit_indices"],
+                    #             pm.property_set["final_layout"],
+                    #             self.device,
+                    #         )
+                    # el
+                    if action["name"] == "VF2PostLayout":
                         assert pm.property_set["VF2PostLayout_stop_reason"] is not None
                         post_layout = pm.property_set["post_layout"]
                         if post_layout:
