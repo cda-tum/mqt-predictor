@@ -13,10 +13,9 @@ from gymnasium.spaces import Box, Dict, Discrete
 from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
+from qiskit.passmanager.flow_controllers import DoWhileController
 from qiskit.transpiler import CouplingMap, PassManager, TranspileLayout
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
-
-from qiskit.passmanager.flow_controllers import DoWhileController
 
 from mqt.bench.devices import get_device_by_name
 from mqt.predictor import reward, rl
@@ -218,11 +217,12 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         pm = PassManager()
                         pm.append(
                             DoWhileController(
-                            action["transpile_pass"](
-                                self.device.basis_gates,
-                                CouplingMap(self.device.coupling_map) if self.layout is not None else None,
+                                action["transpile_pass"](
+                                    self.device.basis_gates,
+                                    CouplingMap(self.device.coupling_map) if self.layout is not None else None,
+                                ),
+                                do_while=action["do_while"],
                             ),
-                            do_while=action["do_while"]),
                         )
                     else:
                         pm = PassManager(transpile_pass)

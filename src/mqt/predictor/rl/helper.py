@@ -52,18 +52,14 @@ from qiskit.transpiler.passes import (
     VF2Layout,
     VF2PostLayout,
 )
+from qiskit.transpiler.passes.layout.vf2_layout import VF2LayoutStopReason
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
-
-
-from qiskit.transpiler.passes.layout.vf2_layout import VF2LayoutStopReason
 
 from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import reward, rl
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from numpy.typing import NDArray
 
     from mqt.bench.devices import Device
@@ -190,8 +186,11 @@ def get_actions_opt() -> list[dict[str, Any]]:
                 CommutativeCancellation(basis_gates=native_gate),
                 GatesInBasis(native_gate),
                 ConditionalController(
-                    common.generate_translation_passmanager(target=None, basis_gates=native_gate, coupling_map=coupling_map).to_flow_controller(),
-                    condition=lambda property_set: not property_set["all_gates_in_basis"]),
+                    common.generate_translation_passmanager(
+                        target=None, basis_gates=native_gate, coupling_map=coupling_map
+                    ).to_flow_controller(),
+                    condition=lambda property_set: not property_set["all_gates_in_basis"],
+                ),
                 Depth(recurse=True),
                 FixedPoint("depth"),
                 Size(recurse=True),
@@ -257,8 +256,11 @@ def get_actions_layout() -> list[dict[str, Any]]:
                     [
                         FullAncillaAllocation(coupling_map=CouplingMap(device.coupling_map)),
                         EnlargeWithAncilla(),
-                        ApplyLayout()],
-                    condition=lambda property_set: property_set["VF2Layout_stop_reason"] == VF2LayoutStopReason.SOLUTION_FOUND)
+                        ApplyLayout(),
+                    ],
+                    condition=lambda property_set: property_set["VF2Layout_stop_reason"]
+                    == VF2LayoutStopReason.SOLUTION_FOUND,
+                ),
             ],
             "origin": "qiskit",
         },
