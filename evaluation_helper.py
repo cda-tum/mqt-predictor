@@ -83,6 +83,16 @@ def generate_eval_plot(
 
     plt.ylabel("KL Divergence")
     plt.xlabel("Episodes")
-    plt.yscale("log")
-    plt.legend()
+
+    from matplotlib import ticker as mticker
+
+    ax = plt.gca()
+    ax.set_yscale("log")
+    ax.yaxis.set_minor_formatter(mticker.ScalarFormatter())
+    ax.yaxis.set_major_formatter(mticker.ScalarFormatter())
     plt.savefig(f"results/{num_qubits}_qubits_{device}.pdf", bbox_inches="tight")
+
+    # plt.rcParams["font.size"] = 8
+    # plt.ylim(0.0001, 1)
+    # plt.legend(loc="upper center", mode="expand", ncol=3)
+    # plt.savefig(f"{num_qubits}legend.pdf")
