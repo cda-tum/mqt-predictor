@@ -8,8 +8,8 @@ from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
+from qiskit.transpiler.layout import TranspileLayout
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
-from qiskit.transpiler.runningpassmanager import TranspileLayout
 
 from mqt.bench.devices import Device, get_available_devices, get_device_by_name
 from mqt.predictor.rl import helper

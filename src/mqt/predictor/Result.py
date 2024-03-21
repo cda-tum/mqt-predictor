@@ -32,14 +32,17 @@ class Result:
         if compiled_qc is not None:
             rew_fid = reward.expected_fidelity(compiled_qc, device)
             rew_crit_depth = reward.crit_depth(compiled_qc)
+            rew_succ_prob = reward.expected_success_probability(compiled_qc, device)
         else:
             rew_fid = -1.0
             rew_crit_depth = -1.0
+            rew_succ_prob = -1.0
 
         self.compiler = compilation_setup
         self.compilation_time = compilation_time
         self.fidelity = rew_fid
         self.critical_depth = rew_crit_depth
+        self.success_probability = rew_succ_prob
 
     def get_dict(self) -> dict[str, float]:
         """Returns the results as a dictionary."""
@@ -48,4 +51,5 @@ class Result:
             self.compiler + "_" + "time": self.compilation_time,
             self.compiler + "_" + "expected_fidelity": self.fidelity,
             self.compiler + "_" + "critical_depth": self.critical_depth,
+            self.compiler + "_" + "expected_success_probability": self.success_probability,
         }

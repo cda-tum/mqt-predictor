@@ -10,13 +10,16 @@ from mqt.predictor.evaluation import create_qiskit_result, create_tket_result
 def test_create_result() -> None:
     devices = get_available_devices()
     assert devices[0].num_qubits > 10
-    res = create_tket_result(QuantumCircuit(10), devices[0])
+    qc = QuantumCircuit(10)
+    for i in range(10):
+        qc.id(i)
+    res = create_tket_result(qc, devices[0])
     assert isinstance(res, Result)
     assert res.compilation_time >= 0.0
     assert res.fidelity >= 0.0
     assert res.critical_depth >= 0.0
 
-    res = create_qiskit_result(QuantumCircuit(10), devices[0])
+    res = create_qiskit_result(qc, devices[0])
     assert isinstance(res, Result)
     assert res.compilation_time >= 0.0
     assert res.fidelity >= 0.0

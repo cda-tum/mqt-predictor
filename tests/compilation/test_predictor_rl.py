@@ -13,13 +13,13 @@ def test_predictor_env_reset_from_string() -> None:
     predictor = rl.Predictor(figure_of_merit="expected_fidelity", device_name="ionq_harmony")
     qasm_path = Path("test.qasm")
     qc = get_benchmark("dj", 1, 3)
-    qc.qasm(filename=str(qasm_path))
+    qc.from_qasm_file(str(qasm_path))
     assert predictor.env.reset(qc=qasm_path)[0] == rl.helper.create_feature_dict(qc)
 
 
 @pytest.mark.parametrize(
     "figure_of_merit",
-    ["expected_fidelity", "critical_depth"],
+    ["expected_fidelity", "critical_depth", "expected_success_probability"],
 )
 def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
     """Test the qcompile function with a newly trained model."""

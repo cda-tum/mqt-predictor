@@ -130,6 +130,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
         """Calculates and returns the reward for the current state."""
         if self.reward_function == "expected_fidelity":
             return reward.expected_fidelity(self.state, self.device)
+        if self.reward_function == "expected_success_probability":
+            return reward.expected_success_probability(self.state, self.device)
         # else: can only be "critical_depth"
         return reward.crit_depth(self.state)
 
