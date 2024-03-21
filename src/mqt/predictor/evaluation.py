@@ -82,9 +82,11 @@ def create_tket_result(
         FullPeepholeOptimise(target_2qb_gate=OpType.TK2).apply(tket_qc)
         PlacementPass(GraphPlacement(arch)).apply(tket_qc)
         RoutingPass(arch).apply(tket_qc)
-        native_rebase.apply(tket_qc)
         duration = time.time() - start_time
         transpiled_qc_tket = tk_to_qiskit(tket_qc)
+        # replace "node" with "q" to match qiskit naming convention
+        # to prevent transpile errors in expected_success_probability(...)
+        transpiled_qc_tket.qregs[0]._name = "q"  # noqa: SLF001
     except Exception as e:
         logger.warning("tket Transpile Error occurred for: " + device.name + " " + str(e))
         return Result("tket_" + device.name, -1, None, device)

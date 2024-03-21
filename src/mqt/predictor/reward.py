@@ -85,17 +85,25 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
     # collect gate durations for all qubits
     op_times = []
     for op in device.basis_gates:
-        if op == "barrier":
+        if op == "barrier" or op == "id":
             continue
         if op in ["rxx", "rzz", "cx", "cz", "cp", "ecr", "xx_plus_yy"]:
             for q0, q1 in device.coupling_map:  # multi-qubit gates
-                op_times.append((op, [q0, q1], device.get_two_qubit_gate_fidelity(op, q0, q1), "s"))
+                try:
+                    d = device.get_two_qubit_gate_duration(op, q0, q1)
+                    op_times.append((op, [q0, q1], d, "s"))
+                except ValueError:  # noqa:PERF203
+                    pass  # gate time not available for this qubit pair
         else:  # single-qubit gates
             for q in range(device.num_qubits):
-                if op == "measure":
-                    op_times.append((op, [q], device.get_readout_duration(q), "s"))
-                else:
-                    op_times.append((op, [q], device.get_single_qubit_gate_duration(op, q), "s"))
+                try:
+                    if op == "measure":
+                        d = device.get_readout_duration(q)
+                    else:
+                        d = device.get_single_qubit_gate_duration(op, q)
+                    op_times.append((op, [q], d, "s"))
+                except ValueError:  # noqa:PERF203
+                    pass  # gate time not available for this qubit
 
     # associate gate times for each qubit through asap scheduling
     transpiled = transpile(qc, scheduling_method="asap", basis_gates=device.basis_gates, instruction_durations=op_times)
