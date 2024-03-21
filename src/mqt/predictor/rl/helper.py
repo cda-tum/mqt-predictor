@@ -501,13 +501,16 @@ def handle_downloading_model(download_url: str, model_name: str) -> None:
     total_length = int(r.headers.get("content-length"))  # type: ignore[arg-type]
     fname = str(get_path_trained_model() / (model_name + ".zip"))
 
-    with Path(fname).open(mode="wb") as f, tqdm(
-        desc=fname,
-        total=total_length,
-        unit="iB",
-        unit_scale=True,
-        unit_divisor=1024,
-    ) as bar:
+    with (
+        Path(fname).open(mode="wb") as f,
+        tqdm(
+            desc=fname,
+            total=total_length,
+            unit="iB",
+            unit_scale=True,
+            unit_divisor=1024,
+        ) as bar,
+    ):
         for data in r.iter_content(chunk_size=1024):
             size = f.write(data)
             bar.update(size)
