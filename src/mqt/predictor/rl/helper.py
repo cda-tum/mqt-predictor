@@ -75,9 +75,9 @@ else:
 from bqskit import compile as bqskit_compile
 from bqskit.ir import gates
 from qiskit import QuantumRegister
-from qiskit.providers.fake_provider import FakeGuadalupe, FakeMontreal, FakeQuito, FakeWashington
 from qiskit.transpiler.preset_passmanagers import common
 from qiskit.transpiler.runningpassmanager import ConditionalController
+from qiskit_ibm_runtime.fake_provider import FakeGuadalupe, FakeMontreal, FakeQuito, FakeWashington
 
 logger = logging.getLogger("mqt-predictor")
 
