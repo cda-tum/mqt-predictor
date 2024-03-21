@@ -93,7 +93,7 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
                     d = device.get_two_qubit_gate_duration(op, q0, q1)
                     op_times.append((op, [q0, q1], d, "s"))
                 except ValueError:  # noqa:PERF203
-                    pass  # gate time not available for this qubit pair
+                    pass  # gate duration not available for this qubit pair
         else:  # single-qubit gates
             for q in range(device.num_qubits):
                 try:
@@ -103,7 +103,7 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
                         d = device.get_single_qubit_gate_duration(op, q)
                     op_times.append((op, [q], d, "s"))
                 except ValueError:  # noqa:PERF203
-                    pass  # gate time not available for this qubit
+                    pass  # gate duration not available for this qubit
 
     # associate gate times for each qubit through asap scheduling
     transpiled = transpile(qc, scheduling_method="asap", basis_gates=device.basis_gates, instruction_durations=op_times)
