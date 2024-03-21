@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed, load
 from qiskit import QuantumCircuit
+from qiskit.qasm2 import dump
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
@@ -96,7 +97,8 @@ class Predictor:
                     res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, dev.name], timeout)
                     if res:
                         compiled_qc = res[0]
-                        compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
+                        with Path(target_path / (target_filename + ".qasm")).open("w") as f:
+                            dump(compiled_qc, f)
 
                 except Exception as e:
                     print(e, filename, "inner")
@@ -153,7 +155,8 @@ class Predictor:
                 res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device_name, rl_pred], timeout)
                 if res:
                     compiled_qc = res[0]
-                    compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
+                    with Path(target_path / (target_filename + ".qasm")).open("w") as f:
+                        dump(compiled_qc, f)
 
             except Exception as e:
                 print(e, filename, device_name)

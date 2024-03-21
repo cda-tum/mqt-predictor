@@ -11,7 +11,7 @@ description = "MQT Predictor - A MQT tool for Determining Good Quantum Circuit C
 readme = "README.md"
 authors = [
     { name = "Nils Quetschlich", email = "nils.quetschlich@tum.de" },
-    { name = "Lukas Burgholzer", email = "lukas.burgholzer@jku.at"},
+    { name = "Lukas Burgholzer", email = "lukas.burgholzer@tum.de"},
 ]
 keywords = ["MQT",  "quantum computing", "compilation", "machine learning", "prediction"]
 license = { file = "LICENSE" }
@@ -19,13 +19,14 @@ requires-python = ">=3.10"
 dynamic = ["version"]
 
 dependencies = [
-    "mqt.bench @ git+https://github.com/cda-tum/mqt-bench.git",
+    "mqt.bench>=1.1.0, <1.1.1",
     "sb3_contrib>=2.0.0, <2.2.2",
     "scikit-learn>=1.4.0,<1.4.2",
     "importlib_metadata>=4.4; python_version < '3.10'",
     "importlib_resources>=5.0; python_version < '3.10'",
     "tensorboard>=2.11.0, <2.16.3",
-    "bqskit>=1.1.0, <1.1.2",
+#    "bqskit>=1.1.0, <1.1.2",
+    "bqskit @ git+https://github.com/BQSKit/bqskit.git",
 ]
 
 classifiers = [
@@ -100,7 +101,7 @@ implicit_reexport = true
 # recent versions of `gym` are typed, but stable-baselines3 pins a very old version of gym.
 # qiskit is not yet marked as typed, but is typed mostly.
 # the other libraries do not have type stubs.
-module = ["qiskit.*", "joblib.*", "sklearn.*", "matplotlib.*", "gymnasium.*", "mqt.bench.*", "sb3_contrib.*", "bqskit.*"]
+module = ["qiskit.*", "joblib.*", "sklearn.*", "matplotlib.*", "gymnasium.*", "mqt.bench.*", "sb3_contrib.*", "bqskit.*", "qiskit_ibm_runtime.*"]
 ignore_missing_imports = true
 
 [tool.ruff]
