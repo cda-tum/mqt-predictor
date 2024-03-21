@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
-from qiskit.compiler import transpile
+from qiskit import transpile
 
 from mqt.bench.utils import calc_supermarq_features
 
