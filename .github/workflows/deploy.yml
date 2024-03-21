@@ -59,7 +59,7 @@ jobs:
     if: github.event_name == 'release' && github.event.action == 'published'
     environment:
       name: pypi
-      url: https://pypi.org/p/mqt.bench
+      url: https://pypi.org/p/mqt.predictor
     permissions:
       id-token: write
     steps:
