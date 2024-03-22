@@ -82,14 +82,14 @@ def generate_eval_plot(
     plt.plot(mqt_predictor, label="Proposed Approach", color=colors[4], linewidth=linewidth)
 
     plt.ylabel("KL Divergence")
-    plt.xlabel("Episodes")
-
-    from matplotlib import ticker as mticker
+    plt.xlabel("Epochs")
 
     ax = plt.gca()
     ax.set_yscale("log")
-    ax.yaxis.set_minor_formatter(mticker.ScalarFormatter())
-    ax.yaxis.set_major_formatter(mticker.ScalarFormatter())
+    plt.ylim(0.065, 1)
+    plt.yticks([0.1, 0.3, 0.5, 0.7, 0.9], ["0.1", "0.3", "0.5", "0.7", "0.9"])
+    # ax.yaxis.set_minor_formatter(mticker.ScalarFormatter())
+    # ax.yaxis.set_major_formatter(mticker.ScalarFormatter())
     plt.savefig(f"results/{num_qubits}_qubits_{device}.pdf", bbox_inches="tight")
 
     # plt.rcParams["font.size"] = 8
