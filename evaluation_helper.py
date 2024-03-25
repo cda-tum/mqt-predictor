@@ -86,8 +86,12 @@ def generate_eval_plot(
 
     ax = plt.gca()
     ax.set_yscale("log")
-    plt.ylim(0.065, 1)
-    plt.yticks([0.1, 0.3, 0.5, 0.7, 0.9], ["0.1", "0.3", "0.5", "0.7", "0.9"])
+    if num_qubits == 4:
+        plt.yticks([0.3, 0.4, 0.6], [0.3, 0.4, 0.6])
+    elif num_qubits == 6:
+        plt.yticks([0.1, 0.2, 0.3, 0.4, 0.5], [0.1, 0.2, 0.3, 0.4, 0.5])
+    elif num_qubits == 8:
+        plt.yticks([0.1, 0.2], [0.1, 0.2])
     # ax.yaxis.set_minor_formatter(mticker.ScalarFormatter())
     # ax.yaxis.set_major_formatter(mticker.ScalarFormatter())
     plt.savefig(f"results/{num_qubits}_qubits_{device}.pdf", bbox_inches="tight")
