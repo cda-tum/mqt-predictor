@@ -6,7 +6,7 @@ from itertools import combinations
 import matplotlib.pyplot as plt
 import numpy as np
 from cma import CMAEvolutionStrategy
-from qiskit import QuantumCircuit
+from mqt.predictor.quantumcircuit import QuantumCircuit
 from qiskit.circuit import Parameter
 from qiskit.compiler import transpile
 from qiskit.providers.aer import AerSimulator
@@ -221,4 +221,7 @@ if __name__ == "__main__":
         res.append(best_KL)
 
     print(f"AVG KL={np.average(res)}, STD KL={np.std(res)}, BEST KL={np.min(res)}")
-    np.savetxt(f"results/O{opt_level}/all_eval_data_{fake_backend.name}_{n_qubits}_qubits.txt", np.array(all_eval_data))
+    np.savetxt(
+        f"evaluations/results_application_aware_compilation/O{opt_level}/all_eval_data_{fake_backend.name}_{n_qubits}_qubits.txt",
+        np.array(all_eval_data),
+    )

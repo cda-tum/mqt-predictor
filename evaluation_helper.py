@@ -94,7 +94,7 @@ def generate_eval_plot(
         plt.yticks([0.1, 0.2], [0.1, 0.2])
     # ax.yaxis.set_minor_formatter(mticker.ScalarFormatter())
     # ax.yaxis.set_major_formatter(mticker.ScalarFormatter())
-    plt.savefig(f"results/{num_qubits}_qubits_{device}.pdf", bbox_inches="tight")
+    plt.savefig(f"evaluations/results_application_aware_compilation/{num_qubits}_qubits_{device}.pdf", bbox_inches="tight")
 
     # plt.rcParams["font.size"] = 8
     # plt.ylim(0.0001, 1)
