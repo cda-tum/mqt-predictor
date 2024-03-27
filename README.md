@@ -88,7 +88,7 @@ Please comment out the lines as shown in the image above and substitute them by 
 
 The following code gives an example how to compile the application using the MQT Predictor framework.
 
-```python3
+```console
 python3 application_aware_compilation.py --num_qubits 4 --dev ibm_quito
 ```
 
