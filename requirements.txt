@@ -91,7 +91,7 @@ mdurl==0.1.2
 mistune==3.0.2
 more-itertools==10.2.0
 mpmath==1.3.0
-mqt.bench==1.1.0
+mqt.bench==1.0.8
 multitasking==0.0.11
 Nasdaq-Data-Link==1.0.4
 nbclient==0.9.0
