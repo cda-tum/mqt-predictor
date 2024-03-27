@@ -1,6 +1,8 @@
-from mqt.predictor import rl
+from __future__ import annotations
+
 import argparse
 
+from mqt.predictor import rl
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run QCBM")

@@ -77,6 +77,7 @@ pip install . --no-dependencies
 ```
 
 Note: In the `Qiskit.QuantumCircuit` file, a small modification is necessary to run the experiments:
+
 <p align="center">
 <picture>
   <img src="./docs/_static/qiskit_fix.png" width="70%">
@@ -84,7 +85,6 @@ Note: In the `Qiskit.QuantumCircuit` file, a small modification is necessary to 
 </p>
 
 Please comment out the lines as shown in the image above and substitute them by `new_parameter = float(new_parameter)`.
-
 
 The following code gives an example how to compile the application using the MQT Predictor framework.
 

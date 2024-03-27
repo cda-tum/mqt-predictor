@@ -113,7 +113,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         with Path(
-            f"evaluations/results_application_aware_compilation/mqt_predictor_{self.num_qubits_uncompiled_circuit}_qubits_" + str(self.timestamp) + ".txt"
+            f"evaluations/results_application_aware_compilation/mqt_predictor_{self.num_qubits_uncompiled_circuit}_qubits_"
+            + str(self.timestamp)
+            + ".txt"
         ).open(mode="w+") as file:
             file.write("KL values and number of gates for\n")
             file.write("Device: " + str(self.device["name"]) + "\n")
@@ -183,7 +185,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
             if new_KL_value > 0.0:
                 with Path(
-                    f"evaluations/results_application_aware_compilation/mqt_predictor_{self.num_qubits_uncompiled_circuit}_qubits_" + str(self.timestamp) + ".txt"
+                    f"evaluations/results_application_aware_compilation/mqt_predictor_{self.num_qubits_uncompiled_circuit}_qubits_"
+                    + str(self.timestamp)
+                    + ".txt"
                 ).open(mode="a") as file:
                     file.write(str(new_KL_value) + " " + str(self.state.count_ops()) + "\n")
 
@@ -191,7 +195,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 self.best_KL = new_KL_value
                 self.best_compilation_sequence = self.used_actions
                 with Path(
-                    f"evaluations/results_application_aware_compilation/mqt_predictor_{self.num_qubits_uncompiled_circuit}_qubits_" + str(self.timestamp) + ".txt"
+                    f"evaluations/results_application_aware_compilation/mqt_predictor_{self.num_qubits_uncompiled_circuit}_qubits_"
+                    + str(self.timestamp)
+                    + ".txt"
                 ).open(mode="a") as file:
                     file.write("evaluation_data:" + str(evaluation_data) + "\n")
                     file.write(str(self.best_compilation_sequence) + "\n")

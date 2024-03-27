@@ -92,11 +92,6 @@ def generate_eval_plot(
         plt.yticks([0.1, 0.2, 0.3, 0.4, 0.5], [0.1, 0.2, 0.3, 0.4, 0.5])
     elif num_qubits == 8:
         plt.yticks([0.1, 0.2], [0.1, 0.2])
-    # ax.yaxis.set_minor_formatter(mticker.ScalarFormatter())
-    # ax.yaxis.set_major_formatter(mticker.ScalarFormatter())
-    plt.savefig(f"evaluations/results_application_aware_compilation/{num_qubits}_qubits_{device}.pdf", bbox_inches="tight")
-
-    # plt.rcParams["font.size"] = 8
-    # plt.ylim(0.0001, 1)
-    # plt.legend(loc="upper center", mode="expand", ncol=3)
-    # plt.savefig(f"{num_qubits}legend.pdf")
+    plt.savefig(
+        f"evaluations/results_application_aware_compilation/{num_qubits}_qubits_{device}.pdf", bbox_inches="tight"
+    )
