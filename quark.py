@@ -64,8 +64,6 @@ class QCBM:
             max_evaluations = 750
         elif n_qubits <= 6:
             max_evaluations = 1000
-        # elif n_qubits <= 8:
-        #     max_evaluations = 2000
         else:
             max_evaluations = 2500
         self.target = self.get_target(n_qubits)
