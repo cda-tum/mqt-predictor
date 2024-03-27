@@ -11,86 +11,96 @@
 </picture>
 </p>
 
-# MQT Predictor: Automatic Device Selection with Device-Specific Circuit Compilation for Quantum Computing
+# Towards Application-Aware Quantum Circuit Compilation
 
-MQT Predictor is a framework that allows one to automatically select a suitable quantum device for a particular application and provides an optimized compiler for the selected device.
-It not only supports end-users in navigating the vast landscape of choices, it also allows to mix-and-match compiler passes from various tools to create optimized compilers that transcend the individual tools.
-Evaluations on more than 500 quantum circuits and seven devices have shown that—compared to Qiskit's and TKET's most optimized compilation flows—the MQT Predictor yields circuits with an expected fidelity that is on par with the best possible result that could be achieved by trying out all combinations of devices and compilers and even achieves a similar performance when considering the critical depth as an alternative figure of merit.
+This branch contains the source code to run the experiments described in the paper
+"Towards Application-Aware Quantum Circuit Compilation".
 
-Therefore, MQT Predictor tackles this problem from two angles:
+Due to the variety of different available compilers and proposed compilation schemes, the respectively compiled quantum circuits also significantly differ, e.g., in terms of the number of gates, the mapping of logical to physical qubits, and the induced overhead by adhering to a device's restricted connectivity.
+Although all compiled quantum circuits represent the same functionality and should lead to the same solutions to the application considered, this is not the case in reality due to the imperfection of the currently available _Noisy Intermediate Scale Quantum_ (NISQ) computers.
 
-1. It provides a method (based on Reinforcement Learning) that produces device-specific quantum circuit compilers by combining compilation passes from various compiler tools and learning optimized sequences of those passes with respect to a customizable figure of merit). This mix-and-match of compiler passes from various tools allows one to eliminate vendor locks and to create optimized compilers that transcend the individual tools.
+This raises the question of how to evaluate the quality of a compilation scheme.
+To this end, different metrics acting as _figures of merit_ have been proposed to compare compilation schemes.
+Those figures of merit try to resemble how well a compiled circuit can be executed on a quantum computer and, by that, act as a _proxy_ for the solution quality of the considered application.
+These figures of merit can be grouped into three categories with an increasing effort to calculate but also higher resemblance of the actual execution:
 
-2. It provides a prediction method (based on Supervised Machine Learning) that, without performing any compilation, automatically predicts the most suitable device for a given application. This completely eliminates the manual and laborious task of determining a suitable target device and guides end-users through the vast landscape of choices without the need for quantum computing expertise.
+1. Figures of merit based on characteristics of the compiled quantum circuit: This includes efficiently computable metrics such as the depth of the compiled circuit or its gate count---frequently limited to the number of two-qubit gates because, for most current architectures, their execution error rate is significantly higher than that of single-qubit gates.
+2. Figures of merit based on the characteristics of the compiled quantum circuit _and_ quantum device: Here, information such as specific gate error rates and qubit decoherence times are also considered, e.g., in the _expected fidelity_ and the _estimated success probability_.
+3. Figures of merit based on the comparison of (noiseless) simulations and actual execution results of the compiled quantum circuit: When executed both on a noiseless simulator and on an actual quantum device, the overlap in the resulting histograms can be compared. The compilation scheme leading to the largest overlap is selected as the most promising one.
+
+In this work, a different approach is explored: instead of defining a _proxy_ for the expected solution quality of a considered application and using this as the figure of merit during compilation, the solution quality of the application _itself_ is used---offering the potential to further increase the solution quality for a considered application.
+
+Realizing such an _application-aware_ compilation scheme for a considered application requires two steps: An application-aware figure of merit must be defined and a compilation environment must be set up that supports customizable figures of merit.
+To this end, a running example of an industy-inspired application is used for illustrative purposes, which is introduced first.
+
+## Considered Exemplary Figure of Merit
+
+Generative learning is experiencing rapid growth and attracting widespread interest across industries, with applications extending from anomaly detection to text and image generation, as well as speech and video synthesis.
+Ultimately, the objective of training a generative model is to express the underlying distribution of a dataset using a machine learning model.
+In _quantum generative learning_, this model is represented by a parameterized quantum circuit.
+
+A _Quantum Circuit Born Machine_ (QCBM)is a quantum generative model that is trained to learn a target distribution:
 
 <p align="center">
 <picture>
-  <img src="docs/_static/problem.png" width="100%">
+  <img src="./docs/_static/application.jpg" width="70%">
 </picture>
 </p>
 
-For more details, please refer to:
+In this case, the distribution of a two-dimensional dataset that resembles the letter X (indicated by the orange tiles)---the parameter values of the shown parameterized quantum circuit are adjusted so that the resulting model distribution comes as close as possible to the target distribution.
 
-<p align="center">
-  <a href="https://mqt.readthedocs.io/projects/predictor">
-  <img width=30% src="https://img.shields.io/badge/documentation-blue?style=for-the-badge&logo=read%20the%20docs" alt="Documentation" />
-  </a>
-</p>
+## Application-Aware Figure of Merit
 
-If you have any questions, feel free to create a [discussion](https://github.com/cda-tum/mqt-predictor/discussions) or an [issue](https://github.com/cda-tum/mqt-predictor/issues) on [GitHub](https://github.com/cda-tum/mqt-predictor).
+During the QCBM training, the deviation of the model distribution Q to the target distribution P shall be minimized.
+This difference is determined using the Kullback-Leibler (KL) divergence,
 
-MQT Predictor is part of the Munich Quantum Toolkit (MQT) developed by the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the [Technical University of Munich](https://www.tum.de/).
+$$D_{\mathrm{KL}}(P \| Q)=\sum_{x \in \mathcal{X}} P(x) \log \left(\frac{P(x)}{Q(x)}\right)$$.
 
-## Getting Started
+Whenever the KL~divergence reaches its minimum, the training is completed and the lower it is, the better the model is trained.
+Therefore, it is a suitable candidate for the _application-aware figure of merit_ in this exemplary application.
+To minimize the KL~divergence, the model parameters are adapted via the covariance matrix adaption evolutionary strategy (CMA-ES), a gradient-free optimizer.
 
-`mqt-predictor` is available via [PyPI](https://pypi.org/project/mqt.predictor/).
+## Compilation Environment
+
+To compile the underlying quantum circuit of the QCBM application for the KL~divergence as its application-aware figure of merit, the MQT~Predictor framework has been adapted accordingly.
+By providing the quantum circuit of the considered application, such as, e.g., an application instance with $4$ qubits as shown above, the framework over time learns the most efficient combination of compilation passes that leads to the highest solution quality---while, during the training, the application itself is run for each determined sequence of compilation passes.
+
+## Run the Experiments to Reproduce the Results
+
+All Python packages and their used version are listed in the `requirements.txt` file and can be installed by running:
 
 ```console
-(venv) $ pip install mqt.predictor
+pip install -r requirements.txt --no-dependencies
+pip install -e . --no-dependencies
 ```
 
-The following code gives an example on the usage:
+Note: In the `Qiskit.QuantumCircuit` file, a small modification is necessary to run the experiments:
+<p align="center">
+<picture>
+  <img src="./docs/_static/qiskit_fix.png" width="70%">
+</picture>
+</p>
+Please comment out the lines as shown in the image above and substitute them by `new_parameter = float(new_parameter)`.
+
+
+The following code gives an example how to compile the application using the MQT Predictor framework.
 
 ```python3
-from mqt.predictor import qcompile
-from mqt.bench import get_benchmark
+from mqt.predictor import rl
 
-# get a benchmark circuit on algorithmic level representing the GHZ state with 5 qubits from [MQT Bench](https://github.com/cda-tum/mqt-bench)
-qc_uncompiled = get_benchmark(benchmark_name="dj", level="alg", circuit_size=5)
-
-# compile it using the MQT Predictor
-qc_compiled, compilation_information, quantum_device = qcompile(qc_uncompiled)
-
-# print the selected device and the compilation information
-print(quantum_device, compilation_information)
-
-# draw the compiled circuit
-print(qc_compiled.draw())
+rl.Predictor(figure_of_merit="KL", device_name="ibm_quito", num_qubits=4).train_model(timesteps=30000)
 ```
 
-**Detailed documentation and examples are available at [ReadTheDocs](https://mqt.readthedocs.io/projects/predictor).**
+To create the baseline results, run:
 
-# Repository Structure
+```console
+python3 quark.py --num_qubits 4 --opt 1 --num_runs 25
+python3 quark.py --num_qubits 4 --opt 3 --num_runs 25
+```
 
-```
-.
-├── docs/
-├── evaluations/
-├── src/
-│ ├── mqt/
-│   └── predictor/
-│     ├── calibration_files/
-│     ├── ml/
-│     │ └── training_data/
-│     │     ├── trained_model
-│     │     ├── training_circuits
-│     │     ├── training_circuits_compiled
-│     │     └── training_data_aggregated
-│     └── rl/
-│          └── training_data/
-│              ├── trained_model
-│              └── training_circuits
-```
+Afterwards, the plots of the paper can be generated by running the jupyter notebook in `evaluations/evaluation_application_aware_compilation.ipynb`.
+
+
 
 ## Acknowledgements
 
