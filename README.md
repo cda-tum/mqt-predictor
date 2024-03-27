@@ -56,7 +56,7 @@ This difference is determined using the Kullback-Leibler (KL) divergence:
 
 $$D_{\mathrm{KL}}(P \| Q)=\sum_{x \in \mathcal{X}} P(x) \log \left(\frac{P(x)}{Q(x)}\right)$$
 
-Whenever the KL~divergence reaches its minimum, the training is completed and the lower it is, the better the model is trained.
+Whenever the KL divergence reaches its minimum, the training is completed and the lower it is, the better the model is trained.
 Therefore, it is a suitable candidate for the _application-aware figure of merit_ in this exemplary application.
 To minimize the KL~divergence, the model parameters are adapted via the covariance matrix adaption evolutionary strategy (CMA-ES), a gradient-free optimizer.
 
@@ -71,7 +71,7 @@ All Python packages and their used version are listed in the `requirements.txt` 
 
 ```console
 pip install -r requirements.txt --no-dependencies
-pip install -e . --no-dependencies
+pip install . --no-dependencies
 ```
 
 Note: In the `Qiskit.QuantumCircuit` file, a small modification is necessary to run the experiments:
