@@ -52,9 +52,9 @@ In this case, the distribution of a two-dimensional dataset that resembles the l
 ## Application-Aware Figure of Merit
 
 During the QCBM training, the deviation of the model distribution Q to the target distribution P shall be minimized.
-This difference is determined using the Kullback-Leibler (KL) divergence,
+This difference is determined using the Kullback-Leibler (KL) divergence:
 
-$$D_{\mathrm{KL}}(P \| Q)=\sum_{x \in \mathcal{X}} P(x) \log \left(\frac{P(x)}{Q(x)}\right)$$.
+$$D_{\mathrm{KL}}(P \| Q)=\sum_{x \in \mathcal{X}} P(x) \log \left(\frac{P(x)}{Q(x)}\right)$$
 
 Whenever the KL~divergence reaches its minimum, the training is completed and the lower it is, the better the model is trained.
 Therefore, it is a suitable candidate for the _application-aware figure of merit_ in this exemplary application.
