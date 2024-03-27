@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import quark
+import quantum_generative_modeling
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete
@@ -94,7 +94,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.filename = ""
 
         if reward_function == "KL":
-            self.state: QuantumCircuit = quark.generate_circuit(n_qubits=num_qubits)
+            self.state: QuantumCircuit = quantum_generative_modeling.generate_circuit(n_qubits=num_qubits)
         else:
             self.state, self.filename = rl.helper.get_state_sample()
 

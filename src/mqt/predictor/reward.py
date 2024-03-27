@@ -14,7 +14,7 @@ from mqt.predictor.utils import (
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit
 
-import quark
+import quantum_generative_modeling
 from qiskit.providers.aer import AerSimulator
 from qiskit.providers.fake_provider import FakeGuadalupeV2, FakeMontrealV2, FakeNairobiV2, FakeQuitoV2, FakeTorontoV2
 
@@ -58,7 +58,7 @@ def KL(
     all_res = []
     all_eval_data = []
     for _ in range(3):
-        qcbm = quark.QCBM(n_qubits=num_initial_qubits)
+        qcbm = quantum_generative_modeling.QCBM(n_qubits=num_initial_qubits)
         best_KL, evaluation_data = qcbm.train(circuit=compiled_qc, backend=backend)
         all_res.append(best_KL)
         all_eval_data.append(evaluation_data)
