@@ -19,14 +19,14 @@ requires-python = ">=3.9"
 dynamic = ["version"]
 
 dependencies = [
-#    "pytket_qiskit>=0.48.0",
-    "mqt.bench>=1.1.0,<1.1.1",
-    "sb3_contrib>=2.0.0",
-    "scikit-learn>=1.3.0, <1.3.3",
+    "mqt.bench==1.0.8",
+    "sb3_contrib==2.2.1",
+    "scikit-learn==1.3.2",
     "importlib_metadata>=4.4; python_version < '3.10'",
     "importlib_resources>=5.0; python_version < '3.10'",
-    "tensorboard>=2.11.0",
-    "bqskit>=1.1.0, <1.2.0",
+    "tensorboard==2.15.1",
+    "bqskit==1.1.1",
+    "cma==3.3.0"
 ]
 
 classifiers = [
