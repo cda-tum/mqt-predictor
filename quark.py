@@ -6,7 +6,7 @@ from itertools import combinations
 import matplotlib.pyplot as plt
 import numpy as np
 from cma import CMAEvolutionStrategy
-from mqt.predictor.quantumcircuit import QuantumCircuit
+from quantumcircuit import QuantumCircuit
 from qiskit.circuit import Parameter
 from qiskit.compiler import transpile
 from qiskit.providers.aer import AerSimulator
