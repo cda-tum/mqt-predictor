@@ -58,11 +58,11 @@ $$D_{\mathrm{KL}}(P \| Q)=\sum_{x \in \mathcal{X}} P(x) \log \left(\frac{P(x)}{Q
 
 Whenever the KL divergence reaches its minimum, the training is completed and the lower it is, the better the model is trained.
 Therefore, it is a suitable candidate for the _application-aware figure of merit_ in this exemplary application.
-To minimize the KL~divergence, the model parameters are adapted via the covariance matrix adaption evolutionary strategy (CMA-ES), a gradient-free optimizer.
+To minimize the KL divergence, the model parameters are adapted via the covariance matrix adaption evolutionary strategy (CMA-ES), a gradient-free optimizer.
 
 ## Compilation Environment
 
-To compile the underlying quantum circuit of the QCBM application for the KL~divergence as its application-aware figure of merit, the MQT~Predictor framework has been adapted accordingly.
+To compile the underlying quantum circuit of the QCBM application for the KL divergence as its application-aware figure of merit, the MQT Predictor framework has been adapted accordingly.
 By providing the quantum circuit of the considered application, such as, e.g., an application instance with $4$ qubits as shown above, the framework over time learns the most efficient combination of compilation passes that leads to the highest solution quality---while, during the training, the application itself is run for each determined sequence of compilation passes.
 
 ## Run the Experiments to Reproduce the Results
