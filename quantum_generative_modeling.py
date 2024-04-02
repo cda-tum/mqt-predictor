@@ -59,7 +59,7 @@ class QCBM:
     This training method is referred to as quantum circuit born machine (QCBM).
     """
 
-    def __init__(self, n_qubits: int, shots=10000, population_size=5, sigma=0.5):
+    def __init__(self, n_qubits: int, shots: int = 10000, population_size: int = 5, sigma: float = 0.5):
         if n_qubits <= 4:
             max_evaluations = 750
         elif n_qubits <= 6:
@@ -73,7 +73,7 @@ class QCBM:
         self.sigma = sigma
         self.n_qubits = n_qubits
 
-    def train(self, circuit, backend) -> tuple[float, list[float]]:
+    def train(self, circuit: QuantumCircuit, backend: fake_backend.FakeBackendV2) -> tuple[float, list[float]]:
         execute_circuit = self.get_execute_circuit(circuit, backend)
         evolution_data = []
 
@@ -117,12 +117,12 @@ class QCBM:
         # Return the lowest KL divergence (Figure of merit)
         return best_kl, evolution_data
 
-    def kl_divergence(self, pmf_model):
+    def kl_divergence(self, pmf_model: np.ndarray):
         # Loss function bwteen target and model distribution
         pmf_model[pmf_model == 0] = 1e-8
         return np.sum(self.target * np.log(self.target / pmf_model), axis=1)
 
-    def get_execute_circuit(self, circuit_transpiled, backend):
+    def get_execute_circuit(self, circuit_transpiled: QuantumCircuit, backend: fake_backend.FakeBackendV2):
         def execute_circuit(solutions, num_shots=None):
             # Execute the circuit and returns the probability mass function
 
