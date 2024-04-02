@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pathlib
+import re
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -12,7 +13,7 @@ linewidth = 3.5
 
 def read_mqt_predictor_file(num_qubits: int, device: str) -> list[float]:
     best_res = [1.0]
-    for file in pathlib.Path("results/").glob(f"mqt_predictor_{num_qubits}_qubits*"):
+    for file in pathlib.Path("results_application_aware_compilation/").glob(f"mqt_predictor_{num_qubits}_qubits*"):
         found_device = False
         with pathlib.Path(file).open() as f:
             lines = f.readlines()
@@ -20,7 +21,8 @@ def read_mqt_predictor_file(num_qubits: int, device: str) -> list[float]:
                 if line.startswith("Device:") and line.split(":")[1].strip() == device:
                     found_device = True
                 if line.startswith("evaluation_data:") and found_device:
-                    eval_data = eval(line.split(":")[1])
+                    regex = re.findall(r"\d+\.\d+", line.split(":")[1])
+                    eval_data = [float(x) for x in regex]
                     if min(eval_data) < min(best_res):
                         best_res = eval_data
     return best_res
@@ -92,6 +94,4 @@ def generate_eval_plot(
         plt.yticks([0.1, 0.2, 0.3, 0.4, 0.5], [0.1, 0.2, 0.3, 0.4, 0.5])
     elif num_qubits == 8:
         plt.yticks([0.1, 0.2], [0.1, 0.2])
-    plt.savefig(
-        f"evaluations/results_application_aware_compilation/{num_qubits}_qubits_{device}.pdf", bbox_inches="tight"
-    )
+    plt.savefig(f"results_application_aware_compilation/{num_qubits}_qubits_{device}.pdf", bbox_inches="tight")
