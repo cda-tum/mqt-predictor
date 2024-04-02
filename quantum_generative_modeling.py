@@ -6,6 +6,7 @@ from itertools import combinations
 import matplotlib.pyplot as plt
 import numpy as np
 from cma import CMAEvolutionStrategy
+from joblib import Parallel, delayed
 from qiskit import QuantumCircuit
 from qiskit.circuit import Parameter
 from qiskit.compiler import transpile
@@ -96,7 +97,6 @@ class QCBM:
             # Sample five (corresponding to population size) possible solutions from covariance matrix
             solutions = es.ask()
 
-            # epoch = es.result[4]
             # Get five (corresponding to population size) pmfs (probability mass functions), that correspond to five different sets of parameter distributions
             pmfs_model = execute_circuit(solutions, self.n_shots)
 
@@ -106,9 +106,6 @@ class QCBM:
             loss_epoch = self.kl_divergence(pmfs_model.reshape([self.population_size, -1]))
             # Tell optimizer the loss function for each of the five pmfs, to determine the best performing sets of model parameters
             es.tell(solutions, loss_epoch)
-
-            # if epoch % 20 == 0:
-            #     print(f"Epoch={epoch} | KL={min(loss_epoch)}")
 
             evolution_data.append(min(loss_epoch))
             if min(loss_epoch) < best_kl:
@@ -125,12 +122,6 @@ class QCBM:
     def get_execute_circuit(self, circuit_transpiled: QuantumCircuit, backend: fake_backend.FakeBackendV2):
         def execute_circuit(solutions, num_shots=None):
             # Execute the circuit and returns the probability mass function
-
-            # all_circuits = [circuit_transpiled.assign_parameters(solution) for solution in solutions]
-            # jobs = backend.run(all_circuits, shots=num_shots)
-            # samples_dictionary = [jobs.result().get_counts(circuit).int_outcomes() for circuit in all_circuits]
-
-            from joblib import Parallel, delayed
 
             sample_dicts = Parallel(n_jobs=-1, verbose=0)(
                 delayed(self.generate_result)(circuit_transpiled.assign_parameters(solution), num_shots, i, backend)
@@ -172,7 +163,7 @@ class QCBM:
 
         return grid.flatten()
 
-    def generate_result(self, qc, num_shots, index, backend):
+    def generate_result(self, qc: QuantumCircuit, num_shots: int, index: int, backend: fake_backend.FakeBackendV2):
         job = backend.run(qc, shots=num_shots)
         samples_dictionary = job.result().get_counts(qc).int_outcomes()
         return {index: samples_dictionary}
