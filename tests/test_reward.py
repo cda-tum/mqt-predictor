@@ -16,7 +16,7 @@ def test_KL() -> None:
         initial_gate_count=sum(compiled_qc.count_ops().values()),
         max_cx_count=100,
         num_initial_qubits=qc.num_qubits,
-        device_name="ibm_nairobi",
+        device_name="ibm_quito",
     )
     assert 0 < res < 1
 
