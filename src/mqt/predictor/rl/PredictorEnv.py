@@ -112,15 +112,17 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.best_compilation_sequence: list[str] = []
 
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        with Path(
-            f"evaluations/results_application_aware_compilation/mqt_predictor_{self.num_qubits_uncompiled_circuit}_qubits_"
-            + str(self.timestamp)
-            + ".txt"
-        ).open(mode="w+") as file:
-            file.write("KL values and number of gates for\n")
-            file.write("Device: " + str(self.device["name"]) + "\n")
-            file.write("Reward function: " + str(self.reward_function) + "\n")
-            file.write("Number of qubits: " + str(self.num_qubits_uncompiled_circuit) + "\n")
+
+        if reward_function == "KL":
+            with Path(
+                f"evaluations/results_application_aware_compilation/mqt_predictor_{self.num_qubits_uncompiled_circuit}_qubits_"
+                + str(self.timestamp)
+                + ".txt"
+            ).open(mode="w+") as file:
+                file.write("KL values and number of gates for\n")
+                file.write("Device: " + str(self.device["name"]) + "\n")
+                file.write("Reward function: " + str(self.reward_function) + "\n")
+                file.write("Number of qubits: " + str(self.num_qubits_uncompiled_circuit) + "\n")
 
     def step(self, action: int) -> tuple[dict[str, Any], float, bool, bool, dict[Any, Any]]:
         """Executes the given action and returns the new state, the reward, whether the episode is done, whether the episode is truncated and additional information."""
@@ -140,13 +142,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
         self.state = altered_qc
         self.num_steps += 1
-
-        # print(
-        #     "step: " + str(self.num_steps) + " action: " + str(self.action_set[action].get("name")),
-        #     self.state.count_ops(),
-        # )
-
         self.valid_actions = self.determine_valid_actions_for_state()
+
         if len(self.valid_actions) == 0:
             msg = "No valid actions left."
             raise RuntimeError(msg)

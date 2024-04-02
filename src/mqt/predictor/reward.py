@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 import quantum_generative_modeling
 from qiskit.providers.aer import AerSimulator
-from qiskit.providers.fake_provider import FakeGuadalupeV2, FakeMontrealV2, FakeNairobiV2, FakeQuitoV2, FakeTorontoV2
+from qiskit.providers.fake_provider import FakeMontrealV2, FakeNairobiV2, FakeQuitoV2
 
 logger = logging.getLogger("mqt-predictor")
 
@@ -37,14 +37,10 @@ def KL(
     device_name: str,
     precision: int = 10,
 ) -> tuple[float, list[float]]:
-    if device_name == "ibm_guadalupe":
-        backend = AerSimulator.from_backend(FakeGuadalupeV2())
-    elif device_name == "ibm_quito":
+    if device_name == "ibm_quito":
         backend = AerSimulator.from_backend(FakeQuitoV2())
     elif device_name == "ibm_nairobi":
         backend = AerSimulator.from_backend(FakeNairobiV2())
-    elif device_name == "ibm_toronto":
-        backend = AerSimulator.from_backend(FakeTorontoV2())
     elif device_name == "ibm_montreal":
         backend = AerSimulator.from_backend(FakeMontrealV2())
     else:
