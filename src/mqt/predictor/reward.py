@@ -20,7 +20,7 @@ from qiskit.providers.fake_provider import FakeMontrealV2, FakeNairobiV2, FakeQu
 
 logger = logging.getLogger("mqt-predictor")
 
-figure_of_merit = Literal["expected_fidelity", "critical_depth", "max_cut", "KL"]
+figure_of_merit = Literal["expected_fidelity", "critical_depth", "KL"]
 
 
 def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:

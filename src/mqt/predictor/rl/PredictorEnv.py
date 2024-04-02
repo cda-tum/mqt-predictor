@@ -200,8 +200,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     file.write(str(self.best_compilation_sequence) + "\n")
 
             return new_KL_value
-        error_msg = f"Reward function {self.reward_function} not supported."
-        raise ValueError(error_msg)
+        return None  # type: ignore[unreachable]
 
     def render(self) -> None:
         """Renders the current state."""
