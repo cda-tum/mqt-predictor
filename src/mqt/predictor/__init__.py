@@ -2,14 +2,6 @@ from __future__ import annotations
 
 import logging
 
-from mqt.predictor.ml import qcompile
-from mqt.predictor.Result import Result
-
-__all__ = [
-    "Result",
-    "qcompile",
-]
-
 logger = logging.getLogger("mqt-predictor")
 
 console_handler = logging.StreamHandler()
