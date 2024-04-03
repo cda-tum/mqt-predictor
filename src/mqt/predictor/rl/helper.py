@@ -688,34 +688,6 @@ def get_ibm_backend_properties_by_device_name(device_name: str) -> Any:
     return None
 
 
-# def get_layout_postprocessing_qiskit_pass() -> (
-#     Callable[[Device], list[FullAncillaAllocation | EnlargeWithAncilla | ApplyLayout]]
-# ):
-#     return lambda device: [
-#         FullAncillaAllocation(coupling_map=CouplingMap(device.coupling_map)),
-#         EnlargeWithAncilla(),
-#         ApplyLayout(),
-#     ]
-
-
-# def postprocess_VF2Layout(
-#     qc: QuantumCircuit,
-#     initial_layout: Layout,
-#     original_qubit_indices: dict[QuantumRegister, int],
-#     final_layout: Layout,
-#     device: Device,
-# ) -> tuple[QuantumCircuit, PassManager]:
-#     """Postprocesses the given quantum circuit with the given layout and returns the altered quantum circuit and the respective PassManager."""
-#     postprocessing_action = rl.helper.get_layout_postprocessing_qiskit_pass()(device)
-#     pm = PassManager(postprocessing_action)
-#     pm.property_set["layout"] = initial_layout
-#     pm.property_set["original_qubit_indices"] = original_qubit_indices
-#     pm.property_set["final_layout"] = final_layout
-#     assert pm.property_set["layout"] is not None
-#     altered_qc = pm.run(qc)
-#     return altered_qc, pm
-
-
 def postprocess_VF2PostLayout(
     qc: QuantumCircuit, post_layout: Layout, layout_before: TranspileLayout
 ) -> tuple[QuantumCircuit, PassManager]:
