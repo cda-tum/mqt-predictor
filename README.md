@@ -35,13 +35,13 @@ In this work, a different approach is explored: instead of defining a _proxy_ fo
 Realizing such an _application-aware_ compilation scheme for a considered application requires two steps: An application-aware figure of merit must be defined and a compilation environment must be set up that supports customizable figures of merit.
 To this end, a running example of an industy-inspired application is used for illustrative purposes, which is introduced first.
 
-## Considered Exemplary Figure of Merit
+## Running Example: Quantum Generative Modeling
 
 Generative learning is experiencing rapid growth and attracting widespread interest across industries, with applications extending from anomaly detection to text and image generation, as well as speech and video synthesis.
 Ultimately, the objective of training a generative model is to express the underlying distribution of a dataset using a machine learning model.
 In _quantum generative learning_, this model is represented by a parameterized quantum circuit.
 
-A _Quantum Circuit Born Machine_ (QCBM)is a quantum generative model that is trained to learn a target distribution:
+A _Quantum Circuit Born Machine_ (QCBM) is a quantum generative model that is trained to learn a target distribution:
 
 <p align="center">
 <picture>
@@ -76,7 +76,7 @@ pip install -r requirements.txt --no-dependencies
 pip install . --no-dependencies
 ```
 
-Note: In the `Qiskit.QuantumCircuit` file, a small modification is necessary to run the experiments:
+Note: In the `qiskit.circuit.quantumCircuit.py` file, a small modification is necessary to run the experiments:
 
 <p align="center">
 <picture>
