@@ -112,7 +112,6 @@ In case you are using this work, we would be thankful if you referred to it by c
 }
 ```
 
-
 ## Disclaimer
 
 This branch will not receive further update or maintenance. The latest version of the MQT Predictor framework can be found in the `main` branch.
