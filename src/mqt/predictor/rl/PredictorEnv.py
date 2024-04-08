@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from pathlib import Path
 
+from qiskit.transpiler.passes.layout.vf2_layout import VF2LayoutStopReason
 import numpy as np
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from gymnasium import Env
@@ -247,6 +248,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         post_layout = pm.property_set["post_layout"]
                         if post_layout:
                             altered_qc, pm = rl.helper.postprocess_VF2PostLayout(altered_qc, post_layout, self.layout)
+                    elif action["name"] == "VF2Layout":
+                        if pm.property_set["VF2Layout_stop_reason"] == VF2LayoutStopReason.SOLUTION_FOUND:
+                            assert pm.property_set["layout"]
                     else:
                         assert pm.property_set["layout"]
 
