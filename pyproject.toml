@@ -27,6 +27,7 @@ dependencies = [
     "tensorboard>=2.11.0, <2.16.3",
 #    "bqskit>=1.1.0, <1.1.2",
     "bqskit @ git+https://github.com/BQSKit/bqskit.git",
+    "lark~=0.7"
 ]
 
 classifiers = [
