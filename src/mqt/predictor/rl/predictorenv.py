@@ -29,7 +29,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
     def __init__(
         self, reward_function: reward.figure_of_merit = "expected_fidelity", device_name: str = "ibm_washington"
-    ):
+    ) -> None:
         logger.info("Init env: " + reward_function)
 
         self.action_set = {}
@@ -128,7 +128,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         obs = rl.helper.create_feature_dict(self.state)
         return obs, reward_val, done, False, {}
 
-    def calculate_reward(self) -> Any:
+    def calculate_reward(self) -> float:
         """Calculates and returns the reward for the current state."""
         if self.reward_function == "expected_fidelity":
             return reward.expected_fidelity(self.state, self.device)
@@ -247,7 +247,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         assert pm.property_set["VF2PostLayout_stop_reason"] is not None
                         post_layout = pm.property_set["post_layout"]
                         if post_layout:
-                            altered_qc, pm = rl.helper.postprocess_VF2PostLayout(altered_qc, post_layout, self.layout)
+                            altered_qc, pm = rl.helper.postprocess_vf2postlayout(altered_qc, post_layout, self.layout)
                     elif action["name"] == "VF2Layout":
                         if pm.property_set["VF2Layout_stop_reason"] == VF2LayoutStopReason.SOLUTION_FOUND:
                             assert pm.property_set["layout"]

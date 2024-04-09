@@ -61,6 +61,7 @@ from mqt.predictor import reward, rl
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
+    from qiskit.providers.models import BackendProperties
 
     from mqt.bench.devices import Device
 
@@ -307,7 +308,7 @@ def get_actions_mapping() -> list[dict[str, Any]]:
                 bqskit_circuit,
                 model=MachineModel(
                     num_qudits=device.num_qubits,
-                    gate_set=get_BQSKit_native_gates(device),
+                    gate_set=get_bqskit_native_gates(device),
                     coupling_graph=[(elem[0], elem[1]) for elem in device.coupling_map],
                 ),
                 with_mapping=True,
@@ -332,7 +333,7 @@ def get_actions_synthesis() -> list[dict[str, Any]]:
             "name": "BQSKitSynthesis",
             "transpile_pass": lambda device: lambda bqskit_circuit: bqskit_compile(
                 bqskit_circuit,
-                model=MachineModel(bqskit_circuit.num_qudits, gate_set=get_BQSKit_native_gates(device)),
+                model=MachineModel(bqskit_circuit.num_qudits, gate_set=get_bqskit_native_gates(device)),
                 optimization_level=2,
             ),
             "origin": "bqskit",
@@ -368,7 +369,8 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
 
     found_suitable_qc = False
     while not found_suitable_qc:
-        random_index = np.random.randint(len(file_list))
+        rng = np.random.default_rng(10)
+        random_index = rng.integers(len(file_list))
         num_qubits = int(str(file_list[random_index]).split("_")[-1].split(".")[0])
         if max_qubits and num_qubits > max_qubits:
             continue
@@ -382,7 +384,7 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
     return qc, str(file_list[random_index])
 
 
-def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float_]]:
+def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float64]]:
     """Creates a feature dictionary for a given quantum circuit.
 
     Args:
@@ -584,7 +586,7 @@ class PreProcessTKETRoutingAfterQiskitLayout:
         place_with_map(circuit=circuit, qmap=mapping)
 
 
-def get_BQSKit_native_gates(device: Device) -> list[gates.Gate] | None:
+def get_bqskit_native_gates(device: Device) -> list[gates.Gate] | None:
     """Returns the native gates of the given device.
 
     Args:
@@ -666,7 +668,7 @@ def final_layout_bqskit_to_qiskit(
     )
 
 
-def get_ibm_backend_properties_by_device_name(device_name: str) -> Any:
+def get_ibm_backend_properties_by_device_name(device_name: str) -> BackendProperties | None:
     """Returns the IBM backend name for the given device name.
 
     Args:
@@ -688,7 +690,7 @@ def get_ibm_backend_properties_by_device_name(device_name: str) -> Any:
     return None
 
 
-def postprocess_VF2PostLayout(
+def postprocess_vf2postlayout(
     qc: QuantumCircuit, post_layout: Layout, layout_before: TranspileLayout
 ) -> tuple[QuantumCircuit, PassManager]:
     """Postprocesses the given quantum circuit with the post_layout and returns the altered quantum circuit and the respective PassManager."""

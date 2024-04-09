@@ -202,9 +202,9 @@ def save_classifier(clf: RandomForestClassifier, figure_of_merit: reward.figure_
 
 
 def save_training_data(
-    training_data: list[NDArray[np.float_]],
+    training_data: list[NDArray[np.float64]],
     names_list: list[str],
-    scores_list: list[NDArray[np.float_]],
+    scores_list: list[NDArray[np.float64]],
     figure_of_merit: reward.figure_of_merit,
 ) -> None:
     """Saves the given training data to the training data folder.
@@ -225,7 +225,7 @@ def save_training_data(
 
 def load_training_data(
     figure_of_merit: reward.figure_of_merit = "expected_fidelity",
-) -> tuple[list[NDArray[np.float_]], list[str], list[NDArray[np.float_]]]:
+) -> tuple[list[NDArray[np.float64]], list[str], list[NDArray[np.float64]]]:
     """Loads and returns the training data from the training data folder.
 
     Args:
@@ -252,10 +252,10 @@ def load_training_data(
 
 @dataclass
 class TrainingData:
-    X_train: NDArray[np.float_]
-    X_test: NDArray[np.float_]
-    y_train: NDArray[np.float_]
-    y_test: NDArray[np.float_]
+    X_train: NDArray[np.float64]
+    X_test: NDArray[np.float64]
+    y_train: NDArray[np.float64]
+    y_test: NDArray[np.float64]
     indices_train: list[int]
     indices_test: list[int]
     names_list: list[str]

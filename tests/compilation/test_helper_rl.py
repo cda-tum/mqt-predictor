@@ -31,7 +31,7 @@ def test_get_path_training_circuits() -> None:
     assert isinstance(path, Path)
 
 
-def test_VF2_layout_and_postlayout() -> None:
+def test_vf2_layout_and_postlayout() -> None:
     qc = get_benchmark("ghz", 1, 3)
 
     for dev in [get_device_by_name("ibm_montreal"), get_device_by_name("ionq_harmony")]:
@@ -63,8 +63,8 @@ def test_VF2_layout_and_postlayout() -> None:
 
     assert pm.property_set["VF2PostLayout_stop_reason"] == VF2PostLayoutStopReason.SOLUTION_FOUND
 
-    postprocessed_VF2PostLayout_qc, _ = rl.helper.postprocess_VF2PostLayout(
+    postprocessed_vf2postlayout_qc, _ = rl.helper.postprocess_vf2postlayout(
         altered_qc, pm.property_set["post_layout"], qc_transpiled.layout
     )
 
-    assert initial_layout_before != postprocessed_VF2PostLayout_qc.layout.initial_layout
+    assert initial_layout_before != postprocessed_vf2postlayout_qc.layout.initial_layout
