@@ -20,6 +20,7 @@ dynamic = ["version"]
 
 dependencies = [
     "mqt.bench>=1.1.0, <1.1.1",
+    "pytket_qiskit>=0.52.0, <0.53.0",
     "sb3_contrib>=2.0.0, <2.2.2",
     "scikit-learn>=1.4.0,<1.4.2",
     "importlib_metadata>=4.4; python_version < '3.10'",
