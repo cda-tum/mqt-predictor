@@ -163,7 +163,7 @@ def test_tket_routing() -> None:
     qc.cx(0, 3)
     qc.cx(0, 4)
 
-    device = get_device_by_name("ibm_montreal")
+    device = get_device_by_name("ionq_harmony")
 
     layout_action = helper.get_actions_layout()[0]
     transpile_pass = layout_action["transpile_pass"](device)
