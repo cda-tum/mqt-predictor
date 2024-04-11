@@ -27,10 +27,10 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
     """Test the qcompile function with a newly trained model."""
     """ Important: Those trained models are used in later tests and must not be deleted. """
 
-    device = "ionq_harmony"
+    device = "ibm_montreal"
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
     predictor.train_model(
-        timesteps=200,
+        timesteps=100,
         test=True,
     )
 
