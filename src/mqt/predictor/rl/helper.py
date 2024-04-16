@@ -72,6 +72,9 @@ else:
     import importlib_metadata as metadata
     import importlib_resources as resources
 
+import operator
+import zipfile
+
 from bqskit import compile as bqskit_compile
 from bqskit.ir import gates
 from qiskit import QuantumRegister
@@ -359,8 +362,6 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
 
     path_zip = get_path_training_circuits() / "training_data_compilation.zip"
     if len(file_list) == 0 and path_zip.exists():
-        import zipfile
-
         with zipfile.ZipFile(str(path_zip), "r") as zip_ref:
             zip_ref.extractall(get_path_training_circuits())
 
@@ -617,7 +618,7 @@ def final_layout_pytket_to_qiskit(pytket_circuit: Circuit, qiskit_ciruit: Quantu
     qiskit_layout = {}
     qiskit_qreg = qiskit_ciruit.qregs[0]
 
-    pytket_layout = dict(sorted(pytket_layout.items(), key=lambda item: item[1]))
+    pytket_layout = dict(sorted(pytket_layout.items(), key=operator.itemgetter(1)))
 
     for node, qubit_index in pytket_layout.items():
         qiskit_layout[node.index[0]] = qiskit_qreg[qubit_index]

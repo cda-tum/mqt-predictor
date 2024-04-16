@@ -104,7 +104,7 @@ repos:
         name: Disallow improper capitalization
         language: pygrep
         entry: PyBind|Numpy|Cmake|CCache|Github|PyTest|Mqt|Tum
-        exclude: .pre-commit-config.yaml
+        exclude: (.joblib|.pre-commit-config.yaml)
 
   # Check best practices for scientific Python code
   - repo: https://github.com/scientific-python/cookie

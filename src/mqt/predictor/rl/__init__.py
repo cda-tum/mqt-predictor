@@ -5,7 +5,7 @@ from mqt.predictor.rl.predictor import Predictor
 from mqt.predictor.rl.predictorenv import PredictorEnv
 
 __all__ = [
-    "qcompile",
     "Predictor",
     "PredictorEnv",
+    "qcompile",
 ]

@@ -36,7 +36,7 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
 
     qc = get_benchmark("ghz", 1, 5)
     res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
-    assert type(res) == tuple
+    assert isinstance(res, tuple)
     qc_compiled, compilation_information = res
 
     assert isinstance(qc_compiled, QuantumCircuit)

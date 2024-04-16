@@ -63,7 +63,7 @@ class Predictor:
             action = int(action)
             action_item = self.env.action_set[action]
             used_compilation_passes.append(action_item["name"])
-            obs, reward_val, terminated, truncated, info = self.env.step(action)
+            obs, _reward_val, terminated, truncated, _info = self.env.step(action)
 
         if not self.env.error_occured:
             return self.env.state, used_compilation_passes

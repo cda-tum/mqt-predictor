@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import zipfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -183,8 +184,6 @@ class Predictor:
 
         path_zip = source_path / "training_data_device_selection.zip"
         if not any(file.suffix == ".qasm" for file in source_path.iterdir()) and path_zip.exists():
-            import zipfile
-
             with zipfile.ZipFile(str(path_zip), "r") as zip_ref:
                 zip_ref.extractall(source_path)
 

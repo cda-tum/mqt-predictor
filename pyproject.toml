@@ -73,16 +73,21 @@ Discussions = "https://github.com/cda-tum/mqt-predictor/discussions"
 Research = "https://www.cda.cit.tum.de/research/quantum/"
 
 [tool.setuptools_scm]
-[tool.mypy]
-mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
-files = ["src", "tests"]
-python_version = "3.10"
-strict = true
-show_error_codes = true
-enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-warn_unreachable = true
-explicit_package_bases = true
-pretty = true
+
+
+[tool.pytest.ini_options]
+minversion = "7.2"
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config", "--showlocals"]
+log_cli_level = "INFO"
+xfail_strict = true
+filterwarnings = [
+    "error",
+    "ignore:.*pkg_resources.*:DeprecationWarning:",
+    "ignore:.*sre_.*:DeprecationWarning:",
+    "ignore:.*Rigetti.*:UserWarning:",
+    "ignore:.*Values in x.*:RuntimeWarning:",
+]
 
 [tool.coverage]
 run.source = ["mqt.predictor"]
@@ -92,6 +97,21 @@ report.exclude_also = [
     'raise AssertionError',
     'raise NotImplementedError',
 ]
+
+show_missing = true
+skip_empty = true
+precision = 1
+
+
+[tool.mypy]
+mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
+files = ["src", "tests"]
+python_version = "3.10"
+strict = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+warn_unreachable = true
+explicit_package_bases = true
+pretty = true
 
 [[tool.mypy.overrides]]
 module = ["pytket.*"]
@@ -105,12 +125,13 @@ implicit_reexport = true
 module = ["qiskit.*", "joblib.*", "sklearn.*", "matplotlib.*", "gymnasium.*", "mqt.bench.*", "sb3_contrib.*", "bqskit.*", "qiskit_ibm_runtime.*"]
 ignore_missing_imports = true
 
+
 [tool.ruff]
 line-length = 120
 extend-include = ["*.ipynb"]
 src = ["src"]
+preview = true
 unsafe-fixes = true
-
 [tool.ruff.lint]
 extend-select = [
     "A",           # flake8-builtins
@@ -124,6 +145,7 @@ extend-select = [
     "EXE",         # flake8-executable
     "FA",          # flake8-future-annotations
     "FLY",         # flynt
+    "FURB",        # refurb
     "I",           # isort
     "ICN",         # flake8-import-conventions
     "ISC",         # flake8-implicit-str-concat
@@ -141,18 +163,16 @@ extend-select = [
     "RET",         # flake8-return
     "RSE",         # flake8-raise
     "RUF",         # Ruff-specific
-#    "S",           # flake8-bandit
     "SLF",         # flake8-self
     "SLOT",        # flake8-slots
     "SIM",         # flake8-simplify
-#    "T20",         # flake8-print
     "TCH",         # flake8-type-checking
     "TID",         # flake8-tidy-imports
     "TRY",         # tryceratops
     "UP",          # pyupgrade
     "YTT",         # flake8-2020
 ]
-extend-ignore = [
+ignore = [
     "ANN101",  # Missing type annotation for self in method
     "ANN102",  # Missing type annotation for cls in classmethod
     "ISC001",  # Conflicts with formatter

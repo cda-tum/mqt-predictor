@@ -31,7 +31,7 @@ def test_qcompile_with_pretrained_models(figure_of_merit: reward.figure_of_merit
 @pytest.mark.skipif(not IN_GITHUB_ACTIONS, reason="Only run this test on GitHub runner")
 def test_qcompile() -> None:
     qc = get_benchmark("ghz", 1, 5)
-    qc_compiled, compilation_information, quantum_device = qcompile(qc)
+    qc_compiled, _compilation_information, quantum_device = qcompile(qc)
     assert quantum_device in get_available_device_names()
     assert qc_compiled.layout is not None
     assert len(qc_compiled) > 0
@@ -50,9 +50,9 @@ def test_evaluate_sample_circuit() -> None:
             if "mqt-predictor" in compilation_setup:
                 expected_keys.append(compilation_setup + "_" + key)
             else:
-                expected_keys.extend(
-                    [compilation_setup + "_" + name + "_" + key for name in get_available_device_names()]
-                )
+                expected_keys.extend([
+                    compilation_setup + "_" + name + "_" + key for name in get_available_device_names()
+                ])
 
     assert all(key in res for key in expected_keys)
     if Path(filename).exists():
