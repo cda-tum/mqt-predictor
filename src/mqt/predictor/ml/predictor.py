@@ -515,6 +515,8 @@ class Predictor:
         for i in range(len(names_list_num_qubits)):
             tmp_res = scores_filtered_sorted_accordingly[i]
             max_score = max(tmp_res)
+            if max_score == 0:
+                continue
             for j in range(len(tmp_res)):
                 plt.plot(i, tmp_res[j] / max_score, alpha=1.0, markersize=1.7, color=color_all)
 
