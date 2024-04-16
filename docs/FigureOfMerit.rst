@@ -10,7 +10,7 @@ information needs to be collected, such as, e.g., gate/readout fidelities, gate 
 decoherence times. While for some devices, this information may be publicly available, for other
 devices it may be estimated from comparable devices, previous records, or insider knowledge.
 
-So far, two figures of merit are implemented: `expected_fidelity` and `critical_depth`.
+So far, two figures of merit are implemented: ``expected_fidelity`` and ``critical_depth``.
 
 Expected Fidelity
 -----------------
@@ -27,10 +27,10 @@ with :math:`\mathit{\mathcal{F}}(g_i)` being the expected execution fidelity of 
 :math:`\mathit{\mathcal{F}_{RO}}(q_j)` being the expected execution fidelity of a measurement operation :math:`q_j` on its corresponding qubit and :math:`|G|` respectively :math:`m` being the number of gates and measurements in the compiled circuit.
 
 
-This figure of merit determines an estimate of the probability that a quantum circuit will return the expected result, the so-called `expected fidelity`, which ranges between :math:`0.0` and :math:`1.0` with higher values being better.
+This figure of merit determines an estimate of the probability that a quantum circuit will return the expected result, the so-called ``expected fidelity``, which ranges between :math:`0.0` and :math:`1.0` with higher values being better.
 
 
 Critical Depth
 --------------
-A potential alternative could be the `critical depth` (taken from :cite:labelpar:`tomesh2022supermarq`)---a measure to describe the percentage of multi-qubit gates on the longest path through a compiled quantum circuit (determining the depth).
+A potential alternative could be the ``critical depth`` (taken from :cite:labelpar:`tomesh2022supermarq`)---a measure to describe the percentage of multi-qubit gates on the longest path through a compiled quantum circuit (determining the depth).
 A respective value close to 1 would indicate a very sequential circuit while a value of 0 would indicate a highly parallel one.
