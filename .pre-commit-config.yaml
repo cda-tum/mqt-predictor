@@ -54,7 +54,6 @@ repos:
     hooks:
       - id: codespell
         args: ["-L", "wille,linz,fro"]
-        exclude: "mqt/benchviewer/templates/legal.html"
 
   # Format configuration files with prettier
   - repo: https://github.com/pre-commit/mirrors-prettier
