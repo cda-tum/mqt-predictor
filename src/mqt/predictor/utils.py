@@ -2,19 +2,31 @@ from __future__ import annotations
 
 import logging
 import signal
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from qiskit import QuantumCircuit
+
+    from mqt.predictor.reward import figure_of_merit
+    from mqt.predictor.rl.predictor import Predictor as RL_Predictor
 
 logger = logging.getLogger("mqt-predictor")
 
 
-def timeout_watcher(func: Any, args: list[Any], timeout: int) -> Any:
+def timeout_watcher(
+    func: Callable[..., bool | QuantumCircuit],
+    args: list[QuantumCircuit | figure_of_merit | str | RL_Predictor],
+    timeout: int,
+) -> tuple[QuantumCircuit, list[str]] | bool:
     """Method that stops a function call after a given timeout limit."""
 
-    class TimeoutException(Exception):  # Custom exception class
+    class TimeoutExceptionError(Exception):  # Custom exception class
         pass
 
-    def timeout_handler(_signum: Any, _frame: Any) -> None:  # Custom signal handler
-        raise TimeoutException
+    def timeout_handler(_signum: int, _frame: Any) -> None:  # noqa: ANN401
+        raise TimeoutExceptionError
 
     # Change the behavior of SIGALRM
     signal.signal(signal.SIGALRM, timeout_handler)
@@ -22,7 +34,7 @@ def timeout_watcher(func: Any, args: list[Any], timeout: int) -> Any:
     signal.alarm(timeout)
     try:
         res = func(*args)
-    except TimeoutException:
+    except TimeoutExceptionError:
         logger.debug("Calculation/Generation exceeded timeout limit for " + func.__module__ + ", " + str(args[1:]))
         return False
     except Exception:

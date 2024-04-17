@@ -13,8 +13,10 @@ from gymnasium.spaces import Box, Dict, Discrete
 from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
+from qiskit.passmanager.flow_controllers import DoWhileController
 from qiskit.transpiler import CouplingMap, PassManager, TranspileLayout
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
+from qiskit.transpiler.passes.layout.vf2_layout import VF2LayoutStopReason
 
 from mqt.bench.devices import get_device_by_name
 from mqt.predictor import reward, rl
@@ -27,7 +29,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
     def __init__(
         self, reward_function: reward.figure_of_merit = "expected_fidelity", device_name: str = "ibm_washington"
-    ):
+    ) -> None:
         logger.info("Init env: " + reward_function)
 
         self.action_set = {}
@@ -126,7 +128,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         obs = rl.helper.create_feature_dict(self.state)
         return obs, reward_val, done, False, {}
 
-    def calculate_reward(self) -> Any:
+    def calculate_reward(self) -> float:
         """Calculates and returns the reward for the current state."""
         if self.reward_function == "expected_fidelity":
             return reward.expected_fidelity(self.state, self.device)
@@ -215,11 +217,13 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     if action["name"] == "QiskitO3":
                         pm = PassManager()
                         pm.append(
-                            action["transpile_pass"](
-                                self.device.basis_gates,
-                                CouplingMap(self.device.coupling_map) if self.layout is not None else None,
+                            DoWhileController(
+                                action["transpile_pass"](
+                                    self.device.basis_gates,
+                                    CouplingMap(self.device.coupling_map) if self.layout is not None else None,
+                                ),
+                                do_while=action["do_while"],
                             ),
-                            do_while=action["do_while"],
                         )
                     else:
                         pm = PassManager(transpile_pass)
@@ -239,20 +243,14 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     + self.actions_mapping_indices
                     + self.actions_final_optimization_indices
                 ):
-                    if action["name"] == "VF2Layout":
-                        if pm.property_set["layout"]:
-                            altered_qc, pm = rl.helper.postprocess_VF2Layout(
-                                altered_qc,
-                                pm.property_set["layout"],
-                                pm.property_set["original_qubit_indices"],
-                                pm.property_set["final_layout"],
-                                self.device,
-                            )
-                    elif action["name"] == "VF2PostLayout":
+                    if action["name"] == "VF2PostLayout":
                         assert pm.property_set["VF2PostLayout_stop_reason"] is not None
                         post_layout = pm.property_set["post_layout"]
                         if post_layout:
-                            altered_qc, pm = rl.helper.postprocess_VF2PostLayout(altered_qc, post_layout, self.layout)
+                            altered_qc, pm = rl.helper.postprocess_vf2postlayout(altered_qc, post_layout, self.layout)
+                    elif action["name"] == "VF2Layout":
+                        if pm.property_set["VF2Layout_stop_reason"] == VF2LayoutStopReason.SOLUTION_FOUND:
+                            assert pm.property_set["layout"]
                     else:
                         assert pm.property_set["layout"]
 

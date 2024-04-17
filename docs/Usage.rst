@@ -19,9 +19,9 @@ To compile a quantum circuit, use the ``qcompile`` method:
 .. automodule:: mqt.predictor
     :members: qcompile
 
-Currently available figures of merit are `expected_fidelity` and `critical_depth`.
+Currently available figures of merit are ``expected_fidelity`` and ``critical_depth``.
 
-An example how `qcompile` is used can be found in the :doc:`quickstart <Quickstart>` jupyter notebook.
+An example how ``qcompile`` is used can be found in the :doc:`quickstart <Quickstart>` jupyter notebook.
 
 .. _pip_usage:
 

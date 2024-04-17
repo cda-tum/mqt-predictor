@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import zipfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -8,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed, load
 from qiskit import QuantumCircuit
+from qiskit.qasm2 import dump
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
@@ -94,9 +96,10 @@ class Predictor:
                     continue
                 try:
                     res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, dev.name], timeout)
-                    if res:
+                    if isinstance(res, tuple):
                         compiled_qc = res[0]
-                        compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
+                        with Path(target_path / (target_filename + ".qasm")).open("w") as f:
+                            dump(compiled_qc, f)
 
                 except Exception as e:
                     print(e, filename, "inner")
@@ -151,9 +154,10 @@ class Predictor:
                 continue
             try:
                 res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device_name, rl_pred], timeout)
-                if res:
+                if isinstance(res, tuple):
                     compiled_qc = res[0]
-                    compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
+                    with Path(target_path / (target_filename + ".qasm")).open("w") as f:
+                        dump(compiled_qc, f)
 
             except Exception as e:
                 print(e, filename, device_name)
@@ -180,8 +184,6 @@ class Predictor:
 
         path_zip = source_path / "training_data_device_selection.zip"
         if not any(file.suffix == ".qasm" for file in source_path.iterdir()) and path_zip.exists():
-            import zipfile
-
             with zipfile.ZipFile(str(path_zip), "r") as zip_ref:
                 zip_ref.extractall(source_path)
 
@@ -200,7 +202,7 @@ class Predictor:
         figure_of_merit: reward.figure_of_merit,
         path_uncompiled_circuits: Path | None = None,
         path_compiled_circuits: Path | None = None,
-    ) -> tuple[list[NDArray[np.float_]], list[str], list[NDArray[np.float_]]]:
+    ) -> tuple[list[NDArray[np.float64]], list[str], list[NDArray[np.float64]]]:
         """Handles to create training data from all generated training samples
 
         Args:
@@ -361,20 +363,20 @@ class Predictor:
             ml.helper.TrainingData: The prepared training data.
         """
         training_data, names_list, raw_scores_list = ml.helper.load_training_data(figure_of_merit)
-        unzipped_training_data_X, unzipped_training_data_Y = zip(*training_data, strict=False)
+        unzipped_training_data_x, unzipped_training_data_y = zip(*training_data, strict=False)
         scores_list: list[list[float]] = [[] for _ in range(len(raw_scores_list))]
-        X_raw = list(unzipped_training_data_X)
-        X_list: list[list[float]] = [[] for _ in range(len(X_raw))]
-        y_list = list(unzipped_training_data_Y)
-        for i in range(len(X_raw)):
-            X_list[i] = list(X_raw[i])
+        x_raw = list(unzipped_training_data_x)
+        x_list: list[list[float]] = [[] for _ in range(len(x_raw))]
+        y_list = list(unzipped_training_data_y)
+        for i in range(len(x_raw)):
+            x_list[i] = list(x_raw[i])
             scores_list[i] = list(raw_scores_list[i])
 
-        X, y, indices = np.array(X_list), np.array(y_list), np.array(range(len(y_list)))
+        x, y, indices = np.array(x_list), np.array(y_list), np.array(range(len(y_list)))
 
         # Store all non zero feature indices
-        non_zero_indices = [i for i in range(len(X[0])) if sum(X[:, i]) > 0]
-        X = X[:, non_zero_indices]
+        non_zero_indices = [i for i in range(len(x[0])) if sum(x[:, i]) > 0]
+        x = x[:, non_zero_indices]
 
         if save_non_zero_indices:
             data = np.asarray(non_zero_indices)
@@ -384,17 +386,17 @@ class Predictor:
             )
 
         (
-            X_train,
-            X_test,
+            x_train,
+            x_test,
             y_train,
             y_test,
             indices_train,
             indices_test,
-        ) = train_test_split(X, y, indices, test_size=0.3, random_state=5)
+        ) = train_test_split(x, y, indices, test_size=0.3, random_state=5)
 
         return ml.helper.TrainingData(
-            X_train,
-            X_test,
+            x_train,
+            x_test,
             y_train,
             y_test,
             indices_train,
@@ -513,6 +515,8 @@ class Predictor:
         for i in range(len(names_list_num_qubits)):
             tmp_res = scores_filtered_sorted_accordingly[i]
             max_score = max(tmp_res)
+            if max_score == 0:
+                continue
             for j in range(len(tmp_res)):
                 plt.plot(i, tmp_res[j] / max_score, alpha=1.0, markersize=1.7, color=color_all)
 
