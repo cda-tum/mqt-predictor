@@ -149,7 +149,7 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
         lifetime = sum(durations)  # all operation times on qubit
         # only use dominant decoherence term (either T1 or T2) as in https://arxiv.org/pdf/2001.02826
         # alternative: np.exp(-lifetime / T_1 - lifetime / T_2) as in https://arxiv.org/abs/2306.15020
-        T_min = min(device.calibration.get_t1(qubit_idx), device.calibration.get_t2(qubit_idx))
+        T_min = min(device.calibration.get_t1(qubit_idx), device.calibration.get_t2(qubit_idx))  # noqa:N806
         decoherence = np.exp(-lifetime / T_min)
         res *= decoherence
 
