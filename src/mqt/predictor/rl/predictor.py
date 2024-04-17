@@ -19,7 +19,9 @@ PATH_LENGTH = 260
 class Predictor:
     """The Predictor class is used to train a reinforcement learning model for a given figure of merit and device such that it acts as a compiler."""
 
-    def __init__(self, figure_of_merit: reward.figure_of_merit, device_name: str, logger_level: int = logging.INFO):
+    def __init__(
+        self, figure_of_merit: reward.figure_of_merit, device_name: str, logger_level: int = logging.INFO
+    ) -> None:
         logger.setLevel(logger_level)
 
         self.model = None
@@ -61,7 +63,7 @@ class Predictor:
             action = int(action)
             action_item = self.env.action_set[action]
             used_compilation_passes.append(action_item["name"])
-            obs, reward_val, terminated, truncated, info = self.env.step(action)
+            obs, _reward_val, terminated, truncated, _info = self.env.step(action)
 
         if not self.env.error_occured:
             return self.env.state, used_compilation_passes

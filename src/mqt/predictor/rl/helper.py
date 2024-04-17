@@ -52,6 +52,7 @@ from qiskit.transpiler.passes import (
     VF2Layout,
     VF2PostLayout,
 )
+from qiskit.transpiler.passes.layout.vf2_layout import VF2LayoutStopReason
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
@@ -59,9 +60,8 @@ from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import reward, rl
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from numpy.typing import NDArray
+    from qiskit.providers.models import BackendProperties
 
     from mqt.bench.devices import Device
 
@@ -72,10 +72,13 @@ else:
     import importlib_metadata as metadata
     import importlib_resources as resources
 
+import operator
+import zipfile
+
 from bqskit import compile as bqskit_compile
 from bqskit.ir import gates
 from qiskit import QuantumRegister
-from qiskit.passmanager.flow_controllers import ConditionalController
+from qiskit.passmanager import ConditionalController
 from qiskit.transpiler.preset_passmanagers import common
 from qiskit_ibm_runtime.fake_provider import FakeGuadalupe, FakeMontreal, FakeQuito, FakeWashington
 
@@ -187,13 +190,9 @@ def get_actions_opt() -> list[dict[str, Any]]:
                 CommutativeCancellation(basis_gates=native_gate),
                 GatesInBasis(native_gate),
                 ConditionalController(
-                    [
-                        pass_
-                        for x in common.generate_translation_passmanager(
-                            target=None, basis_gates=native_gate, coupling_map=coupling_map
-                        ).passes()
-                        for pass_ in x["passes"]
-                    ],
+                    common.generate_translation_passmanager(
+                        target=None, basis_gates=native_gate, coupling_map=coupling_map
+                    ).to_flow_controller(),
                     condition=lambda property_set: not property_set["all_gates_in_basis"],
                 ),
                 Depth(recurse=True),
@@ -257,6 +256,15 @@ def get_actions_layout() -> list[dict[str, Any]]:
                     coupling_map=CouplingMap(device.coupling_map),
                     properties=get_ibm_backend_properties_by_device_name(device.name),
                 ),
+                ConditionalController(
+                    [
+                        FullAncillaAllocation(coupling_map=CouplingMap(device.coupling_map)),
+                        EnlargeWithAncilla(),
+                        ApplyLayout(),
+                    ],
+                    condition=lambda property_set: property_set["VF2Layout_stop_reason"]
+                    == VF2LayoutStopReason.SOLUTION_FOUND,
+                ),
             ],
             "origin": "qiskit",
         },
@@ -303,7 +311,7 @@ def get_actions_mapping() -> list[dict[str, Any]]:
                 bqskit_circuit,
                 model=MachineModel(
                     num_qudits=device.num_qubits,
-                    gate_set=get_BQSKit_native_gates(device),
+                    gate_set=get_bqskit_native_gates(device),
                     coupling_graph=[(elem[0], elem[1]) for elem in device.coupling_map],
                 ),
                 with_mapping=True,
@@ -328,7 +336,7 @@ def get_actions_synthesis() -> list[dict[str, Any]]:
             "name": "BQSKitSynthesis",
             "transpile_pass": lambda device: lambda bqskit_circuit: bqskit_compile(
                 bqskit_circuit,
-                model=MachineModel(bqskit_circuit.num_qudits, gate_set=get_BQSKit_native_gates(device)),
+                model=MachineModel(bqskit_circuit.num_qudits, gate_set=get_bqskit_native_gates(device)),
                 optimization_level=2,
             ),
             "origin": "bqskit",
@@ -354,8 +362,6 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
 
     path_zip = get_path_training_circuits() / "training_data_compilation.zip"
     if len(file_list) == 0 and path_zip.exists():
-        import zipfile
-
         with zipfile.ZipFile(str(path_zip), "r") as zip_ref:
             zip_ref.extractall(get_path_training_circuits())
 
@@ -364,7 +370,8 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
 
     found_suitable_qc = False
     while not found_suitable_qc:
-        random_index = np.random.randint(len(file_list))
+        rng = np.random.default_rng(10)
+        random_index = rng.integers(len(file_list))
         num_qubits = int(str(file_list[random_index]).split("_")[-1].split(".")[0])
         if max_qubits and num_qubits > max_qubits:
             continue
@@ -378,7 +385,7 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
     return qc, str(file_list[random_index])
 
 
-def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float_]]:
+def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float64]]:
     """Creates a feature dictionary for a given quantum circuit.
 
     Args:
@@ -580,7 +587,7 @@ class PreProcessTKETRoutingAfterQiskitLayout:
         place_with_map(circuit=circuit, qmap=mapping)
 
 
-def get_BQSKit_native_gates(device: Device) -> list[gates.Gate] | None:
+def get_bqskit_native_gates(device: Device) -> list[gates.Gate] | None:
     """Returns the native gates of the given device.
 
     Args:
@@ -611,7 +618,7 @@ def final_layout_pytket_to_qiskit(pytket_circuit: Circuit, qiskit_ciruit: Quantu
     qiskit_layout = {}
     qiskit_qreg = qiskit_ciruit.qregs[0]
 
-    pytket_layout = dict(sorted(pytket_layout.items(), key=lambda item: item[1]))
+    pytket_layout = dict(sorted(pytket_layout.items(), key=operator.itemgetter(1)))
 
     for node, qubit_index in pytket_layout.items():
         qiskit_layout[node.index[0]] = qiskit_qreg[qubit_index]
@@ -662,7 +669,7 @@ def final_layout_bqskit_to_qiskit(
     )
 
 
-def get_ibm_backend_properties_by_device_name(device_name: str) -> Any:
+def get_ibm_backend_properties_by_device_name(device_name: str) -> BackendProperties | None:
     """Returns the IBM backend name for the given device name.
 
     Args:
@@ -684,42 +691,16 @@ def get_ibm_backend_properties_by_device_name(device_name: str) -> Any:
     return None
 
 
-def get_layout_postprocessing_qiskit_pass() -> (
-    Callable[[Device], list[FullAncillaAllocation | EnlargeWithAncilla | ApplyLayout]]
-):
-    return lambda device: [
-        FullAncillaAllocation(coupling_map=CouplingMap(device.coupling_map)),
-        EnlargeWithAncilla(),
-        ApplyLayout(),
-    ]
-
-
-def postprocess_VF2Layout(
-    qc: QuantumCircuit,
-    initial_layout: Layout,
-    original_qubit_indices: dict[QuantumRegister, int],
-    final_layout: Layout,
-    device: Device,
-) -> tuple[QuantumCircuit, PassManager]:
-    """Postprocesses the given quantum circuit with the given layout and returns the altered quantum circuit and the respective PassManager."""
-    postprocessing_action = rl.helper.get_layout_postprocessing_qiskit_pass()(device)
-    pm = PassManager(postprocessing_action)
-    pm.property_set["layout"] = initial_layout
-    pm.property_set["original_qubit_indices"] = original_qubit_indices
-    pm.property_set["final_layout"] = final_layout
-    altered_qc = pm.run(qc)
-    return altered_qc, pm
-
-
-def postprocess_VF2PostLayout(
+def postprocess_vf2postlayout(
     qc: QuantumCircuit, post_layout: Layout, layout_before: TranspileLayout
 ) -> tuple[QuantumCircuit, PassManager]:
     """Postprocesses the given quantum circuit with the post_layout and returns the altered quantum circuit and the respective PassManager."""
-    pm = PassManager(ApplyLayout())
+    apply_layout = ApplyLayout()
     assert layout_before is not None
-    pm.property_set["layout"] = layout_before.initial_layout
-    pm.property_set["original_qubit_indices"] = layout_before.input_qubit_mapping
-    pm.property_set["final_layout"] = layout_before.final_layout
-    pm.property_set["post_layout"] = post_layout
-    altered_qc = pm.run(qc)
-    return altered_qc, pm
+    apply_layout.property_set["layout"] = layout_before.initial_layout
+    apply_layout.property_set["original_qubit_indices"] = layout_before.input_qubit_mapping
+    apply_layout.property_set["final_layout"] = layout_before.final_layout
+    apply_layout.property_set["post_layout"] = post_layout
+
+    altered_qc = apply_layout(qc)
+    return altered_qc, apply_layout

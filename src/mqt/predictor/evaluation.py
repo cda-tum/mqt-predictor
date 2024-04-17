@@ -154,7 +154,7 @@ def evaluate_all_sample_circuits() -> None:
     )
 
 
-def evaluate_GHZ_circuits() -> None:
+def evaluate_ghz_circuits() -> None:
     """Evaluates all GHZ circuits and saves the results to a csv file."""
     res_csv = []
 

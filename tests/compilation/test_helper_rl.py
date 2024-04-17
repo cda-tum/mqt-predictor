@@ -31,7 +31,7 @@ def test_get_path_training_circuits() -> None:
     assert isinstance(path, Path)
 
 
-def test_VF2_layout_and_postlayout() -> None:
+def test_vf2_layout_and_postlayout() -> None:
     qc = get_benchmark("ghz", 1, 3)
 
     for dev in [get_device_by_name("ibm_montreal"), get_device_by_name("ionq_harmony")]:
@@ -41,16 +41,7 @@ def test_VF2_layout_and_postlayout() -> None:
                 layout_pass = layout_action["transpile_pass"](dev)
                 break
         pm = PassManager(layout_pass)
-        altered_qc = pm.run(qc)
-        assert len(altered_qc.layout.initial_layout) == 3
-        assert pm.property_set["VF2Layout_stop_reason"] is not None
-        layouted_qc, pm = rl.helper.postprocess_VF2Layout(
-            altered_qc,
-            pm.property_set["layout"],
-            pm.property_set["original_qubit_indices"],
-            pm.property_set["final_layout"],
-            dev,
-        )
+        layouted_qc = pm.run(qc)
         assert len(layouted_qc.layout.initial_layout) == dev.num_qubits
 
     dev_success = get_device_by_name("ibm_montreal")
@@ -70,13 +61,10 @@ def test_VF2_layout_and_postlayout() -> None:
     pm = PassManager(post_layout_pass)
     altered_qc = pm.run(qc_transpiled)
 
-    assert pm.property_set["VF2PostLayout_stop_reason"] is not None
     assert pm.property_set["VF2PostLayout_stop_reason"] == VF2PostLayoutStopReason.SOLUTION_FOUND
 
-    assert len(layouted_qc.layout.initial_layout) == dev.num_qubits
-    layouted_qc, pm = rl.helper.postprocess_VF2PostLayout(
+    postprocessed_vf2postlayout_qc, _ = rl.helper.postprocess_vf2postlayout(
         altered_qc, pm.property_set["post_layout"], qc_transpiled.layout
     )
-    initial_layout_after = layouted_qc.layout.initial_layout
 
-    assert initial_layout_before != initial_layout_after
+    assert initial_layout_before != postprocessed_vf2postlayout_qc.layout.initial_layout

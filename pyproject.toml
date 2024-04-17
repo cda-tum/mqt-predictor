@@ -11,7 +11,7 @@ description = "MQT Predictor - A MQT tool for Determining Good Quantum Circuit C
 readme = "README.md"
 authors = [
     { name = "Nils Quetschlich", email = "nils.quetschlich@tum.de" },
-    { name = "Lukas Burgholzer", email = "lukas.burgholzer@jku.at"},
+    { name = "Lukas Burgholzer", email = "lukas.burgholzer@tum.de"},
 ]
 keywords = ["MQT",  "quantum computing", "compilation", "machine learning", "prediction"]
 license = { file = "LICENSE" }
@@ -19,13 +19,15 @@ requires-python = ">=3.10"
 dynamic = ["version"]
 
 dependencies = [
-    "mqt.bench @ git+https://github.com/cda-tum/mqt-bench.git",
+    "mqt.bench>=1.1.1, <1.2.0",
+    "pytket_qiskit>=0.52.0, <0.53.0",
     "sb3_contrib>=2.0.0, <2.2.2",
     "scikit-learn>=1.4.0,<1.4.2",
     "importlib_metadata>=4.4; python_version < '3.10'",
     "importlib_resources>=5.0; python_version < '3.10'",
     "tensorboard>=2.11.0, <2.16.3",
-    "bqskit>=1.1.0, <1.1.2",
+    "bqskit>=1.1.2, <1.2.0",
+    "lark>=0.7, <1.0"
 ]
 
 classifiers = [
@@ -71,16 +73,27 @@ Discussions = "https://github.com/cda-tum/mqt-predictor/discussions"
 Research = "https://www.cda.cit.tum.de/research/quantum/"
 
 [tool.setuptools_scm]
-[tool.mypy]
-mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
-files = ["src", "tests"]
-python_version = "3.10"
-strict = true
-show_error_codes = true
-enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-warn_unreachable = true
-explicit_package_bases = true
-pretty = true
+
+
+[tool.pytest.ini_options]
+minversion = "7.2"
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config", "--showlocals"]
+log_cli_level = "INFO"
+xfail_strict = true
+filterwarnings = [
+    "error",
+    "ignore:.*pkg_resources.*:DeprecationWarning:",
+    "ignore:.*sre_.*:DeprecationWarning:",
+    "ignore:.*Rigetti.*:UserWarning:",
+    "ignore:.*Values in x.*:RuntimeWarning:",
+    "ignore:.*The Rebase2QuditGatePass has moved to bqskit.passes.retarget.two.*:DeprecationWarning:",
+    "ignore:.*The least populated class in y has only 3 members, which is less than n_splits=5.*:UserWarning:",
+    "ignore:.*divide by zero encountered in det.*:RuntimeWarning:",
+    "ignore:.*invalid value encountered in det.*:RuntimeWarning:",
+    "ignore:..*env.action_masks to get variables from other wrappers is deprecated and will be removed in v1.0.*:UserWarning:",
+
+]
 
 [tool.coverage]
 run.source = ["mqt.predictor"]
@@ -90,6 +103,21 @@ report.exclude_also = [
     'raise AssertionError',
     'raise NotImplementedError',
 ]
+
+show_missing = true
+skip_empty = true
+precision = 1
+
+
+[tool.mypy]
+mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
+files = ["src", "tests"]
+python_version = "3.10"
+strict = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+warn_unreachable = true
+explicit_package_bases = true
+pretty = true
 
 [[tool.mypy.overrides]]
 module = ["pytket.*"]
@@ -103,16 +131,17 @@ implicit_reexport = true
 module = ["qiskit.*", "joblib.*", "sklearn.*", "matplotlib.*", "gymnasium.*", "mqt.bench.*", "sb3_contrib.*", "bqskit.*", "qiskit_ibm_runtime.*"]
 ignore_missing_imports = true
 
-[tool.ruff]
-extend-include = ["*.ipynb"]
-line-length = 120
-src = ["src"]
-unsafe-fixes = true
 
+[tool.ruff]
+line-length = 120
+extend-include = ["*.ipynb"]
+src = ["src"]
+preview = true
+unsafe-fixes = true
 [tool.ruff.lint]
 extend-select = [
     "A",           # flake8-builtins
-#    "ANN",         # flake8-annotations
+    "ANN",         # flake8-annotations
     "ARG",         # flake8-unused-arguments
     "ASYNC",       # flake8-async
     "B",  "B904",  # flake8-bugbear
@@ -122,11 +151,13 @@ extend-select = [
     "EXE",         # flake8-executable
     "FA",          # flake8-future-annotations
     "FLY",         # flynt
+    "FURB",        # refurb
     "I",           # isort
     "ICN",         # flake8-import-conventions
     "ISC",         # flake8-implicit-str-concat
-  #  "N",           # flake8-naming
-  #  "NPY",         # numpy
+    "LOG",         # flake8-logging-format
+    "N",           # flake8-naming
+    "NPY",         # numpy
     "PERF",        # perflint
     "PGH",         # pygrep-hooks
     "PIE",         # flake8-pie
@@ -147,13 +178,18 @@ extend-select = [
     "UP",          # pyupgrade
     "YTT",         # flake8-2020
 ]
-extend-ignore = [
-    "PLR",  # Design related pylint codes
-    "ISC001", # Added because of ruff-format warning
+ignore = [
+    "ANN101",  # Missing type annotation for self in method
+    "ANN102",  # Missing type annotation for cls in classmethod
+    "ISC001",  # Conflicts with formatter
+    "E501",    # Line too long (Black is enough)
+    "PLR",     # Design related pylint codes
+    "S101",    # Use of assert detected
 ]
+flake8-unused-arguments.ignore-variadic-names = true
 isort.required-imports = ["from __future__ import annotations"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "*.pyi" = ["D"]  # pydocstyle
 "*.ipynb" = [
     "D",    # pydocstyle
@@ -161,17 +197,5 @@ isort.required-imports = ["from __future__ import annotations"]
     "I002", # Allow missing `from __future__ import annotations` import
 ]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google"
-
-
-[tool.pytest.ini_options]
-filterwarnings = [
-    "ignore:Call to deprecated create function FieldDescriptor",
-    "ignore:Call to deprecated create function Descriptor",
-    "ignore:Call to deprecated create function EnumDescriptor",
-    "ignore:Call to deprecated create function EnumValueDescriptor",
-    "ignore:Call to deprecated create function FileDescriptor",
-    "ignore:Call to deprecated create function OneofDescriptor",
-    "ignore:distutils Version classes are deprecated. Use packaging.version instead.",
-]

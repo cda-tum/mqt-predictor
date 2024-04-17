@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 from qiskit import QuantumCircuit
+from qiskit.qasm2 import dump
 
 from mqt.bench import get_benchmark
 from mqt.predictor import reward, rl
@@ -13,7 +14,8 @@ def test_predictor_env_reset_from_string() -> None:
     predictor = rl.Predictor(figure_of_merit="expected_fidelity", device_name="ionq_harmony")
     qasm_path = Path("test.qasm")
     qc = get_benchmark("dj", 1, 3)
-    qc.from_qasm_file(str(qasm_path))
+    with Path(qasm_path).open("w") as f:
+        dump(qc, f)
     assert predictor.env.reset(qc=qasm_path)[0] == rl.helper.create_feature_dict(qc)
 
 
@@ -25,7 +27,7 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
     """Test the qcompile function with a newly trained model."""
     """ Important: Those trained models are used in later tests and must not be deleted. """
 
-    device = "ionq_harmony"
+    device = "ibm_montreal"
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
     predictor.train_model(
         timesteps=100,
@@ -34,7 +36,7 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
 
     qc = get_benchmark("ghz", 1, 5)
     res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
-    assert type(res) == tuple
+    assert isinstance(res, tuple)
     qc_compiled, compilation_information = res
 
     assert isinstance(qc_compiled, QuantumCircuit)

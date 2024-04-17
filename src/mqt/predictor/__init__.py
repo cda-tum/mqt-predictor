@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 
 from mqt.predictor.ml import qcompile
-from mqt.predictor.Result import Result
+from mqt.predictor.result import Result
 
 __all__ = [
     "Result",
