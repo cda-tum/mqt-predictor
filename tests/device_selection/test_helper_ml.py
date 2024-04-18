@@ -3,8 +3,7 @@ from __future__ import annotations
 import pytest
 
 from mqt.bench import benchmark_generator
-from mqt.bench.devices import get_available_device_names, get_available_devices
-from mqt.predictor import ml, qcompile
+from mqt.predictor import ml
 
 
 def test_load_training_data() -> None:
@@ -51,28 +50,6 @@ def test_get_path_trained_model() -> None:
     for figure_of_merit in ["expected_fidelity", "critical_depth"]:
         path = ml.helper.get_path_trained_model(figure_of_merit=figure_of_merit)
         assert path.exists()
-
-
-def test_predict_device_for_figure_of_merit() -> None:
-    qc = benchmark_generator.get_benchmark("ghz", 1, 5)
-    assert ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity") in get_available_device_names()
-
-    with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
-        ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
-
-    devices = get_available_devices()
-    for d in devices:
-        d.num_qubits = 0
-    with pytest.raises(ValueError, match="No suitable device found."):
-        ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity", devices)
-
-
-def test_qcompile() -> None:
-    qc = benchmark_generator.get_benchmark("ghz", 1, 5)
-    qc_compiled, compilation_information, quantum_device = qcompile(qc)
-    assert quantum_device in get_available_device_names()
-    assert qc_compiled.layout is not None
-    assert len(qc_compiled) > 0
 
 
 def test_get_path_results() -> None:

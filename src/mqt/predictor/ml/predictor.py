@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import zipfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -8,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed, load
 from qiskit import QuantumCircuit
+from qiskit.qasm2 import dump
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
@@ -95,9 +97,10 @@ class Predictor:
                     continue
                 try:
                     res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, dev.name], timeout)
-                    if res:
+                    if isinstance(res, tuple):
                         compiled_qc = res[0]
-                        compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
+                        with Path(target_path / (target_filename + ".qasm")).open("w") as f:
+                            dump(compiled_qc, f)
 
                 except Exception as e:
                     print(e, filename, "inner")
@@ -129,7 +132,7 @@ class Predictor:
         logger.info("Processing: " + device_name + " for " + figure_of_merit)
         rl_pred = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device_name)
 
-        dev_index = next((i for i, dev in enumerate(self.devices) if dev.name == device_name), None)
+        dev_index = get_available_device_names().index(device_name)
         dev_max_qubits = self.devices[dev_index].num_qubits
 
         if source_path is None:
@@ -152,9 +155,10 @@ class Predictor:
                 continue
             try:
                 res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device_name, rl_pred], timeout)
-                if res:
+                if isinstance(res, tuple):
                     compiled_qc = res[0]
-                    compiled_qc.qasm(filename=Path(target_path) / (target_filename + ".qasm"))
+                    with Path(target_path / (target_filename + ".qasm")).open("w") as f:
+                        dump(compiled_qc, f)
 
             except Exception as e:
                 print(e, filename, device_name)
@@ -181,8 +185,6 @@ class Predictor:
 
         path_zip = source_path / "training_data_device_selection.zip"
         if not any(file.suffix == ".qasm" for file in source_path.iterdir()) and path_zip.exists():
-            import zipfile
-
             with zipfile.ZipFile(str(path_zip), "r") as zip_ref:
                 zip_ref.extractall(source_path)
 
@@ -201,7 +203,7 @@ class Predictor:
         figure_of_merit: reward.figure_of_merit,
         path_uncompiled_circuits: Path | None = None,
         path_compiled_circuits: Path | None = None,
-    ) -> tuple[list[NDArray[np.float_]], list[str], list[NDArray[np.float_]]]:
+    ) -> tuple[list[NDArray[np.float64]], list[str], list[NDArray[np.float64]]]:
         """Handles to create training data from all generated training samples
 
         Args:
@@ -353,13 +355,13 @@ class Predictor:
         if visualize_results:
             y_pred = np.array(list(clf.predict(training_data.X_test)))
             res, _ = self.calc_performance_measures(scores_filtered, y_pred, training_data.y_test)
-            self.plot_eval_histogram(res, filename="RandomForestClassifier")
+            self.generate_eval_histogram(res, filename="RandomForestClassifier")
 
             logger.info("Best Accuracy: " + str(clf.best_score_))
             top3 = (res.count(1) + res.count(2) + res.count(3)) / len(res)
             logger.info("Top 3: " + str(top3))
             logger.info("Feature Importance: " + str(clf.best_estimator_.feature_importances_))
-            self.plot_eval_all_detailed_compact_normed(names_filtered, scores_filtered, y_pred, training_data.y_test)
+            self.generate_eval_all_datapoints(names_filtered, scores_filtered, y_pred, training_data.y_test)
 
         self.set_classifier(clf.best_estimator_)
         ml.helper.save_classifier(clf.best_estimator_, figure_of_merit)
@@ -384,7 +386,7 @@ class Predictor:
             ml.helper.TrainingData: The prepared training data.
         """
         training_data, names_list, raw_scores_list = ml.helper.load_training_data(figure_of_merit)
-        unzipped_training_data_X, unzipped_training_data_Y = zip(*training_data)
+        unzipped_training_data_x, unzipped_training_data_y = zip(*training_data, strict=False)
         scores_list: list[list[float]] = [[] for _ in range(len(raw_scores_list))]
         X_raw = list(unzipped_training_data_X)
         X_list: list[list[float]] = [[] for _ in range(len(X_raw))]
@@ -415,17 +417,17 @@ class Predictor:
                 )
 
         (
-            X_train,
-            X_test,
+            x_train,
+            x_test,
             y_train,
             y_test,
             indices_train,
             indices_test,
-        ) = train_test_split(X, y, indices, test_size=0.3, random_state=5)
+        ) = train_test_split(x, y, indices, test_size=0.3, random_state=5)
 
         return ml.helper.TrainingData(
-            X_train,
-            X_test,
+            x_train,
+            x_test,
             y_train,
             y_test,
             indices_train,
@@ -464,13 +466,16 @@ class Predictor:
 
         return res, relative_scores
 
-    def plot_eval_histogram(self, res: list[int], filename: str = "histogram", color: str = "#21918c") -> None:
+    def generate_eval_histogram(
+        self, res: list[int], filename: str = "histogram", color: str = "#21918c", show_plot: bool = True
+    ) -> None:
         """Method to generate the histogram for the evaluation scores
 
         Args:
             res (list[int]): The ranks of the predictions
             filename (str, optional): The filename of the histogram. Defaults to "histogram".
             color (str, optional): The color of the histogram. Defaults to "#21918c".
+            show_plot (bool, optional): Whether to show the plot. Defaults to True. False for testing purposes.
 
         """
 
@@ -501,9 +506,10 @@ class Predictor:
         if not result_path.is_dir():
             result_path.mkdir()
         plt.savefig(result_path / (filename + ".pdf"), bbox_inches="tight")
-        plt.show()
+        if show_plot:
+            plt.show()
 
-    def plot_eval_all_detailed_compact_normed(
+    def generate_eval_all_datapoints(
         self,
         names_list: list[Any],
         scores_filtered: list[Any],
@@ -535,13 +541,15 @@ class Predictor:
             qubit_list_sorted,
             scores_filtered_sorted_accordingly,
             y_pred_sorted_accordingly,
-        ) = zip(*sorted(zip(names_list_num_qubits, scores_filtered, y_pred)))
+        ) = zip(*sorted(zip(names_list_num_qubits, scores_filtered, y_pred, strict=False)), strict=False)
         plt.figure(figsize=(17, 8))
         for i in range(len(names_list_num_qubits)):
             tmp_res = scores_filtered_sorted_accordingly[i]
             max_score = max(tmp_res)
+            if max_score == 0:
+                continue
             for j in range(len(tmp_res)):
-                plt.plot(i, tmp_res[j] / max_score, "b.", alpha=1.0, markersize=1.7, color=color_all)
+                plt.plot(i, tmp_res[j] / max_score, alpha=1.0, markersize=1.7, color=color_all)
 
             plt.plot(
                 i,

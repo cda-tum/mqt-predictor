@@ -58,7 +58,7 @@ class Predictor:
                 raise RuntimeError(msg) from e
 
         assert self.model
-        obs, _ = self.env.reset(qc)  # type: ignore[unreachable]
+        obs, _ = self.env.reset(qc, seed=0)  # type: ignore[unreachable]
 
         used_compilation_passes = []
         terminated = False
@@ -69,8 +69,7 @@ class Predictor:
             action = int(action)
             action_item = self.env.action_set[action]
             used_compilation_passes.append(action_item["name"])
-            obs, reward_val, terminated, truncated, info = self.env.step(action)
-            self.env.state._layout = self.env.layout  # noqa: SLF001
+            obs, _reward_val, terminated, truncated, _info = self.env.step(action)
 
         if not self.env.error_occured:
             return self.env.state, used_compilation_passes
@@ -112,7 +111,7 @@ class Predictor:
         }
         model = MaskablePPO(
             MaskableMultiInputActorCriticPolicy,
-            env,
+            self.env,
             verbose=verbose,
             tensorboard_log="./" + model_name + "_" + self.figure_of_merit + "_" + self.device_name,
             gamma=0.98,

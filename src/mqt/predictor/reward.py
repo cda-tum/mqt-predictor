@@ -5,13 +5,12 @@ from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
 
-if TYPE_CHECKING:
-    from qiskit.circuit import QuantumRegister, Qubit
-
 from mqt.bench.utils import calc_supermarq_features
 
 if TYPE_CHECKING:
-    from qiskit import QuantumCircuit
+    from qiskit import QuantumCircuit, QuantumRegister, Qubit
+
+    from mqt.bench.devices import Device
 
     from mqt.bench.devices import Device
 
@@ -55,8 +54,6 @@ def expected_fidelity(qc: QuantumCircuit, device: Device, precision: int = 10) -
         if gate_type != "barrier":
             assert len(qargs) in [1, 2]
             first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
-            if device.name == "rigetti_aspen_m2":
-                first_qubit_idx = (first_qubit_idx + 40) % 80
 
             if len(qargs) == 1:
                 if gate_type == "measure":
@@ -65,10 +62,20 @@ def expected_fidelity(qc: QuantumCircuit, device: Device, precision: int = 10) -
                     specific_fidelity = device.get_single_qubit_gate_fidelity(gate_type, first_qubit_idx)
             else:
                 second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
-                if device.name == "rigetti_aspen_m2":
-                    second_qubit_idx = (second_qubit_idx + 40) % 80
                 specific_fidelity = device.get_two_qubit_gate_fidelity(gate_type, first_qubit_idx, second_qubit_idx)
 
             res *= specific_fidelity
 
     return cast(float, np.round(res, precision))
+
+
+def calc_qubit_index(qargs: list[Qubit], qregs: list[QuantumRegister], index: int) -> int:
+    offset = 0
+    for reg in qregs:
+        if qargs[index] not in reg:
+            offset += reg.size
+        else:
+            qubit_index: int = offset + reg.index(qargs[index])
+            return qubit_index
+    error_msg = f"Global qubit index for local qubit {index} index not found."
+    raise ValueError(error_msg)

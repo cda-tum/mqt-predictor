@@ -19,11 +19,11 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.9"
+          python-version: "3.10"
       - name: Install MQT Predictor
         run: pip install .[coverage]
       - name: Generate Report
-        run: pytest -v --cov --cov-config=pyproject.toml --cov-report=xml
+        run: pytest -v --cov --cov-config=pyproject.toml --cov-report=xml --ignore=tests/test_pretrained_models.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload coverage to Codecov

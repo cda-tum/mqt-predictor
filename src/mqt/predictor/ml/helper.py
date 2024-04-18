@@ -1,17 +1,9 @@
 from __future__ import annotations
 
-import sys
-from typing import Any
-
-if sys.version_info < (3, 10, 0):
-    import importlib_resources as resources
-else:
-    from importlib import resources  # type: ignore[no-redef]
-
-import re
 from dataclasses import dataclass
+from importlib import resources
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import networkx as nx  # type: ignore[import-untyped]
 import numpy as np
@@ -35,11 +27,12 @@ if TYPE_CHECKING:
     from qiskit.circuit import Qubit
     from sklearn.ensemble import RandomForestClassifier
 
+    from mqt.bench.devices import Device
+
 
 def qcompile(
     qc: QuantumCircuit,
     figure_of_merit: reward.figure_of_merit = "expected_fidelity",
-    devices: list[Device] | None = None,
 ) -> tuple[QuantumCircuit, list[str], str]:
     """Compiles a given quantum circuit to a device with the highest predicted figure of merit.
 
@@ -51,17 +44,14 @@ def qcompile(
         tuple[QuantumCircuit, list[str], str] | bool: Returns a tuple containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, False is returned.
     """
 
-    device_name = predict_device_for_figure_of_merit(qc, figure_of_merit, devices)
-    assert device_name is not None
-    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device_name)
-    return *res, device_name
+    device = predict_device_for_figure_of_merit(qc, figure_of_merit)
+    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device.name)
+    return *res, device.name
 
 
 def predict_device_for_figure_of_merit(
-    qc: QuantumCircuit,
-    figure_of_merit: reward.figure_of_merit = "expected_fidelity",
-    devices: list[Device] | None = None,
-) -> str:
+    qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit = "expected_fidelity"
+) -> Device:
     """Returns the name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
 
     Args:
@@ -70,20 +60,17 @@ def predict_device_for_figure_of_merit(
         devices ([Device], optional): The devices to be considered for compilation.
 
     Returns:
-        str : The name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
+        Device : The device with the highest predicted figure of merit that is suitable for the given quantum circuit.
     """
-    if devices is None:
-        devices = get_available_devices()
-
-    ml_predictor = ml.Predictor(devices=devices)
+    ml_predictor = ml.Predictor()
     predicted_device_index_probs = ml_predictor.predict_probs(qc, figure_of_merit)
     assert ml_predictor.clf is not None
     classes = ml_predictor.clf.classes_  # type: ignore[unreachable]
     predicted_device_index = classes[np.argsort(predicted_device_index_probs)[::-1]]
 
     for index in predicted_device_index:
-        if devices[index].num_qubits >= qc.num_qubits:
-            return devices[index].name
+        if ml_predictor.devices[index].num_qubits >= qc.num_qubits:
+            return ml_predictor.devices[index]
     msg = "No suitable device found."
     raise ValueError(msg)
 
@@ -249,9 +236,9 @@ def save_classifier(clf: RandomForestClassifier, figure_of_merit: reward.figure_
 
 
 def save_training_data(
-    training_data: list[NDArray[np.float_]],
+    training_data: list[NDArray[np.float64]],
     names_list: list[str],
-    scores_list: list[NDArray[np.float_]],
+    scores_list: list[NDArray[np.float64]],
     figure_of_merit: reward.figure_of_merit,
 ) -> None:
     """Saves the given training data to the training data folder.
@@ -272,7 +259,7 @@ def save_training_data(
 
 def load_training_data(
     figure_of_merit: reward.figure_of_merit = "expected_fidelity",
-) -> tuple[list[NDArray[np.float_]], list[str], list[NDArray[np.float_]]]:
+) -> tuple[list[NDArray[np.float64]], list[str], list[NDArray[np.float64]]]:
     """Loads and returns the training data from the training data folder.
 
     Args:
@@ -467,10 +454,10 @@ def circuit_to_graph(qc: QuantumCircuit, ops_list_encoding: dict[str, int]) -> t
 
 @dataclass
 class TrainingData:
-    X_train: NDArray[np.float_]
-    X_test: NDArray[np.float_]
-    y_train: NDArray[np.float_]
-    y_test: NDArray[np.float_]
+    X_train: NDArray[np.float64]
+    X_test: NDArray[np.float64]
+    y_train: NDArray[np.float64]
+    y_test: NDArray[np.float64]
     indices_train: list[int]
     indices_test: list[int]
     names_list: list[str]

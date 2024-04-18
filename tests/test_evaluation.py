@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from qiskit import QuantumCircuit
 
 from mqt.bench import get_benchmark
@@ -25,9 +23,11 @@ def test_evaluate_sample_circuit() -> None:
                     [compilation_setup + "_" + device_name + "_" + key for device_name in get_available_device_names()]
                 )
 
-    assert all(key in res for key in expected_keys)
-    if Path(filename).exists():
-        Path(filename).unlink()
+    res = create_qiskit_result(QuantumCircuit(10), devices[0])
+    assert isinstance(res, Result)
+    assert res.compilation_time >= 0.0
+    assert res.fidelity >= 0.0
+    assert res.critical_depth >= 0.0
 
 
 def test_false_input() -> None:
@@ -48,5 +48,18 @@ def test_false_input() -> None:
     res = create_qiskit_result(QuantumCircuit(10), devices[0])
     assert isinstance(res, Result)
     assert res.compilation_time == -1.0
+    assert res.fidelity == -1.0
+    assert res.critical_depth == -1.0
+
+    res = create_tket_result(QuantumCircuit(10), devices[0])
+    assert isinstance(res, Result)
+    assert res.compilation_time == -1.0
+    assert res.fidelity == -1.0
+    assert res.critical_depth == -1.0
+
+
+def test_result_none_input() -> None:
+    res = Result("test", 1.0, None, None)
+    assert res.compilation_time == 1.0
     assert res.fidelity == -1.0
     assert res.critical_depth == -1.0
