@@ -19,9 +19,9 @@ def test_evaluate_sample_circuit() -> None:
             if "mqt-predictor" in compilation_setup:
                 expected_keys.append(compilation_setup + "_" + key)
             else:
-                expected_keys.extend(
-                    [compilation_setup + "_" + device_name + "_" + key for device_name in get_available_device_names()]
-                )
+                expected_keys.extend([
+                    compilation_setup + "_" + device_name + "_" + key for device_name in get_available_device_names()
+                ])
 
     res = create_qiskit_result(QuantumCircuit(10), devices[0])
     assert isinstance(res, Result)

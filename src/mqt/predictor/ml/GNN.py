@@ -71,15 +71,15 @@ class Net(nn.Module):  # type: ignore[misc]
         elif self.activation == "sigmoid":
             self.activation_func = nn.Sigmoid()
 
-        edge_dim = None if self.zx else self.edge_embedding_dim if self.edge_embedding_dim else 1
+        edge_dim = None if self.zx else self.edge_embedding_dim or 1
 
         if self.model == "TransformerConv":
             self.layers = []
             for i in range(self.num_layers):
                 if i == 0 and not self.zx:
-                    in_channels = self.node_embedding_dim if self.node_embedding_dim else 1  # gate
+                    in_channels = self.node_embedding_dim or 1  # gate
                 if i == 0 and self.zx:
-                    in_channels = self.node_embedding_dim if self.node_embedding_dim else 2  # gate + phase
+                    in_channels = self.node_embedding_dim or 2  # gate + phase
                 if i > 0:
                     in_channels = inner_hidden_dim
                 layer = Sequential(

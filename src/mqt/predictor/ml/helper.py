@@ -16,7 +16,7 @@ from qiskit.dagcircuit import DAGInNode, DAGOutNode
 from qiskit.transpiler.passes import RemoveBarriers
 from torch_geometric.utils import from_networkx
 
-from mqt.bench.devices import Device, get_available_devices
+from mqt.bench.devices import Device
 from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import ml, reward, rl
 

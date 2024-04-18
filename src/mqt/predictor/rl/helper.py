@@ -24,7 +24,6 @@ from qiskit import QuantumCircuit
 from qiskit.circuit.equivalence_library import StandardEquivalenceLibrary
 from qiskit.circuit.library import XGate, ZGate
 from qiskit.converters import circuit_to_dag
-from qiskit.transpiler import CouplingMap
 from qiskit.transpiler import CouplingMap, Layout, PassManager, TranspileLayout
 from qiskit.transpiler.passes import (
     ApplyLayout,
@@ -430,7 +429,7 @@ def encode_circuit(qc: QuantumCircuit) -> NDArray[np.int_]:
     return np.array(matrix)
 
 
-def create_feature_dict(qc: QuantumCircuit, features: list[str] | str = "all") -> dict[str, int | NDArray[np.float_]]:
+def create_feature_dict(qc: QuantumCircuit, features: list[str] | str = "all") -> dict[str, int | NDArray[np.float64]]:
     """Creates a feature dictionary for a given quantum circuit.
 
     Args:

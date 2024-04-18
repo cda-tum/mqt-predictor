@@ -107,7 +107,7 @@ class CustomCNN(BaseFeaturesExtractor):  # type: ignore[misc]
         cnn_outs, lengths = [], []
         for sample in x:  # sample in batch
             try:
-                seq_len, C, H, W = sample.shape
+                seq_len, _C, _H, _W = sample.shape
                 cnn_out = self.cnn(sample.float())  # batch, channel, height, width
             except Exception as e:
                 msg = "Sample shape is not (seq_len, C, H, W)."

@@ -30,7 +30,7 @@ class Predictor:
         logger.setLevel(logger_level)
 
         self.clf = None
-        self.devices = devices if devices else get_available_devices()
+        self.devices = devices or get_available_devices()
 
     def set_classifier(self, clf: RandomForestClassifier) -> None:
         """Sets the classifier to the given classifier"""
@@ -386,7 +386,7 @@ class Predictor:
             ml.helper.TrainingData: The prepared training data.
         """
         training_data, names_list, raw_scores_list = ml.helper.load_training_data(figure_of_merit)
-        unzipped_training_data_x, unzipped_training_data_y = zip(*training_data, strict=False)
+        _unzipped_training_data_x, _unzipped_training_data_y = zip(*training_data, strict=False)
         scores_list: list[list[float]] = [[] for _ in range(len(raw_scores_list))]
         X_raw = list(unzipped_training_data_X)
         X_list: list[list[float]] = [[] for _ in range(len(X_raw))]

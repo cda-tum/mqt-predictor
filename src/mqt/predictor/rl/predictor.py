@@ -26,7 +26,7 @@ class Predictor:
         device_name: str,
         logger_level: int = logging.INFO,
         features: list[str] | str = "all",
-    ):
+    ) -> None:
         logger.setLevel(logger_level)
 
         self.model = None
@@ -101,9 +101,7 @@ class Predictor:
             progress_bar = True
 
         logger.debug("Start training for: " + self.figure_of_merit + " on " + self.device_name)
-        env = rl.PredictorEnv(
-            reward_function=self.figure_of_merit, device_name=self.device_name, features=self.features
-        )
+        rl.PredictorEnv(reward_function=self.figure_of_merit, device_name=self.device_name, features=self.features)
         policy_kwargs = {
             "features_extractor_class": CustomCombinedExtractor,
             "features_extractor_kwargs": {"cnn_output_dim": 64, "normalized_image": False},

@@ -66,5 +66,5 @@ def test_trained_rl_model() -> None:
         "/home/ubuntu/mqt/mqt-predictor/model_expected_fidelity_ionq_harmony/rl_model_2000_steps.zip"
     )
     qc = get_benchmark("ghz", 1, 5)
-    compiled_qc, used_passes = predictor.compile_as_predicted(qc)
+    _compiled_qc, _used_passes = predictor.compile_as_predicted(qc)
     return

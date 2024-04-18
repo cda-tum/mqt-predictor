@@ -31,7 +31,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         reward_function: reward.figure_of_merit = "expected_fidelity",
         device_name: str = "ionq_harmony",
         features: list[str] | str = "all",
-    ):
+    ) -> None:
         logger.info("Init env: " + reward_function)
 
         self.action_set = {}

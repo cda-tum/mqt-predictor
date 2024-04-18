@@ -12,8 +12,6 @@ if TYPE_CHECKING:
 
     from mqt.bench.devices import Device
 
-    from mqt.bench.devices import Device
-
 logger = logging.getLogger("mqt-predictor")
 
 figure_of_merit = Literal["expected_fidelity", "critical_depth", "fidelity"]
