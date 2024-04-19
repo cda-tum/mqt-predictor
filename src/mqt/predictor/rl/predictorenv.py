@@ -163,7 +163,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
             return reward.crit_depth(self.state)
         error_msg = f"Reward function {self.reward_function} not supported."
         raise ValueError(error_msg)
-    
+
     def calculate_improvement(self) -> float:
         """Calculates and returns the improvement in reward."""
         return self.init_reward - reward.expected_fidelity(self.state, self.device)
