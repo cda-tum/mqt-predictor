@@ -461,7 +461,7 @@ def create_feature_dict(qc: QuantumCircuit, features: list[str] | str = "all") -
     )
     feature_dict["circuit"] = encode_circuit(qc) if ("all" in features or "circuit" in features) else None
     # graph feature creation
-    if "all" in features or "graph" in features:
+    if "all" in features or any(k.startswith("graph") for k in features):
         try:
             ops_list = qc.count_ops()
             ops_list_dict = ml.helper.dict_to_featurevector(ops_list)
