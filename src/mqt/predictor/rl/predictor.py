@@ -95,10 +95,10 @@ class Predictor:
 
         if test:
             n_steps = 100
-            progress_bar = True
+            progress_bar = False
         else:
             n_steps = 2048
-            progress_bar = True
+            progress_bar = False
 
         logger.debug("Start training for: " + self.figure_of_merit + " on " + self.device_name)
         rl.PredictorEnv(reward_function=self.figure_of_merit, device_name=self.device_name, features=self.features)

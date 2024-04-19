@@ -4,6 +4,9 @@ import logging
 from typing import TYPE_CHECKING
 
 from stable_baselines3.common.preprocessing import get_flattened_obs_dim
+from torch_geometric.data import Batch, Data
+
+from mqt.predictor.ml.GNN import Net
 
 if TYPE_CHECKING:
     from gymnasium import spaces
@@ -46,14 +49,20 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):  # type: ignore[misc]
         extractors: Dict[str, nn.Module] = {}
 
         total_concat_size = 0
+        graph_observation_space = []
         for key, subspace in observation_space.spaces.items():
             if key == "circuit":
                 extractors[key] = CustomCNN(subspace, features_dim=cnn_output_dim, normalized_image=normalized_image)
                 total_concat_size += cnn_output_dim
+            elif key.startswith("graph"):
+                graph_observation_space.append(subspace)
             else:
                 # The observation key is a vector, flatten it if needed
                 extractors[key] = nn.Flatten()
                 total_concat_size += get_flattened_obs_dim(subspace)
+        if graph_observation_space:
+            extractors["graph"] = CustomGNN(graph_observation_space, features_dim=cnn_output_dim)
+            total_concat_size += cnn_output_dim
 
         self.extractors = nn.ModuleDict(extractors)
 
@@ -64,7 +73,11 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):  # type: ignore[misc]
         encoded_tensor_list = []
 
         for key, extractor in self.extractors.items():
-            encoded_tensor_list.append(extractor(observations[key]))
+            if key == "graph":
+                obs = [v for k, v in observations.items() if k.startswith("graph")]
+                encoded_tensor_list.append(extractor(obs))
+            else:
+                encoded_tensor_list.append(extractor(observations[key]))
         return th.cat(encoded_tensor_list, dim=1)
 
 
@@ -128,3 +141,36 @@ class CustomCNN(BaseFeaturesExtractor):  # type: ignore[misc]
         lstm_out, _ = nn.utils.rnn.pad_packed_sequence(packed_output, batch_first=True)
 
         return self.linear(lstm_out[:, -1, :])
+
+
+class CustomGNN(BaseFeaturesExtractor):  # type: ignore[misc]
+    """
+    GNN
+
+    :param observation_space:
+    :param features_dim: Number of features extracted.
+        This corresponds to the number of unit for the last layer.
+    :param normalized_image: Whether to assume that the image is already normalized
+        or not (this disables dtype and bounds checks): when True, it only checks that
+        the space is a Box and has 3 dimensions.
+        Otherwise, it checks that it has expected dtype (uint8) and bounds (values in [0, 255]).
+    """
+
+    def __init__(self, observation_space: spaces.Box, features_dim: int = 512) -> None:
+        super().__init__(observation_space, features_dim)
+        self.gnn = Net(output_dim=features_dim)
+
+    def forward(self, input: list[list[th.Tensor]] | list[th.Tensor]) -> th.Tensor:
+        data_list = []
+        if isinstance(input[0], th.Tensor):
+            input = [[i] for i in input]
+        for i in range(len(input[0])):
+            x, edge_index, edge_attr = input[0][i], input[1][i], input[2][i]
+            x = x.squeeze(0).long()
+            edge_index = edge_index.squeeze(0).long()
+            edge_attr = edge_attr.squeeze(0).long()
+            data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr)
+            data_list.append(data)
+
+        batch = Batch.from_data_list(data_list)
+        return self.gnn(batch)

@@ -132,7 +132,7 @@ class Net(nn.Module):  # type: ignore[misc]
                     dropout=self.dropout,
                     act=self.activation_func,
                     norm=self.batch_norm_layer if self.batch_norm else None,
-                    edge_dim=edge_dim,
+                    # edge_dim=edge_dim,
                 )
             ]
             last_hidden_dim = self.output_dim

@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from pathlib import Path
-
 import numpy as np
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete, Sequence
+from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.passmanager.flow_controllers import DoWhileController
@@ -83,6 +83,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.has_parametrized_gates = False
 
         qubit_num, _max_depth = self.device.num_qubits, 10000
+        max_num_nodes = 10000
+        max_num_node_labels = 50
 
         spaces = {
             "num_qubits": Discrete(128),
@@ -93,8 +95,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
             "parallelism": Box(low=0, high=1, shape=(1,), dtype=np.float32),
             "liveness": Box(low=0, high=1, shape=(1,), dtype=np.float32),
             "directed_program_communication": Box(low=0, high=1, shape=(1,), dtype=np.float32),
-            "singleQ_gates_per_layer": Box(low=0, high=1, shape=(1,), dtype=np.float32),
-            "multiQ_gates_per_layer": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            "single_qubit_gates_per_layer": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            "multi_qubit_gates_per_layer": Box(low=0, high=1, shape=(1,), dtype=np.float32),
             "circuit": Sequence(
                 Box(
                     low=0,
@@ -107,6 +109,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
                     dtype=np.int_,
                 ),
             ),
+            "graph_edge_index": Sequence(Box(low=0, high=max_num_nodes, shape=(2,), dtype=np.int_)),
+            "graph_x": Sequence(Box(low=0, high=max_num_node_labels, shape=(1,), dtype=np.int_)),
+            "graph_edge_attr": Sequence(Box(low=0, high=1, shape=(1,), dtype=np.int_)),
         }
         self.observation_space = Dict({k: v for k, v in spaces.items() if ("all" in features or k in features)})
         self.features = features
@@ -228,13 +233,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
             action = self.action_set[action_index]
             if action["name"] == "terminate":
                 return self.state
-            if (
-                action_index
-                in self.actions_layout_indices + self.actions_routing_indices + self.actions_mapping_indices
-            ):
-                transpile_pass = action["transpile_pass"](self.device.coupling_map)
-            elif action_index in self.actions_synthesis_indices:
-                transpile_pass = action["transpile_pass"](self.device.basis_gates)
+            if action_index in self.actions_opt_indices:
+                transpile_pass = action["transpile_pass"]
             else:
                 transpile_pass = action["transpile_pass"](self.device)
 

@@ -400,7 +400,7 @@ def encode_circuit(qc: QuantumCircuit) -> NDArray[np.int_]:
     # Create a look-up table for qubit indices (needed for multiple registers)
     q_idx_LUT = {qubit: idx for idx, qubit in enumerate(dag.qubits)}
 
-    num_qubits, _max_depth = 11, 10000
+    num_qubits, _max_depth = 11, 10000  # Adjust according to the device
 
     matrix = []  # np.zeros((num_qubits, num_qubits, max_depth), dtype=np.int_)
     for _i, tensor_op in enumerate(layers[1:-1]):
@@ -453,10 +453,40 @@ def create_feature_dict(qc: QuantumCircuit, features: list[str] | str = "all") -
     feature_dict["directed_program_communication"] = np.array(
         [supermarq_features.directed_program_communication], dtype=np.float32
     )
-    feature_dict["singleQ_gates_per_layer"] = np.array([supermarq_features.singleQ_gates_per_layer], dtype=np.float32)
-    feature_dict["multiQ_gates_per_layer"] = np.array([supermarq_features.multiQ_gates_per_layer], dtype=np.float32)
+    feature_dict["single_qubit_gates_per_layer"] = np.array(
+        [supermarq_features.single_qubit_gates_per_layer], dtype=np.float32
+    )
+    feature_dict["multi_qubit_gates_per_layer"] = np.array(
+        [supermarq_features.multi_qubit_gates_per_layer], dtype=np.float32
+    )
     feature_dict["circuit"] = encode_circuit(qc) if ("all" in features or "circuit" in features) else None
-
+    # graph feature creation
+    if "all" in features or "graph" in features:
+        try:
+            ops_list = qc.count_ops()
+            ops_list_dict = ml.helper.dict_to_featurevector(ops_list)
+            # operations/gates encoding for graph feature creation
+            ops_list_encoding = ops_list_dict.copy()
+            ops_list_encoding["measure"] = len(ops_list_encoding)  # add extra gate
+            # unique number for each gate {'measure': 0, 'cx': 1, ...}
+            for i, key in enumerate(ops_list_dict):
+                ops_list_encoding[key] = i
+            graph = ml.helper.circuit_to_graph(qc, ops_list_encoding)
+            # convert to lists of numpy arrays
+            x_np = [x.numpy() for x in graph.x]
+            edge_index_np = [edge.numpy() for edge in graph.edge_index]
+            edge_attr_np = [attr.numpy() for attr in graph.edge_attr]
+            feature_dict["graph_x"] = x_np
+            feature_dict["graph_edge_index"] = edge_index_np
+            feature_dict["graph_edge_attr"] = edge_attr_np
+        except Exception:
+            feature_dict["graph_x"] = None
+            feature_dict["graph_edge_index"] = None
+            feature_dict["graph_edge_attr"] = None
+    else:
+        feature_dict["graph_x"] = None
+        feature_dict["graph_edge_index"] = None
+        feature_dict["graph_edge_attr"] = None
     return {k: v for k, v in feature_dict.items() if ("all" in features or k in features)}
 
 
