@@ -107,11 +107,11 @@ In case you are using this work, we would be thankful if you referred to it by c
 
 ```bibtex
 @misc{quetschlich2024application_compilation,
-    title         = {{Towards Application-Aware Quantum Circuit Compilation}},
-    author        = {N. Quetschlich and F. J. Kiwit and M. A. Wolf and C. A. Riofrio and A. Luckow and L. Burgholzer and R. Wille},
-    year          = {2024},
-    eprint        = {2404.12433},
-    archivePrefix = {arXiv},
+    title      = {{Towards Application-Aware Quantum Circuit Compilation}},
+    author     = {N. Quetschlich and F. J. Kiwit and M. A. Wolf and C. A. Riofrio and A. Luckow and L. Burgholzer and R. Wille},
+    year       = {2024},
+    eprint     = {2404.12433},
+    eprinttype = {arXiv},
 }
 ```
 
