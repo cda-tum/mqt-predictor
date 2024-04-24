@@ -92,8 +92,10 @@ filterwarnings = [
     "ignore:.*divide by zero encountered in det.*:RuntimeWarning:",
     "ignore:.*invalid value encountered in det.*:RuntimeWarning:",
     "ignore:..*env.action_masks to get variables from other wrappers is deprecated and will be removed in v1.0.*:UserWarning:",
-
 ]
+
+[tool.check-wheel-contents]
+ignore = "W002"
 
 [tool.coverage]
 run.source = ["mqt.predictor"]
