@@ -1,7 +1,7 @@
 [build-system]
 requires = [
     "setuptools>=66",
-    "setuptools_scm>=7.2"
+    "setuptools_scm>=7"
 ]
 build-backend = "setuptools.build_meta"
 
@@ -47,7 +47,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=7"]
+test = ["pytest>=7.2"]
 coverage = ["mqt.predictor[test]", "pytest-cov[toml]"]
 dev = ["mqt.predictor[coverage]"]
 docs = [
