@@ -18,7 +18,6 @@ jobs:
 
   python-tests:
     name: 🐍 Test
-    continue-on-error: true
     needs: change-detection
     if: fromJSON(needs.change-detection.outputs.run-python-tests)
     uses: cda-tum/mqt-core/.github/workflows/reusable-python-ci.yml@v2.4.1
@@ -28,7 +27,7 @@ jobs:
   code-ql:
     name: 📝 CodeQL
     needs: change-detection
-    if: fromJSON(needs.change-detection.outputs.run-code-ql)
+    if: ${{ always() }}
     uses: cda-tum/mqt-core/.github/workflows/reusable-code-ql-python.yml@v2.4.1
 
   required-checks-pass: # This job does nothing and is only used for branch protection
