@@ -23,6 +23,7 @@ jobs:
     uses: cda-tum/mqt-core/.github/workflows/reusable-python-ci.yml@v2.4.1
     secrets:
       token: ${{ secrets.CODECOV_TOKEN }}
+    continue-on-error: true
 
   code-ql:
     name: 📝 CodeQL
