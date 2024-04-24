@@ -37,7 +37,7 @@ For more details, please refer to:
   </a>
 </p>
 
-MQT Predictor is part of the Munich Quantum Toolkit (MQT) developed by the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the [Technical University of Munich](https://www.tum.de/) and is hosted at [https://www.cda.cit.tum.de/mqtbench/](https://www.cda.cit.tum.de/mqtbench/).
+MQT Predictor is part of the Munich Quantum Toolkit (MQT) developed by the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the [Technical University of Munich](https://www.tum.de/).
 
 If you have any questions, feel free to create a [discussion](https://github.com/cda-tum/mqt-predictor/discussions) or an [issue](https://github.com/cda-tum/mqt-predictor/issues) on [GitHub](https://github.com/cda-tum/mqt-predictor).
 
