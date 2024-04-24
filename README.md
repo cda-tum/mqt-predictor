@@ -37,6 +37,8 @@ For more details, please refer to:
   </a>
 </p>
 
+MQT Predictor is part of the Munich Quantum Toolkit (MQT) developed by the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the [Technical University of Munich](https://www.tum.de/) and is hosted at [https://www.cda.cit.tum.de/mqtbench/](https://www.cda.cit.tum.de/mqtbench/).
+
 If you have any questions, feel free to create a [discussion](https://github.com/cda-tum/mqt-predictor/discussions) or an [issue](https://github.com/cda-tum/mqt-predictor/issues) on [GitHub](https://github.com/cda-tum/mqt-predictor).
 
 MQT Predictor is part of the Munich Quantum Toolkit (MQT) developed by the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the [Technical University of Munich](https://www.tum.de/).
@@ -69,28 +71,6 @@ print(qc_compiled.draw())
 ```
 
 **Detailed documentation and examples are available at [ReadTheDocs](https://mqt.readthedocs.io/projects/predictor).**
-
-# Repository Structure
-
-```
-.
-├── docs/
-├── evaluations/
-├── src/
-│ ├── mqt/
-│   └── predictor/
-│     ├── calibration_files/
-│     ├── ml/
-│     │ └── training_data/
-│     │     ├── trained_model
-│     │     ├── training_circuits
-│     │     ├── training_circuits_compiled
-│     │     └── training_data_aggregated
-│     └── rl/
-│          └── training_data/
-│              ├── trained_model
-│              └── training_circuits
-```
 
 ## Acknowledgements
 
