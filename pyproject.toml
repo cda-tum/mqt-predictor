@@ -19,7 +19,8 @@ requires-python = ">=3.10"
 dynamic = ["version"]
 
 dependencies = [
-    "mqt.bench>=1.1.1, <1.2.0",
+    "mqt.bench @ git+https://github.com/cda-tum/mqt-bench.git@main",
+    #"mqt.bench>=1.1.1, <1.2.0",
     "pytket_qiskit>=0.52.0, <0.54.0",
     "sb3_contrib>=2.0.0, <2.3.1",
     "scikit-learn>=1.4.0,<1.4.3",
@@ -92,6 +93,7 @@ filterwarnings = [
     "ignore:.*divide by zero encountered in det.*:RuntimeWarning:",
     "ignore:.*invalid value encountered in det.*:RuntimeWarning:",
     "ignore:..*env.action_masks to get variables from other wrappers is deprecated and will be removed in v1.0.*:UserWarning:",
+    "ignore::SyntaxWarning:.*(docplex).*",
 ]
 
 [tool.check-wheel-contents]
