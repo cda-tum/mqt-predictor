@@ -65,15 +65,3 @@ def expected_fidelity(qc: QuantumCircuit, device: Device, precision: int = 10) -
             res *= specific_fidelity
 
     return cast(float, np.round(res, precision))
-
-
-def calc_qubit_index(qargs: list[Qubit], qregs: list[QuantumRegister], index: int) -> int:
-    offset = 0
-    for reg in qregs:
-        if qargs[index] not in reg:
-            offset += reg.size
-        else:
-            qubit_index: int = offset + reg.index(qargs[index])
-            return qubit_index
-    error_msg = f"Global qubit index for local qubit {index} index not found."
-    raise ValueError(error_msg)

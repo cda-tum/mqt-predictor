@@ -66,7 +66,6 @@ docs = [
     "qiskit[visualization]",
     "torch",
     "torch_geometric",
-    "pyzx",
 ]
 
 [project.urls]

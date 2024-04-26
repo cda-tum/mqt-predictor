@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from torch_geometric.loader import DataLoader
 
-from mqt.predictor.ml.GNN import Net
+from mqt.predictor.ml.gnn import Net
 
 if TYPE_CHECKING:
     from torch_geometric.data import Dataset

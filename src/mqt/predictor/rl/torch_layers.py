@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from stable_baselines3.common.preprocessing import get_flattened_obs_dim
 from torch_geometric.data import Batch, Data
 
-from mqt.predictor.ml.GNN import Net
+from mqt.predictor.ml.gnn import Net
 
 if TYPE_CHECKING:
     from gymnasium import spaces
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 import torch as th
 import torch.nn as nn
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
-from torch.nn import functional as F
+from torch.nn import functional
 
 logger = logging.getLogger("mqt-predictor")
 PATH_LENGTH = 260
@@ -120,12 +120,12 @@ class CustomCNN(BaseFeaturesExtractor):  # type: ignore[misc]
         cnn_outs, lengths = [], []
         for sample in x:  # sample in batch
             try:
-                seq_len, _C, _H, _W = sample.shape
+                seq_len, _c, _h, _w = sample.shape
                 cnn_out = self.cnn(sample.float())  # batch, channel, height, width
             except Exception as e:
                 msg = "Sample shape is not (seq_len, C, H, W)."
                 raise ValueError(msg) from e
-            cnn_out = F.relu(cnn_out.view(seq_len, -1))  # seq_len, out_channels * height * width
+            cnn_out = functional.relu(cnn_out.view(seq_len, -1))  # seq_len, out_channels * height * width
             cnn_outs.append(cnn_out)
             lengths.append(seq_len)
 
@@ -160,12 +160,13 @@ class CustomGNN(BaseFeaturesExtractor):  # type: ignore[misc]
         super().__init__(observation_space, features_dim)
         self.gnn = Net(output_dim=features_dim)
 
-    def forward(self, input: list[list[th.Tensor]] | list[th.Tensor]) -> th.Tensor:
+    def forward(self, input_data: list[list[th.Tensor]] | list[th.Tensor]) -> th.Tensor:
         data_list = []
-        if isinstance(input[0], th.Tensor):
-            input = [[i] for i in input]
-        for i in range(len(input[0])):
-            x, edge_index, edge_attr = input[0][i], input[1][i], input[2][i]
+        if isinstance(input_data[0], th.Tensor):
+            input_data = [[i] for i in input_data]
+        for i in range(len(input_data[0])):
+            # input args sorted by alphabetic keys
+            edge_attr, edge_index, x = input_data[0][i], input_data[1][i], input_data[2][i]
             x = x.squeeze(0).long()
             edge_index = edge_index.squeeze(0).long()
             edge_attr = edge_attr.squeeze(0).long()

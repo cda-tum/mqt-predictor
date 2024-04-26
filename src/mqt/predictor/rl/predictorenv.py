@@ -79,7 +79,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.num_steps = 0
         self.layout: TranspileLayout | None = None
         self.num_qubits_uncompiled_circuit = 0
-        self.init_reward = None
+        self.init_reward = 0.0
 
         self.has_parametrized_gates = False
 
@@ -140,7 +140,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
             raise RuntimeError(msg)
 
         if action == self.action_terminate_index:
-            if self.init_reward is None:
+            if self.init_reward == 0.0:
                 self.init_reward = self.calculate_reward()
             reward_val = self.calculate_reward()
             done = True
@@ -166,7 +166,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
     def calculate_improvement(self) -> float:
         """Calculates and returns the improvement in reward."""
-        return self.init_reward - reward.expected_fidelity(self.state, self.device)
+        return reward.expected_fidelity(self.state, self.device) - self.init_reward
 
     def render(self) -> None:
         """Renders the current state."""

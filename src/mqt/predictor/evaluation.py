@@ -119,7 +119,7 @@ def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figur
             )
     else:
         try:
-            qc_compiled = ml.qcompile(qc, figure_of_merit=figure_of_merit, devices=devices)
+            qc_compiled = ml.qcompile(qc, figure_of_merit=figure_of_merit)
             if qc_compiled:
                 assert isinstance(qc_compiled, tuple)
                 return Result(
@@ -137,10 +137,9 @@ def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figur
 def evaluate_all_sample_circuits() -> None:
     """Evaluates all sample circuits and saves the results to a csv file."""
     res_csv = []
-    devices = get_available_devices()
 
     results = Parallel(n_jobs=-1, verbose=3, backend="threading")(
-        delayed(evaluate_sample_circuit)(str(file), devices)
+        delayed(evaluate_sample_circuit)(str(file))
         for file in list(ml.helper.get_path_training_circuits().glob("*.qasm"))
     )
     res_csv.append(list(results[0].keys()))
@@ -156,11 +155,10 @@ def evaluate_all_sample_circuits() -> None:
 def evaluate_ghz_circuits() -> None:
     """Evaluates all GHZ circuits and saves the results to a csv file."""
     res_csv = []
-    devices = get_available_devices()
 
     path = Path(str(resources.files("mqt.predictor"))) / "ml" / "training_data" / "ghz"
     results = Parallel(n_jobs=-1, verbose=3, backend="threading")(
-        delayed(evaluate_sample_circuit)(str(file), devices) for file in list(path.glob("*.qasm"))
+        delayed(evaluate_sample_circuit)(str(file)) for file in list(path.glob("*.qasm"))
     )
     res_csv.append(list(results[0].keys()))
     res_csv.extend([list(res.values()) for res in results])
@@ -172,7 +170,7 @@ def evaluate_ghz_circuits() -> None:
     )
 
 
-def evaluate_sample_circuit(filename: str, devices: list[Device]) -> dict[str, Any]:
+def evaluate_sample_circuit(filename: str) -> dict[str, Any]:
     """Evaluates a given sample circuit and returns the results as a dictionary.
 
     Args:
@@ -190,8 +188,8 @@ def evaluate_sample_circuit(filename: str, devices: list[Device]) -> dict[str, A
         "num_qubits": str(Path(filename).stem).replace("_", " ").split(" ")[-1],
     }
     qc = QuantumCircuit.from_qasm_file(filename)
-    results.update(create_mqtpredictor_result(qc, "expected_fidelity", filename=filename, devices=devices).get_dict())
-    results.update(create_mqtpredictor_result(qc, "critical_depth", filename=filename, devices=devices).get_dict())
+    results.update(create_mqtpredictor_result(qc, "expected_fidelity", filename=filename).get_dict())
+    results.update(create_mqtpredictor_result(qc, "critical_depth", filename=filename).get_dict())
 
     for dev in get_available_devices():
         results.update(create_qiskit_result(qc, dev).get_dict())

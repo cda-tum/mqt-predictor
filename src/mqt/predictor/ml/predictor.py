@@ -13,7 +13,7 @@ from qiskit.qasm2 import dump
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from mqt.bench.devices import Device, get_available_devices, get_device_by_name
+from mqt.bench.devices import Device, get_available_device_names, get_available_devices, get_device_by_name
 from mqt.predictor import ml, reward, rl, utils
 
 if TYPE_CHECKING:
@@ -386,28 +386,28 @@ class Predictor:
             ml.helper.TrainingData: The prepared training data.
         """
         training_data, names_list, raw_scores_list = ml.helper.load_training_data(figure_of_merit)
-        _unzipped_training_data_x, _unzipped_training_data_y = zip(*training_data, strict=False)
+        unzipped_training_data_x, unzipped_training_data_y = zip(*training_data, strict=False)
         scores_list: list[list[float]] = [[] for _ in range(len(raw_scores_list))]
-        X_raw = list(unzipped_training_data_X)
-        X_list: list[list[float]] = [[] for _ in range(len(X_raw))]
-        X_graph: list[list[Data]] = [[] for _ in range(len(X_raw))]
-        y_list = list(unzipped_training_data_Y)
-        for i in range(len(X_raw)):
+        x_raw = list(unzipped_training_data_x)
+        x_list: list[list[float]] = [[] for _ in range(len(x_raw))]
+        x_graph: list[list[Data]] = [[] for _ in range(len(x_raw))]
+        y_list = list(unzipped_training_data_y)
+        for i in range(len(x_raw)):
             if graph_only:
-                X_graph[i] = list(X_raw[i][:2])  # only graphs
+                x_graph[i] = list(x_raw[i][:2])  # only graphs
             else:
-                X_list[i] = list(X_raw[i][2:])  # all but graphs
+                x_list[i] = list(x_raw[i][2:])  # all but graphs
             scores_list[i] = list(raw_scores_list[i])
 
         y, indices = np.array(y_list), np.array(range(len(y_list)))
 
         if graph_only:
-            X: Any = X_graph
+            x: Any = x_graph
         else:
-            X = np.array(X_list)
+            x = np.array(x_list)
             # Store all non zero feature indices
-            non_zero_indices = [i for i in range(len(X[0])) if sum(X[:, i]) > 0]
-            X = X[:, non_zero_indices]
+            non_zero_indices = [i for i in range(len(x[0])) if sum(x[:, i]) > 0]
+            x = x[:, non_zero_indices]
 
             if save_non_zero_indices:
                 data = np.asarray(non_zero_indices)

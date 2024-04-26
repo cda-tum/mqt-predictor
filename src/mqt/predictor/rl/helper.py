@@ -398,7 +398,7 @@ def encode_circuit(qc: QuantumCircuit) -> NDArray[np.int_]:
     layers = list(dag.multigraph_layers())
 
     # Create a look-up table for qubit indices (needed for multiple registers)
-    q_idx_LUT = {qubit: idx for idx, qubit in enumerate(dag.qubits)}
+    q_idx_lut = {qubit: idx for idx, qubit in enumerate(dag.qubits)}
 
     num_qubits, _max_depth = 11, 10000  # Adjust according to the device
 
@@ -411,15 +411,15 @@ def encode_circuit(qc: QuantumCircuit) -> NDArray[np.int_]:
             except Exception:
                 continue
             if node.op.num_qubits == 1:  # single qubit gate
-                q_idx = q_idx_LUT[node.qargs[0]]
+                q_idx = q_idx_lut[node.qargs[0]]
                 layer[0, q_idx, q_idx] = gate_dict[operation_name]
             else:  # multi qubit gate
                 controls = []
                 for qubit in node.qargs[:-1]:
-                    q_idx = q_idx_LUT[qubit]  # control qubits
+                    q_idx = q_idx_lut[qubit]  # control qubits
                     layer[0, q_idx, q_idx] = gate_dict["ctr"]
                     controls.append(q_idx)
-                q_idx = q_idx_LUT[node.qargs[-1]]  # target qubit
+                q_idx = q_idx_lut[node.qargs[-1]]  # target qubit
                 layer[0, q_idx, q_idx] = gate_dict[operation_name]
                 for control in controls:
                     layer[0, control, q_idx] = gate_dict[operation_name]
@@ -471,7 +471,8 @@ def create_feature_dict(qc: QuantumCircuit, features: list[str] | str = "all") -
             # unique number for each gate {'measure': 0, 'cx': 1, ...}
             for i, key in enumerate(ops_list_dict):
                 ops_list_encoding[key] = i
-            graph = ml.helper.circuit_to_graph(qc, ops_list_encoding)
+            # graph = ml.helper.circuit_to_graph(qc, ops_list_encoding)
+            graph = ml.helper.circuit_to_interaction_graph(qc, ops_list_encoding)
             # convert to lists of numpy arrays
             x_np = [x.numpy() for x in graph.x]
             edge_index_np = [edge.numpy() for edge in graph.edge_index]

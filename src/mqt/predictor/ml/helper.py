@@ -7,10 +7,9 @@ from typing import TYPE_CHECKING, Any
 
 import networkx as nx  # type: ignore[import-untyped]
 import numpy as np
-import pyzx as zx
 from joblib import dump
 from qiskit import QuantumCircuit
-from qiskit.circuit import Clbit
+from qiskit.circuit import Clbit, Qubit
 from qiskit.converters import circuit_to_dag
 from qiskit.dagcircuit import DAGInNode, DAGOutNode
 from qiskit.transpiler.passes import RemoveBarriers
@@ -24,7 +23,6 @@ if TYPE_CHECKING:
     import rustworkx as rx
     import torch_geometric
     from numpy._typing import NDArray
-    from qiskit.circuit import Qubit
     from sklearn.ensemble import RandomForestClassifier
 
     from mqt.bench.devices import Device
@@ -200,10 +198,6 @@ def create_feature_dict(qc: str | QuantumCircuit, graph_features: bool = False) 
             feature_dict["graph"] = circuit_to_graph(qc, ops_list_encoding)
         except Exception:
             feature_dict["graph"] = None
-        try:
-            feature_dict["zx_graph"] = qasm_to_zx(qc.qasm())
-        except Exception:  # e.g. zx-calculus not supported for all circuits
-            feature_dict["zx_graph"] = None
 
     for key in ops_list_dict:
         feature_dict[key] = float(ops_list_dict[key])
@@ -219,8 +213,8 @@ def create_feature_dict(qc: str | QuantumCircuit, graph_features: bool = False) 
     feature_dict["liveness"] = supermarq_features.liveness
     feature_dict["directed_program_communication"] = supermarq_features.directed_program_communication
     feature_dict["gate_coverage"] = supermarq_features.directed_critical_depth
-    feature_dict["singleQ_gates_per_layer"] = supermarq_features.singleQ_gates_per_layer
-    feature_dict["multiQ_gates_per_layer"] = supermarq_features.multiQ_gates_per_layer
+    feature_dict["single_qubit_gates_per_layer"] = supermarq_features.single_qubit_gates_per_layer
+    feature_dict["multi_qubit_gates_per_layer"] = supermarq_features.multi_qubit_gates_per_layer
     feature_dict["my_critical_depth"] = supermarq_features.my_critical_depth
     return feature_dict
 
@@ -331,105 +325,6 @@ def rustworkx_to_networkx(graph: rx.PyDAG[Any, Any], ops_list_encoding: dict[str
     return nx_graph
 
 
-def zx_to_networkx(zx_graph: zx.graph.BaseGraph) -> nx.DiGraph:
-    # create a networkx graph
-    nx_graph = nx.DiGraph()
-
-    # Add nodes to the NetworkX graph
-    for idx in zx_graph.vertices():
-        t = zx_graph.type(idx)
-        phase = float(zx_graph.phase(idx))
-
-        nx_graph.add_node(idx, gate=t, phase=phase)
-
-    # Add edges to the NetworkX graph
-    for e in zx_graph.edges():
-        source, target = e
-        t = zx_graph.edge_type(e)
-
-        nx_graph.add_edge(source, target, wire=t)
-
-    return nx_graph
-
-
-def substitute_cp_and_cu1_gate(qasm: str) -> str:
-    """
-    Substitute all occurrences of the cp gate in a qasm string with a custom gate definition.
-    """
-
-    # Function to replace cp gate with custom gate definition
-    def replace_cp_gate(match: re.Match[str]) -> str:
-        phase, qubit1, qubit2 = match.groups()
-        if "/" in phase:
-            numerator, denominator = phase.split("/")
-            new_denominator = str(int(denominator) * 2)
-            phase_2 = numerator + "/" + new_denominator
-        else:
-            phase_2 = phase + "/2"
-
-        # rz is same as u1 up to a global phase
-        return (
-            f"rz({phase_2}) {qubit2};\n"
-            f"cx {qubit1},{qubit2};\n"
-            f"rz(-{phase_2}) {qubit2};\n"
-            f"cx {qubit1},{qubit2};\n"
-            f"rz({phase_2}) {qubit2};\n"
-        )
-
-    # Replace all occurrences of the cp gate with the custom gate definition
-    # cp is same as cu1
-    qasm = re.sub(r"cp\((.+?)\) (.+?),(.+?);", replace_cp_gate, qasm)
-    # Replace all occurrences of the cp gate with the custom gate definition
-    qasm = re.sub(r"cu1\((.+?)\) (.+?),(.+?);", replace_cp_gate, qasm)
-
-    return qasm.replace("--", "")
-
-
-def format_u1_gate(qasm: str) -> str:
-    def format_u1(match: re.Match[str]) -> str:
-        phase = match.group(1)
-        return f"u1({phase})"
-
-    return re.sub(r"u\(0,0,(.+?)\)", format_u1, qasm)
-
-
-def replace_swap_gate(qasm: str) -> str:
-    def format_swap(match: re.Match[str]) -> str:
-        qubit1 = match.group(1)
-        qubit2 = match.group(2)
-        return f"cx {qubit1},{qubit2}; cx {qubit2},{qubit1}; cx {qubit1},{qubit2};"
-
-    return re.sub(r"swap (.+?),(.+?);", format_swap, qasm)
-
-
-def qasm_to_zx(qasm: str) -> zx.Circuit:
-    """
-    Convert a qasm string to a zx-calculus string.
-    """
-    qasm = substitute_cp_and_cu1_gate(qasm)
-    qasm = format_u1_gate(qasm)
-    qasm = replace_swap_gate(qasm)
-    qasm = qasm.replace("u1(", "rz(")
-    qasm = qasm.replace("p(", "rz(")
-
-    try:
-        zx_circ = zx.Circuit.from_qasm(qasm)
-        zx_graph = zx_circ.to_graph()
-
-        nx_graph = zx_to_networkx(zx_graph)
-
-        #### Postprocessing ###
-        # Remove root and leaf nodes (in and out nodes)
-        nodes_to_remove = [node for node, degree in nx_graph.degree() if degree < 1]
-        nx_graph.remove_nodes_from(nodes_to_remove)
-
-        # Convert to torch_geometric data
-        return from_networkx(nx_graph, group_node_attrs=all, group_edge_attrs=all)
-    except Exception as e:
-        msg = f"Error in qasm_to_zx: {e}"
-        raise ValueError(msg) from e
-
-
 def circuit_to_graph(qc: QuantumCircuit, ops_list_encoding: dict[str, int]) -> torch_geometric.data.Data:
     """
     Convert a quantum circuit to a torch_geometric graph.
@@ -450,6 +345,59 @@ def circuit_to_graph(qc: QuantumCircuit, ops_list_encoding: dict[str, int]) -> t
 
     # Convert to torch_geometric data
     return from_networkx(nx_graph, group_node_attrs=all, group_edge_attrs=all)
+
+
+def circuit_to_interaction_graph(qc: QuantumCircuit, ops_list_encoding: dict[str, int]) -> torch_geometric.data.Data:
+    """
+    Convert a quantum circuit to a torch_geometric graph.
+    """
+    ### Preprocessing ###
+    circ = RemoveBarriers()(qc)
+
+    # Convert to a rustworkx DAG
+    dag_circuit = circuit_to_dag(circ, copy_operations=False)
+
+    # Create an empty interaction nx graph
+    nx_interaction_graph = nx.DiGraph()
+
+    qubit_idx: dict[Qubit, int] = {}  # map qubit to index
+    op_count: dict[tuple[int, int], dict[str, float]] = {}  # count of operations on edge
+    for wire in dag_circuit.wires:
+        if isinstance(wire, Qubit):
+            for node in dag_circuit.nodes_on_wire(wire):
+                if type(node) in [DAGInNode, DAGOutNode]:
+                    continue
+
+                for i, qarg in enumerate(node.qargs):
+                    if qarg not in qubit_idx:
+                        qubit_idx[qarg] = len(qubit_idx)
+                    if i == 0:
+                        u = v = qubit_idx[qarg]
+                        count_increase = 1.0
+                    elif i == 1:
+                        v = qubit_idx[qarg]
+                        # prevent double counting
+                        count_increase = 0.5
+
+                if nx_interaction_graph.has_edge(u, v):
+                    # update gate count on existing edge
+                    op_count[(u, v)][node.op.name] += count_increase
+                    nx_interaction_graph[u][v]["gate_count"] = op_count[(u, v)]
+                else:  # add new edge
+                    op_count[(u, v)] = dict.fromkeys(ops_list_encoding.keys(), 0)
+                    op_count[(u, v)][node.op.name] += count_increase
+                    nx_interaction_graph.add_edge(u, v, gate_count=op_count[(u, v)])
+
+    # transform all edge features to integer numpy arrays
+    for _u, _v, data in nx_interaction_graph.edges(data=True):
+        data["gate_count"] = np.array(list(data["gate_count"].values()), dtype=np.int16)
+
+    # add initial 1.0 feature for all nodes
+    for node in nx_interaction_graph.nodes():
+        nx_interaction_graph.nodes[node]["feature"] = np.ones(1, dtype=np.int16)
+
+    # Convert to torch_geometric data
+    return from_networkx(nx_interaction_graph, group_node_attrs="all", group_edge_attrs="all")
 
 
 @dataclass
