@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
-from torch.nn import functional as F
+from torch.nn import functional
 from torch_geometric.nn import (
     AttentionalAggregation,
     Sequential,
@@ -45,10 +45,10 @@ class Net(nn.Module):  # type: ignore[misc]
             self.edge_embedding = nn.Embedding(self.num_edge_categories, self.edge_embedding_dim)
 
         if self.node_embedding_dim and self.node_embedding_dim == 1:  # one-hot encoding
-            self.node_embedding = lambda x: F.one_hot(x, num_classes=self.num_node_categories).float()
+            self.node_embedding = lambda x: functional.one_hot(x, num_classes=self.num_node_categories).float()
             self.node_embedding_dim = self.num_node_categories
         if self.edge_embedding_dim and self.edge_embedding_dim == 1 and not self.zx:  # one-hot encoding
-            self.edge_embedding = lambda x: F.one_hot(x, num_classes=self.num_edge_categories).float()
+            self.edge_embedding = lambda x: functional.one_hot(x, num_classes=self.num_edge_categories).float()
             self.edge_embedding_dim = self.num_edge_categories
 
         # hidden dimension accounting for multi-head concatenation

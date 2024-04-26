@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 import torch as th
 import torch.nn as nn
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, NatureCNN, is_image_space
 from torch.nn import functional
 
 logger = logging.getLogger("mqt-predictor")
@@ -44,6 +44,7 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):  # type: ignore[misc]
         cnn_output_dim: int = 256,
         normalized_image: bool = False,
     ) -> None:
+        # TODO we do not know features-dim here before going over all the items, so put something there. This is dirty!
         super().__init__(observation_space, features_dim=1)
 
         extractors: Dict[str, nn.Module] = {}
@@ -56,6 +57,9 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):  # type: ignore[misc]
                 total_concat_size += cnn_output_dim
             elif key.startswith("graph"):
                 graph_observation_space.append(subspace)
+            elif is_image_space(subspace, normalized_image=normalized_image):
+                extractors[key] = NatureCNN(subspace, features_dim=cnn_output_dim, normalized_image=normalized_image)
+                total_concat_size += cnn_output_dim
             else:
                 # The observation key is a vector, flatten it if needed
                 extractors[key] = nn.Flatten()
