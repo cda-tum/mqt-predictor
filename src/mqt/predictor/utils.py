@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import logging
 import signal
+import sys
 from typing import TYPE_CHECKING, Any
+from warnings import warn
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -21,6 +23,10 @@ def timeout_watcher(
     timeout: int,
 ) -> tuple[QuantumCircuit, list[str]] | bool:
     """Method that stops a function call after a given timeout limit."""
+
+    if sys.platform == "win32":
+        warn("Timeout is not supported on Windows.", category=RuntimeWarning, stacklevel=2)
+        return func(*args) if isinstance(args, tuple | list) else func(args)
 
     class TimeoutExceptionError(Exception):  # Custom exception class
         pass
