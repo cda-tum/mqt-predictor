@@ -24,11 +24,9 @@ dependencies = [
     "pytket_qiskit>=0.52.0, <0.54.0",
     "sb3_contrib>=2.0.0, <2.3.1",
     "scikit-learn>=1.4.0,<1.4.3",
-    "importlib_metadata>=4.4; python_version < '3.10'",
-    "importlib_resources>=5.0; python_version < '3.10'",
     "tensorboard>=2.11.0, <2.16.3",
     "bqskit>=1.1.2, <1.2.0",
-    "lark>=0.7, <1.0"
+    "lark~=0.7"
 ]
 
 classifiers = [
@@ -95,7 +93,7 @@ filterwarnings = [
     "ignore:..*env.action_masks to get variables from other wrappers is deprecated and will be removed in v1.0.*:UserWarning:",
     "ignore::DeprecationWarning:.*(docplex).*",
     "ignore::SyntaxWarning:.*(docplex).*",
-    "ignore::DeprecationWarning:.*(google).*",
+    "ignore::DeprecationWarning:.*.*",
     "ignore::DeprecationWarning:.*(qiskit).*",
 ]
 
