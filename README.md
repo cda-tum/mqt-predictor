@@ -6,8 +6,10 @@
 
 <p align="center">
 <picture>
+<a  href="https://mqt.readthedocs.io/" target="_blank">
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/mqt_light.png" width="60%">
   <img src="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/mqt_dark.png" width="60%">
+</a>
 </picture>
 </p>
 
@@ -37,11 +39,9 @@ For more details, please refer to:
   </a>
 </p>
 
-MQT Predictor is part of the Munich Quantum Toolkit (MQT) developed by the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the [Technical University of Munich](https://www.tum.de/).
+MQT Predictor is part of the [Munich Quantum Toolkit (MQT)](https://mqt.readthedocs.io/) developed by the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the [Technical University of Munich](https://www.tum.de/).
 
 If you have any questions, feel free to create a [discussion](https://github.com/cda-tum/mqt-predictor/discussions) or an [issue](https://github.com/cda-tum/mqt-predictor/issues) on [GitHub](https://github.com/cda-tum/mqt-predictor).
-
-MQT Predictor is part of the Munich Quantum Toolkit (MQT) developed by the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the [Technical University of Munich](https://www.tum.de/).
 
 ## Getting Started
 
