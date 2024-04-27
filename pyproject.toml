@@ -94,6 +94,7 @@ filterwarnings = [
     "ignore::SyntaxWarning:.*(docplex).*",
     "ignore:.*pytorch.*:UserWarning:",
     "ignore::DeprecationWarning:.*importlib*",
+    "ignore::DeprecationWarning:.*qiskit_optimization*",
 ]
 
 [tool.check-wheel-contents]
