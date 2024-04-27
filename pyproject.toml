@@ -93,7 +93,6 @@ filterwarnings = [
     "ignore:..*env.action_masks to get variables from other wrappers is deprecated and will be removed in v1.0.*:UserWarning:",
     "ignore::SyntaxWarning:.*(docplex).*",
     "ignore:.*pytorch.*:UserWarning:",
-    "ignore::DeprecationWarning:.*",
 ]
 
 [tool.check-wheel-contents]
