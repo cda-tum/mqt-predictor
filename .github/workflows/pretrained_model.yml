@@ -24,6 +24,6 @@ jobs:
       - name: Install MQT Predictor
         run: pip install .[test]
       - name: Run Pre-Trained Models
-        run: pytest -v tests/compilation/test_pretrained_models.py
+        run: pytest -v tests/test_pretrained_models.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
