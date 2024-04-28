@@ -95,7 +95,7 @@ filterwarnings = [
     "ignore::DeprecationWarning:.*(docplex).*",
     "ignore:.*pytorch.*:UserWarning:",
     "ignore::DeprecationWarning:.*(importlib).*",
-    "ignore::InconsistentVersionWarning:.*(sklearn).*",
+    "ignore:.*sklearn.exceptions.*::InconsistentVersionWarning:",
 ]
 
 [tool.check-wheel-contents]
