@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest
@@ -13,7 +12,7 @@ from mqt.predictor import qcompile, reward, rl
 from mqt.predictor.evaluation import evaluate_sample_circuit
 
 # only run test when executed on GitHub runner
-EXECUTION_FLAG = os.getenv("RUN_PREGENERATED_TESTS") == "true"
+EXECUTION_FLAG = True  # os.getenv("RUN_PREGENERATED_TESTS") == "true"
 
 
 @pytest.mark.skipif(not EXECUTION_FLAG, reason="Only run this test on GitHub runner on demand.")
