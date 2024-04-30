@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-latest]
+        runs-on: [ubuntu-latest] # on ubuntu, all supported python versions are tested while on macos and windows only the minimum and maximum supported python versions are tested
         python-version: ${{ fromJson(needs.dist.outputs.python-versions) }}
         include:
           - runs-on: macos-13
