@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Literal
 
@@ -100,13 +101,25 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
     qasm_path = Path("test.qasm")
     with Path(qasm_path).open("w") as f:
         dump(qc, f)
-    predictor.compile_all_circuits_devicewise(
-        device_name="ibm_montreal",
-        timeout=100,
-        figure_of_merit=figure_of_merit,
-        source_path=source_path,
-        target_path=target_path,
-    )
+
+    if sys.platform == "win32":
+        with pytest.warns(RuntimeWarning, match="Timeout is not supported on Windows."):
+            predictor.compile_all_circuits_devicewise(
+                device_name="ibm_montreal",
+                timeout=100,
+                figure_of_merit=figure_of_merit,
+                source_path=source_path,
+                target_path=target_path,
+            )
+    else:
+        predictor.compile_all_circuits_devicewise(
+            device_name="ibm_montreal",
+            timeout=100,
+            figure_of_merit=figure_of_merit,
+            source_path=source_path,
+            target_path=target_path,
+        )
+
     assert any(file.suffix == ".qasm" for file in target_path.iterdir())
 
     training_sample, circuit_name, scores = predictor.generate_training_sample(

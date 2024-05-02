@@ -13,10 +13,10 @@ from mqt.predictor import qcompile, reward, rl
 from mqt.predictor.evaluation import evaluate_sample_circuit
 
 # only run test when executed on GitHub runner
-IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
+EXECUTION_FLAG = os.getenv("RUN_PREGENERATED_TESTS") == "true"
 
 
-@pytest.mark.skipif(not IN_GITHUB_ACTIONS, reason="Only run this test on GitHub runner")
+@pytest.mark.skipif(not EXECUTION_FLAG, reason="Only run this test on GitHub runner on demand.")
 @pytest.mark.parametrize(
     "figure_of_merit",
     ["expected_fidelity", "critical_depth"],
@@ -28,7 +28,7 @@ def test_qcompile_with_pretrained_models(figure_of_merit: reward.figure_of_merit
     assert compilation_information is not None
 
 
-@pytest.mark.skipif(not IN_GITHUB_ACTIONS, reason="Only run this test on GitHub runner")
+@pytest.mark.skipif(not EXECUTION_FLAG, reason="Only run this test on GitHub runner on demand.")
 def test_qcompile() -> None:
     qc = get_benchmark("ghz", 1, 5)
     qc_compiled, _compilation_information, quantum_device = qcompile(qc)
@@ -37,7 +37,7 @@ def test_qcompile() -> None:
     assert len(qc_compiled) > 0
 
 
-@pytest.mark.skipif(not IN_GITHUB_ACTIONS, reason="Only run this test on GitHub runner")
+@pytest.mark.skipif(not EXECUTION_FLAG, reason="Only run this test on GitHub runner on demand.")
 def test_evaluate_sample_circuit() -> None:
     qc = get_benchmark("ghz", 1, 3)
     filename = "test_3.qasm"
