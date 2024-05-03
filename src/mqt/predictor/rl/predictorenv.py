@@ -5,11 +5,10 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from pathlib import Path
-
 import numpy as np
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from gymnasium import Env
-from gymnasium.spaces import Box, Dict, Discrete
+from gymnasium.spaces import Box, Dict, Discrete, Sequence
 from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
@@ -28,7 +27,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
     """Predictor environment for reinforcement learning."""
 
     def __init__(
-        self, reward_function: reward.figure_of_merit = "expected_fidelity", device_name: str = "ibm_washington"
+        self,
+        reward_function: reward.figure_of_merit = "expected_fidelity",
+        device_name: str = "ionq_harmony",
+        features: list[str] | str = "all",
     ) -> None:
         logger.info("Init env: " + reward_function)
 
@@ -77,8 +79,13 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.num_steps = 0
         self.layout: TranspileLayout | None = None
         self.num_qubits_uncompiled_circuit = 0
+        self.init_reward = 0.0
 
         self.has_parametrized_gates = False
+
+        qubit_num, _max_depth = self.device.num_qubits, 10000
+        max_num_nodes = 10000
+        max_num_node_labels = 50
 
         spaces = {
             "num_qubits": Discrete(128),
@@ -88,8 +95,27 @@ class PredictorEnv(Env):  # type: ignore[misc]
             "entanglement_ratio": Box(low=0, high=1, shape=(1,), dtype=np.float32),
             "parallelism": Box(low=0, high=1, shape=(1,), dtype=np.float32),
             "liveness": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            "directed_program_communication": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            "single_qubit_gates_per_layer": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            "multi_qubit_gates_per_layer": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            "circuit": Sequence(
+                Box(
+                    low=0,
+                    high=50,
+                    shape=(
+                        1,
+                        qubit_num,
+                        qubit_num,
+                    ),
+                    dtype=np.int_,
+                ),
+            ),
+            "graph_edge_index": Sequence(Box(low=0, high=max_num_nodes, shape=(2,), dtype=np.int_)),
+            "graph_x": Sequence(Box(low=0, high=max_num_node_labels, shape=(1,), dtype=np.int_)),
+            "graph_edge_attr": Sequence(Box(low=0, high=1, shape=(1,), dtype=np.int_)),
         }
-        self.observation_space = Dict(spaces)
+        self.observation_space = Dict({k: v for k, v in spaces.items() if ("all" in features or k in features)})
+        self.features = features
         self.filename = ""
 
     def step(self, action: int) -> tuple[dict[str, Any], float, bool, bool, dict[Any, Any]]:
@@ -98,7 +124,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         altered_qc = self.apply_action(action)
         if not altered_qc:
             return (
-                rl.helper.create_feature_dict(self.state),
+                rl.helper.create_feature_dict(self.state, self.features),
                 0,
                 True,
                 False,
@@ -114,6 +140,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
             raise RuntimeError(msg)
 
         if action == self.action_terminate_index:
+            if self.init_reward == 0.0:
+                self.init_reward = self.calculate_reward()
             reward_val = self.calculate_reward()
             done = True
         else:
@@ -124,16 +152,21 @@ class PredictorEnv(Env):  # type: ignore[misc]
         if self.state.count_ops().get("unitary"):
             self.state = self.state.decompose(gates_to_decompose="unitary")
 
-        self.state._layout = self.layout  # noqa: SLF001
-        obs = rl.helper.create_feature_dict(self.state)
+        obs = rl.helper.create_feature_dict(self.state, self.features)
         return obs, reward_val, done, False, {}
 
     def calculate_reward(self) -> float:
         """Calculates and returns the reward for the current state."""
         if self.reward_function == "expected_fidelity":
             return reward.expected_fidelity(self.state, self.device)
-        # else: can only be "critical_depth"
-        return reward.crit_depth(self.state)
+        if self.reward_function == "critical_depth":
+            return reward.crit_depth(self.state)
+        error_msg = f"Reward function {self.reward_function} not supported."
+        raise ValueError(error_msg)
+
+    def calculate_improvement(self) -> float:
+        """Calculates and returns the improvement in reward."""
+        return reward.expected_fidelity(self.state, self.device) - self.init_reward
 
     def render(self) -> None:
         """Renders the current state."""
@@ -175,7 +208,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
         self.num_qubits_uncompiled_circuit = self.state.num_qubits
         self.has_parametrized_gates = len(self.state.parameters) > 0
-        return rl.helper.create_feature_dict(self.state), {}
+        return rl.helper.create_feature_dict(self.state, self.features), {}
 
     def action_masks(self) -> list[bool]:
         """Returns a list of valid actions for the current state."""

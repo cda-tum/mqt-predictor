@@ -13,11 +13,12 @@ from qiskit.qasm2 import dump
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from mqt.bench.devices import get_available_device_names, get_available_devices
+from mqt.bench.devices import Device, get_available_device_names, get_available_devices, get_device_by_name
 from mqt.predictor import ml, reward, rl, utils
 
 if TYPE_CHECKING:
     from numpy._typing import NDArray
+    from torch_geometric.data import Data
 
 plt.rcParams["font.family"] = "Times New Roman"
 
@@ -25,11 +26,11 @@ logger = logging.getLogger("mqt-predictor")
 
 
 class Predictor:
-    def __init__(self, logger_level: int = logging.INFO) -> None:
+    def __init__(self, logger_level: int = logging.INFO, devices: list[Device] | None = None) -> None:
         logger.setLevel(logger_level)
 
         self.clf = None
-        self.devices = get_available_devices()
+        self.devices = devices or get_available_devices()
 
     def set_classifier(self, clf: RandomForestClassifier) -> None:
         """Sets the classifier to the given classifier"""
@@ -275,19 +276,36 @@ class Predictor:
         all_relevant_files = path_compiled_circuits.glob(str(file).split(".")[0] + "*")
 
         for filename in all_relevant_files:
-            filename_str = str(filename)
-            if (str(file).split(".")[0] + "_" + figure_of_merit + "_") not in filename_str and filename_str.endswith(
-                ".qasm"
-            ):
-                continue
-            comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
-            device = self.devices[comp_path_index]
-            qc = QuantumCircuit.from_qasm_file(filename_str)
-            if figure_of_merit == "critical_depth":
-                score = reward.crit_depth(qc)
-            elif figure_of_merit == "expected_fidelity":
-                score = reward.expected_fidelity(qc, device)
-            scores[comp_path_index] = score
+            try:
+                filename_str = str(filename)
+                if (
+                    str(file).split(".")[0] + "_" + figure_of_merit + "_"
+                ) not in filename_str and filename_str.endswith(".qasm"):
+                    continue
+                comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
+                device = self.devices[comp_path_index]
+                qc = QuantumCircuit.from_qasm_file(filename_str)
+
+                if figure_of_merit == "critical_depth":
+                    score = reward.crit_depth(qc)
+                elif figure_of_merit == "expected_fidelity":
+                    score = reward.expected_fidelity(qc, device)
+                elif figure_of_merit == "fidelity":  # old training data
+                    num2name = {
+                        0: "ibm_washington",
+                        1: "ibm_montreal",
+                        2: "oqc_lucy",
+                        3: "rigetti_aspen_m2",
+                        4: "ionq_harmony",
+                        5: "ionq_aria1",
+                        6: "quantinuum_h2",
+                    }
+                    device = get_device_by_name(num2name[comp_path_index])
+                    score = reward.expected_fidelity(qc, device)
+
+                scores[comp_path_index] = score
+            except Exception as ex:  # rigetti_aspen_m2 coupling map error
+                print(filename, ex)
 
         num_not_empty_entries = 0
         for i in range(len(self.devices)):
@@ -298,6 +316,7 @@ class Predictor:
             logger.warning("no compiled circuits found for:" + str(file))
 
         feature_vec = ml.helper.create_feature_dict(str(path_uncompiled_circuit / file))
+
         training_sample = (list(feature_vec.values()), np.argmax(scores))
         circuit_name = str(file).split(".")[0]
         return (training_sample, circuit_name, scores)
@@ -351,13 +370,17 @@ class Predictor:
         return self.clf is not None
 
     def get_prepared_training_data(
-        self, figure_of_merit: reward.figure_of_merit, save_non_zero_indices: bool = False
+        self,
+        figure_of_merit: reward.figure_of_merit,
+        save_non_zero_indices: bool = False,
+        graph_only: bool = False,
     ) -> ml.helper.TrainingData:
         """Prepares the training data for the given figure of merit.
 
         Args:
             figure_of_merit (reward.reward_functions): The figure of merit to be used for training.
             save_non_zero_indices (bool, optional): Whether to save the non zero indices. Defaults to False.
+            graph_only (bool, optional): Whether to use only the graph feature. If false, all features except for graph are used.
 
         Returns:
             ml.helper.TrainingData: The prepared training data.
@@ -367,23 +390,31 @@ class Predictor:
         scores_list: list[list[float]] = [[] for _ in range(len(raw_scores_list))]
         x_raw = list(unzipped_training_data_x)
         x_list: list[list[float]] = [[] for _ in range(len(x_raw))]
+        x_graph: list[list[Data]] = [[] for _ in range(len(x_raw))]
         y_list = list(unzipped_training_data_y)
         for i in range(len(x_raw)):
-            x_list[i] = list(x_raw[i])
+            if graph_only:
+                x_graph[i] = list(x_raw[i][:2])  # only graphs
+            else:
+                x_list[i] = list(x_raw[i][2:])  # all but graphs
             scores_list[i] = list(raw_scores_list[i])
 
-        x, y, indices = np.array(x_list), np.array(y_list), np.array(range(len(y_list)))
+        y, indices = np.array(y_list), np.array(range(len(y_list)))
 
-        # Store all non zero feature indices
-        non_zero_indices = [i for i in range(len(x[0])) if sum(x[:, i]) > 0]
-        x = x[:, non_zero_indices]
+        if graph_only:
+            x: Any = x_graph
+        else:
+            x = np.array(x_list)
+            # Store all non zero feature indices
+            non_zero_indices = [i for i in range(len(x[0])) if sum(x[:, i]) > 0]
+            x = x[:, non_zero_indices]
 
-        if save_non_zero_indices:
-            data = np.asarray(non_zero_indices)
-            np.save(
-                ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True),
-                data,
-            )
+            if save_non_zero_indices:
+                data = np.asarray(non_zero_indices)
+                np.save(
+                    ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True),
+                    data,
+                )
 
         (
             x_train,

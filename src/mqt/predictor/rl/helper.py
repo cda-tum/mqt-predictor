@@ -23,6 +23,7 @@ from pytket.placement import place_with_map
 from qiskit import QuantumCircuit
 from qiskit.circuit.equivalence_library import StandardEquivalenceLibrary
 from qiskit.circuit.library import XGate, ZGate
+from qiskit.converters import circuit_to_dag
 from qiskit.transpiler import CouplingMap, Layout, PassManager, TranspileLayout
 from qiskit.transpiler.passes import (
     ApplyLayout,
@@ -57,7 +58,7 @@ from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
 from mqt.bench.utils import calc_supermarq_features
-from mqt.predictor import reward, rl
+from mqt.predictor import ml, reward, rl
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -385,7 +386,50 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
     return qc, str(file_list[random_index])
 
 
-def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float64]]:
+def encode_circuit(qc: QuantumCircuit) -> NDArray[np.int_]:
+    # Define a mapping from gate names to integers
+    gate_dict = {x: i for i, x in enumerate(ml.helper.get_openqasm_gates())}
+    gate_dict["ctr"] = len(gate_dict.keys())
+    gate_dict["measure"] = len(gate_dict.keys())
+
+    # Convert the circuit to a DAG and prepare the layers (wo barriers)
+    dag = circuit_to_dag(qc)
+    dag.remove_all_ops_named("barrier")
+    layers = list(dag.multigraph_layers())
+
+    # Create a look-up table for qubit indices (needed for multiple registers)
+    q_idx_lut = {qubit: idx for idx, qubit in enumerate(dag.qubits)}
+
+    num_qubits, _max_depth = 11, 10000  # Adjust according to the device
+
+    matrix = []  # np.zeros((num_qubits, num_qubits, max_depth), dtype=np.int_)
+    for _i, tensor_op in enumerate(layers[1:-1]):
+        layer = np.zeros((1, num_qubits, num_qubits), dtype=np.int_)
+        for node in tensor_op:
+            try:
+                operation_name = node.op.name
+            except Exception:
+                continue
+            if node.op.num_qubits == 1:  # single qubit gate
+                q_idx = q_idx_lut[node.qargs[0]]
+                layer[0, q_idx, q_idx] = gate_dict[operation_name]
+            else:  # multi qubit gate
+                controls = []
+                for qubit in node.qargs[:-1]:
+                    q_idx = q_idx_lut[qubit]  # control qubits
+                    layer[0, q_idx, q_idx] = gate_dict["ctr"]
+                    controls.append(q_idx)
+                q_idx = q_idx_lut[node.qargs[-1]]  # target qubit
+                layer[0, q_idx, q_idx] = gate_dict[operation_name]
+                for control in controls:
+                    layer[0, control, q_idx] = gate_dict[operation_name]
+                    layer[0, q_idx, control] = gate_dict["ctr"]
+        matrix.append(layer)  # [:, :, i] = layer
+
+    return np.array(matrix)
+
+
+def create_feature_dict(qc: QuantumCircuit, features: list[str] | str = "all") -> dict[str, int | NDArray[np.float64]]:
     """Creates a feature dictionary for a given quantum circuit.
 
     Args:
@@ -394,7 +438,6 @@ def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float6
     Returns:
         dict[str, Any]: The feature dictionary for the given quantum circuit.
     """
-
     feature_dict = {
         "num_qubits": qc.num_qubits,
         "depth": qc.depth(),
@@ -402,13 +445,70 @@ def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float6
 
     supermarq_features = calc_supermarq_features(qc)
     # for all dict values, put them in a list each
-    feature_dict["program_communication"] = np.array([supermarq_features.program_communication], dtype=np.float32)
-    feature_dict["critical_depth"] = np.array([supermarq_features.critical_depth], dtype=np.float32)
-    feature_dict["entanglement_ratio"] = np.array([supermarq_features.entanglement_ratio], dtype=np.float32)
-    feature_dict["parallelism"] = np.array([supermarq_features.parallelism], dtype=np.float32)
-    feature_dict["liveness"] = np.array([supermarq_features.liveness], dtype=np.float32)
-
-    return feature_dict
+    feature_dict["program_communication"] = (
+        np.array([supermarq_features.program_communication], dtype=np.float32)
+        if "program_communication" in features
+        else None
+    )
+    feature_dict["critical_depth"] = (
+        np.array([supermarq_features.critical_depth], dtype=np.float32) if "critical_depth" in features else None
+    )
+    feature_dict["entanglement_ratio"] = (
+        np.array([supermarq_features.entanglement_ratio], dtype=np.float32)
+        if "entanglement_ratio" in features
+        else None
+    )
+    feature_dict["parallelism"] = (
+        np.array([supermarq_features.parallelism], dtype=np.float32) if "parallelism" in features else None
+    )
+    feature_dict["liveness"] = (
+        np.array([supermarq_features.liveness], dtype=np.float32) if "liveness" in features else None
+    )
+    feature_dict["directed_program_communication"] = (
+        np.array([supermarq_features.directed_program_communication], dtype=np.float32)
+        if "directed_program_communication" in features
+        else None
+    )
+    feature_dict["single_qubit_gates_per_layer"] = (
+        np.array([supermarq_features.single_qubit_gates_per_layer], dtype=np.float32)
+        if "single_qubit_gates_per_layer" in features
+        else None
+    )
+    feature_dict["multi_qubit_gates_per_layer"] = (
+        np.array([supermarq_features.multi_qubit_gates_per_layer], dtype=np.float32)
+        if "multi_qubit_gates_per_layer" in features
+        else None
+    )
+    feature_dict["circuit"] = encode_circuit(qc) if ("all" in features or "circuit" in features) else None
+    # graph feature creation
+    if "all" in features or any(k.startswith("graph") for k in features):
+        try:
+            ops_list = qc.count_ops()
+            ops_list_dict = ml.helper.dict_to_featurevector(ops_list)
+            # operations/gates encoding for graph feature creation
+            ops_list_encoding = ops_list_dict.copy()
+            ops_list_encoding["measure"] = len(ops_list_encoding)  # add extra gate
+            # unique number for each gate {'measure': 0, 'cx': 1, ...}
+            for i, key in enumerate(ops_list_dict):
+                ops_list_encoding[key] = i
+            # graph = ml.helper.circuit_to_graph(qc, ops_list_encoding)
+            graph = ml.helper.circuit_to_interaction_graph(qc, ops_list_encoding)
+            # convert to lists of numpy arrays
+            x_np = [x.numpy() for x in graph.x]
+            edge_index_np = [edge.numpy() for edge in graph.edge_index]
+            edge_attr_np = [attr.numpy() for attr in graph.edge_attr]
+            feature_dict["graph_x"] = x_np
+            feature_dict["graph_edge_index"] = edge_index_np
+            feature_dict["graph_edge_attr"] = edge_attr_np
+        except Exception:
+            feature_dict["graph_x"] = None
+            feature_dict["graph_edge_index"] = None
+            feature_dict["graph_edge_attr"] = None
+    else:
+        feature_dict["graph_x"] = None
+        feature_dict["graph_edge_index"] = None
+        feature_dict["graph_edge_attr"] = None
+    return {k: v for k, v in feature_dict.items() if ("all" in features or k in features)}
 
 
 def get_path_training_data() -> Path:

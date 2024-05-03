@@ -8,6 +8,7 @@ from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPo
 from sb3_contrib.common.maskable.utils import get_action_masks
 
 from mqt.predictor import reward, rl
+from mqt.predictor.rl.torch_layers import CustomCombinedExtractor
 
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit
@@ -20,12 +21,17 @@ class Predictor:
     """The Predictor class is used to train a reinforcement learning model for a given figure of merit and device such that it acts as a compiler."""
 
     def __init__(
-        self, figure_of_merit: reward.figure_of_merit, device_name: str, logger_level: int = logging.INFO
+        self,
+        figure_of_merit: reward.figure_of_merit,
+        device_name: str,
+        logger_level: int = logging.INFO,
+        features: list[str] | str = "all",
     ) -> None:
         logger.setLevel(logger_level)
 
         self.model = None
-        self.env = rl.PredictorEnv(reward_function=figure_of_merit, device_name=device_name)
+        self.features = features
+        self.env = rl.PredictorEnv(figure_of_merit, device_name, features)
         self.device_name = device_name
         self.figure_of_merit = figure_of_merit
 
@@ -92,9 +98,36 @@ class Predictor:
             progress_bar = False
         else:
             n_steps = 2048
-            progress_bar = True
+            progress_bar = False
 
         logger.debug("Start training for: " + self.figure_of_merit + " on " + self.device_name)
+        rl.PredictorEnv(reward_function=self.figure_of_merit, device_name=self.device_name, features=self.features)
+        policy_kwargs = {
+            "features_extractor_class": CustomCombinedExtractor,
+            "features_extractor_kwargs": {
+                "nn_output_dim": 64,
+                "num_node_categories": 0,
+                "num_edge_categories": 0,
+                "node_embedding_dim": None,
+                "edge_embedding_dim": None,
+                "num_layers": 1,
+                "hidden_dim": 4,
+                "dropout": 0.0,
+                "batch_norm": False,
+                "activation": "relu",
+                "readout": "mean",
+                "heads": 1,
+                "concat": False,
+                "beta": False,
+                "bias": True,
+                "root_weight": True,
+                "model": "TransformerConv",
+                "jk": "last",
+                "v2": True,
+                "normalized_image": False,
+            },
+            "share_features_extractor": True,
+        }
         model = MaskablePPO(
             MaskableMultiInputActorCriticPolicy,
             self.env,
@@ -102,6 +135,7 @@ class Predictor:
             tensorboard_log="./" + model_name + "_" + self.figure_of_merit + "_" + self.device_name,
             gamma=0.98,
             n_steps=n_steps,
+            policy_kwargs=policy_kwargs,
         )
         model.learn(total_timesteps=timesteps, progress_bar=progress_bar)
         model.save(

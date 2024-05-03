@@ -5,14 +5,23 @@ from importlib import resources
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import networkx as nx  # type: ignore[import-untyped]
 import numpy as np
 from joblib import dump
 from qiskit import QuantumCircuit
+from qiskit.circuit import Clbit, Qubit
+from qiskit.converters import circuit_to_dag
+from qiskit.dagcircuit import DAGInNode, DAGOutNode
+from qiskit.transpiler.passes import RemoveBarriers
+from torch_geometric.utils import from_networkx
 
+from mqt.bench.devices import Device
 from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import ml, reward, rl
 
 if TYPE_CHECKING:
+    import rustworkx as rx
+    import torch_geometric
     from numpy._typing import NDArray
     from sklearn.ensemble import RandomForestClassifier
 
@@ -46,6 +55,7 @@ def predict_device_for_figure_of_merit(
     Args:
         qc (QuantumCircuit): The quantum circuit to be compiled.
         figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
+        devices ([Device], optional): The devices to be considered for compilation.
 
     Returns:
         Device : The device with the highest predicted figure of merit that is suitable for the given quantum circuit.
@@ -154,11 +164,12 @@ def dict_to_featurevector(gate_dict: dict[str, int]) -> dict[str, int]:
 PATH_LENGTH = 260
 
 
-def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
+def create_feature_dict(qc: str | QuantumCircuit, graph_features: bool = False) -> dict[str, Any]:
     """Creates and returns a feature dictionary for a given quantum circuit.
 
     Args:
         qc (str | QuantumCircuit): The quantum circuit to be compiled.
+        graph_features (bool): Whether to include graph features in the feature dictionary.
 
     Returns:
         dict[str, Any]: The feature dictionary of the given quantum circuit.
@@ -174,8 +185,20 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
 
     ops_list = qc.count_ops()
     ops_list_dict = dict_to_featurevector(ops_list)
-
     feature_dict = {}
+
+    if graph_features:
+        try:
+            # operations/gates encoding for graph feature creation
+            ops_list_encoding = ops_list_dict.copy()
+            ops_list_encoding["measure"] = len(ops_list_encoding)  # add extra gate
+            # unique number for each gate {'measure': 0, 'cx': 1, ...}
+            for i, key in enumerate(ops_list_dict):
+                ops_list_encoding[key] = i
+            feature_dict["graph"] = circuit_to_graph(qc, ops_list_encoding)
+        except Exception:
+            feature_dict["graph"] = None
+
     for key in ops_list_dict:
         feature_dict[key] = float(ops_list_dict[key])
 
@@ -188,6 +211,11 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     feature_dict["entanglement_ratio"] = supermarq_features.entanglement_ratio
     feature_dict["parallelism"] = supermarq_features.parallelism
     feature_dict["liveness"] = supermarq_features.liveness
+    feature_dict["directed_program_communication"] = supermarq_features.directed_program_communication
+    feature_dict["gate_coverage"] = supermarq_features.directed_critical_depth
+    feature_dict["single_qubit_gates_per_layer"] = supermarq_features.single_qubit_gates_per_layer
+    feature_dict["multi_qubit_gates_per_layer"] = supermarq_features.multi_qubit_gates_per_layer
+    feature_dict["my_critical_depth"] = supermarq_features.my_critical_depth
     return feature_dict
 
 
@@ -214,7 +242,7 @@ def save_training_data(
         figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
     """
 
-    with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
+    with resources.as_file(get_path_training_data() / "training_data_graph") as path:
         data = np.asarray(training_data, dtype=object)
         np.save(str(path / ("training_data_" + figure_of_merit + ".npy")), data)
         data = np.asarray(names_list)
@@ -234,7 +262,7 @@ def load_training_data(
     Returns:
        tuple[NDArray[np.float_], list[str], list[NDArray[np.float_]]]: The training data, the names list and the scores list.
     """
-    with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
+    with resources.as_file(get_path_training_data() / "training_data_graph") as path:
         if (
             path.joinpath("training_data_" + figure_of_merit + ".npy").is_file()
             and path.joinpath("names_list_" + figure_of_merit + ".npy").is_file()
@@ -248,6 +276,128 @@ def load_training_data(
             raise FileNotFoundError(error_msg)
 
         return training_data, names_list, scores_list
+
+
+def rustworkx_to_networkx(graph: rx.PyDAG[Any, Any], ops_list_encoding: dict[str, int]) -> nx.DiGraph:
+    """
+    Convert a rustworkx DAG to a networkx graph.
+    """
+    # create a networkx graph
+    nx_graph = nx.DiGraph()
+
+    control_dict = {}  # to mark edges as control
+    # add node operations = gates as nodes
+    for node_idx, node in enumerate(graph.nodes()):
+        if type(node) in [DAGInNode, DAGOutNode]:
+            op = ops_list_encoding["id"]
+        else:
+            op = ops_list_encoding[node.op.name]
+
+            controls = []  # mark controls
+            if hasattr(node.op, "num_ctrl_qubits"):
+                # last qubit is target
+                controls += list(node.qargs[:-1])
+            if node.op.condition:
+                # classical c_if(...) operation
+                controls += node.op.condition_bits
+            if controls:
+                control_dict[node_idx] = controls
+
+        nx_graph.add_node(node_idx, gate=op)
+
+    count = 0
+    bit_dict: dict[Qubit | Clbit, int] = {}
+    # add quantum/classical bits as edges
+    for edge in graph.weighted_edge_list():
+        source, target, bit = edge
+
+        if not bit_dict.get(bit, False):
+            bit_dict[bit] = count
+            count += 1
+        # bit_nr = bit_dict[bit]
+
+        is_classic = 1 if isinstance(bit, Clbit) else 0
+        is_control = 1 if bit in control_dict.get(target, []) else 0
+
+        if is_classic == 0:  # only add quantum wires
+            nx_graph.add_edge(source, target, is_control=is_control)  # , bit_nr=bit_nr, is_classic=is_classic)
+
+    return nx_graph
+
+
+def circuit_to_graph(qc: QuantumCircuit, ops_list_encoding: dict[str, int]) -> torch_geometric.data.Data:
+    """
+    Convert a quantum circuit to a torch_geometric graph.
+    """
+    ### Preprocessing ###
+    circ = RemoveBarriers()(qc)
+
+    # Convert to a rustworkx DAG
+    dag_circuit = circuit_to_dag(circ, copy_operations=False)
+    dag_graph = dag_circuit._multi_graph  # noqa: SLF001
+    # Convert to networkx graph
+    nx_graph = rustworkx_to_networkx(dag_graph, ops_list_encoding)
+
+    #### Postprocessing ###
+    # Remove root and leaf nodes (in and out nodes)
+    nodes_to_remove = [node for node, degree in nx_graph.degree() if degree <= 1]
+    nx_graph.remove_nodes_from(nodes_to_remove)
+
+    # Convert to torch_geometric data
+    return from_networkx(nx_graph, group_node_attrs=all, group_edge_attrs=all)
+
+
+def circuit_to_interaction_graph(qc: QuantumCircuit, ops_list_encoding: dict[str, int]) -> torch_geometric.data.Data:
+    """
+    Convert a quantum circuit to a torch_geometric graph.
+    """
+    ### Preprocessing ###
+    circ = RemoveBarriers()(qc)
+
+    # Convert to a rustworkx DAG
+    dag_circuit = circuit_to_dag(circ, copy_operations=False)
+
+    # Create an empty interaction nx graph
+    nx_interaction_graph = nx.DiGraph()
+
+    qubit_idx: dict[Qubit, int] = {}  # map qubit to index
+    op_count: dict[tuple[int, int], dict[str, float]] = {}  # count of operations on edge
+    for wire in dag_circuit.wires:
+        if isinstance(wire, Qubit):
+            for node in dag_circuit.nodes_on_wire(wire):
+                if type(node) in [DAGInNode, DAGOutNode]:
+                    continue
+
+                for i, qarg in enumerate(node.qargs):
+                    if qarg not in qubit_idx:
+                        qubit_idx[qarg] = len(qubit_idx)
+                    if i == 0:
+                        u = v = qubit_idx[qarg]
+                        count_increase = 1.0
+                    elif i == 1:
+                        v = qubit_idx[qarg]
+                        # prevent double counting
+                        count_increase = 0.5
+
+                if nx_interaction_graph.has_edge(u, v):
+                    # update gate count on existing edge
+                    op_count[(u, v)][node.op.name] += count_increase
+                    nx_interaction_graph[u][v]["gate_count"] = op_count[(u, v)]
+                else:  # add new edge
+                    op_count[(u, v)] = dict.fromkeys(ops_list_encoding.keys(), 0)
+                    op_count[(u, v)][node.op.name] += count_increase
+                    nx_interaction_graph.add_edge(u, v, gate_count=op_count[(u, v)])
+
+    # transform all edge features to integer numpy arrays
+    for _u, _v, data in nx_interaction_graph.edges(data=True):
+        data["gate_count"] = np.array(list(data["gate_count"].values()), dtype=np.int16)
+
+    # add initial 1.0 feature for all nodes
+    for node in nx_interaction_graph.nodes():
+        nx_interaction_graph.nodes[node]["feature"] = np.ones(1, dtype=np.int16)
+
+    # Convert to torch_geometric data
+    return from_networkx(nx_interaction_graph, group_node_attrs="all", group_edge_attrs="all")
 
 
 @dataclass
