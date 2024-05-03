@@ -445,19 +445,39 @@ def create_feature_dict(qc: QuantumCircuit, features: list[str] | str = "all") -
 
     supermarq_features = calc_supermarq_features(qc)
     # for all dict values, put them in a list each
-    feature_dict["program_communication"] = np.array([supermarq_features.program_communication], dtype=np.float32)
-    feature_dict["critical_depth"] = np.array([supermarq_features.critical_depth], dtype=np.float32)
-    feature_dict["entanglement_ratio"] = np.array([supermarq_features.entanglement_ratio], dtype=np.float32)
-    feature_dict["parallelism"] = np.array([supermarq_features.parallelism], dtype=np.float32)
-    feature_dict["liveness"] = np.array([supermarq_features.liveness], dtype=np.float32)
-    feature_dict["directed_program_communication"] = np.array(
-        [supermarq_features.directed_program_communication], dtype=np.float32
+    feature_dict["program_communication"] = (
+        np.array([supermarq_features.program_communication], dtype=np.float32)
+        if "program_communication" in features
+        else None
     )
-    feature_dict["single_qubit_gates_per_layer"] = np.array(
-        [supermarq_features.single_qubit_gates_per_layer], dtype=np.float32
+    feature_dict["critical_depth"] = (
+        np.array([supermarq_features.critical_depth], dtype=np.float32) if "critical_depth" in features else None
     )
-    feature_dict["multi_qubit_gates_per_layer"] = np.array(
-        [supermarq_features.multi_qubit_gates_per_layer], dtype=np.float32
+    feature_dict["entanglement_ratio"] = (
+        np.array([supermarq_features.entanglement_ratio], dtype=np.float32)
+        if "entanglement_ratio" in features
+        else None
+    )
+    feature_dict["parallelism"] = (
+        np.array([supermarq_features.parallelism], dtype=np.float32) if "parallelism" in features else None
+    )
+    feature_dict["liveness"] = (
+        np.array([supermarq_features.liveness], dtype=np.float32) if "liveness" in features else None
+    )
+    feature_dict["directed_program_communication"] = (
+        np.array([supermarq_features.directed_program_communication], dtype=np.float32)
+        if "directed_program_communication" in features
+        else None
+    )
+    feature_dict["single_qubit_gates_per_layer"] = (
+        np.array([supermarq_features.single_qubit_gates_per_layer], dtype=np.float32)
+        if "single_qubit_gates_per_layer" in features
+        else None
+    )
+    feature_dict["multi_qubit_gates_per_layer"] = (
+        np.array([supermarq_features.multi_qubit_gates_per_layer], dtype=np.float32)
+        if "multi_qubit_gates_per_layer" in features
+        else None
     )
     feature_dict["circuit"] = encode_circuit(qc) if ("all" in features or "circuit" in features) else None
     # graph feature creation

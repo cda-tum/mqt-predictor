@@ -41,7 +41,27 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):  # type: ignore[misc]
     def __init__(
         self,
         observation_space: spaces.Dict,
-        cnn_output_dim: int = 256,
+        # GNN parameters
+        num_node_categories: int,
+        num_edge_categories: int,
+        node_embedding_dim: int | None,
+        edge_embedding_dim: int | None,
+        num_layers: int,
+        hidden_dim: int,
+        dropout: float,
+        batch_norm: bool,
+        activation: str,
+        readout: str,
+        heads: int,
+        concat: bool,
+        beta: bool,
+        bias: bool,
+        root_weight: bool,
+        model: str,
+        jk: str,
+        v2: bool,
+        # default parameters
+        nn_output_dim: int = 256,
         normalized_image: bool = False,
     ) -> None:
         # TODO we do not know features-dim here before going over all the items, so put something there. This is dirty!
@@ -53,20 +73,41 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):  # type: ignore[misc]
         graph_observation_space = []
         for key, subspace in observation_space.spaces.items():
             if key == "circuit":
-                extractors[key] = CustomCNN(subspace, features_dim=cnn_output_dim, normalized_image=normalized_image)
-                total_concat_size += cnn_output_dim
+                extractors[key] = CustomCNN(subspace, features_dim=nn_output_dim, normalized_image=normalized_image)
+                total_concat_size += nn_output_dim
             elif key.startswith("graph"):
                 graph_observation_space.append(subspace)
             elif is_image_space(subspace, normalized_image=normalized_image):
-                extractors[key] = NatureCNN(subspace, features_dim=cnn_output_dim, normalized_image=normalized_image)
-                total_concat_size += cnn_output_dim
+                extractors[key] = NatureCNN(subspace, features_dim=nn_output_dim, normalized_image=normalized_image)
+                total_concat_size += nn_output_dim
             else:
                 # The observation key is a vector, flatten it if needed
                 extractors[key] = nn.Flatten()
                 total_concat_size += get_flattened_obs_dim(subspace)
         if graph_observation_space:
-            extractors["graph"] = CustomGNN(graph_observation_space, features_dim=cnn_output_dim)
-            total_concat_size += cnn_output_dim
+            extractors["graph"] = CustomGNN(
+                observation_space,
+                features_dim=nn_output_dim,
+                num_node_categories=num_node_categories,
+                num_edge_categories=num_edge_categories,
+                node_embedding_dim=node_embedding_dim,
+                edge_embedding_dim=edge_embedding_dim,
+                num_layers=num_layers,
+                hidden_dim=hidden_dim,
+                dropout=dropout,
+                batch_norm=batch_norm,
+                activation=activation,
+                readout=readout,
+                heads=heads,
+                concat=concat,
+                beta=beta,
+                bias=bias,
+                root_weight=root_weight,
+                model=model,
+                jk=jk,
+                v2=v2,
+            )
+            total_concat_size += nn_output_dim
 
         self.extractors = nn.ModuleDict(extractors)
 
@@ -160,9 +201,52 @@ class CustomGNN(BaseFeaturesExtractor):  # type: ignore[misc]
         Otherwise, it checks that it has expected dtype (uint8) and bounds (values in [0, 255]).
     """
 
-    def __init__(self, observation_space: spaces.Box, features_dim: int = 512) -> None:
+    def __init__(
+        self,
+        observation_space: spaces.Box,
+        features_dim: int,
+        num_node_categories: int,
+        num_edge_categories: int,
+        node_embedding_dim: int | None,
+        edge_embedding_dim: int | None,
+        num_layers: int,
+        hidden_dim: int,
+        dropout: float,
+        batch_norm: bool,
+        activation: str,
+        readout: str,
+        heads: int,
+        concat: bool,
+        beta: bool,
+        bias: bool,
+        root_weight: bool,
+        model: str,
+        jk: str,
+        v2: bool,
+    ) -> None:
         super().__init__(observation_space, features_dim)
-        self.gnn = Net(output_dim=features_dim)
+        self.gnn = Net(
+            num_node_categories=num_node_categories,
+            num_edge_categories=num_edge_categories,
+            node_embedding_dim=node_embedding_dim,
+            edge_embedding_dim=edge_embedding_dim,
+            num_layers=num_layers,
+            hidden_dim=hidden_dim,
+            output_dim=features_dim,
+            dropout=dropout,
+            batch_norm=batch_norm,
+            activation=activation,
+            readout=readout,
+            heads=heads,
+            concat=concat,
+            beta=beta,
+            bias=bias,
+            root_weight=root_weight,
+            model=model,
+            jk=jk,
+            v2=v2,
+            zx=False,
+        )
 
     def forward(self, input_data: list[list[th.Tensor]] | list[th.Tensor]) -> th.Tensor:
         data_list = []

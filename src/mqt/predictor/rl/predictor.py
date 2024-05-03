@@ -104,7 +104,28 @@ class Predictor:
         rl.PredictorEnv(reward_function=self.figure_of_merit, device_name=self.device_name, features=self.features)
         policy_kwargs = {
             "features_extractor_class": CustomCombinedExtractor,
-            "features_extractor_kwargs": {"cnn_output_dim": 64, "normalized_image": False},
+            "features_extractor_kwargs": {
+                "nn_output_dim": 64,
+                "num_node_categories": 0,
+                "num_edge_categories": 0,
+                "node_embedding_dim": None,
+                "edge_embedding_dim": None,
+                "num_layers": 1,
+                "hidden_dim": 4,
+                "dropout": 0.0,
+                "batch_norm": False,
+                "activation": "relu",
+                "readout": "mean",
+                "heads": 1,
+                "concat": False,
+                "beta": False,
+                "bias": True,
+                "root_weight": True,
+                "model": "TransformerConv",
+                "jk": "last",
+                "v2": True,
+                "normalized_image": False,
+            },
             "share_features_extractor": True,
         }
         model = MaskablePPO(

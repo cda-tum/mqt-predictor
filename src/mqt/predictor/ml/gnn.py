@@ -71,7 +71,7 @@ class Net(nn.Module):  # type: ignore[misc]
         elif self.activation == "sigmoid":
             self.activation_func = nn.Sigmoid()
 
-        edge_dim = None if self.zx else self.edge_embedding_dim or 1
+        edge_dim = None if self.zx else self.edge_embedding_dim or 43
 
         if self.model == "TransformerConv":
             self.layers = []
