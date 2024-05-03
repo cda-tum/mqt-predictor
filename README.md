@@ -7,12 +7,12 @@
 [![codecov](https://img.shields.io/codecov/c/github/cda-tum/mqt-predictor?style=flat-square&logo=codecov)](https://codecov.io/gh/cda-tum/mqt-predictor)
 
 <p align="center">
-<picture>
-<a  href="https://mqt.readthedocs.io/" target="_blank">
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/mqt_light.png" width="60%">
-  <img src="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/mqt_dark.png" width="60%">
-</a>
-</picture>
+  <a href="https://mqt.readthedocs.io">
+   <picture>
+     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqt/main/docs/_static/mqt_light.png" width="60%">
+     <img src="https://raw.githubusercontent.com/cda-tum/mqt/main/docs/_static/mqt_dark.png" width="60%">
+   </picture>
+  </a>
 </p>
 
 # MQT Predictor: Automatic Device Selection with Device-Specific Circuit Compilation for Quantum Computing
