@@ -1,7 +1,7 @@
 [build-system]
 requires = [
-    "setuptools>=61",
-    "setuptools_scm[toml]>=7"
+    "setuptools>=66.1",
+    "setuptools_scm>=7"
 ]
 build-backend = "setuptools.build_meta"
 
@@ -19,12 +19,10 @@ requires-python = ">=3.10"
 dynamic = ["version"]
 
 dependencies = [
-    "mqt.bench>=1.1.1, <1.2.0",
-    "pytket_qiskit>=0.52.0, <0.53.0",
-    "sb3_contrib>=2.0.0, <2.2.2",
-    "scikit-learn>=1.4.0,<1.4.2",
-    "importlib_metadata>=4.4; python_version < '3.10'",
-    "importlib_resources>=5.0; python_version < '3.10'",
+    "mqt.bench>=1.1.2, <1.2.0",
+    "pytket_qiskit>=0.52.0, <0.54.0",
+    "sb3_contrib>=2.0.0, <2.3.1",
+    "scikit-learn>=1.4.0,<1.4.3",
     "tensorboard>=2.11.0, <2.16.3",
     "bqskit>=1.1.2, <1.2.0",
     "lark>=0.7, <1.0"
@@ -47,8 +45,8 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=7"]
-coverage = ["mqt.predictor[test]", "pytest-cov[toml]"]
+test = ["pytest>=7.2"]
+coverage = ["mqt.predictor[test]", "pytest-cov>=4"]
 dev = ["mqt.predictor[coverage]"]
 docs = [
     "furo>=2023.08.17",
@@ -92,8 +90,15 @@ filterwarnings = [
     "ignore:.*divide by zero encountered in det.*:RuntimeWarning:",
     "ignore:.*invalid value encountered in det.*:RuntimeWarning:",
     "ignore:..*env.action_masks to get variables from other wrappers is deprecated and will be removed in v1.0.*:UserWarning:",
-
+    "ignore::SyntaxWarning:.*(docplex).*",
+    "ignore::DeprecationWarning:.*(docplex).*",
+    "ignore:.*pytorch.*:UserWarning:",
+    "ignore::DeprecationWarning:.*(importlib).*",
+    "ignore::sklearn.exceptions.InconsistentVersionWarning:sklearn:",
 ]
+
+[tool.check-wheel-contents]
+ignore = "W002"
 
 [tool.coverage]
 run.source = ["mqt.predictor"]

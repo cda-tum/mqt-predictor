@@ -1,14 +1,18 @@
+[![PyPI](https://img.shields.io/pypi/v/mqt.predictor?logo=pypi&style=flat-square)](https://pypi.org/project/mqt.predictor/)
+![OS](https://img.shields.io/badge/os-linux%20%7C%20macos%20%7C%20windows-blue?style=flat-square)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![CodeCov](https://github.com/cda-tum/mqt-predictor/actions/workflows/coverage.yml/badge.svg)](https://github.com/cda-tum/mqt-predictor/actions/workflows/coverage.yml)
-[![Deploy to PyPI](https://github.com/cda-tum/mqt-predictor/actions/workflows/deploy.yml/badge.svg)](https://github.com/cda-tum/mqt-predictor/actions/workflows/deploy.yml)
-[![codecov](https://codecov.io/gh/cda-tum/mqt-predictor/branch/main/graph/badge.svg?token=ZL5js1wjrB)](https://codecov.io/gh/cda-tum/mqt-predictor)
-[![Documentation](https://img.shields.io/readthedocs/mqt-predictor?logo=readthedocs&style=flat-square)](https://mqt.readthedocs.io/projects/predictor)
+[![CI](https://img.shields.io/github/actions/workflow/status/cda-tum/mqt-predictor/ci.yml?branch=main&style=flat-square&logo=github&label=ci)](https://github.com/cda-tum/mqt-predictor/actions/workflows/ci.yml)
+[![CD](https://img.shields.io/github/actions/workflow/status/cda-tum/mqt-predictor/cd.yml?style=flat-square&logo=github&label=cd)](https://github.com/cda-tum/mqt-predictor/actions/workflows/cd.yml)
+[![Documentation](https://img.shields.io/readthedocs/predictor?logo=readthedocs&style=flat-square)](https://mqt.readthedocs.io/projects/predictor)
+[![codecov](https://img.shields.io/codecov/c/github/cda-tum/mqt-predictor?style=flat-square&logo=codecov)](https://codecov.io/gh/cda-tum/mqt-predictor)
 
 <p align="center">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/mqt_light.png" width="60%">
-  <img src="https://raw.githubusercontent.com/cda-tum/mqtpredictor/main/docs/_static/mqt_dark.png" width="60%">
-</picture>
+  <a href="https://mqt.readthedocs.io">
+   <picture>
+     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqt/main/docs/_static/mqt_light.png" width="60%">
+     <img src="https://raw.githubusercontent.com/cda-tum/mqt/main/docs/_static/mqt_dark.png" width="60%">
+   </picture>
+  </a>
 </p>
 
 # MQT Predictor: Automatic Device Selection with Device-Specific Circuit Compilation for Quantum Computing
@@ -37,9 +41,9 @@ For more details, please refer to:
   </a>
 </p>
 
-If you have any questions, feel free to create a [discussion](https://github.com/cda-tum/mqt-predictor/discussions) or an [issue](https://github.com/cda-tum/mqt-predictor/issues) on [GitHub](https://github.com/cda-tum/mqt-predictor).
+MQT Predictor is part of the [Munich Quantum Toolkit (MQT)](https://mqt.readthedocs.io/) developed by the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the [Technical University of Munich](https://www.tum.de/).
 
-MQT Predictor is part of the Munich Quantum Toolkit (MQT) developed by the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the [Technical University of Munich](https://www.tum.de/).
+If you have any questions, feel free to create a [discussion](https://github.com/cda-tum/mqt-predictor/discussions) or an [issue](https://github.com/cda-tum/mqt-predictor/issues) on [GitHub](https://github.com/cda-tum/mqt-predictor).
 
 ## Getting Started
 
@@ -70,28 +74,6 @@ print(qc_compiled.draw())
 
 **Detailed documentation and examples are available at [ReadTheDocs](https://mqt.readthedocs.io/projects/predictor).**
 
-# Repository Structure
-
-```
-.
-├── docs/
-├── evaluations/
-├── src/
-│ ├── mqt/
-│   └── predictor/
-│     ├── calibration_files/
-│     ├── ml/
-│     │ └── training_data/
-│     │     ├── trained_model
-│     │     ├── training_circuits
-│     │     ├── training_circuits_compiled
-│     │     └── training_data_aggregated
-│     └── rl/
-│          └── training_data/
-│              ├── trained_model
-│              └── training_circuits
-```
-
 ## Acknowledgements
 
 The Munich Quantum Toolkit has been supported by the European
@@ -101,17 +83,17 @@ Munich Quantum Valley, which is supported by the Bavarian state government with 
 
 <p align="center">
 <picture>
-<source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqt-predictor/main/docs/_static/tum_dark.svg" width="28%">
-<img src="https://raw.githubusercontent.com/cda-tum/mqt-predictor/main/docs/_static/tum_light.svg" width="28%">
+<source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqt/main/docs/_static/tum_dark.svg" width="28%">
+<img src="https://raw.githubusercontent.com/cda-tum/mqt/main/docs/_static/tum_light.svg" width="28%" alt="TUM Logo">
 </picture>
 <picture>
-<img src="https://raw.githubusercontent.com/cda-tum/mqt-predictor/main/docs/_static/logo-bavaria.svg" width="16%">
+<img src="https://raw.githubusercontent.com/cda-tum/mqt/main/docs/_static/logo-bavaria.svg" width="16%" alt="Coat of Arms of Bavaria">
 </picture>
 <picture>
-<source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqt-predictor/main/docs/_static/erc_dark.svg" width="24%">
-<img src="https://raw.githubusercontent.com/cda-tum/mqt-predictor/main/docs/_static/erc_light.svg" width="24%">
+<source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cda-tum/mqt/main/docs/_static/erc_dark.svg" width="24%">
+<img src="https://raw.githubusercontent.com/cda-tum/mqt/main/docs/_static/erc_light.svg" width="24%" alt="ERC Logo">
 </picture>
 <picture>
-<img src="https://raw.githubusercontent.com/cda-tum/mqt-predictor/main/docs/_static/logo-mqv.svg" width="28%">
+<img src="https://raw.githubusercontent.com/cda-tum/mqt/main/docs/_static/logo-mqv.svg" width="28%" alt="MQV Logo">
 </picture>
 </p>
