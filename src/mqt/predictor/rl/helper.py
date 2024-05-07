@@ -1,3 +1,5 @@
+"""Helper functions of the reinforcement learning compilation predictor."""
+
 from __future__ import annotations
 
 import logging
@@ -93,7 +95,7 @@ def qcompile(
 ) -> tuple[QuantumCircuit, list[str]]:
     """Compiles a given quantum circuit to a device optimizing for the given figure of merit.
 
-    Args:
+    Arguments:
         qc (QuantumCircuit | str): The quantum circuit to be compiled. If a string is given, it is assumed to be a path to a qasm file.
         figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
         device_name (str, optional): The name of the device to compile to. Defaults to "ibm_washington".
@@ -102,7 +104,6 @@ def qcompile(
     Returns:
         tuple[QuantumCircuit, list[str]] | bool: Returns a tuple containing the compiled quantum circuit and the compilation information. If compilation fails, False is returned.
     """
-
     if predictor_singleton is None:
         if figure_of_merit is None:
             msg = "figure_of_merit must not be None if predictor_singleton is None."
@@ -352,7 +353,7 @@ def get_action_terminate() -> dict[str, Any]:
 def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str]:
     """Returns a random quantum circuit from the training circuits folder.
 
-    Args:
+    Arguments:
         max_qubits (int, None): The maximum number of qubits the returned quantum circuit may have. If no limit is set, it defaults to None.
 
     Returns:
@@ -388,13 +389,12 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
 def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float64]]:
     """Creates a feature dictionary for a given quantum circuit.
 
-    Args:
+    Arguments:
         qc (QuantumCircuit): The quantum circuit for which the feature dictionary is created.
 
     Returns:
         dict[str, Any]: The feature dictionary for the given quantum circuit.
     """
-
     feature_dict = {
         "num_qubits": qc.num_qubits,
         "depth": qc.depth(),
@@ -429,7 +429,7 @@ def get_path_training_circuits() -> Path:
 def load_model(model_name: str) -> MaskablePPO:
     """Loads a trained model from the trained model folder.
 
-    Args:
+    Arguments:
         model_name (str): The name of the model to be loaded.
 
     Returns:
@@ -498,7 +498,7 @@ def load_model(model_name: str) -> MaskablePPO:
 def handle_downloading_model(download_url: str, model_name: str) -> None:
     """Downloads a trained model from the given URL and saves it to the trained model folder.
 
-    Args:
+    Arguments:
         download_url (str): The URL from which the model is downloaded.
         model_name (str): The name of the model to be downloaded.
     """
@@ -525,8 +525,8 @@ def handle_downloading_model(download_url: str, model_name: str) -> None:
 
 
 class PreProcessTKETRoutingAfterQiskitLayout:
-    """
-        Pre-processing step to route a circuit with TKET after a Qiskit Layout pass has been applied.
+    """Pre-processing step to route a circuit with TKET after a Qiskit Layout pass has been applied.
+
         The reason why we can apply the trivial layout here is that the circuit already got assigned a layout by qiskit.
         Implicitly, Qiskit is reordering its qubits in a sequential manner, i.e., the qubit with the lowest *physical* qubit
         first.
@@ -590,7 +590,7 @@ class PreProcessTKETRoutingAfterQiskitLayout:
 def get_bqskit_native_gates(device: Device) -> list[gates.Gate] | None:
     """Returns the native gates of the given device.
 
-    Args:
+    Arguments:
         device: The device for which the native gates are returned.
 
     Returns:
@@ -613,6 +613,7 @@ def get_bqskit_native_gates(device: Device) -> list[gates.Gate] | None:
 
 
 def final_layout_pytket_to_qiskit(pytket_circuit: Circuit, qiskit_ciruit: QuantumCircuit) -> Layout:
+    """Converts a final layout from pytket to qiskit."""
     pytket_layout = pytket_circuit.qubit_readout
     size_circuit = pytket_circuit.n_qubits
     qiskit_layout = {}
@@ -636,10 +637,12 @@ def final_layout_bqskit_to_qiskit(
     compiled_qc: QuantumCircuit,
     initial_qc: QuantumCircuit,
 ) -> TranspileLayout:
-    # BQSKit provides an initial layout as a list[int] where each virtual qubit is mapped to a physical qubit
-    # similarly, it provides a final layout as a list[int] representing where each virtual qubit is mapped to at the end
-    # of the circuit
+    """Converts a final layout from bqskit to qiskit.
 
+    BQSKit provides an initial layout as a list[int] where each virtual qubit is mapped to a physical qubit
+    similarly, it provides a final layout as a list[int] representing where each virtual qubit is mapped to at the end
+    of the circuit.
+    """
     ancilla = QuantumRegister(compiled_qc.num_qubits - initial_qc.num_qubits, "ancilla")
     qiskit_initial_layout = {}
     for i in range(compiled_qc.num_qubits):
@@ -672,7 +675,7 @@ def final_layout_bqskit_to_qiskit(
 def get_ibm_backend_properties_by_device_name(device_name: str) -> BackendProperties | None:
     """Returns the IBM backend name for the given device name.
 
-    Args:
+    Arguments:
         device_name (str): The name of the device for which the IBM backend name is returned.
 
     Returns:

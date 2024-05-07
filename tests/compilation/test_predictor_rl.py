@@ -1,3 +1,5 @@
+"""Tests for the compilation with reinforcement learning."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -11,6 +13,7 @@ from mqt.predictor import reward, rl
 
 
 def test_predictor_env_reset_from_string() -> None:
+    """Test the reset function of the predictor environment with a quantum circuit given as a string as input."""
     predictor = rl.Predictor(figure_of_merit="expected_fidelity", device_name="ionq_harmony")
     qasm_path = Path("test.qasm")
     qc = get_benchmark("dj", 1, 3)
@@ -45,6 +48,7 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
 
 
 def test_qcompile_with_false_input() -> None:
+    """Test the qcompile function with false input."""
     qc = get_benchmark("dj", 1, 5)
     with pytest.raises(ValueError, match="figure_of_merit must not be None if predictor_singleton is None."):
         rl.helper.qcompile(qc, None, "quantinuum_h2")

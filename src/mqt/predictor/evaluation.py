@@ -1,3 +1,5 @@
+"""This module contains functions for evaluating the performance of the mqt-predictor."""
+
 from __future__ import annotations
 
 import logging
@@ -29,9 +31,9 @@ logger = logging.getLogger("mqt-predictor")
 def create_qiskit_result(qc: QuantumCircuit, device: Device) -> Result:
     """Creates a Result object for a given benchmark and device using qiskit for compilation.
 
-    Args:
-        benchmark (str): The path to the benchmark to be compiled.
-        device (mqt.bench.Device | None, optional): The device to be used for compilation. Defaults to None.
+    Arguments:
+        qc: The quantum circuit to be compiled.
+        device: The device to be used for compilation. Defaults to None.
 
     Returns:
         Result: Returns a Result object containing the compiled quantum circuit.
@@ -60,9 +62,9 @@ def create_tket_result(
 ) -> Result:
     """Creates a Result object for a given benchmark and device using tket for compilation.
 
-    Args:
-        benchmark (str): The path to the benchmark to be compiled.
-        device (mqt.bench.Device | None, optional): The device to be used for compilation. Defaults to None.
+    Arguments:
+        qc: The quantum circuit to be compiled.
+        device: The device to be used for compilation. Defaults to None.
 
     Returns:
         Result: Returns a Result object containing the compiled quantum circuit.
@@ -95,7 +97,7 @@ def create_tket_result(
 def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit, filename: str) -> Result:
     """Creates a Result object for a given benchmark and figure of merit using mqt-predictor for compilation.
 
-    Args:
+    Arguments:
         qc (QuantumCircuit): The quantum circuit to be compiled.
         figure_of_merit (reward.reward_functions): The figure of merit to be used for compilation.
         filename (str): The path to the benchmark to be compiled.
@@ -173,7 +175,7 @@ def evaluate_ghz_circuits() -> None:
 def evaluate_sample_circuit(filename: str) -> dict[str, Any]:
     """Evaluates a given sample circuit and returns the results as a dictionary.
 
-    Args:
+    Arguments:
         filename (str): The path to the sample circuit to be evaluated.
         devices (list[Device]): The devices to be used for compilation.
 

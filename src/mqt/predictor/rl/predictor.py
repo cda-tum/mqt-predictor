@@ -1,3 +1,5 @@
+"""This module contains the Predictor class, which is used to predict the most suitable compilation pass sequence for a given quantum circuit."""
+
 from __future__ import annotations
 
 import logging
@@ -22,6 +24,7 @@ class Predictor:
     def __init__(
         self, figure_of_merit: reward.figure_of_merit, device_name: str, logger_level: int = logging.INFO
     ) -> None:
+        """Initializes the Predictor object."""
         logger.setLevel(logger_level)
 
         self.model = None
@@ -30,6 +33,7 @@ class Predictor:
         self.figure_of_merit = figure_of_merit
 
     def load_model(self) -> None:
+        """Loads the trained model for the given figure of merit and device."""
         self.model = rl.helper.load_model("model_" + self.figure_of_merit + "_" + self.device_name)
 
     def compile_as_predicted(
@@ -38,8 +42,8 @@ class Predictor:
     ) -> tuple[QuantumCircuit, list[str]]:
         """Compiles a given quantum circuit such that the given figure of merit is maximized by using the respectively trained optimized compiler.
 
-        Args:
-            qc (QuantumCircuit: The quantum circuit to be compiled or the path to a qasm file containing the quantum circuit.
+        Arguments:
+            qc: The quantum circuit to be compiled or the path to a qasm file containing the quantum circuit.
 
         Returns:
             tuple[QuantumCircuit, list[str]] | bool: Returns a tuple containing the compiled quantum circuit and the compilation information. If compilation fails, False is returned.
@@ -80,13 +84,12 @@ class Predictor:
     ) -> None:
         """Trains all models for the given reward functions and device.
 
-        Args:
+        Arguments:
             timesteps (int, optional): The number of timesteps to train the model. Defaults to 1000.
             model_name (str, optional): The name of the model. Defaults to "model".
             verbose (int, optional): The verbosity level. Defaults to 2.
             test (bool, optional): Whether to train the model for testing purposes. Defaults to False.
         """
-
         if test:
             n_steps = 100
             progress_bar = False

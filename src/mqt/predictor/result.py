@@ -1,3 +1,5 @@
+"""The Result class is used to store the results of a compilation."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -11,8 +13,7 @@ if TYPE_CHECKING:
 
 
 class Result:
-    """
-    The Result class is used to store the results of a compilation.
+    """The Result class is used to store the results of a compilation.
 
     Attributes:
         compilation_setup (str): The setup used for compilation. Either 'mqt-predictor_<figure_of_merit>', 'qiskit' or 'tket'. For the two latter, also the device name is appended.
@@ -29,6 +30,7 @@ class Result:
         compiled_qc: QuantumCircuit | None,
         device: Device,
     ) -> None:
+        """Initializes the Result object."""
         if compiled_qc is not None:
             rew_fid = reward.expected_fidelity(compiled_qc, device)
             rew_crit_depth = reward.crit_depth(compiled_qc)
@@ -43,7 +45,6 @@ class Result:
 
     def get_dict(self) -> dict[str, float]:
         """Returns the results as a dictionary."""
-
         return {
             self.compiler + "_" + "time": self.compilation_time,
             self.compiler + "_" + "expected_fidelity": self.fidelity,

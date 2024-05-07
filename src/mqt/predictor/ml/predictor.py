@@ -1,3 +1,5 @@
+"""This module contains the Predictor class, which is used to predict the most suitable quantum device for a given quantum circuit."""
+
 from __future__ import annotations
 
 import logging
@@ -25,14 +27,17 @@ logger = logging.getLogger("mqt-predictor")
 
 
 class Predictor:
+    """The Predictor class is used to predict the most suitable quantum device for a given quantum circuit."""
+
     def __init__(self, logger_level: int = logging.INFO) -> None:
+        """Initializes the Predictor class."""
         logger.setLevel(logger_level)
 
         self.clf = None
         self.devices = get_available_devices()
 
     def set_classifier(self, clf: RandomForestClassifier) -> None:
-        """Sets the classifier to the given classifier"""
+        """Sets the classifier to the given classifier."""
         self.clf = clf
 
     def compile_all_circuits_circuitwise(
@@ -45,11 +50,12 @@ class Predictor:
     ) -> None:
         """Compiles all circuits in the given directory with the given timeout and saves them in the given directory.
 
-        Args:
-            timeout (int): The timeout in seconds for the compilation of a single circuit
-            source_path (Path, optional): The path to the directory containing the circuits to be compiled. Defaults to None.
-            target_path (Path, optional): The path to the directory where the compiled circuits should be saved. Defaults to None.
-            logger_level (int, optional): The level of the logger. Defaults to logging.INFO.
+        Arguments:
+            figure_of_merit: The figure of merit to be used for compilation.
+            timeout: The timeout in seconds for the compilation of a single circuit.
+            source_path: The path to the directory containing the circuits to be compiled. Defaults to None.
+            target_path: The path to the directory where the compiled circuits should be saved. Defaults to None.
+            logger_level: The level of the logger. Defaults to logging.INFO.
 
         """
         logger.setLevel(logger_level)
@@ -77,7 +83,7 @@ class Predictor:
     ) -> None:
         """Compiles a single circuit with the given timeout and saves it in the given directory.
 
-        Args:
+        Arguments:
             filename (Path): The path to the circuit to be compiled
             timeout (int): The timeout in seconds for the compilation of the circuit
             source_path (Path): The path to the directory containing the circuit to be compiled
@@ -118,7 +124,7 @@ class Predictor:
     ) -> None:
         """Compiles all circuits in the given directory with the given timeout and saves them in the given directory.
 
-        Args:
+        Arguments:
             device_name (str): The name of the device to be used for compilation
             timeout (int): The timeout in seconds for the compilation of a single circuit
             figure_of_merit (reward.reward_functions): The figure of merit to be used for compilation
@@ -171,7 +177,7 @@ class Predictor:
     ) -> None:
         """Compiles all circuits in the given directory with the given timeout and saves them in the given directory.
 
-        Args:
+        Arguments:
             source_path (Path, optional): The path to the directory containing the circuits to be compiled. Defaults to None.
             target_path (Path, optional): The path to the directory where the compiled circuits should be saved. Defaults to None.
             timeout (int, optional): The timeout in seconds for the compilation of a single circuit. Defaults to 600.
@@ -203,9 +209,9 @@ class Predictor:
         path_uncompiled_circuits: Path | None = None,
         path_compiled_circuits: Path | None = None,
     ) -> tuple[list[NDArray[np.float64]], list[str], list[NDArray[np.float64]]]:
-        """Handles to create training data from all generated training samples
+        """Handles to create training data from all generated training samples.
 
-        Args:
+        Arguments:
             figure_of_merit (reward.reward_functions): The figure of merit to be used for training
             path_uncompiled_circuits (Path, optional): The path to the directory containing the uncompiled circuits. Defaults to None.
             path_compiled_circuits (Path, optional): The path to the directory containing the compiled circuits. Defaults to None.
@@ -255,7 +261,7 @@ class Predictor:
     ) -> tuple[tuple[list[Any], Any], str, list[float]]:
         """Handles to create a training sample from a given file.
 
-        Args:
+        Arguments:
             file (Path): The name of the file to be used for training
             figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
             path_uncompiled_circuit (Path): The path to the directory containing the uncompiled circuits. Defaults to None.
@@ -307,14 +313,13 @@ class Predictor:
     ) -> bool:
         """Trains a random forest classifier for the given figure of merit.
 
-        Args:
+        Arguments:
             figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for training. Defaults to "expected_fidelity".
             visualize_results (bool, optional): Whether to visualize the results. Defaults to False.
 
         Returns:
             bool: Whether the training was successful.
         """
-
         training_data = self.get_prepared_training_data(figure_of_merit, save_non_zero_indices=True)
 
         scores_filtered = [training_data.scores_list[i] for i in training_data.indices_test]
@@ -355,7 +360,7 @@ class Predictor:
     ) -> ml.helper.TrainingData:
         """Prepares the training data for the given figure of merit.
 
-        Args:
+        Arguments:
             figure_of_merit (reward.reward_functions): The figure of merit to be used for training.
             save_non_zero_indices (bool, optional): Whether to save the non zero indices. Defaults to False.
 
@@ -411,9 +416,9 @@ class Predictor:
         y_pred: np.ndarray[Any, np.dtype[np.float64]],
         y_test: np.ndarray[Any, np.dtype[np.float64]],
     ) -> tuple[list[int], list[float]]:
-        """Method to generate the performance measures for a trained classifier
+        """Method to generate the performance measures for a trained classifier.
 
-        Args:
+        Arguments:
             scores_filtered (list[list[float]]): The scores filtered for the respectively predicted indices of all training data
             y_pred (np.ndarray[Any, np.dtype[np.float64]]): The predicted labels
             y_test (np.ndarray[Any, np.dtype[np.float64]]): The actual labels
@@ -421,7 +426,6 @@ class Predictor:
         Returns:
             tuple[list[int], list[float]]: The ranks and the relative scores
         """
-
         res = []
         relative_scores = []
         for i in range(len(y_pred)):
@@ -438,16 +442,15 @@ class Predictor:
     def generate_eval_histogram(
         self, res: list[int], filename: str = "histogram", color: str = "#21918c", show_plot: bool = True
     ) -> None:
-        """Method to generate the histogram for the evaluation scores
+        """Method to generate the histogram for the evaluation scores.
 
-        Args:
+        Arguments:
             res (list[int]): The ranks of the predictions
             filename (str, optional): The filename of the histogram. Defaults to "histogram".
             color (str, optional): The color of the histogram. Defaults to "#21918c".
             show_plot (bool, optional): Whether to show the plot. Defaults to True. False for testing purposes.
 
         """
-
         plt.figure(figsize=(10, 5))
 
         num_of_comp_paths = len(self.devices)
@@ -487,9 +490,9 @@ class Predictor:
         color_all: str = "#21918c",
         color_pred: str = "#440154",
     ) -> None:
-        """Method to generate the plot for the evaluation scores of all training data
+        """Method to generate the plot for the evaluation scores of all training data.
 
-        Args:
+        Arguments:
             names_list (list[Any]): The names of all training data
             scores_filtered (list[Any]): The scores filtered for the respectively predicted indices of all training data
             y_pred (np.ndarray[Any, np.dtype[np.float64]]): The predicted labels
@@ -498,7 +501,6 @@ class Predictor:
             color_pred (str, optional): The color of the evaluation scores of the predicted training data. Defaults to "#440154".
 
         """
-
         # Create list of all qubit numbers and sort them
         names_list_num_qubits = []
         for i in range(len(names_list)):
@@ -551,14 +553,13 @@ class Predictor:
     def predict_probs(self, qasm_str_or_path: str | QuantumCircuit, figure_of_merit: reward.figure_of_merit) -> int:
         """Returns the probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
 
-        Args:
+        Arguments:
             qasm_str_or_path (str | QuantumCircuit): The qasm string or path to the qasm file
             figure_of_merit (reward.reward_functions): The figure of merit to be used for prediction
 
         Returns:
             int: The index of the predicted compilation option
         """
-
         if self.clf is None:
             path = ml.helper.get_path_trained_model(figure_of_merit)
             if path.is_file():
