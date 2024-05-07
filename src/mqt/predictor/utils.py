@@ -1,4 +1,4 @@
-"""Utility functions for the mqt predictor module."""
+"""Utility functions for the mqt.predictor module."""
 
 from __future__ import annotations
 
