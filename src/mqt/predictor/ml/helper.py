@@ -1,3 +1,5 @@
+"""Helper functions for the machine learning device selection predictor."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -25,14 +27,13 @@ def qcompile(
 ) -> tuple[QuantumCircuit, list[str], str]:
     """Compiles a given quantum circuit to a device with the highest predicted figure of merit.
 
-    Args:
-        qc (QuantumCircuit): The quantum circuit to be compiled.
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
+    Arguments:
+        qc: The quantum circuit to be compiled.
+        figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
-        tuple[QuantumCircuit, list[str], str] | bool: Returns a tuple containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, False is returned.
+        Returns a tuple containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, False is returned.
     """
-
     device = predict_device_for_figure_of_merit(qc, figure_of_merit)
     res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device.name)
     return *res, device.name
@@ -43,12 +44,12 @@ def predict_device_for_figure_of_merit(
 ) -> Device:
     """Returns the name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
 
-    Args:
-        qc (QuantumCircuit): The quantum circuit to be compiled.
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
+    Arguments:
+        qc: The quantum circuit to be compiled.
+        figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
-        Device : The device with the highest predicted figure of merit that is suitable for the given quantum circuit.
+        The device with the highest predicted figure of merit that is suitable for the given quantum circuit.
     """
     ml_predictor = ml.Predictor()
     predicted_device_index_probs = ml_predictor.predict_probs(qc, figure_of_merit)
@@ -157,11 +158,11 @@ PATH_LENGTH = 260
 def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     """Creates and returns a feature dictionary for a given quantum circuit.
 
-    Args:
-        qc (str | QuantumCircuit): The quantum circuit to be compiled.
+    Arguments:
+        qc: The quantum circuit to be compiled.
 
     Returns:
-        dict[str, Any]: The feature dictionary of the given quantum circuit.
+        The feature dictionary of the given quantum circuit.
     """
     if not isinstance(qc, QuantumCircuit):
         if len(qc) < PATH_LENGTH and Path(qc).exists():
@@ -194,9 +195,9 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
 def save_classifier(clf: RandomForestClassifier, figure_of_merit: reward.figure_of_merit = "expected_fidelity") -> None:
     """Saves the given classifier to the trained model folder.
 
-    Args:
-        clf (RandomForestClassifier): The classifier to be saved.
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
+    Arguments:
+        clf: The classifier to be saved.
+        figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
     """
     dump(clf, str(get_path_trained_model(figure_of_merit)))
 
@@ -209,11 +210,12 @@ def save_training_data(
 ) -> None:
     """Saves the given training data to the training data folder.
 
-    Args:
-        res (tuple[list[Any], list[Any], list[Any]]): The training data, the names list and the scores list to be saved.
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
+    Arguments:
+        training_data: The training data, the names list and the scores list to be saved.
+        names_list: The names list of the training data.
+        scores_list: The scores list of the training data.
+        figure_of_merit: The figure of merit to be used for compilation.
     """
-
     with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
         data = np.asarray(training_data, dtype=object)
         np.save(str(path / ("training_data_" + figure_of_merit + ".npy")), data)
@@ -228,11 +230,11 @@ def load_training_data(
 ) -> tuple[list[NDArray[np.float64]], list[str], list[NDArray[np.float64]]]:
     """Loads and returns the training data from the training data folder.
 
-    Args:
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
+    Arguments:
+        figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
-       tuple[NDArray[np.float_], list[str], list[NDArray[np.float_]]]: The training data, the names list and the scores list.
+       The training data, the names list and the scores list.
     """
     with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
         if (
@@ -252,6 +254,8 @@ def load_training_data(
 
 @dataclass
 class TrainingData:
+    """Dataclass for the training data."""
+
     X_train: NDArray[np.float64]
     X_test: NDArray[np.float64]
     y_train: NDArray[np.float64]

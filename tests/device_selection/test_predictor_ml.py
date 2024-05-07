@@ -1,3 +1,5 @@
+"""Tests for the machine learning device selection predictor module."""
+
 from __future__ import annotations
 
 import sys
@@ -14,8 +16,10 @@ from mqt.predictor import ml, reward
 
 
 def test_train_random_forest_classifier() -> None:
-    """Test the training of a random forest classifier. This test must be executed prior to any prediction to make sure
-    the model is trained using the latest scikit-learn version."""
+    """Test the training of a random forest classifier.
+
+    This test must be executed prior to any prediction to make sure the model is trained using the latest scikit-learn version.
+    """
     predictor = ml.Predictor()
     assert predictor.clf is None
     predictor.train_random_forest_classifier(visualize_results=False)
@@ -24,6 +28,7 @@ def test_train_random_forest_classifier() -> None:
 
 
 def test_predict_device_for_figure_of_merit() -> None:
+    """Test the prediction of the device with the highest expected fidelity for a given quantum circuit."""
     qc = benchmark_generator.get_benchmark("ghz", 1, 5)
     assert ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity").name in get_available_device_names()
 
@@ -32,6 +37,7 @@ def test_predict_device_for_figure_of_merit() -> None:
 
 
 def test_predict() -> None:
+    """Test the prediction of the device with the highest expected fidelity for a given quantum circuit qasm dump considering all predicted probabilities for all devices."""
     path = ml.helper.get_path_trained_model(figure_of_merit="expected_fidelity")
     assert path.is_file()
     filename = "test_qasm.qasm"
@@ -53,6 +59,7 @@ def test_predict() -> None:
 
 
 def test_performance_measures() -> None:
+    """Test the calculation of the performance measures for a given set of scores and labels."""
     predictor = ml.Predictor()
     figure_of_merit: Literal["expected_fidelity"] = "expected_fidelity"
 
@@ -90,6 +97,7 @@ def test_performance_measures() -> None:
 
 
 def test_compile_all_circuits_for_dev_and_fom() -> None:
+    """Test the compilation of all circuits for a given device and figure of merit."""
     predictor = ml.Predictor()
     source_path = Path()
     target_path = Path("test_compiled_circuits")

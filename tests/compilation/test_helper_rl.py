@@ -1,3 +1,5 @@
+"""Tests for the helper functions of the reinforcement learning predictor."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -13,6 +15,7 @@ from mqt.predictor import rl
 
 
 def test_create_feature_dict() -> None:
+    """Test the creation of a feature dictionary."""
     qc = get_benchmark("dj", 1, 5)
     features = rl.helper.create_feature_dict(qc)
     for feature in features.values():
@@ -20,18 +23,21 @@ def test_create_feature_dict() -> None:
 
 
 def test_get_path_trained_model() -> None:
+    """Test the retrieval of the path to the trained model."""
     path = rl.helper.get_path_trained_model()
     assert path.exists()
     assert isinstance(path, Path)
 
 
 def test_get_path_training_circuits() -> None:
+    """Test the retrieval of the path to the training circuits."""
     path = rl.helper.get_path_training_circuits()
     assert path.exists()
     assert isinstance(path, Path)
 
 
 def test_vf2_layout_and_postlayout() -> None:
+    """Test the VF2Layout and VF2PostLayout passes."""
     qc = get_benchmark("ghz", 1, 3)
 
     for dev in [get_device_by_name("ibm_montreal"), get_device_by_name("ionq_harmony")]:

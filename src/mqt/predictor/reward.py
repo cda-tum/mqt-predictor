@@ -1,3 +1,5 @@
+"""This module contains the functions to calculate the reward of a quantum circuit on a given device."""
+
 from __future__ import annotations
 
 import logging
@@ -26,13 +28,13 @@ def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
 def expected_fidelity(qc: QuantumCircuit, device: Device, precision: int = 10) -> float:
     """Calculates the expected fidelity of a given quantum circuit on a given device.
 
-    Args:
-        qc (QuantumCircuit): The quantum circuit to be compiled.
-        device(mqt.bench.Device): The device to be used for compilation.
-        precision (int, optional): The precision of the returned value. Defaults to 10.
+    Arguments:
+        qc: The quantum circuit to be compiled.
+        device: The device to be used for compilation.
+        precision: The precision of the returned value. Defaults to 10.
 
     Returns:
-        float: The expected fidelity of the given quantum circuit on the given device.
+        The expected fidelity of the given quantum circuit on the given device.
     """
     res = 1.0
     for instruction, qargs, _cargs in qc.data:
@@ -57,6 +59,7 @@ def expected_fidelity(qc: QuantumCircuit, device: Device, precision: int = 10) -
 
 
 def calc_qubit_index(qargs: list[Qubit], qregs: list[QuantumRegister], index: int) -> int:
+    """Calculates the global qubit index for a given quantum circuit and qubit index."""
     offset = 0
     for reg in qregs:
         if qargs[index] not in reg:

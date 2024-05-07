@@ -1,3 +1,5 @@
+"""Test the pre-trained models for the predictor."""
+
 from __future__ import annotations
 
 import os
@@ -22,6 +24,7 @@ EXECUTION_FLAG = os.getenv("RUN_PREGENERATED_TESTS") == "true"
     ["expected_fidelity", "critical_depth"],
 )
 def test_qcompile_with_pretrained_models(figure_of_merit: reward.figure_of_merit) -> None:
+    """Test the qcompile compilation function using reinforcement learning with pre-trained models."""
     qc = get_benchmark("ghz", 1, 3)
     qc_compiled, compilation_information = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name="quantinuum_h2")
     assert isinstance(qc_compiled, QuantumCircuit)
@@ -30,6 +33,7 @@ def test_qcompile_with_pretrained_models(figure_of_merit: reward.figure_of_merit
 
 @pytest.mark.skipif(not EXECUTION_FLAG, reason="Only run this test on GitHub runner on demand.")
 def test_qcompile() -> None:
+    """Test the whole compilation including device selection with a quantum circuit."""
     qc = get_benchmark("ghz", 1, 5)
     qc_compiled, _compilation_information, quantum_device = qcompile(qc)
     assert quantum_device in get_available_device_names()
@@ -39,6 +43,7 @@ def test_qcompile() -> None:
 
 @pytest.mark.skipif(not EXECUTION_FLAG, reason="Only run this test on GitHub runner on demand.")
 def test_evaluate_sample_circuit() -> None:
+    """Test the evaluation of a sample circuit with pre-generated models."""
     qc = get_benchmark("ghz", 1, 3)
     filename = "test_3.qasm"
     with Path(filename).open("w") as f:
