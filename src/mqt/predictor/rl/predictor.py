@@ -46,7 +46,7 @@ class Predictor:
             qc: The quantum circuit to be compiled or the path to a qasm file containing the quantum circuit.
 
         Returns:
-            tuple[QuantumCircuit, list[str]] | bool: Returns a tuple containing the compiled quantum circuit and the compilation information. If compilation fails, False is returned.
+            A tuple containing the compiled quantum circuit and the compilation information. If compilation fails, False is returned.
         """
         if not self.model:
             try:
@@ -85,10 +85,10 @@ class Predictor:
         """Trains all models for the given reward functions and device.
 
         Arguments:
-            timesteps (int, optional): The number of timesteps to train the model. Defaults to 1000.
-            model_name (str, optional): The name of the model. Defaults to "model".
-            verbose (int, optional): The verbosity level. Defaults to 2.
-            test (bool, optional): Whether to train the model for testing purposes. Defaults to False.
+            timesteps: The number of timesteps to train the model. Defaults to 1000.
+            model_name: The name of the model. Defaults to "model".
+            verbose: The verbosity level. Defaults to 2.
+            test: Whether to train the model for testing purposes. Defaults to False.
         """
         if test:
             n_steps = 100

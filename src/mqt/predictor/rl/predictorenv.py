@@ -151,12 +151,12 @@ class PredictorEnv(Env):  # type: ignore[misc]
         """Resets the environment to the given state or a random state.
 
         Arguments:
-            qc (Path | str | QuantumCircuit | None, optional): The quantum circuit to be compiled or the path to a qasm file containing the quantum circuit. Defaults to None.
-            seed (int | None, optional): The seed to be used for the random number generator. Defaults to None.
-            options (dict[str, Any] | None, optional): Additional options. Defaults to None.
+            qc: The quantum circuit to be compiled or the path to a qasm file containing the quantum circuit. Defaults to None.
+            seed: The seed to be used for the random number generator. Defaults to None.
+            options: Additional options. Defaults to None.
 
         Returns:
-            tuple[QuantumCircuit, dict[str, Any]]: The initial state and additional information.
+            The initial state and additional information.
         """
         super().reset(seed=seed)
         if isinstance(qc, QuantumCircuit):

@@ -28,11 +28,11 @@ def qcompile(
     """Compiles a given quantum circuit to a device with the highest predicted figure of merit.
 
     Arguments:
-        qc (QuantumCircuit): The quantum circuit to be compiled.
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
+        qc: The quantum circuit to be compiled.
+        figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
-        tuple[QuantumCircuit, list[str], str] | bool: Returns a tuple containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, False is returned.
+        Returns a tuple containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, False is returned.
     """
     device = predict_device_for_figure_of_merit(qc, figure_of_merit)
     res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device.name)
@@ -45,11 +45,11 @@ def predict_device_for_figure_of_merit(
     """Returns the name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
 
     Arguments:
-        qc (QuantumCircuit): The quantum circuit to be compiled.
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
+        qc: The quantum circuit to be compiled.
+        figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
-        Device : The device with the highest predicted figure of merit that is suitable for the given quantum circuit.
+        The device with the highest predicted figure of merit that is suitable for the given quantum circuit.
     """
     ml_predictor = ml.Predictor()
     predicted_device_index_probs = ml_predictor.predict_probs(qc, figure_of_merit)
@@ -159,10 +159,10 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     """Creates and returns a feature dictionary for a given quantum circuit.
 
     Arguments:
-        qc (str | QuantumCircuit): The quantum circuit to be compiled.
+        qc: The quantum circuit to be compiled.
 
     Returns:
-        dict[str, Any]: The feature dictionary of the given quantum circuit.
+        The feature dictionary of the given quantum circuit.
     """
     if not isinstance(qc, QuantumCircuit):
         if len(qc) < PATH_LENGTH and Path(qc).exists():
@@ -196,8 +196,8 @@ def save_classifier(clf: RandomForestClassifier, figure_of_merit: reward.figure_
     """Saves the given classifier to the trained model folder.
 
     Arguments:
-        clf (RandomForestClassifier): The classifier to be saved.
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
+        clf: The classifier to be saved.
+        figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
     """
     dump(clf, str(get_path_trained_model(figure_of_merit)))
 
@@ -231,10 +231,10 @@ def load_training_data(
     """Loads and returns the training data from the training data folder.
 
     Arguments:
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
+        figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
-       tuple[NDArray[np.float_], list[str], list[NDArray[np.float_]]]: The training data, the names list and the scores list.
+       The training data, the names list and the scores list.
     """
     with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
         if (

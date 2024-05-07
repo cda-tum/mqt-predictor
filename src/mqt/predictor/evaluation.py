@@ -36,7 +36,7 @@ def create_qiskit_result(qc: QuantumCircuit, device: Device) -> Result:
         device: The device to be used for compilation. Defaults to None.
 
     Returns:
-        Result: Returns a Result object containing the compiled quantum circuit.
+        A Result object containing the compiled quantum circuit.
     """
     if qc.num_qubits > device.num_qubits:
         return Result("qiskit_", -1, None, device)
@@ -67,7 +67,7 @@ def create_tket_result(
         device: The device to be used for compilation. Defaults to None.
 
     Returns:
-        Result: Returns a Result object containing the compiled quantum circuit.
+        A Result object containing the compiled quantum circuit.
     """
     if qc.num_qubits > device.num_qubits:
         return Result("tket_" + device.name, -1, None, device)
@@ -98,13 +98,13 @@ def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figur
     """Creates a Result object for a given benchmark and figure of merit using mqt-predictor for compilation.
 
     Arguments:
-        qc (QuantumCircuit): The quantum circuit to be compiled.
-        figure_of_merit (reward.reward_functions): The figure of merit to be used for compilation.
-        filename (str): The path to the benchmark to be compiled.
+        qc: The quantum circuit to be compiled.
+        figure_of_merit: The figure of merit to be used for compilation.
+        filename: The path to the benchmark to be compiled.
 
 
     Returns:
-        Result: Returns a Result object containing the compiled quantum circuit.
+        A Result object containing the compiled quantum circuit.
     """
     device = ml.helper.predict_device_for_figure_of_merit(qc, figure_of_merit)
     dev_index = get_available_device_names().index(device.name)
@@ -176,11 +176,11 @@ def evaluate_sample_circuit(filename: str) -> dict[str, Any]:
     """Evaluates a given sample circuit and returns the results as a dictionary.
 
     Arguments:
-        filename (str): The path to the sample circuit to be evaluated.
-        devices (list[Device]): The devices to be used for compilation.
+        filename: The path to the sample circuit to be evaluated.
+        devices: The devices to be used for compilation.
 
     Returns:
-        dict[str, Any]: Returns a dictionary containing the results of the evaluation.
+        A dictionary containing the results of the evaluation.
     """
     logger.info("Evaluate file: " + filename)
 

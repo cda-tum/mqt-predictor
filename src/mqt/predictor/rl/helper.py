@@ -96,13 +96,13 @@ def qcompile(
     """Compiles a given quantum circuit to a device optimizing for the given figure of merit.
 
     Arguments:
-        qc (QuantumCircuit | str): The quantum circuit to be compiled. If a string is given, it is assumed to be a path to a qasm file.
-        figure_of_merit (reward.reward_functions, optional): The figure of merit to be used for compilation. Defaults to "expected_fidelity".
-        device_name (str, optional): The name of the device to compile to. Defaults to "ibm_washington".
-        predictor_singleton (rl.Predictor, optional): A predictor object that is used for compilation to reduce compilation time when compiling multiple quantum circuits. If None, a new predictor object is created. Defaults to None.
+        qc: The quantum circuit to be compiled. If a string is given, it is assumed to be a path to a qasm file.
+        figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
+        device_name: The name of the device to compile to. Defaults to "ibm_washington".
+        predictor_singleton: A predictor object that is used for compilation to reduce compilation time when compiling multiple quantum circuits. If None, a new predictor object is created. Defaults to None.
 
     Returns:
-        tuple[QuantumCircuit, list[str]] | bool: Returns a tuple containing the compiled quantum circuit and the compilation information. If compilation fails, False is returned.
+        A tuple containing the compiled quantum circuit and the compilation information. If compilation fails, False is returned.
     """
     if predictor_singleton is None:
         if figure_of_merit is None:
@@ -354,10 +354,10 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
     """Returns a random quantum circuit from the training circuits folder.
 
     Arguments:
-        max_qubits (int, None): The maximum number of qubits the returned quantum circuit may have. If no limit is set, it defaults to None.
+        max_qubits: The maximum number of qubits the returned quantum circuit may have. If no limit is set, it defaults to None.
 
     Returns:
-        tuple[QuantumCircuit, str]: A tuple containing the random quantum circuit and the path to the file from which it was read.
+        A tuple containing the random quantum circuit and the path to the file from which it was read.
     """
     file_list = list(get_path_training_circuits().glob("*.qasm"))
 
@@ -390,10 +390,10 @@ def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float6
     """Creates a feature dictionary for a given quantum circuit.
 
     Arguments:
-        qc (QuantumCircuit): The quantum circuit for which the feature dictionary is created.
+        qc: The quantum circuit for which the feature dictionary is created.
 
     Returns:
-        dict[str, Any]: The feature dictionary for the given quantum circuit.
+        The feature dictionary for the given quantum circuit.
     """
     feature_dict = {
         "num_qubits": qc.num_qubits,
@@ -430,10 +430,10 @@ def load_model(model_name: str) -> MaskablePPO:
     """Loads a trained model from the trained model folder.
 
     Arguments:
-        model_name (str): The name of the model to be loaded.
+        model_name: The name of the model to be loaded.
 
     Returns:
-        MaskablePPO: The loaded model.
+        The loaded model.
     """
     path = get_path_trained_model()
 
@@ -499,8 +499,8 @@ def handle_downloading_model(download_url: str, model_name: str) -> None:
     """Downloads a trained model from the given URL and saves it to the trained model folder.
 
     Arguments:
-        download_url (str): The URL from which the model is downloaded.
-        model_name (str): The name of the model to be downloaded.
+        download_url: The URL from which the model is downloaded.
+        model_name: The name of the model to be downloaded.
     """
     logger.info("Start downloading model...")
 
@@ -594,7 +594,7 @@ def get_bqskit_native_gates(device: Device) -> list[gates.Gate] | None:
         device: The device for which the native gates are returned.
 
     Returns:
-        list[gates.Gate]: The native gates of the given provider.
+        The native gates of the given provider.
     """
     provider = device.name.split("_")[0]
 
@@ -676,10 +676,10 @@ def get_ibm_backend_properties_by_device_name(device_name: str) -> BackendProper
     """Returns the IBM backend name for the given device name.
 
     Arguments:
-        device_name (str): The name of the device for which the IBM backend name is returned.
+        device_name: The name of the device for which the IBM backend name is returned.
 
     Returns:
-        str: The IBM backend name for the given device name.
+        The IBM backend name for the given device name.
     """
     if "ibm" not in device_name:
         return None
