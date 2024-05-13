@@ -1,3 +1,5 @@
+"""Integration tests for the compilation actions using further SDKs."""
+
 from __future__ import annotations
 
 from typing import cast
@@ -93,6 +95,7 @@ def test_bqskit_mapping_action_swaps_necessary() -> None:
 def check_mapped_circuit(
     initial_qc: QuantumCircuit, mapped_qc: QuantumCircuit, device: Device, layout: TranspileLayout
 ) -> None:
+    """Check if the mapped quantum circuit is correctly mapped to the device."""
     # check if the altered circuit is correctly mapped to the device
     check_mapping = CheckMap(coupling_map=CouplingMap(device.coupling_map))
     check_mapping(mapped_qc)
@@ -128,7 +131,6 @@ def check_mapped_circuit(
 
 def test_bqskit_mapping_action_no_swaps_necessary() -> None:
     """Test the BQSKitMapping action for a simple quantum circuit that does not require SWAP gates."""
-
     bqskit_mapping_action = None
     for action in helper.get_actions_mapping():
         if action["name"] == "BQSKitMapping":
@@ -155,7 +157,6 @@ def test_bqskit_mapping_action_no_swaps_necessary() -> None:
 
 def test_tket_routing() -> None:
     """Test the TKETRouting action."""
-
     qc = QuantumCircuit(5)
     qc.h(0)
     qc.cx(0, 1)

@@ -1,3 +1,5 @@
+"""Predictor environment for the compilation using reinforcement learning."""
+
 from __future__ import annotations
 
 import logging
@@ -30,6 +32,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
     def __init__(
         self, reward_function: reward.figure_of_merit = "expected_fidelity", device_name: str = "ibm_washington"
     ) -> None:
+        """Initializes the PredictorEnv object."""
         logger.info("Init env: " + reward_function)
 
         self.action_set = {}
@@ -149,13 +152,13 @@ class PredictorEnv(Env):  # type: ignore[misc]
     ) -> tuple[QuantumCircuit, dict[str, Any]]:
         """Resets the environment to the given state or a random state.
 
-        Args:
-            qc (Path | str | QuantumCircuit | None, optional): The quantum circuit to be compiled or the path to a qasm file containing the quantum circuit. Defaults to None.
-            seed (int | None, optional): The seed to be used for the random number generator. Defaults to None.
-            options (dict[str, Any] | None, optional): Additional options. Defaults to None.
+        Arguments:
+            qc: The quantum circuit to be compiled or the path to a qasm file containing the quantum circuit. Defaults to None.
+            seed: The seed to be used for the random number generator. Defaults to None.
+            options: Additional options. Defaults to None.
 
         Returns:
-            tuple[QuantumCircuit, dict[str, Any]]: The initial state and additional information.
+            The initial state and additional information.
         """
         super().reset(seed=seed)
         if isinstance(qc, QuantumCircuit):

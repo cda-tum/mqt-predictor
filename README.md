@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![CI](https://img.shields.io/github/actions/workflow/status/cda-tum/mqt-predictor/ci.yml?branch=main&style=flat-square&logo=github&label=ci)](https://github.com/cda-tum/mqt-predictor/actions/workflows/ci.yml)
 [![CD](https://img.shields.io/github/actions/workflow/status/cda-tum/mqt-predictor/cd.yml?style=flat-square&logo=github&label=cd)](https://github.com/cda-tum/mqt-predictor/actions/workflows/cd.yml)
-[![Documentation](https://img.shields.io/readthedocs/predictor?logo=readthedocs&style=flat-square)](https://mqt.readthedocs.io/projects/predictor)
+[![Documentation](https://img.shields.io/readthedocs/mqt-predictor?logo=readthedocs&style=flat-square)](https://mqt.readthedocs.io/projects/predictor)
 [![codecov](https://img.shields.io/codecov/c/github/cda-tum/mqt-predictor?style=flat-square&logo=codecov)](https://codecov.io/gh/cda-tum/mqt-predictor)
 
 <p align="center">

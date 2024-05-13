@@ -1,3 +1,5 @@
+"""Utility functions for the mqt.predictor module."""
+
 from __future__ import annotations
 
 import logging
@@ -23,7 +25,6 @@ def timeout_watcher(
     timeout: int,
 ) -> tuple[QuantumCircuit, list[str]] | bool:
     """Method that stops a function call after a given timeout limit."""
-
     if sys.platform == "win32":
         warn("Timeout is not supported on Windows.", category=RuntimeWarning, stacklevel=2)
         return func(*args) if isinstance(args, tuple | list) else func(args)
