@@ -43,7 +43,7 @@ def test_predict() -> None:
     filename = "test_qasm.qasm"
     figure_of_merit: reward.figure_of_merit = "expected_fidelity"
     qc = benchmark_generator.get_benchmark("dj", 1, 8)
-    with Path(filename).open("w") as f:
+    with Path(filename).open("w", encoding="locale") as f:
         dump(qc, f)
     predictor = ml.Predictor()
     predictions = predictor.predict_probs(filename, figure_of_merit=figure_of_merit)
@@ -107,7 +107,7 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
 
     qc = benchmark_generator.get_benchmark("dj", 1, 3)
     qasm_path = Path("test.qasm")
-    with Path(qasm_path).open("w") as f:
+    with Path(qasm_path).open("w", encoding="locale") as f:
         dump(qc, f)
 
     if sys.platform == "win32":
