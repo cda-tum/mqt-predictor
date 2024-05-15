@@ -24,7 +24,7 @@ def test_predictor_env_reset_from_string() -> None:
 
 @pytest.mark.parametrize(
     "figure_of_merit",
-    ["expected_fidelity", "critical_depth", "expected_success_probability"],
+    reward.FIGURES_OF_MERIT,
 )
 def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
     """Test the qcompile function with a newly trained model."""

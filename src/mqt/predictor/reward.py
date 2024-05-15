@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("mqt-predictor")
 
+FIGURES_OF_MERIT = ["expected_fidelity", "critical_depth", "expected_success_probability"]
 figure_of_merit = Literal["expected_fidelity", "critical_depth", "expected_success_probability"]
 
 
@@ -75,13 +76,13 @@ def calc_qubit_index(qargs: list[Qubit], qregs: list[QuantumRegister], index: in
 def expected_success_probability(qc: QuantumCircuit, device: Device, precision: int = 10) -> float:
     """Calculates the expected success probability of a given quantum circuit on a given device.
 
-    Args:
+    Arguments:
         qc (QuantumCircuit): The quantum circuit to be compiled.
-        device(mqt.bench.Device): The device to be used for compilation.
+        device (mqt.bench.Device): The device to be used for compilation.
         precision (int, optional): The precision of the returned value. Defaults to 10.
 
     Returns:
-        float: The expected success probability of the given quantum circuit on the given device.
+        The expected success probability of the given quantum circuit on the given device.
     """
     res = 1.0
 
@@ -93,18 +94,18 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
         if op in ["rxx", "rzz", "cx", "cz", "cp", "ecr", "xx_plus_yy"]:
             for q0, q1 in device.coupling_map:  # multi-qubit gates
                 try:
-                    d = device.get_two_qubit_gate_duration(op, q0, q1)
-                    op_times.append((op, [q0, q1], d, "s"))
+                    duration = device.get_two_qubit_gate_duration(op, q0, q1)
+                    op_times.append((op, [q0, q1], duration, "s"))
                 except ValueError:  # noqa:PERF203
                     pass  # gate duration not available for this qubit pair
         else:  # single-qubit gates
             for q in range(device.num_qubits):
                 try:
                     if op == "measure":
-                        d = device.get_readout_duration(q)
+                        duration = device.get_readout_duration(q)
                     else:
-                        d = device.get_single_qubit_gate_duration(op, q)
-                    op_times.append((op, [q], d, "s"))
+                        duration = device.get_single_qubit_gate_duration(op, q)
+                    op_times.append((op, [q], duration, "s"))
                 except ValueError:  # noqa:PERF203
                     pass  # gate duration not available for this qubit
 
@@ -142,7 +143,7 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
             qubit_durations[first_qubit_idx].append(instruction.duration)
             qubit_durations[second_qubit_idx].append(instruction.duration)
 
-        res *= fidelity
+        res *= fidelity  # == expected_fidelity
 
     # calculate T1,T2 decoherence over entire qubit lifetime
     for qubit_idx, durations in qubit_durations.items():

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from mqt.bench import benchmark_generator
-from mqt.predictor import ml
+from mqt.predictor import ml, reward
 
 
 def test_load_training_data() -> None:
@@ -57,7 +57,7 @@ def test_get_path_training_data() -> None:
 
 def test_get_path_trained_model() -> None:
     """Test the retrieval of the path to the trained model."""
-    for figure_of_merit in ["expected_fidelity", "critical_depth"]:
+    for figure_of_merit in reward.FIGURES_OF_MERIT:
         path = ml.helper.get_path_trained_model(figure_of_merit=figure_of_merit)
         assert path.exists()
 
