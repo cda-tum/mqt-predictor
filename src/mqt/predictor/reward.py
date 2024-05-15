@@ -99,13 +99,13 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
                 except ValueError:  # noqa:PERF203
                     pass  # gate duration not available for this qubit pair
         else:  # single-qubit gates
-            for q in range(device.num_qubits):
+            for qubit in range(device.num_qubits):
                 try:
                     if op == "measure":
-                        duration = device.get_readout_duration(q)
+                        duration = device.get_readout_duration(qubit)
                     else:
-                        duration = device.get_single_qubit_gate_duration(op, q)
-                    op_times.append((op, [q], duration, "s"))
+                        duration = device.get_single_qubit_gate_duration(op, qubit)
+                    op_times.append((op, [qubit], duration, "s"))
                 except ValueError:  # noqa:PERF203
                     pass  # gate duration not available for this qubit
 
