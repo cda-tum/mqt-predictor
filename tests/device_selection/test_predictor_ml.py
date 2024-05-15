@@ -113,7 +113,7 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
     if sys.platform == "win32":
         with pytest.warns(RuntimeWarning, match="Timeout is not supported on Windows."):
             predictor.compile_all_circuits_devicewise(
-                device_name="ionq_harmony",
+                device_name="ibm_montreal",
                 timeout=100,
                 figure_of_merit=figure_of_merit,
                 source_path=source_path,
@@ -121,7 +121,7 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
             )
     else:
         predictor.compile_all_circuits_devicewise(
-            device_name="ionq_harmony",
+            device_name="ibm_montreal",
             timeout=100,
             figure_of_merit=figure_of_merit,
             source_path=source_path,
