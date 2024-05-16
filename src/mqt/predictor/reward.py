@@ -86,39 +86,36 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
     """
     res = 1.0
 
-    # collect gate durations for all qubits
+    # collect gate durations for operations in the circuit
     op_times = []
-    for op in device.basis_gates:
-        if op == "barrier" or op == "id":
+    for instruction, qargs, _cargs in qc.data:
+        gate_type = instruction.name
+        if gate_type == "barrier" or gate_type == "id":
             continue
-        if op in ["rxx", "rzz", "cx", "cz", "cp", "ecr", "xx_plus_yy"]:
-            for q0, q1 in device.coupling_map:  # multi-qubit gates
-                try:
-                    duration = device.get_two_qubit_gate_duration(op, q0, q1)
-                    op_times.append((op, [q0, q1], duration, "s"))
-                except ValueError:  # noqa:PERF203
-                    pass  # gate duration not available for this qubit pair
-        else:  # single-qubit gates
-            for qubit in range(device.num_qubits):
-                try:
-                    if op == "measure":
-                        duration = device.get_readout_duration(qubit)
-                    else:
-                        duration = device.get_single_qubit_gate_duration(op, qubit)
-                    op_times.append((op, [qubit], duration, "s"))
-                except ValueError:  # noqa:PERF203
-                    pass  # gate duration not available for this qubit
+        assert len(qargs) in [1, 2]
+        first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
 
-    # associate gate times for each qubit through asap scheduling
-    transpiled = transpile(qc, scheduling_method="asap", basis_gates=device.basis_gates, instruction_durations=op_times)
+        if len(qargs) == 1:  # single-qubit gate
+            if gate_type == "measure":
+                duration = device.get_readout_duration(first_qubit_idx)
+            else:
+                duration = device.get_single_qubit_gate_duration(gate_type, first_qubit_idx)
+            op_times.append((gate_type, [first_qubit_idx], duration, "s"))
+        else:  # multi-qubit gate
+            second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
+            duration = device.get_two_qubit_gate_duration(gate_type, first_qubit_idx, second_qubit_idx)
+            op_times.append((gate_type, [first_qubit_idx, second_qubit_idx], duration, "s"))
 
+    # associate gate and idle (delay) times for each qubit through asap scheduling
+    scheduled_circ = transpile(
+        qc, scheduling_method="asap", basis_gates=device.basis_gates, instruction_durations=op_times
+    )
     qubit_durations: dict[int, list[float]] = {qubit_index: [] for qubit_index in range(device.num_qubits)}
 
-    for instruction, qargs, _cargs in transpiled.data:
+    for instruction, qargs, _cargs in scheduled_circ.data:
         gate_type = instruction.name
         if gate_type == "barrier":
             continue
-
         assert len(qargs) in [1, 2]
         first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
 

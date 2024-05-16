@@ -14,6 +14,7 @@ def test_create_result() -> None:
     device = get_device_by_name("ibm_montreal")
     assert device.num_qubits >= 10
     qc = QuantumCircuit(10)
+    qc.measure_all()
 
     res = create_tket_result(qc, device)
     assert isinstance(res, Result)

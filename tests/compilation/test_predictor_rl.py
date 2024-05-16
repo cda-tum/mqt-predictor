@@ -28,6 +28,7 @@ def test_predictor_env_reset_from_string() -> None:
 )
 def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
     """Test the qcompile function with a newly trained model.
+
     Important: Those trained models are used in later tests and must not be deleted.
     To test ESP as well, training must be done with a device that provides all relevant information (e.g. gate times).
     """
