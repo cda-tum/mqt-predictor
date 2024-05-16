@@ -121,8 +121,6 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
 
         assert len(qargs) in [1, 2]
         first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
-        if device.name == "rigetti_aspen_m2":
-            first_qubit_idx = (first_qubit_idx + 40) % 80
 
         fidelity = 1.0
         if len(qargs) == 1:  # single-qubit gate
@@ -136,8 +134,6 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
 
         else:  # multi-qubit gate
             second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
-            if device.name == "rigetti_aspen_m2":
-                second_qubit_idx = (second_qubit_idx + 40) % 80
 
             fidelity = device.get_two_qubit_gate_fidelity(gate_type, first_qubit_idx, second_qubit_idx)
             qubit_durations[first_qubit_idx].append(instruction.duration)
