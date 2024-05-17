@@ -95,7 +95,7 @@ filterwarnings = [
     "ignore:.*pytorch.*:UserWarning:",
     "ignore::DeprecationWarning:.*(importlib).*",
     "ignore::sklearn.exceptions.InconsistentVersionWarning:sklearn:",
-    "ignore:.*The class `qiskit.providers.provider.Provider` is deprecated as of qiskit 1.1. It will be removed no earlier than 3 months after the release date.*:DeprecationWarning",
+    "ignore:.*:DeprecationWarning:qiskit.providers.provider.*",
 ]
 
 [tool.check-wheel-contents]
