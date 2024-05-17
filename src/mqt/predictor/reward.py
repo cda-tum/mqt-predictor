@@ -6,7 +6,7 @@ import logging
 from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
-from qiskit import transpile
+from qiskit.transpiler import InstructionDurations, PassManager, passes
 
 from mqt.bench.utils import calc_supermarq_features
 
@@ -107,11 +107,14 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
             op_times.append((gate_type, [first_qubit_idx, second_qubit_idx], duration, "s"))
 
     # associate gate and idle (delay) times for each qubit through asap scheduling
-    scheduled_circ = transpile(
-        qc, scheduling_method="asap", basis_gates=device.basis_gates, instruction_durations=op_times
-    )
+    sched_pass = passes.ASAPScheduleAnalysis(InstructionDurations(op_times))
+    pm = PassManager(sched_pass)
+    scheduled_circ = pm.run(qc)
+
+    # store all gate/idle times for each qubit
     qubit_durations: dict[int, list[float]] = {qubit_index: [] for qubit_index in range(device.num_qubits)}
 
+    # collect gate/idle durations and gate fidelities for each qubit
     for instruction, qargs, _cargs in scheduled_circ.data:
         gate_type = instruction.name
         if gate_type == "barrier":
@@ -144,7 +147,7 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
         if len(durations) <= 1:
             continue
         lifetime = sum(durations)  # all operation times on qubit
-        # only use dominant decoherence term (either T1 or T2) as in https://arxiv.org/pdf/2001.02826
+        # only use dominant decoherence term (either T1 or T2) as in https://arxiv.org/abs/2001.02826
         # alternative: np.exp(-lifetime / T_1 - lifetime / T_2) as in https://arxiv.org/abs/2306.15020
         T_min = min(device.calibration.get_t1(qubit_idx), device.calibration.get_t2(qubit_idx))  # noqa:N806
         decoherence = np.exp(-lifetime / T_min)
