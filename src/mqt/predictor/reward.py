@@ -147,9 +147,8 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
         if len(durations) <= 1:
             continue
         # don't consider last measurement operation (decoherence before readout)
-        if durations[-1] == device.get_readout_duration(qubit_idx):
-            durations = durations[:-1]
-        lifetime = sum(durations)  # all operation times on qubit
+        mod_durations = durations[:-1] if durations[-1] == device.get_readout_duration(qubit_idx) else durations
+        lifetime = sum(mod_durations)  # all operation times on qubit (without readout)
         # only use dominant decoherence term (either T1 or T2) as in https://arxiv.org/abs/2001.02826
         # alternative: np.exp(-lifetime / T_1 - lifetime / T_2) as in https://arxiv.org/abs/2306.15020
         T_min = min(device.calibration.get_t1(qubit_idx), device.calibration.get_t2(qubit_idx))  # noqa:N806
