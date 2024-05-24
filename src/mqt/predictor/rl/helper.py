@@ -34,7 +34,6 @@ from qiskit.transpiler.passes import (
     CommutativeCancellation,
     CommutativeInverseCancellation,
     ConsolidateBlocks,
-    CXCancellation,
     DenseLayout,
     Depth,
     EnlargeWithAncilla,
@@ -124,11 +123,6 @@ def get_actions_opt() -> list[dict[str, Any]]:
         {
             "name": "Optimize1qGatesDecomposition",
             "transpile_pass": [Optimize1qGatesDecomposition()],
-            "origin": "qiskit",
-        },
-        {
-            "name": "CXCancellation",
-            "transpile_pass": [CXCancellation()],
             "origin": "qiskit",
         },
         {
