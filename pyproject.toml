@@ -22,10 +22,10 @@ dependencies = [
     "mqt.bench>=1.1.2, <1.2.0",
     "pytket_qiskit>=0.52.0, <0.54.0",
     "sb3_contrib>=2.0.0, <2.3.1",
-    "scikit-learn>=1.4.0,<1.4.3",
+    "scikit-learn>=1.4.0,<1.5.1",
     "tensorboard>=2.11.0, <2.16.3",
     "bqskit>=1.1.2, <1.2.0",
-    "lark>=0.7, <1.0"
+    "lark>=0.7, <2.0"
 ]
 
 classifiers = [
