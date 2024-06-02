@@ -77,9 +77,9 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
     """Calculates the expected success probability of a given quantum circuit on a given device.
 
     Arguments:
-        qc (QuantumCircuit): The quantum circuit to be compiled.
-        device (mqt.bench.Device): The device to be used for compilation.
-        precision (int, optional): The precision of the returned value. Defaults to 10.
+        qc: The quantum circuit to be compiled.
+        device: The device to be used for compilation.
+        precision: The precision of the returned value. Defaults to 10.
 
     Returns:
         The expected success probability of the given quantum circuit on the given device.
