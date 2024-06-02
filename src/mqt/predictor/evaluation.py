@@ -86,6 +86,7 @@ def create_tket_result(
         FullPeepholeOptimise(target_2qb_gate=OpType.TK2).apply(tket_qc)
         PlacementPass(GraphPlacement(arch)).apply(tket_qc)
         RoutingPass(arch).apply(tket_qc)
+        native_rebase.apply(tket_qc)
         duration = time.time() - start_time
         transpiled_qc_tket = tk_to_qiskit(tket_qc)
 
