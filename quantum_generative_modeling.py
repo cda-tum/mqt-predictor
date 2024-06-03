@@ -120,7 +120,7 @@ class QCBM:
         return np.sum(self.target * np.log(self.target / pmf_model), axis=1)
 
     def get_execute_circuit(self, circuit_transpiled: QuantumCircuit, backend: fake_backend.FakeBackendV2) -> callable:
-        def execute_circuit(solutions: np.ndarray, num_shots=None):
+        def execute_circuit(solutions: np.ndarray, num_shots=None) -> np.ndarray | None:
             # Execute the circuit and returns the probability mass function
 
             sample_dicts = Parallel(n_jobs=-1, verbose=0)(
@@ -149,7 +149,7 @@ class QCBM:
         return execute_circuit
 
     @staticmethod
-    def get_target(n_qubits) -> np.ndarray:
+    def get_target(n_qubits: int) -> np.ndarray:
         # Target distribution
         side_dimension = int(2 ** (n_qubits / 2))
         grid = np.zeros((side_dimension, side_dimension))
