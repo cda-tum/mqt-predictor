@@ -114,13 +114,13 @@ class QCBM:
         # Return the lowest KL divergence (Figure of merit)
         return best_kl, evolution_data
 
-    def kl_divergence(self, pmf_model: np.ndarray):
+    def kl_divergence(self, pmf_model: np.ndarray) -> np.ndarray:
         # Loss function bwteen target and model distribution
         pmf_model[pmf_model == 0] = 1e-8
         return np.sum(self.target * np.log(self.target / pmf_model), axis=1)
 
-    def get_execute_circuit(self, circuit_transpiled: QuantumCircuit, backend: fake_backend.FakeBackendV2):
-        def execute_circuit(solutions, num_shots=None):
+    def get_execute_circuit(self, circuit_transpiled: QuantumCircuit, backend: fake_backend.FakeBackendV2) -> callable:
+        def execute_circuit(solutions: np.ndarray, num_shots=None):
             # Execute the circuit and returns the probability mass function
 
             sample_dicts = Parallel(n_jobs=-1, verbose=0)(
@@ -149,7 +149,7 @@ class QCBM:
         return execute_circuit
 
     @staticmethod
-    def get_target(n_qubits):
+    def get_target(n_qubits) -> np.ndarray:
         # Target distribution
         side_dimension = int(2 ** (n_qubits / 2))
         grid = np.zeros((side_dimension, side_dimension))
@@ -163,7 +163,9 @@ class QCBM:
 
         return grid.flatten()
 
-    def generate_result(self, qc: QuantumCircuit, num_shots: int, index: int, backend: fake_backend.FakeBackendV2):
+    def generate_result(
+        self, qc: QuantumCircuit, num_shots: int, index: int, backend: fake_backend.FakeBackendV2
+    ) -> dict[int, dict[int, int]]:
         job = backend.run(qc, shots=num_shots)
         samples_dictionary = job.result().get_counts(qc).int_outcomes()
         return {index: samples_dictionary}
