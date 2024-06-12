@@ -88,23 +88,27 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
 
     # collect gate durations for operations in the circuit
     op_times = []
-    for instruction, qargs, _cargs in qc.data:
-        gate_type = instruction.name
-        if gate_type == "barrier" or gate_type == "id":
-            continue
-        assert len(qargs) in [1, 2]
-        first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
+    try:
+        for instruction, qargs, _cargs in qc.data:
+            gate_type = instruction.name
+            if gate_type == "barrier" or gate_type == "id":
+                continue
+            assert len(qargs) in [1, 2]
+            first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
 
-        if len(qargs) == 1:  # single-qubit gate
-            if gate_type == "measure":
-                duration = device.get_readout_duration(first_qubit_idx)
-            else:
-                duration = device.get_single_qubit_gate_duration(gate_type, first_qubit_idx)
-            op_times.append((gate_type, [first_qubit_idx], duration, "s"))
-        else:  # multi-qubit gate
-            second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
-            duration = device.get_two_qubit_gate_duration(gate_type, first_qubit_idx, second_qubit_idx)
-            op_times.append((gate_type, [first_qubit_idx, second_qubit_idx], duration, "s"))
+            if len(qargs) == 1:  # single-qubit gate
+                if gate_type == "measure":
+                    duration = device.get_readout_duration(first_qubit_idx)
+                else:
+                    duration = device.get_single_qubit_gate_duration(gate_type, first_qubit_idx)
+                op_times.append((gate_type, [first_qubit_idx], duration, "s"))
+            else:  # multi-qubit gate
+                second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
+                duration = device.get_two_qubit_gate_duration(gate_type, first_qubit_idx, second_qubit_idx)
+                op_times.append((gate_type, [first_qubit_idx, second_qubit_idx], duration, "s"))
+    except ValueError:
+        logger.exception("Calculating ESP requires device with fully specified gate and readout durations.")
+        return 0.0
 
     # associate gate and idle (delay) times for each qubit through asap scheduling
     sched_pass = passes.ASAPScheduleAnalysis(InstructionDurations(op_times))
