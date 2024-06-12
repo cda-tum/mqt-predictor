@@ -24,13 +24,15 @@ def test_predictor_env_reset_from_string() -> None:
 
 @pytest.mark.parametrize(
     "figure_of_merit",
-    ["expected_fidelity", "critical_depth"],
+    reward.FIGURES_OF_MERIT,
 )
 def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
-    """Test the qcompile function with a newly trained model."""
-    """ Important: Those trained models are used in later tests and must not be deleted. """
+    """Test the qcompile function with a newly trained model.
 
-    device = "ibm_montreal"
+    Important: Those trained models are used in later tests and must not be deleted.
+    To test ESP as well, training must be done with a device that provides all relevant information (e.g. gate times).
+    """
+    device = "ionq_harmony"  # fully specified calibration data
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
     predictor.train_model(
         timesteps=100,

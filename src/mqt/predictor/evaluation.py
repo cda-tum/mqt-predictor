@@ -20,6 +20,8 @@ from pytket.passes import (
 )
 from pytket.placement import GraphPlacement
 from qiskit import QuantumCircuit, transpile
+from qiskit.transpiler import Layout, PassManager
+from qiskit.transpiler.passes import ApplyLayout, SetLayout
 
 from mqt.bench.devices import Device, get_available_device_names, get_available_devices
 from mqt.bench.tket_helper import get_rebase
@@ -87,11 +89,26 @@ def create_tket_result(
         native_rebase.apply(tket_qc)
         duration = time.time() - start_time
         transpiled_qc_tket = tk_to_qiskit(tket_qc)
+
+        # to prevent qiskit transpile errors e.g. in expected_success_probability(...)
+        # create a layout that maps the 'node' registers to the 'q' registers
+        layouts = [
+            SetLayout(Layout({node_qubit: i for i, node_qubit in enumerate(node_reg)}))
+            for node_reg in transpiled_qc_tket.qregs
+        ]
+        # create a pass manager with the SetLayout and ApplyLayout passes
+        pm = PassManager(list(layouts))
+        pm.append(ApplyLayout())
+
+        # replace the 'node' register with the 'q' register in the circuit
+        physical_qc_tket = pm.run(transpiled_qc_tket)
+        assert physical_qc_tket.qregs[0].name == "q"
+
     except Exception as e:
         logger.warning("tket Transpile Error occurred for: " + device.name + " " + str(e))
         return Result("tket_" + device.name, -1, None, device)
 
-    return Result("tket_" + device.name, duration, transpiled_qc_tket, device)
+    return Result("tket_" + device.name, duration, physical_qc_tket, device)
 
 
 def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit, filename: str) -> Result:
@@ -192,6 +209,7 @@ def evaluate_sample_circuit(filename: str) -> dict[str, Any]:
     qc = QuantumCircuit.from_qasm_file(filename)
     results.update(create_mqtpredictor_result(qc, "expected_fidelity", filename=filename).get_dict())
     results.update(create_mqtpredictor_result(qc, "critical_depth", filename=filename).get_dict())
+    results.update(create_mqtpredictor_result(qc, "expected_success_probability", filename=filename).get_dict())
 
     for dev in get_available_devices():
         results.update(create_qiskit_result(qc, dev).get_dict())
