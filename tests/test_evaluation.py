@@ -11,7 +11,7 @@ from mqt.predictor import Result, reward
 from mqt.predictor.evaluation import create_qiskit_result, create_tket_result
 
 if TYPE_CHECKING:
-    from pytest import MonkeyPatch
+    import pytest
 
 
 def test_create_result() -> None:
@@ -79,7 +79,7 @@ def test_result_none_input() -> None:
     assert res.expected_success_probability == -1.0
 
 
-def test_esp_wrong_device(monkeypatch: MonkeyPatch) -> None:
+def test_esp_wrong_device(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test esp for device with missing gate and readout durations."""
     device = get_device_by_name("quantinuum_h2")
     assert device.num_qubits >= 10
