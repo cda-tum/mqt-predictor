@@ -74,6 +74,22 @@ print(qc_compiled.draw())
 
 **Detailed documentation and examples are available at [ReadTheDocs](https://mqt.readthedocs.io/projects/predictor).**
 
+## References
+
+In case you are using MQT Predictor in your work, we would be thankful if you referred to it by citing the following publication:
+
+```bibtex
+@ARTICLE{quetschlich2024mqtpredictor,
+    AUTHOR      = {N. Quetschlich and L. Burgholzer and R. Wille},
+    TITLE       = {{MQT Predictor: Automatic Device Selection with Device-Specific Circuit Compilation for Quantum Computing}},
+    YEAR        = {2024},
+    JOURNAL     = {ACM Transactions on Quantum Computing (TQC)},
+    DOI         = {10.1145/3673241},
+    EPRINT      = {2310.06889},
+    EPRINTTYPE  = {arxiv},
+}
+```
+
 ## Acknowledgements
 
 This project received funding from the European Research Council (ERC) under the European Union's Horizon 2020 research
