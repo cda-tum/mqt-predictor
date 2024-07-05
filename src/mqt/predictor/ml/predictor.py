@@ -384,7 +384,7 @@ class Predictor:
         x = x[:, non_zero_indices]
 
         if save_non_zero_indices:
-            data = np.asarray(non_zero_indices)
+            data = np.asarray(non_zero_indices, dtype=np.uint64)
             np.save(
                 ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True),
                 data,
