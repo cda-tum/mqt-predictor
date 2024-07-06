@@ -579,4 +579,4 @@ class Predictor:
         non_zero_indices = np.load(path, allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
-        return cast(int, self.clf.predict_proba([feature_vector])[0])  # type: ignore[attr-defined]
+        return cast(np.float64, self.clf.predict_proba([feature_vector])[0])  # type: ignore[attr-defined]
