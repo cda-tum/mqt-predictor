@@ -377,7 +377,11 @@ class Predictor:
             x_list[i] = list(x_raw[i])
             scores_list[i] = list(raw_scores_list[i])
 
-        x, y, indices = np.array(x_list), np.array(y_list), np.array(range(len(y_list)))
+        x, y, indices = (
+            np.array(x_list, dtype=np.float64),
+            np.array(y_list, dtype=np.int64),
+            np.array(range(len(y_list)), dtype=np.int64),
+        )
 
         # Store all non zero feature indices
         non_zero_indices = [i for i in range(len(x[0])) if sum(x[:, i]) > 0]
