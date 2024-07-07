@@ -93,7 +93,7 @@ filterwarnings = [
     "ignore:.*pytorch.*:UserWarning:",
     "ignore::DeprecationWarning:.*(importlib).*",
     "ignore::sklearn.exceptions.InconsistentVersionWarning:sklearn:",
-    "ignore:.*invalid value encountered in cast.*:RuntimeWarning:sklearn:",
+    "ignore:.*invalid value encountered in cast.*:RuntimeWarning:sklearn.*",
     "ignore:.*The abstract Provider and ProviderV1 classes are deprecated.*:DeprecationWarning:qiskit.*",
 ]
 
