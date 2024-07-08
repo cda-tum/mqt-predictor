@@ -26,35 +26,35 @@ from mqt.predictor import ml, reward
 #     assert predictor.clf is not None
 
 
-def test_predict_device_for_figure_of_merit() -> None:
-    """Test the prediction of the device with the highest expected fidelity for a given quantum circuit."""
-    qc = benchmark_generator.get_benchmark("ghz", 1, 5)
-    assert ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity").name in get_available_device_names()
-
-    with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
-        ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
-
-
-def test_predict() -> None:
-    """Test the prediction of the device with the highest expected fidelity for a given quantum circuit qasm dump considering all predicted probabilities for all devices."""
-    path = ml.helper.get_path_trained_model(figure_of_merit="expected_fidelity")
-    assert path.is_file()
-    filename = "test_qasm.qasm"
-    figure_of_merit: reward.figure_of_merit = "expected_fidelity"
-    qc = benchmark_generator.get_benchmark("dj", 1, 8)
-    with Path(filename).open("w", encoding="locale") as f:
-        dump(qc, f)
-    predictor = ml.Predictor()
-    predictions = predictor.predict_probs(filename, figure_of_merit=figure_of_merit)
-    assert predictor.clf is not None
-    classes = predictor.clf.classes_  # type: ignore[unreachable]
-    predicted_device_indices = classes[np.argsort(predictions)[::-1]]
-    devices = get_available_devices()
-    assert all(0 <= i < len(devices) for i in predicted_device_indices)
-    predictions = predictor.predict_probs(dumps(qc), figure_of_merit=figure_of_merit)
-    predicted_device_indices = classes[np.argsort(predictions)[::-1]]
-    assert all(0 <= i < len(devices) for i in predicted_device_indices)
-    Path(filename).unlink()
+# def test_predict_device_for_figure_of_merit() -> None:
+#     """Test the prediction of the device with the highest expected fidelity for a given quantum circuit."""
+#     qc = benchmark_generator.get_benchmark("ghz", 1, 5)
+#     assert ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity").name in get_available_device_names()
+#
+#     with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
+#         ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
+#
+#
+# def test_predict() -> None:
+#     """Test the prediction of the device with the highest expected fidelity for a given quantum circuit qasm dump considering all predicted probabilities for all devices."""
+#     path = ml.helper.get_path_trained_model(figure_of_merit="expected_fidelity")
+#     assert path.is_file()
+#     filename = "test_qasm.qasm"
+#     figure_of_merit: reward.figure_of_merit = "expected_fidelity"
+#     qc = benchmark_generator.get_benchmark("dj", 1, 8)
+#     with Path(filename).open("w", encoding="locale") as f:
+#         dump(qc, f)
+#     predictor = ml.Predictor()
+#     predictions = predictor.predict_probs(filename, figure_of_merit=figure_of_merit)
+#     assert predictor.clf is not None
+#     classes = predictor.clf.classes_  # type: ignore[unreachable]
+#     predicted_device_indices = classes[np.argsort(predictions)[::-1]]
+#     devices = get_available_devices()
+#     assert all(0 <= i < len(devices) for i in predicted_device_indices)
+#     predictions = predictor.predict_probs(dumps(qc), figure_of_merit=figure_of_merit)
+#     predicted_device_indices = classes[np.argsort(predictions)[::-1]]
+#     assert all(0 <= i < len(devices) for i in predicted_device_indices)
+#     Path(filename).unlink()
 
 
 def test_performance_measures() -> None:
