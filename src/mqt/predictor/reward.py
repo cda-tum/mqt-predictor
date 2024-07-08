@@ -113,50 +113,31 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
     # associate gate and idle (delay) times for each qubit through asap scheduling
     sched_pass = passes.ASAPScheduleAnalysis(InstructionDurations(op_times))
     pm = PassManager(sched_pass)
-    scheduled_circ = pm.run(qc)
+    scheduled_circ = pm.run(qc)        
 
-    # store all gate/idle times for each qubit
-    qubit_durations: dict[int, list[float]] = {qubit_index: [] for qubit_index in range(device.num_qubits)}
-
-    # collect gate/idle durations and gate fidelities for each qubit
+    res = 1.0
     for instruction, qargs, _cargs in scheduled_circ.data:
         gate_type = instruction.name
-        if gate_type == "barrier":
-            continue
-        assert len(qargs) in [1, 2]
-        first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
 
-        fidelity = 1.0
-        if len(qargs) == 1:  # single-qubit gate
-            if gate_type == "measure":  # measurement reliability
-                fidelity = device.get_readout_fidelity(first_qubit_idx)
-            elif gate_type == "delay":
-                pass  # idle: only T1,T2 decoherence
-            else:  # gate reliability
-                fidelity = device.get_single_qubit_gate_fidelity(gate_type, first_qubit_idx)
-            qubit_durations[first_qubit_idx].append(instruction.duration)
+        if gate_type != "barrier":
+            assert len(qargs) in [1, 2]
+            first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
 
-        else:  # multi-qubit gate
-            second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
+            if len(qargs) == 1:
+                if gate_type == "measure":
+                    specific_fidelity = device.get_readout_fidelity(first_qubit_idx)
+                elif gate_type == "delay":
+                    # dominant decoherence term (either T1 or T2) as in https://arxiv.org/abs/2001.02826
+                    # alternative:  exp(-time / T_1 - time / T_2) as in https://arxiv.org/abs/2306.15020
+                    idle_time = device.get_single_qubit_gate_duration("id", first_qubit_idx)
+                    T_min = min(device.calibration.get_t1(first_qubit_idx), device.calibration.get_t2(first_qubit_idx))  # noqa:N806
+                    specific_fidelity = np.exp(-idle_time / T_min)
+                else:
+                    specific_fidelity = device.get_single_qubit_gate_fidelity(gate_type, first_qubit_idx)
+            else:
+                second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
+                specific_fidelity = device.get_two_qubit_gate_fidelity(gate_type, first_qubit_idx, second_qubit_idx)
 
-            fidelity = device.get_two_qubit_gate_fidelity(gate_type, first_qubit_idx, second_qubit_idx)
-            qubit_durations[first_qubit_idx].append(instruction.duration)
-            qubit_durations[second_qubit_idx].append(instruction.duration)
-
-        res *= fidelity  # == expected_fidelity
-
-    # calculate T1,T2 decoherence over entire qubit lifetime
-    for qubit_idx, durations in qubit_durations.items():
-        # don't consider idle qubits
-        if len(durations) <= 1:
-            continue
-        # don't consider last measurement operation (decoherence before readout)
-        mod_durations = durations[:-1] if durations[-1] == device.get_readout_duration(qubit_idx) else durations
-        lifetime = sum(mod_durations)  # all operation times on qubit (without readout)
-        # only use dominant decoherence term (either T1 or T2) as in https://arxiv.org/abs/2001.02826
-        # alternative: np.exp(-lifetime / T_1 - lifetime / T_2) as in https://arxiv.org/abs/2306.15020
-        T_min = min(device.calibration.get_t1(qubit_idx), device.calibration.get_t2(qubit_idx))  # noqa:N806
-        decoherence = np.exp(-lifetime / T_min)
-        res *= decoherence
+            res *= specific_fidelity
 
     return cast(float, np.round(res, precision))
