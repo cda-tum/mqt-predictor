@@ -61,8 +61,10 @@ def test_bqskit_synthesis_action(device: Device) -> None:
     check_nat_gates = GatesInBasis(basis_gates=device.basis_gates)
     check_nat_gates(native_gates_qc)
     only_nat_gates = check_nat_gates.property_set["all_gates_in_basis"]
-    if "oqc" not in device.name:
-        assert only_nat_gates
+    # OQC devices cannot be synthesized using BQSKit because the ECR gate is not yet supported.
+    # IQM devices have a native R gate that is approximated using the U3 gate, but this equivalence is not recognized
+    # by the currently implemented check whether the synthesis was successful.
+    assert only_nat_gates or "oqc" in device.name or "iqm" in device.name
 
 
 def test_bqskit_mapping_action_swaps_necessary() -> None:
