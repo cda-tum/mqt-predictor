@@ -138,7 +138,7 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
                         idle_time = instruction.duration
                         T_min = min(
                             device.calibration.get_t1(first_qubit_idx), device.calibration.get_t2(first_qubit_idx)
-                        )  # noqa:N806
+                        )
                         specific_fidelity = np.exp(-idle_time / T_min)
                     else:
                         specific_fidelity = 1.0
