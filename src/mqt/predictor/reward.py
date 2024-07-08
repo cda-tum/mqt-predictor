@@ -76,6 +76,9 @@ def calc_qubit_index(qargs: list[Qubit], qregs: list[QuantumRegister], index: in
 def expected_success_probability(qc: QuantumCircuit, device: Device, precision: int = 10) -> float:
     """Calculates the expected success probability of a given quantum circuit on a given device.
 
+    It is calculated by multiplying the expected fidelity with a min(T1,T2)-dependant
+    decay factor during qubit idle times. Idle times are available after scheduling.
+
     Arguments:
         qc: The quantum circuit to be compiled.
         device: The device to be used for compilation.
@@ -86,15 +89,17 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
     """
     res = 1.0
 
-    # collect gate durations for operations in the circuit
-    op_times = []
+    # collect gate and measurement durations for active qubits
+    op_times, active_qubits = [], set()
     try:
         for instruction, qargs, _cargs in qc.data:
             gate_type = instruction.name
+
             if gate_type == "barrier" or gate_type == "id":
                 continue
             assert len(qargs) in [1, 2]
             first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
+            active_qubits.add(first_qubit_idx)
 
             if len(qargs) == 1:  # single-qubit gate
                 if gate_type == "measure":
@@ -104,6 +109,7 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
                 op_times.append((gate_type, [first_qubit_idx], duration, "s"))
             else:  # multi-qubit gate
                 second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
+                active_qubits.add(second_qubit_idx)
                 duration = device.get_two_qubit_gate_duration(gate_type, first_qubit_idx, second_qubit_idx)
                 op_times.append((gate_type, [first_qubit_idx, second_qubit_idx], duration, "s"))
     except ValueError:
@@ -112,14 +118,15 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
 
     # associate gate and idle (delay) times for each qubit through asap scheduling
     sched_pass = passes.ASAPScheduleAnalysis(InstructionDurations(op_times))
-    pm = PassManager(sched_pass)
-    scheduled_circ = pm.run(qc)        
+    delay_pass = passes.PadDelay()
+    pm = PassManager([sched_pass, delay_pass])
+    scheduled_circ = pm.run(qc)
 
     res = 1.0
     for instruction, qargs, _cargs in scheduled_circ.data:
         gate_type = instruction.name
 
-        if gate_type != "barrier":
+        if gate_type != "barrier" and gate_type != "id":
             assert len(qargs) in [1, 2]
             first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
 
@@ -127,11 +134,15 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
                 if gate_type == "measure":
                     specific_fidelity = device.get_readout_fidelity(first_qubit_idx)
                 elif gate_type == "delay":
-                    # dominant decoherence term (either T1 or T2) as in https://arxiv.org/abs/2001.02826
-                    # alternative:  exp(-time / T_1 - time / T_2) as in https://arxiv.org/abs/2306.15020
-                    idle_time = device.get_single_qubit_gate_duration("id", first_qubit_idx)
-                    T_min = min(device.calibration.get_t1(first_qubit_idx), device.calibration.get_t2(first_qubit_idx))  # noqa:N806
-                    specific_fidelity = np.exp(-idle_time / T_min)
+                    # only consider active qubits
+                    if first_qubit_idx in active_qubits:
+                        idle_time = instruction.duration
+                        T_min = min(
+                            device.calibration.get_t1(first_qubit_idx), device.calibration.get_t2(first_qubit_idx)
+                        )  # noqa:N806
+                        specific_fidelity = np.exp(-idle_time / T_min)
+                    else:
+                        specific_fidelity = 1.0
                 else:
                     specific_fidelity = device.get_single_qubit_gate_fidelity(gate_type, first_qubit_idx)
             else:
