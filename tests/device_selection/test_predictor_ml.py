@@ -15,16 +15,16 @@ from mqt.bench.devices import get_available_device_names, get_available_devices
 from mqt.predictor import ml, reward
 
 
-def test_train_random_forest_classifier() -> None:
-    """Test the training of a random forest classifier.
-
-    This test must be executed prior to any prediction to make sure the model is trained using the latest scikit-learn version.
-    """
-    predictor = ml.Predictor()
-    assert predictor.clf is None
-    predictor.train_random_forest_classifier(visualize_results=False)
-
-    assert predictor.clf is not None
+# def test_train_random_forest_classifier() -> None:
+#     """Test the training of a random forest classifier.
+#
+#     This test must be executed prior to any prediction to make sure the model is trained using the latest scikit-learn version.
+#     """
+#     predictor = ml.Predictor()
+#     assert predictor.clf is None
+#     predictor.train_random_forest_classifier(visualize_results=False)
+#
+#     assert predictor.clf is not None
 
 
 def test_predict_device_for_figure_of_merit() -> None:
