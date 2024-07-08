@@ -87,7 +87,6 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
     Returns:
         The expected success probability of the given quantum circuit on the given device.
     """
-    res = 1.0
 
     # collect gate and measurement durations for active qubits
     op_times, active_qubits = [], set()
