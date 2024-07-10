@@ -21,9 +21,10 @@ dynamic = ["version"]
 dependencies = [
     "mqt.bench>=1.1.3",
     "sb3_contrib>=2.0.0",
-    "scikit-learn>=1.4.0",
-    "tensorboard>=2.11.0",
+    "scikit-learn>=1.5.1",
+    "tensorboard>=2.17.0",
     "bqskit>=1.1.2",
+    "numpy<2.0.0",
 ]
 
 classifiers = [
@@ -93,6 +94,7 @@ filterwarnings = [
     "ignore:.*pytorch.*:UserWarning:",
     "ignore::DeprecationWarning:.*(importlib).*",
     "ignore::sklearn.exceptions.InconsistentVersionWarning:sklearn:",
+    "ignore:.*invalid value encountered in cast.*:RuntimeWarning:numpy.*",
     "ignore:.*The abstract Provider and ProviderV1 classes are deprecated.*:DeprecationWarning:qiskit.*",
 ]
 
