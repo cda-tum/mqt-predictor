@@ -219,9 +219,9 @@ def save_training_data(
     with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
         data = np.asarray(training_data, dtype=object)
         np.save(str(path / ("training_data_" + figure_of_merit + ".npy")), data)
-        data = np.asarray(names_list)
+        data = np.asarray(names_list, dtype=str)
         np.save(str(path / ("names_list_" + figure_of_merit + ".npy")), data)
-        data = np.asarray(scores_list)
+        data = np.asarray(scores_list, dtype=object)
         np.save(str(path / ("scores_list_" + figure_of_merit + ".npy")), data)
 
 

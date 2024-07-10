@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import zipfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -377,14 +377,18 @@ class Predictor:
             x_list[i] = list(x_raw[i])
             scores_list[i] = list(raw_scores_list[i])
 
-        x, y, indices = np.array(x_list), np.array(y_list), np.array(range(len(y_list)))
+        x, y, indices = (
+            np.array(x_list, dtype=np.float64),
+            np.array(y_list, dtype=np.int64),
+            np.array(range(len(y_list)), dtype=np.int64),
+        )
 
         # Store all non zero feature indices
         non_zero_indices = [i for i in range(len(x[0])) if sum(x[:, i]) > 0]
         x = x[:, non_zero_indices]
 
         if save_non_zero_indices:
-            data = np.asarray(non_zero_indices)
+            data = np.asarray(non_zero_indices, dtype=np.uint64)
             np.save(
                 ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True),
                 data,
@@ -550,7 +554,9 @@ class Predictor:
             result_path.mkdir()
         plt.savefig(result_path / "y_pred_eval_normed.pdf", bbox_inches="tight")
 
-    def predict_probs(self, qasm_str_or_path: str | QuantumCircuit, figure_of_merit: reward.figure_of_merit) -> int:
+    def predict_probs(
+        self, qasm_str_or_path: str | QuantumCircuit, figure_of_merit: reward.figure_of_merit
+    ) -> NDArray[np.float64]:
         """Returns the probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
 
         Arguments:
@@ -564,15 +570,16 @@ class Predictor:
             path = ml.helper.get_path_trained_model(figure_of_merit)
             if path.is_file():
                 self.clf = load(str(path))
-            else:
+
+            if self.clf is None:
                 error_msg = "Classifier is neither trained nor saved."
                 raise FileNotFoundError(error_msg)
 
-        feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)
+        feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)  # type: ignore[unreachable]
         feature_vector = list(feature_dict.values())
 
         path = ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True)
         non_zero_indices = np.load(path, allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
-        return cast(int, self.clf.predict_proba([feature_vector])[0])  # type: ignore[attr-defined]
+        return self.clf.predict_proba([feature_vector])[0]
