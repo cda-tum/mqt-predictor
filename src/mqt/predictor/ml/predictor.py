@@ -336,7 +336,7 @@ class Predictor:
         ]
 
         clf = RandomForestClassifier(random_state=0)
-        clf = GridSearchCV(clf, tree_param, cv=5, n_jobs=8).fit(training_data.X_train, training_data.y_train)
+        clf = GridSearchCV(clf, tree_param, cv=5).fit(training_data.X_train, training_data.y_train)
 
         if visualize_results:
             y_pred = np.array(list(clf.predict(training_data.X_test)))
