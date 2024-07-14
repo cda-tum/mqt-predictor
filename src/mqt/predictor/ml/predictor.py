@@ -199,7 +199,7 @@ class Predictor:
             delayed(self.compile_all_circuits_devicewise)(
                 device_name, timeout, figure_of_merit, source_path, target_path, logger.level
             )
-            for figure_of_merit in ["expected_fidelity", "critical_depth"]
+            for figure_of_merit in reward.FIGURES_OF_MERIT
             for device_name in [dev.name for dev in self.devices]
         )
 
@@ -293,6 +293,8 @@ class Predictor:
                 score = reward.crit_depth(qc)
             elif figure_of_merit == "expected_fidelity":
                 score = reward.expected_fidelity(qc, device)
+            elif figure_of_merit == "expected_success_probability":
+                score = reward.expected_success_probability(qc, device)
             scores[comp_path_index] = score
 
         num_not_empty_entries = 0
