@@ -40,12 +40,13 @@ def test_predict() -> None:
     path = ml.helper.get_path_trained_model(figure_of_merit="expected_fidelity")
     assert path.is_file()
     filename = Path("test_qasm.qasm")
+    figure_of_merit: reward.figure_of_merit = "expected_fidelity"
     qc = benchmark_generator.get_benchmark("dj", 1, 8)
     with filename.open("w", encoding="utf-8") as f:
         dump(qc, f)
 
-    ml.Predictor()
-    # predictions = predictor.predict_probs(filename, figure_of_merit=figure_of_merit)
+    predictor = ml.Predictor()
+    predictions = predictor.predict_probs(filename, figure_of_merit=figure_of_merit)
     # assert predictor.clf is not None
     # classes = predictor.clf.classes_  # type: ignore[unreachable]
     # predicted_device_indices = classes[np.argsort(predictions)[::-1]]
