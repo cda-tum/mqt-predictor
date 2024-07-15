@@ -42,7 +42,7 @@ def test_predict() -> None:
     filename = "test_qasm.qasm"
     figure_of_merit: reward.figure_of_merit = "expected_fidelity"
     qc = benchmark_generator.get_benchmark("dj", 1, 8)
-    with Path(filename).open("w", encoding=None) as f:
+    with Path(filename).open("w", encoding="utf-8") as f:
         dump(qc, f)
     predictor = ml.Predictor()
     predictions = predictor.predict_probs(filename, figure_of_merit=figure_of_merit)
