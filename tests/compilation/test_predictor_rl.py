@@ -21,10 +21,10 @@ def test_predictor_env_reset_from_string() -> None:
     assert predictor.env.reset(qc=qasm_path)[0] == rl.helper.create_feature_dict(qc)
 
 
-@pytest.mark.parametrize(
-    "figure_of_merit",
-    ["expected_fidelity", "critical_depth"],
-)
+# @pytest.mark.parametrize(
+#     "figure_of_merit",
+#     ["expected_fidelity", "critical_depth"],
+# )
 # def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
 #     """Test the qcompile function with a newly trained model."""
 #     """ Important: Those trained models are used in later tests and must not be deleted. """
