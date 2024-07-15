@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Literal
 
@@ -58,7 +57,7 @@ def test_predict() -> None:
 def test_performance_measures() -> None:
     """Test the calculation of the performance measures for a given set of scores and labels."""
     predictor = ml.Predictor()
-    figure_of_merit: Literal["expected_fidelity"] = "expected_fidelity"
+    figure_of_merit: Literal[expected_fidelity] = "expected_fidelity"
 
     training_data = predictor.get_prepared_training_data(figure_of_merit=figure_of_merit, save_non_zero_indices=True)
 
@@ -137,19 +136,19 @@ def test_performance_measures() -> None:
 #     assert circuit_name is not None
 #     assert any(score != -1 for score in scores)
 
-    # (
-    #     training_data,
-    #     name_list,
-    #     scores_list,
-    # ) = predictor.generate_trainingdata_from_qasm_files(figure_of_merit, source_path, target_path)
-    # assert len(training_data) > 0
-    # assert len(name_list) > 0
-    # assert len(scores_list) > 0
-    #
-    # if target_path.exists():
-    #     for file in target_path.iterdir():
-    #         file.unlink()
-    #     target_path.rmdir()
-    #
-    # if qasm_path.exists():
-    #     qasm_path.unlink()
+# (
+#     training_data,
+#     name_list,
+#     scores_list,
+# ) = predictor.generate_trainingdata_from_qasm_files(figure_of_merit, source_path, target_path)
+# assert len(training_data) > 0
+# assert len(name_list) > 0
+# assert len(scores_list) > 0
+#
+# if target_path.exists():
+#     for file in target_path.iterdir():
+#         file.unlink()
+#     target_path.rmdir()
+#
+# if qasm_path.exists():
+#     qasm_path.unlink()
