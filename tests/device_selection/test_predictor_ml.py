@@ -38,6 +38,7 @@ def test_dump() -> None:
     with filename.open("w", encoding="utf-8") as f:
         dump(qc, f)
 
+
 # def test_predict() -> None:
 #     """Test the prediction of the device with the highest expected fidelity for a given quantum circuit qasm dump considering all predicted probabilities for all devices."""
 #     path = ml.helper.get_path_trained_model(figure_of_merit="expected_fidelity")
