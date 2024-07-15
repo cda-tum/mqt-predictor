@@ -44,7 +44,7 @@ def test_predict() -> None:
         dump(qc, f)
 
     predictor = ml.Predictor()
-    predictions = predictor.predict_probs(filename, figure_of_merit=figure_of_merit)
+    predictor.predict_probs(filename, figure_of_merit=figure_of_merit)
     # assert predictor.clf is not None
     # classes = predictor.clf.classes_  # type: ignore[unreachable]
     # predicted_device_indices = classes[np.argsort(predictions)[::-1]]
