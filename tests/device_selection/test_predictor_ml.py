@@ -9,7 +9,7 @@ from qiskit.qasm2 import dump
 
 from mqt.bench import benchmark_generator
 from mqt.bench.devices import get_available_device_names
-from mqt.predictor import ml
+from mqt.predictor import ml, reward
 
 
 def test_train_random_forest_classifier() -> None:
