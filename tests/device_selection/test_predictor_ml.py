@@ -1,7 +1,18 @@
 """Tests for the machine learning device selection predictor module."""
 
 from __future__ import annotations
-from mqt.predictor import ml
+
+import sys
+from pathlib import Path
+from typing import Literal
+
+import numpy as np
+import pytest
+from qiskit.qasm2 import dump, dumps
+
+from mqt.bench import benchmark_generator
+from mqt.bench.devices import get_available_device_names, get_available_devices
+from mqt.predictor import ml, reward
 
 
 def test_train_random_forest_classifier() -> None:
@@ -16,15 +27,15 @@ def test_train_random_forest_classifier() -> None:
     assert predictor.clf is not None
 
 
-#
-#
-# def test_predict_device_for_figure_of_merit() -> None:
-#     """Test the prediction of the device with the highest expected fidelity for a given quantum circuit."""
-#     qc = benchmark_generator.get_benchmark("ghz", 1, 5)
-#     assert ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity").name in get_available_device_names()
-#
-#     with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
-#         ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
+
+
+def test_predict_device_for_figure_of_merit() -> None:
+    """Test the prediction of the device with the highest expected fidelity for a given quantum circuit."""
+    qc = benchmark_generator.get_benchmark("ghz", 1, 5)
+    assert ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity").name in get_available_device_names()
+
+    with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
+        ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
 #
 #
 # def test_predict() -> None:
@@ -49,42 +60,42 @@ def test_train_random_forest_classifier() -> None:
 #     Path(filename).unlink()
 #
 #
-# def test_performance_measures() -> None:
-#     """Test the calculation of the performance measures for a given set of scores and labels."""
-#     predictor = ml.Predictor()
-#     figure_of_merit: Literal["expected_fidelity"] = "expected_fidelity"
-#
-#     training_data = predictor.get_prepared_training_data(figure_of_merit=figure_of_merit, save_non_zero_indices=True)
-#
-#     y_test = training_data.y_test
-#     indices_test = training_data.indices_test
-#     names_list = training_data.names_list
-#     scores_list = training_data.scores_list
-#
-#     assert len(y_test) > 0
-#     assert len(indices_test) > 0
-#     assert len(names_list) > 0
-#     assert len(scores_list) > 0
-#
-#     scores_filtered = [scores_list[i] for i in indices_test]
-#     names_filtered = [names_list[i] for i in indices_test]
-#
-#     # Test calc_performance_measures
-#     res, relative_scores = predictor.calc_performance_measures(scores_filtered, y_test, y_test)
-#     assert all(res)
-#     assert not any(relative_scores)
-#
-#     # Test generate_eval_histogram
-#     predictor.generate_eval_histogram(res, show_plot=False)
-#     histogram_path = Path("results/histogram.pdf")
-#     assert histogram_path.is_file(), "File does not exist"
-#     histogram_path.unlink()
-#
-#     # Test generate_eval_all_datapoints
-#     predictor.generate_eval_all_datapoints(names_filtered, scores_filtered, y_test, y_test)
-#     result_path = Path("results/y_pred_eval_normed.pdf")
-#     assert result_path.is_file(), "File does not exist"
-#     result_path.unlink()
+def test_performance_measures() -> None:
+    """Test the calculation of the performance measures for a given set of scores and labels."""
+    predictor = ml.Predictor()
+    figure_of_merit: Literal["expected_fidelity"] = "expected_fidelity"
+
+    training_data = predictor.get_prepared_training_data(figure_of_merit=figure_of_merit, save_non_zero_indices=True)
+
+    y_test = training_data.y_test
+    indices_test = training_data.indices_test
+    names_list = training_data.names_list
+    scores_list = training_data.scores_list
+
+    assert len(y_test) > 0
+    assert len(indices_test) > 0
+    assert len(names_list) > 0
+    assert len(scores_list) > 0
+
+    scores_filtered = [scores_list[i] for i in indices_test]
+    names_filtered = [names_list[i] for i in indices_test]
+
+    # Test calc_performance_measures
+    res, relative_scores = predictor.calc_performance_measures(scores_filtered, y_test, y_test)
+    assert all(res)
+    assert not any(relative_scores)
+
+    # Test generate_eval_histogram
+    predictor.generate_eval_histogram(res, show_plot=False)
+    histogram_path = Path("results/histogram.pdf")
+    assert histogram_path.is_file(), "File does not exist"
+    histogram_path.unlink()
+
+    # Test generate_eval_all_datapoints
+    predictor.generate_eval_all_datapoints(names_filtered, scores_filtered, y_test, y_test)
+    result_path = Path("results/y_pred_eval_normed.pdf")
+    assert result_path.is_file(), "File does not exist"
+    result_path.unlink()
 #
 #
 # # def test_compile_all_circuits_for_dev_and_fom() -> None:
