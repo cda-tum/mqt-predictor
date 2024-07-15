@@ -2,17 +2,6 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-from typing import Literal
-import numpy as np
-import pytest
-from qiskit.qasm2 import dump, dumps
-
-from mqt.bench import benchmark_generator
-from mqt.bench.devices import get_available_device_names, get_available_devices
-from mqt.predictor import ml, reward
-
 
 # def test_train_random_forest_classifier() -> None:
 #     """Test the training of a random forest classifier.
