@@ -104,7 +104,7 @@ class Predictor:
                     res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, dev.name], timeout)
                     if isinstance(res, tuple):
                         compiled_qc = res[0]
-                        with Path(target_path / (target_filename + ".qasm")).open("w", encoding=None) as f:
+                        with Path(target_path / (target_filename + ".qasm")).open("w", encoding="utf-8") as f:
                             dump(compiled_qc, f)
 
                 except Exception as e:
@@ -554,9 +554,7 @@ class Predictor:
             result_path.mkdir()
         plt.savefig(result_path / "y_pred_eval_normed.pdf", bbox_inches="tight")
 
-    def predict_probs(
-        self, qasm_str_or_path: str | QuantumCircuit, figure_of_merit: reward.figure_of_merit
-    ) -> NDArray[np.float64]:
+    def predict_probs(self, qc: str | QuantumCircuit, figure_of_merit: reward.figure_of_merit) -> NDArray[np.float64]:
         """Returns the probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
 
         Arguments:
@@ -575,7 +573,7 @@ class Predictor:
                 error_msg = "Classifier is neither trained nor saved."
                 raise FileNotFoundError(error_msg)
 
-        feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)  # type: ignore[unreachable]
+        feature_dict = ml.helper.create_feature_dict(qc)  # type: ignore[unreachable]
         feature_vector = list(feature_dict.values())
 
         path = ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True)

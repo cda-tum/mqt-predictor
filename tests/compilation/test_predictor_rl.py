@@ -16,7 +16,7 @@ def test_predictor_env_reset_from_string() -> None:
     predictor = rl.Predictor(figure_of_merit="expected_fidelity", device_name="ionq_harmony")
     qasm_path = Path("test.qasm")
     qc = get_benchmark("dj", 1, 3)
-    with Path(qasm_path).open("w", encoding=None) as f:
+    with qasm_path.open("w", encoding="utf-8") as f:
         dump(qc, f)
     assert predictor.env.reset(qc=qasm_path)[0] == rl.helper.create_feature_dict(qc)
 

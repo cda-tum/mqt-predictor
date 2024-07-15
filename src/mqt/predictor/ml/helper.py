@@ -165,7 +165,8 @@ def create_feature_dict(qc: Path | QuantumCircuit) -> dict[str, Any]:
         The feature dictionary of the given quantum circuit.
     """
     if isinstance(qc, Path) and qc.exists():
-        qc = QuantumCircuit.from_qasm_file(str(qc))
+        qc = QuantumCircuit.from_qasm_file(qc)
+    assert isinstance(qc, QuantumCircuit)
 
     ops_list = qc.count_ops()
     ops_list_dict = dict_to_featurevector(ops_list)

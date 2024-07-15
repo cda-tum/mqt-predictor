@@ -29,7 +29,6 @@ def test_create_feature_dict() -> None:
     assert feature_vector is not None
 
 
-
 def test_get_openqasm_gates() -> None:
     """Test the retrieval of the OpenQASM gates."""
     assert ml.helper.get_openqasm_gates() is not None
