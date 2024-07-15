@@ -46,7 +46,8 @@ def test_predict() -> None:
         with filename.open("w", encoding="utf-8") as f:
             dump(qc, f)
     except Exception as e:
-        raise RuntimeError("File could not be written.") from e
+        msg = "File could not be written."
+        raise RuntimeError(msg) from e
 
     predictor = ml.Predictor()
     predictions = predictor.predict_probs(filename, figure_of_merit=figure_of_merit)
