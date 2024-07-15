@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Literal
 
 import pytest
-from qiskit.qasm2 import dump
 
 from mqt.bench import benchmark_generator
 from mqt.bench.devices import get_available_device_names
-from mqt.predictor import ml, reward
+from mqt.predictor import ml
 
 
 def test_train_random_forest_classifier() -> None:
