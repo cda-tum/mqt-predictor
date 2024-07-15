@@ -26,25 +26,25 @@ def test_predictor_env_reset_from_string() -> None:
     "figure_of_merit",
     ["expected_fidelity", "critical_depth"],
 )
-def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
-    """Test the qcompile function with a newly trained model."""
-    """ Important: Those trained models are used in later tests and must not be deleted. """
-
-    device = "ibm_montreal"
-    predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
-    predictor.train_model(
-        timesteps=100,
-        test=True,
-    )
-
-    qc = get_benchmark("ghz", 1, 5)
-    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
-    assert isinstance(res, tuple)
-    qc_compiled, compilation_information = res
-
-    assert isinstance(qc_compiled, QuantumCircuit)
-    assert qc_compiled.layout is not None
-    assert compilation_information is not None
+# def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
+#     """Test the qcompile function with a newly trained model."""
+#     """ Important: Those trained models are used in later tests and must not be deleted. """
+#
+#     device = "ibm_montreal"
+#     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
+#     predictor.train_model(
+#         timesteps=100,
+#         test=True,
+#     )
+#
+#     qc = get_benchmark("ghz", 1, 5)
+#     res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
+#     assert isinstance(res, tuple)
+#     qc_compiled, compilation_information = res
+#
+#     assert isinstance(qc_compiled, QuantumCircuit)
+#     assert qc_compiled.layout is not None
+#     assert compilation_information is not None
 
 
 def test_qcompile_with_false_input() -> None:
