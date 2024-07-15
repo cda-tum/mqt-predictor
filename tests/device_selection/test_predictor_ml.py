@@ -1,6 +1,7 @@
 """Tests for the machine learning device selection predictor module."""
 
 from __future__ import annotations
+
 from mqt.predictor import ml
 
 
