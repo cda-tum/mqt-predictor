@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from pathlib import Path
 from qiskit.qasm2 import dump
 
 from mqt.bench import benchmark_generator
