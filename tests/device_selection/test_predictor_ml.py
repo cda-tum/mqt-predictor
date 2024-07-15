@@ -36,8 +36,8 @@ def test_predict_device_for_figure_of_merit() -> None:
 
     with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
         ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
-#
-#
+
+
 # def test_predict() -> None:
 #     """Test the prediction of the device with the highest expected fidelity for a given quantum circuit qasm dump considering all predicted probabilities for all devices."""
 #     path = ml.helper.get_path_trained_model(figure_of_merit="expected_fidelity")
@@ -58,8 +58,8 @@ def test_predict_device_for_figure_of_merit() -> None:
 #     predicted_device_indices = classes[np.argsort(predictions)[::-1]]
 #     assert all(0 <= i < len(devices) for i in predicted_device_indices)
 #     Path(filename).unlink()
-#
-#
+
+
 def test_performance_measures() -> None:
     """Test the calculation of the performance measures for a given set of scores and labels."""
     predictor = ml.Predictor()
@@ -96,65 +96,65 @@ def test_performance_measures() -> None:
     result_path = Path("results/y_pred_eval_normed.pdf")
     assert result_path.is_file(), "File does not exist"
     result_path.unlink()
-#
-#
-# # def test_compile_all_circuits_for_dev_and_fom() -> None:
-# #     """Test the compilation of all circuits for a given device and figure of merit."""
-# #     predictor = ml.Predictor()
-# #     source_path = Path()
-# #     target_path = Path("test_compiled_circuits")
-# #     if not target_path.exists():
-# #         target_path.mkdir()
-# #     figure_of_merit: reward.figure_of_merit = "expected_fidelity"
-# #
-# #     qc = benchmark_generator.get_benchmark("dj", 1, 3)
-# #     qasm_path = Path("test.qasm")
-# #     with Path(qasm_path).open("w", encoding="locale") as f:
-# #         dump(qc, f)
-# #
-# #     if sys.platform == "win32":
-# #         with pytest.warns(RuntimeWarning, match="Timeout is not supported on Windows."):
-# #             predictor.compile_all_circuits_devicewise(
-# #                 device_name="ibm_montreal",
-# #                 timeout=100,
-# #                 figure_of_merit=figure_of_merit,
-# #                 source_path=source_path,
-# #                 target_path=target_path,
-# #             )
-# #     else:
-# #         predictor.compile_all_circuits_devicewise(
-# #             device_name="ibm_montreal",
-# #             timeout=100,
-# #             figure_of_merit=figure_of_merit,
-# #             source_path=source_path,
-# #             target_path=target_path,
-# #         )
-# #
-# #     assert any(file.suffix == ".qasm" for file in target_path.iterdir())
-# #
-# #     training_sample, circuit_name, scores = predictor.generate_training_sample(
-# #         file=qasm_path,
-# #         figure_of_merit=figure_of_merit,
-# #         path_uncompiled_circuit=source_path,
-# #         path_compiled_circuits=target_path,
-# #     )
-# #     assert training_sample
-# #     assert circuit_name is not None
-# #     assert any(score != -1 for score in scores)
-# #
-# #     (
-# #         training_data,
-# #         name_list,
-# #         scores_list,
-# #     ) = predictor.generate_trainingdata_from_qasm_files(figure_of_merit, source_path, target_path)
-# #     assert len(training_data) > 0
-# #     assert len(name_list) > 0
-# #     assert len(scores_list) > 0
-# #
-# #     if target_path.exists():
-# #         for file in target_path.iterdir():
-# #             file.unlink()
-# #         target_path.rmdir()
-# #
-# #     if qasm_path.exists():
-# #         qasm_path.unlink()
+
+
+def test_compile_all_circuits_for_dev_and_fom() -> None:
+    """Test the compilation of all circuits for a given device and figure of merit."""
+    predictor = ml.Predictor()
+    source_path = Path()
+    target_path = Path("test_compiled_circuits")
+    if not target_path.exists():
+        target_path.mkdir()
+    figure_of_merit: reward.figure_of_merit = "expected_fidelity"
+
+    qc = benchmark_generator.get_benchmark("dj", 1, 3)
+    qasm_path = Path("test.qasm")
+    with Path(qasm_path).open("w", encoding="locale") as f:
+        dump(qc, f)
+
+    if sys.platform == "win32":
+        with pytest.warns(RuntimeWarning, match="Timeout is not supported on Windows."):
+            predictor.compile_all_circuits_devicewise(
+                device_name="ibm_montreal",
+                timeout=100,
+                figure_of_merit=figure_of_merit,
+                source_path=source_path,
+                target_path=target_path,
+            )
+    else:
+        predictor.compile_all_circuits_devicewise(
+            device_name="ibm_montreal",
+            timeout=100,
+            figure_of_merit=figure_of_merit,
+            source_path=source_path,
+            target_path=target_path,
+        )
+
+    assert any(file.suffix == ".qasm" for file in target_path.iterdir())
+
+    training_sample, circuit_name, scores = predictor.generate_training_sample(
+        file=qasm_path,
+        figure_of_merit=figure_of_merit,
+        path_uncompiled_circuit=source_path,
+        path_compiled_circuits=target_path,
+    )
+    assert training_sample
+    assert circuit_name is not None
+    assert any(score != -1 for score in scores)
+
+    (
+        training_data,
+        name_list,
+        scores_list,
+    ) = predictor.generate_trainingdata_from_qasm_files(figure_of_merit, source_path, target_path)
+    assert len(training_data) > 0
+    assert len(name_list) > 0
+    assert len(scores_list) > 0
+
+    if target_path.exists():
+        for file in target_path.iterdir():
+            file.unlink()
+        target_path.rmdir()
+
+    if qasm_path.exists():
+        qasm_path.unlink()
