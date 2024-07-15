@@ -554,11 +554,11 @@ class Predictor:
             result_path.mkdir()
         plt.savefig(result_path / "y_pred_eval_normed.pdf", bbox_inches="tight")
 
-    def predict_probs(self, qc: str | QuantumCircuit, figure_of_merit: reward.figure_of_merit) -> NDArray[np.float64]:
+    def predict_probs(self, qc: Path | QuantumCircuit, figure_of_merit: reward.figure_of_merit) -> NDArray[np.float64]:
         """Returns the probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
 
         Arguments:
-            qasm_str_or_path: The qasm string or path to the qasm file.
+            qc: The qasm string or path to the qasm file.
             figure_of_merit: The figure of merit to be used for prediction.
 
         Returns:
