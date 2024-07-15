@@ -39,10 +39,10 @@ def test_predict() -> None:
     """Test the prediction of the device with the highest expected fidelity for a given quantum circuit qasm dump considering all predicted probabilities for all devices."""
     path = ml.helper.get_path_trained_model(figure_of_merit="expected_fidelity")
     assert path.is_file()
-    filename = "test_qasm.qasm"
+    filename = Path("test_qasm.qasm")
     figure_of_merit: reward.figure_of_merit = "expected_fidelity"
     qc = benchmark_generator.get_benchmark("dj", 1, 8)
-    with Path(filename).open("w", encoding="utf-8") as f:
+    with filename.open("w", encoding="utf-8") as f:
         dump(qc, f)
     predictor = ml.Predictor()
     predictions = predictor.predict_probs(filename, figure_of_merit=figure_of_merit)
@@ -54,7 +54,7 @@ def test_predict() -> None:
     predictions = predictor.predict_probs(dumps(qc), figure_of_merit=figure_of_merit)
     predicted_device_indices = classes[np.argsort(predictions)[::-1]]
     assert all(0 <= i < len(devices) for i in predicted_device_indices)
-    Path(filename).unlink()
+    filename.unlink()
 
 
 def test_performance_measures() -> None:
