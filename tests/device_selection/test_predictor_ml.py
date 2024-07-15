@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Literal
-
 import pytest
 from qiskit.qasm2 import dump
 
