@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 import numpy as np
+import pytest
 from qiskit.qasm2 import dump
 
 from mqt.bench import benchmark_generator
@@ -47,7 +47,7 @@ def test_predict() -> None:
     predictor = ml.Predictor()
     predictions = predictor.predict_probs(filename, figure_of_merit=figure_of_merit)
     classes = predictor.clf.classes_  # type: ignore[unreachable]
-    predicted_device_indices = classes[np.argsort(predictions)[::-1]]
+    classes[np.argsort(predictions)[::-1]]
     # devices = get_available_devices()
     # assert all(0 <= i < len(devices) for i in predicted_device_indices)
     # filename.unlink()
