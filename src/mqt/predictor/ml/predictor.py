@@ -569,7 +569,7 @@ class Predictor:
         if self.clf is None:
             path = ml.helper.get_path_trained_model(figure_of_merit)
             if path.is_file():
-                self.clf = load(str(path))
+                self.clf = load(path)
 
             if self.clf is None:
                 error_msg = "Classifier is neither trained nor saved."
