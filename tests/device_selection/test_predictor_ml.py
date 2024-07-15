@@ -57,7 +57,7 @@ def test_predict() -> None:
 def test_performance_measures() -> None:
     """Test the calculation of the performance measures for a given set of scores and labels."""
     predictor = ml.Predictor()
-    figure_of_merit: Literal[expected_fidelity] = "expected_fidelity"
+    figure_of_merit: Literal["expected_fidelity"] = "expected_fidelity"
 
     training_data = predictor.get_prepared_training_data(figure_of_merit=figure_of_merit, save_non_zero_indices=True)
 
