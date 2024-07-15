@@ -166,9 +166,6 @@ def create_feature_dict(qc: Path | QuantumCircuit) -> dict[str, Any]:
     """
     if isinstance(qc, Path) and qc.exists():
         qc = QuantumCircuit.from_qasm_file(str(qc))
-    else:
-        error_msg = "Invalid input for 'qc' parameter."
-        raise ValueError(error_msg) from None
 
     ops_list = qc.count_ops()
     ops_list_dict = dict_to_featurevector(ops_list)
