@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 import numpy as np
+import pytest
 from qiskit.qasm2 import dump
 
 from mqt.bench import benchmark_generator
