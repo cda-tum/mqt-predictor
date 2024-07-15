@@ -2,17 +2,14 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Literal
 
-import numpy as np
 import pytest
-from qiskit.qasm2 import dump, dumps
 
 from mqt.bench import benchmark_generator
-from mqt.bench.devices import get_available_device_names, get_available_devices
-from mqt.predictor import ml, reward
+from mqt.bench.devices import get_available_device_names
+from mqt.predictor import ml
 
 
 def test_train_random_forest_classifier() -> None:
@@ -27,8 +24,6 @@ def test_train_random_forest_classifier() -> None:
     assert predictor.clf is not None
 
 
-
-
 def test_predict_device_for_figure_of_merit() -> None:
     """Test the prediction of the device with the highest expected fidelity for a given quantum circuit."""
     qc = benchmark_generator.get_benchmark("ghz", 1, 5)
@@ -36,6 +31,8 @@ def test_predict_device_for_figure_of_merit() -> None:
 
     with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
         ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
+
+
 #
 #
 # def test_predict() -> None:
@@ -96,6 +93,8 @@ def test_performance_measures() -> None:
     result_path = Path("results/y_pred_eval_normed.pdf")
     assert result_path.is_file(), "File does not exist"
     result_path.unlink()
+
+
 #
 #
 # # def test_compile_all_circuits_for_dev_and_fom() -> None:
