@@ -155,7 +155,7 @@ def dict_to_featurevector(gate_dict: dict[str, int]) -> dict[str, int]:
 PATH_LENGTH = 260
 
 
-def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
+def create_feature_dict(qc: Path | QuantumCircuit) -> dict[str, Any]:
     """Creates and returns a feature dictionary for a given quantum circuit.
 
     Arguments:
@@ -164,14 +164,11 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     Returns:
         The feature dictionary of the given quantum circuit.
     """
-    if not isinstance(qc, QuantumCircuit):
-        if len(qc) < PATH_LENGTH and Path(qc).exists():
-            qc = QuantumCircuit.from_qasm_file(qc)
-        elif "OPENQASM" in qc:
-            qc = QuantumCircuit.from_qasm_str(qc)
-        else:
-            error_msg = "Invalid input for 'qc' parameter."
-            raise ValueError(error_msg) from None
+    if isinstance(qc, Path) and qc.exists():
+        qc = QuantumCircuit.from_qasm_file(str(qc))
+    else:
+        error_msg = "Invalid input for 'qc' parameter."
+        raise ValueError(error_msg) from None
 
     ops_list = qc.count_ops()
     ops_list_dict = dict_to_featurevector(ops_list)
