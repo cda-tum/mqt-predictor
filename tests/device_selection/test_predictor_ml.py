@@ -60,7 +60,8 @@ def test_predict() -> None:
     try:
         filename.unlink()
     except Exception as e:
-        raise RuntimeError("File could not be written.") from e
+        msg = "File could not be written."
+        raise RuntimeError(msg) from e
 
 
 def test_performance_measures() -> None:
