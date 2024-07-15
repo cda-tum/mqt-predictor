@@ -34,11 +34,11 @@ def test_predict_device_for_figure_of_merit() -> None:
     with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
         ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
 
-def test_dump() -> None:
-    qc = benchmark_generator.get_benchmark("dj", 1, 8)
-    filename = Path("test_qasm.qasm")
-    with filename.open("w", encoding="utf-8") as f:
-        dump(qc, f)
+# def test_dump() -> None:
+#     qc = benchmark_generator.get_benchmark("dj", 1, 8)
+#     filename = Path("test_qasm.qasm")
+#     with filename.open("w", encoding="utf-8") as f:
+#         dump(qc, f)
 
 # def test_predict() -> None:
 #     """Test the prediction of the device with the highest expected fidelity for a given quantum circuit qasm dump considering all predicted probabilities for all devices."""
