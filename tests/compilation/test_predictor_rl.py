@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from qiskit import QuantumCircuit
 from qiskit.qasm2 import dump
 
 from mqt.bench import get_benchmark
