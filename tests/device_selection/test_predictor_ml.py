@@ -58,12 +58,7 @@ def test_performance_measures() -> None:
     predictor = ml.Predictor()
     figure_of_merit: Literal["expected_fidelity"] = "expected_fidelity"
 
-    training_data = predictor.get_prepared_training_data(figure_of_merit=figure_of_merit, save_non_zero_indices=True)
-
-    y_test = training_data.y_test
-    indices_test = training_data.indices_test
-    names_list = training_data.names_list
-    scores_list = training_data.scores_list
+    predictor.get_prepared_training_data(figure_of_merit=figure_of_merit, save_non_zero_indices=True)
 
     # assert len(y_test) > 0
     # assert len(indices_test) > 0
