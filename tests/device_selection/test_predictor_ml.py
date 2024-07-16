@@ -80,7 +80,7 @@ def test_performance_measures() -> None:
 
     # Test generate_eval_histogram
     predictor.generate_eval_histogram(res, show_plot=False)
-    histogram_path = Path("results/histogram.pdf")
+    # histogram_path = Path("results/histogram.pdf")
     # assert histogram_path.is_file(), "File does not exist"
     # histogram_path.unlink()
     #
