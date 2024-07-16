@@ -65,13 +65,13 @@ def test_performance_measures() -> None:
     names_list = training_data.names_list
     scores_list = training_data.scores_list
 
-    # assert len(y_test) > 0
-    # assert len(indices_test) > 0
-    # assert len(names_list) > 0
-    # assert len(scores_list) > 0
-    #
-    # scores_filtered = [scores_list[i] for i in indices_test]
-    # names_filtered = [names_list[i] for i in indices_test]
+    assert len(y_test) > 0
+    assert len(indices_test) > 0
+    assert len(names_list) > 0
+    assert len(scores_list) > 0
+
+    scores_filtered = [scores_list[i] for i in indices_test]
+    names_filtered = [names_list[i] for i in indices_test]
     #
     # # Test calc_performance_measures
     # res, relative_scores = predictor.calc_performance_measures(scores_filtered, y_test, y_test)
