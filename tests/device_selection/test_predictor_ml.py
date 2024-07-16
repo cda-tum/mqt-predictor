@@ -77,10 +77,10 @@ def test_performance_measures() -> None:
     res, relative_scores = predictor.calc_performance_measures(scores_filtered, y_test, y_test)
     assert all(res)
     assert not any(relative_scores)
-    #
-    # # Test generate_eval_histogram
-    # predictor.generate_eval_histogram(res, show_plot=False)
-    # histogram_path = Path("results/histogram.pdf")
+
+    # Test generate_eval_histogram
+    predictor.generate_eval_histogram(res, show_plot=False)
+    histogram_path = Path("results/histogram.pdf")
     # assert histogram_path.is_file(), "File does not exist"
     # histogram_path.unlink()
     #
