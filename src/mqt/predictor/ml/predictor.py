@@ -479,8 +479,8 @@ class Predictor:
         )
         plt.ylabel("Relative frequency", fontsize=18)
         result_path = Path("results")
-        if not result_path.is_dir():
-            result_path.mkdir()
+        # if not result_path.is_dir():
+        #     result_path.mkdir()
         # plt.savefig(result_path / (filename + ".pdf"), bbox_inches="tight")
         # if show_plot:
         #     plt.show()
