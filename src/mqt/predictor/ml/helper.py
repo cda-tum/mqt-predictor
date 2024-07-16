@@ -40,7 +40,7 @@ def qcompile(
 
 
 def predict_device_for_figure_of_merit(
-    qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit = "expected_fidelity"
+    qc: Path | QuantumCircuit, figure_of_merit: reward.figure_of_merit = "expected_fidelity"
 ) -> Device:
     """Returns the name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
 
@@ -57,8 +57,10 @@ def predict_device_for_figure_of_merit(
     classes = ml_predictor.clf.classes_  # type: ignore[unreachable]
     predicted_device_index = classes[np.argsort(predicted_device_index_probs)[::-1]]
 
+    num_qubits = qc.num_qubits if isinstance(qc, QuantumCircuit) else QuantumCircuit.from_qasm_file(qc).num_qubits
+
     for index in predicted_device_index:
-        if ml_predictor.devices[index].num_qubits >= qc.num_qubits:
+        if ml_predictor.devices[index].num_qubits >= num_qubits:
             return ml_predictor.devices[index]
     msg = "No suitable device found."
     raise ValueError(msg)

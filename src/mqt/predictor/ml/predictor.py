@@ -303,7 +303,7 @@ class Predictor:
         if num_not_empty_entries == 0:
             logger.warning("no compiled circuits found for:" + str(file))
 
-        feature_vec = ml.helper.create_feature_dict(str(path_uncompiled_circuit / file))
+        feature_vec = ml.helper.create_feature_dict(path_uncompiled_circuit / file)
         training_sample = (list(feature_vec.values()), np.argmax(scores))
         circuit_name = str(file).split(".")[0]
         return (training_sample, circuit_name, scores)
