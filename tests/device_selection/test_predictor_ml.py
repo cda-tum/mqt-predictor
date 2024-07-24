@@ -62,9 +62,9 @@ def test_performance_measures() -> None:
     [names_list[i] for i in indices_test]
 
     # Test calc_performance_measures
-    _res, _relative_scores = predictor.calc_performance_measures(scores_filtered, y_test, y_test)
-    # assert all(res)
-    # assert not any(relative_scores)
+    res, relative_scores = predictor.calc_performance_measures(scores_filtered, y_test, y_test)
+    assert all(res)
+    assert not any(relative_scores)
     #
     # # Test generate_eval_histogram
     # predictor.generate_eval_histogram(res, show_plot=False)
