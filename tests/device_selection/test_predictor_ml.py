@@ -58,11 +58,11 @@ def test_performance_measures() -> None:
     assert len(names_list) > 0
     assert len(scores_list) > 0
 
-    [scores_list[i] for i in indices_test]
+    scores_filtered = [scores_list[i] for i in indices_test]
     [names_list[i] for i in indices_test]
 
     # Test calc_performance_measures
-    # res, relative_scores = predictor.calc_performance_measures(scores_filtered, y_test, y_test)
+    _res, _relative_scores = predictor.calc_performance_measures(scores_filtered, y_test, y_test)
     # assert all(res)
     # assert not any(relative_scores)
     #
