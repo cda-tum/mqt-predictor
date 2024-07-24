@@ -40,7 +40,7 @@ def qcompile(
 
 
 def predict_device_for_figure_of_merit(
-    qc: QuantumCircuit, figure_of_merit: reward.figure_of_merit = "expected_fidelity"
+    qc: Path | QuantumCircuit, figure_of_merit: reward.figure_of_merit = "expected_fidelity"
 ) -> Device:
     """Returns the name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
 
@@ -57,8 +57,10 @@ def predict_device_for_figure_of_merit(
     classes = ml_predictor.clf.classes_  # type: ignore[unreachable]
     predicted_device_index = classes[np.argsort(predicted_device_index_probs)[::-1]]
 
+    num_qubits = qc.num_qubits if isinstance(qc, QuantumCircuit) else QuantumCircuit.from_qasm_file(qc).num_qubits
+
     for index in predicted_device_index:
-        if ml_predictor.devices[index].num_qubits >= qc.num_qubits:
+        if ml_predictor.devices[index].num_qubits >= num_qubits:
             return ml_predictor.devices[index]
     msg = "No suitable device found."
     raise ValueError(msg)
@@ -155,7 +157,7 @@ def dict_to_featurevector(gate_dict: dict[str, int]) -> dict[str, int]:
 PATH_LENGTH = 260
 
 
-def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
+def create_feature_dict(qc: Path | QuantumCircuit) -> dict[str, Any]:
     """Creates and returns a feature dictionary for a given quantum circuit.
 
     Arguments:
@@ -164,14 +166,9 @@ def create_feature_dict(qc: str | QuantumCircuit) -> dict[str, Any]:
     Returns:
         The feature dictionary of the given quantum circuit.
     """
-    if not isinstance(qc, QuantumCircuit):
-        if len(qc) < PATH_LENGTH and Path(qc).exists():
-            qc = QuantumCircuit.from_qasm_file(qc)
-        elif "OPENQASM" in qc:
-            qc = QuantumCircuit.from_qasm_str(qc)
-        else:
-            error_msg = "Invalid input for 'qc' parameter."
-            raise ValueError(error_msg) from None
+    if isinstance(qc, Path) and qc.exists():
+        qc = QuantumCircuit.from_qasm_file(qc)
+    assert isinstance(qc, QuantumCircuit)
 
     ops_list = qc.count_ops()
     ops_list_dict = dict_to_featurevector(ops_list)

@@ -104,7 +104,7 @@ class Predictor:
                     res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, dev.name], timeout)
                     if isinstance(res, tuple):
                         compiled_qc = res[0]
-                        with Path(target_path / (target_filename + ".qasm")).open("w", encoding="locale") as f:
+                        with Path(target_path / (target_filename + ".qasm")).open("w", encoding="utf-8") as f:
                             dump(compiled_qc, f)
 
                 except Exception as e:
@@ -162,7 +162,7 @@ class Predictor:
                 res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device_name, rl_pred], timeout)
                 if isinstance(res, tuple):
                     compiled_qc = res[0]
-                    with Path(target_path / (target_filename + ".qasm")).open("w", encoding="locale") as f:
+                    with Path(target_path / (target_filename + ".qasm")).open("w", encoding="utf-8") as f:
                         dump(compiled_qc, f)
 
             except Exception as e:
@@ -303,7 +303,7 @@ class Predictor:
         if num_not_empty_entries == 0:
             logger.warning("no compiled circuits found for:" + str(file))
 
-        feature_vec = ml.helper.create_feature_dict(str(path_uncompiled_circuit / file))
+        feature_vec = ml.helper.create_feature_dict(path_uncompiled_circuit / file)
         training_sample = (list(feature_vec.values()), np.argmax(scores))
         circuit_name = str(file).split(".")[0]
         return (training_sample, circuit_name, scores)
@@ -554,13 +554,11 @@ class Predictor:
             result_path.mkdir()
         plt.savefig(result_path / "y_pred_eval_normed.pdf", bbox_inches="tight")
 
-    def predict_probs(
-        self, qasm_str_or_path: str | QuantumCircuit, figure_of_merit: reward.figure_of_merit
-    ) -> NDArray[np.float64]:
+    def predict_probs(self, qc: Path | QuantumCircuit, figure_of_merit: reward.figure_of_merit) -> NDArray[np.float64]:
         """Returns the probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
 
         Arguments:
-            qasm_str_or_path: The qasm string or path to the qasm file.
+            qc: The QuantumCircuit or Path to the respective qasm file.
             figure_of_merit: The figure of merit to be used for prediction.
 
         Returns:
@@ -569,13 +567,13 @@ class Predictor:
         if self.clf is None:
             path = ml.helper.get_path_trained_model(figure_of_merit)
             if path.is_file():
-                self.clf = load(str(path))
+                self.clf = load(path)
 
             if self.clf is None:
                 error_msg = "Classifier is neither trained nor saved."
                 raise FileNotFoundError(error_msg)
 
-        feature_dict = ml.helper.create_feature_dict(qasm_str_or_path)  # type: ignore[unreachable]
+        feature_dict = ml.helper.create_feature_dict(qc)  # type: ignore[unreachable]
         feature_vector = list(feature_dict.values())
 
         path = ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True)
