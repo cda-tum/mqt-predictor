@@ -54,7 +54,9 @@ def predict_device_for_figure_of_merit(
     ml_predictor = ml.Predictor()
     predicted_device_index_probs = ml_predictor.predict_probs(qc, figure_of_merit)
     assert ml_predictor.clf is not None
+
     classes = ml_predictor.clf.classes_  # type: ignore[unreachable]
+
     predicted_device_index = classes[np.argsort(predicted_device_index_probs)[::-1]]
 
     num_qubits = qc.num_qubits if isinstance(qc, QuantumCircuit) else QuantumCircuit.from_qasm_file(qc).num_qubits

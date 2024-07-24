@@ -104,7 +104,7 @@ class Predictor:
                     res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, dev.name], timeout)
                     if isinstance(res, tuple):
                         compiled_qc = res[0]
-                        with Path(target_path / (target_filename + ".qasm")).open("w", encoding="utf-8") as f:
+                        with Path(target_path / (target_filename + ".qasm")).open("w", encoding=None) as f:
                             dump(compiled_qc, f)
 
                 except Exception as e:
