@@ -457,27 +457,27 @@ class Predictor:
         """
         plt.figure(figsize=(10, 5))
 
-        num_of_comp_paths = len(self.devices)
-        plt.bar(
-            list(range(0, num_of_comp_paths, 1)),
-            height=[res.count(i) / len(res) for i in range(1, num_of_comp_paths + 1, 1)],
-            width=0.90,
-            color=color,
-        )
-
-        plt.xticks(
-            list(range(0, num_of_comp_paths, 1)),
-            [i if i % 2 == 1 else "" for i in range(1, num_of_comp_paths + 1, 1)],
-            fontsize=16,
-        )
-
-        plt.yticks(fontsize=16)
-
-        plt.xlabel(
-            "Best prediction                                                        Worst prediction",
-            fontsize=18,
-        )
-        plt.ylabel("Relative frequency", fontsize=18)
+        # num_of_comp_paths = len(self.devices)
+        # plt.bar(
+        #     list(range(0, num_of_comp_paths, 1)),
+        #     height=[res.count(i) / len(res) for i in range(1, num_of_comp_paths + 1, 1)],
+        #     width=0.90,
+        #     color=color,
+        # )
+        #
+        # plt.xticks(
+        #     list(range(0, num_of_comp_paths, 1)),
+        #     [i if i % 2 == 1 else "" for i in range(1, num_of_comp_paths + 1, 1)],
+        #     fontsize=16,
+        # )
+        #
+        # plt.yticks(fontsize=16)
+        #
+        # plt.xlabel(
+        #     "Best prediction                                                        Worst prediction",
+        #     fontsize=18,
+        # )
+        # plt.ylabel("Relative frequency", fontsize=18)
         # result_path = Path("results")
         # if not result_path.is_dir():
         #     result_path.mkdir()
