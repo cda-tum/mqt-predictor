@@ -478,12 +478,12 @@ class Predictor:
             fontsize=18,
         )
         plt.ylabel("Relative frequency", fontsize=18)
-        result_path = Path("results")
-        if not result_path.is_dir():
-            result_path.mkdir()
-        plt.savefig(result_path / (filename + ".pdf"), bbox_inches="tight")
-        if show_plot:
-            plt.show()
+        # result_path = Path("results")
+        # if not result_path.is_dir():
+        #     result_path.mkdir()
+        # plt.savefig(result_path / (filename + ".pdf"), bbox_inches="tight")
+        # if show_plot:
+        #     plt.show()
 
     def generate_eval_all_datapoints(
         self,
