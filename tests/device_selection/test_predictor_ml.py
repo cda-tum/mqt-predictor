@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
 
 import pytest
 from qiskit.qasm2 import dump
@@ -39,6 +38,7 @@ def test_predict_device_for_figure_of_merit() -> None:
 
     with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
         ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
+
 
 #
 # def test_performance_measures() -> None:
