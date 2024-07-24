@@ -162,7 +162,7 @@ class Predictor:
                 res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device_name, rl_pred], timeout)
                 if isinstance(res, tuple):
                     compiled_qc = res[0]
-                    with Path(target_path / (target_filename + ".qasm")).open("w", encoding=None) as f:
+                    with Path(target_path / (target_filename + ".qasm")).open("w", encoding="utf-8") as f:
                         dump(compiled_qc, f)
 
             except Exception as e:
@@ -558,7 +558,7 @@ class Predictor:
         """Returns the probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
 
         Arguments:
-            qc: The qasm string or path to the qasm file.
+            qc: The QuantumCircuit or Path to the respective qasm file.
             figure_of_merit: The figure of merit to be used for prediction.
 
         Returns:
