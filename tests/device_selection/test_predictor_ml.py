@@ -33,7 +33,7 @@ def test_predict_device_for_figure_of_merit() -> None:
 
     file = Path("test_qasm.qasm")
     qc = benchmark_generator.get_benchmark("dj", 1, 8)
-    with file.open("w", encoding="locale") as f:
+    with file.open("w", encoding="utf-8") as f:
         dump(qc, f)
 
     assert ml.helper.predict_device_for_figure_of_merit(file, "expected_fidelity").name in get_available_device_names()
@@ -91,7 +91,7 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
 
     qc = benchmark_generator.get_benchmark("dj", 1, 3)
     qasm_path = Path("test.qasm")
-    with Path(qasm_path).open("w", encoding="locale") as f:
+    with Path(qasm_path).open("w", encoding="utf-8") as f:
         dump(qc, f)
 
     if sys.platform == "win32":
