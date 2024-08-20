@@ -10,12 +10,13 @@ from typing import TYPE_CHECKING, Any
 import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed, load
-from mqt.bench.devices import get_available_device_names, get_available_devices
-from mqt.predictor import ml, reward, rl, utils
 from qiskit import QuantumCircuit
 from qiskit.qasm2 import dump
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
+
+from mqt.bench.devices import get_available_device_names, get_available_devices
+from mqt.predictor import ml, reward, rl, utils
 
 if TYPE_CHECKING:
     from numpy._typing import NDArray

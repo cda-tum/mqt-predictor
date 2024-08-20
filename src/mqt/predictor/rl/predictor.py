@@ -5,10 +5,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from mqt.predictor import reward, rl
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 from sb3_contrib.common.maskable.utils import get_action_masks
+
+from mqt.predictor import reward, rl
 
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit

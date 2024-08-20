@@ -5,10 +5,11 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from mqt.bench import get_benchmark
-from mqt.predictor import reward, rl
 from qiskit import QuantumCircuit
 from qiskit.qasm2 import dump
+
+from mqt.bench import get_benchmark
+from mqt.predictor import reward, rl
 
 
 def test_predictor_env_reset_from_string() -> None:

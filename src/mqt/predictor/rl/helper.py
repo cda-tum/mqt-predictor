@@ -11,8 +11,6 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import requests
 from bqskit import MachineModel
-from mqt.bench.utils import calc_supermarq_features
-from mqt.predictor import reward, rl
 from packaging import version
 from pytket.architecture import Architecture
 from pytket.circuit import Circuit, Node, Qubit
@@ -59,10 +57,14 @@ from qiskit.transpiler.passes.layout.vf2_layout import VF2LayoutStopReason
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
+from mqt.bench.utils import calc_supermarq_features
+from mqt.predictor import reward, rl
+
 if TYPE_CHECKING:
-    from mqt.bench.devices import Device
     from numpy.typing import NDArray
     from qiskit.providers.models import BackendProperties
+
+    from mqt.bench.devices import Device
 
 
 if TYPE_CHECKING or sys.version_info >= (3, 10, 0):

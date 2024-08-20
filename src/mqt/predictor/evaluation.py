@@ -10,9 +10,6 @@ from typing import Any
 
 import numpy as np
 from joblib import Parallel, delayed
-from mqt.bench.devices import Device, get_available_device_names, get_available_devices
-from mqt.bench.tket_helper import get_rebase
-from mqt.predictor import Result, ml, reward
 from pytket import OpType
 from pytket.architecture import Architecture
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
@@ -23,6 +20,10 @@ from pytket.passes import (
 )
 from pytket.placement import GraphPlacement
 from qiskit import QuantumCircuit, transpile
+
+from mqt.bench.devices import Device, get_available_device_names, get_available_devices
+from mqt.bench.tket_helper import get_rebase
+from mqt.predictor import Result, ml, reward
 
 logger = logging.getLogger("mqt-predictor")
 

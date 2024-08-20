@@ -9,14 +9,16 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from joblib import dump
-from mqt.bench.utils import calc_supermarq_features
-from mqt.predictor import ml, reward, rl
 from qiskit import QuantumCircuit
 
+from mqt.bench.utils import calc_supermarq_features
+from mqt.predictor import ml, reward, rl
+
 if TYPE_CHECKING:
-    from mqt.bench.devices import Device
     from numpy._typing import NDArray
     from sklearn.ensemble import RandomForestClassifier
+
+    from mqt.bench.devices import Device
 
 
 def qcompile(
