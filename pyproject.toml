@@ -98,6 +98,8 @@ filterwarnings = [
     'ignore:.*invalid value encountered in cast.*:RuntimeWarning:numpy.*',
     'ignore:.*The abstract Provider and ProviderV1 classes are deprecated.*:DeprecationWarning:qiskit.*',
     'ignore:.*is deprecated since Qiskit 1.2 and will be removed in Qiskit 2.0. With the removal of Qobj*:DeprecationWarning:',
+    'ignore:.*Treating CircuitInstruction as an iterable is deprecated legacy behavior since Qiskit 1.2, and will be removed in Qiskit 2.0.*:DeprecationWarning:pytket.*',
+
 ]
 
 [tool.check-wheel-contents]
