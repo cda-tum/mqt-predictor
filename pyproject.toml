@@ -99,6 +99,7 @@ filterwarnings = [
     'ignore:.*The abstract Provider and ProviderV1 classes are deprecated.*:DeprecationWarning:qiskit.*',
     'ignore:.*is deprecated since Qiskit 1.2 and will be removed in Qiskit 2.0. With the removal of Qobj*:DeprecationWarning:',
     'ignore:.*Treating CircuitInstruction as an iterable is deprecated legacy behavior since Qiskit 1.2, and will be removed in Qiskit 2.0.*:DeprecationWarning:pytket.*',
+    'ignore:.*The class ``qiskit.qobj.pulse_qobj.PulseLibraryItem`` is deprecated as of qiskit 1.2., and will be removed in Qiskit 2.0.*:,
 
 ]
 
