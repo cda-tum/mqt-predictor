@@ -97,7 +97,7 @@ filterwarnings = [
     'ignore::sklearn.exceptions.InconsistentVersionWarning:sklearn:',
     'ignore:.*invalid value encountered in cast.*:RuntimeWarning:numpy.*',
     'ignore:.*The abstract Provider and ProviderV1 classes are deprecated.*:DeprecationWarning:qiskit.*',
-    'ignore:.*qiskit\.providers\.models.*:DeprecationWarning:qiskit.*',
+    'ignore:.*is deprecated since Qiskit 1.2 and will be removed in Qiskit 2.0. With the removal of Qobj*:DeprecationWarning:qiskit.*',
 ]
 
 [tool.check-wheel-contents]
