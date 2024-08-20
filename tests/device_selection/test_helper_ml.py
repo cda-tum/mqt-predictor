@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from mqt.bench import benchmark_generator
 from mqt.predictor import ml
 

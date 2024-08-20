@@ -6,13 +6,11 @@ import logging
 from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
-
 from mqt.bench.utils import calc_supermarq_features
 
 if TYPE_CHECKING:
-    from qiskit import QuantumCircuit, QuantumRegister, Qubit
-
     from mqt.bench.devices import Device
+    from qiskit import QuantumCircuit, QuantumRegister, Qubit
 
 logger = logging.getLogger("mqt-predictor")
 

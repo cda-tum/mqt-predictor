@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from qiskit import QuantumCircuit
-
 from mqt.bench.devices import get_available_devices
 from mqt.predictor import Result
 from mqt.predictor.evaluation import create_qiskit_result, create_tket_result
+from qiskit import QuantumCircuit
 
 
 def test_create_result() -> None:

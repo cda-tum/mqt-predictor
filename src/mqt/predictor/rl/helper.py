@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import requests
 from bqskit import MachineModel
+from mqt.bench.utils import calc_supermarq_features
+from mqt.predictor import reward, rl
 from packaging import version
 from pytket.architecture import Architecture
 from pytket.circuit import Circuit, Node, Qubit
@@ -57,14 +59,10 @@ from qiskit.transpiler.passes.layout.vf2_layout import VF2LayoutStopReason
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
-from mqt.bench.utils import calc_supermarq_features
-from mqt.predictor import reward, rl
-
 if TYPE_CHECKING:
+    from mqt.bench.devices import Device
     from numpy.typing import NDArray
     from qiskit.providers.models import BackendProperties
-
-    from mqt.bench.devices import Device
 
 
 if TYPE_CHECKING or sys.version_info >= (3, 10, 0):
@@ -606,12 +604,12 @@ def get_bqskit_native_gates(device: Device) -> list[gates.Gate] | None:
     return native_gatesets[provider]
 
 
-def final_layout_pytket_to_qiskit(pytket_circuit: Circuit, qiskit_ciruit: QuantumCircuit) -> Layout:
+def final_layout_pytket_to_qiskit(pytket_circuit: Circuit, qiskit_circuit: QuantumCircuit) -> Layout:
     """Converts a final layout from pytket to qiskit."""
     pytket_layout = pytket_circuit.qubit_readout
     size_circuit = pytket_circuit.n_qubits
     qiskit_layout = {}
-    qiskit_qreg = qiskit_ciruit.qregs[0]
+    qiskit_qreg = qiskit_circuit.qregs[0]
 
     pytket_layout = dict(sorted(pytket_layout.items(), key=operator.itemgetter(1)))
 

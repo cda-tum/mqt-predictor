@@ -6,13 +6,12 @@ import os
 from pathlib import Path
 
 import pytest
-from qiskit import QuantumCircuit
-from qiskit.qasm2 import dump
-
 from mqt.bench import get_benchmark
 from mqt.bench.devices import get_available_device_names
 from mqt.predictor import qcompile, reward, rl
 from mqt.predictor.evaluation import evaluate_sample_circuit
+from qiskit import QuantumCircuit
+from qiskit.qasm2 import dump
 
 # only run test when executed on GitHub runner
 EXECUTION_FLAG = os.getenv("RUN_PREGENERATED_TESTS") == "true"

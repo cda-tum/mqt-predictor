@@ -12,6 +12,8 @@ import numpy as np
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete
+from mqt.bench.devices import get_device_by_name
+from mqt.predictor import reward, rl
 from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
@@ -19,9 +21,6 @@ from qiskit.passmanager.flow_controllers import DoWhileController
 from qiskit.transpiler import CouplingMap, PassManager, TranspileLayout
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
 from qiskit.transpiler.passes.layout.vf2_layout import VF2LayoutStopReason
-
-from mqt.bench.devices import get_device_by_name
-from mqt.predictor import reward, rl
 
 logger = logging.getLogger("mqt-predictor")
 
@@ -174,7 +173,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
         self.valid_actions = self.actions_opt_indices + self.actions_synthesis_indices
 
-        self.error_occured = False
+        self.error_occurred = False
 
         self.num_qubits_uncompiled_circuit = self.state.num_qubits
         self.has_parametrized_gates = len(self.state.parameters) > 0
@@ -238,7 +237,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         )
                     )
 
-                    self.error_occured = True
+                    self.error_occurred = True
                     return None
                 if (
                     action_index
@@ -289,7 +288,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                             action=action["name"], i=self.num_steps, filename=self.filename
                         )
                     )
-                    self.error_occured = True
+                    self.error_occurred = True
                     return None
 
             elif action["origin"] == "bqskit":
@@ -311,7 +310,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                             action=action["name"], i=self.num_steps, filename=self.filename
                         )
                     )
-                    self.error_occured = True
+                    self.error_occurred = True
                     return None
 
             else:

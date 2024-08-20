@@ -6,15 +6,14 @@ from typing import cast
 
 import pytest
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
+from mqt.bench.devices import Device, get_available_devices, get_device_by_name
+from mqt.predictor.rl import helper
 from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
 from qiskit.transpiler.passmanager import TranspileLayout
-
-from mqt.bench.devices import Device, get_available_devices, get_device_by_name
-from mqt.predictor.rl import helper
 
 
 def test_bqskit_o2_action() -> None:

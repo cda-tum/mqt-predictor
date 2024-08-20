@@ -11,10 +11,9 @@ from warnings import warn
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from qiskit import QuantumCircuit
-
     from mqt.predictor.reward import figure_of_merit
     from mqt.predictor.rl.predictor import Predictor as RL_Predictor
+    from qiskit import QuantumCircuit
 
 logger = logging.getLogger("mqt-predictor")
 

@@ -5,11 +5,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from mqt.predictor import reward, rl
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 from sb3_contrib.common.maskable.utils import get_action_masks
-
-from mqt.predictor import reward, rl
 
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit
@@ -69,7 +68,7 @@ class Predictor:
             used_compilation_passes.append(action_item["name"])
             obs, _reward_val, terminated, truncated, _info = self.env.step(action)
 
-        if not self.env.error_occured:
+        if not self.env.error_occurred:
             return self.env.state, used_compilation_passes
 
         msg = "Error occurred during compilation."
