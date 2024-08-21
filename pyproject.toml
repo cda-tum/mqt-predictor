@@ -103,6 +103,7 @@ filterwarnings = [
     'ignore:.*The class ``qiskit.providers.models.backendconfiguration.BackendConfiguration`` is deprecated as of qiskit 1.2.*:DeprecationWarning:qiskit.*',
     'ignore:.*The class ``qiskit.providers.models.backendconfiguration.QasmBackendConfiguration`` is deprecated as of qiskit 1.2.*:DeprecationWarning:qiskit.*',
     'ignore:.*The class ``qiskit.qobj.pulse_qobj.PulseQobjInstruction`` is deprecated as of qiskit 1.2.*:DeprecationWarning:qiskit.*',
+    'ignore:.*The class ``qiskit.qobj.pulse_qobj.PulseLibraryItem`` is deprecated as of qiskit 1.2.*:DeprecationWarning:qiskit.*',
     'ignore:.*The class ``qiskit.providers.models.backendproperties.BackendProperties`` is deprecated as of qiskit 1.2.*:DeprecationWarning:qiskit.*',
     'ignore:.*The class ``qiskit.qobj.pulse_qobj.PulseLibraryItem`` is deprecated as of qiskit 1.2.*:DeprecationWarning:qiskit.*',
     'ignore:.*qiskit.providers.models is deprecated since Qiskit 1.2*:DeprecationWarning:',
