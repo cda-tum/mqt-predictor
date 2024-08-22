@@ -98,6 +98,7 @@ filterwarnings = [
     'ignore:.*invalid value encountered in cast.*:RuntimeWarning:numpy.*',
     'ignore:.*The abstract Provider and ProviderV1 classes are deprecated.*:DeprecationWarning:qiskit.*',
     'ignore:.*Treating CircuitInstruction as an iterable is deprecated legacy behavior since Qiskit 1.2, and will be removed in Qiskit 2.0.*:DeprecationWarning:pytket.*',
+    'ignore:.*Treating CircuitInstruction as an iterable is deprecated legacy behavior since Qiskit 1.2, and will be removed in Qiskit 2.0.*:DeprecationWarning:mqt.*',
     'ignore:.*is deprecated as of qiskit 1.2., and will be removed in Qiskit 2.0.*:DeprecationWarning:pytket.*',
     'ignore:.*The class ``qiskit.providers.models.backendconfiguration.GateConfig`` is deprecated as of qiskit 1.2.*:DeprecationWarning:qiskit.*',
     'ignore:.*The class ``qiskit.providers.models.backendconfiguration.BackendConfiguration`` is deprecated as of qiskit 1.2.*:DeprecationWarning:qiskit.*',
