@@ -606,12 +606,12 @@ def get_bqskit_native_gates(device: Device) -> list[gates.Gate] | None:
     return native_gatesets[provider]
 
 
-def final_layout_pytket_to_qiskit(pytket_circuit: Circuit, qiskit_ciruit: QuantumCircuit) -> Layout:
+def final_layout_pytket_to_qiskit(pytket_circuit: Circuit, qiskit_circuit: QuantumCircuit) -> Layout:
     """Converts a final layout from pytket to qiskit."""
     pytket_layout = pytket_circuit.qubit_readout
     size_circuit = pytket_circuit.n_qubits
     qiskit_layout = {}
-    qiskit_qreg = qiskit_ciruit.qregs[0]
+    qiskit_qreg = qiskit_circuit.qregs[0]
 
     pytket_layout = dict(sorted(pytket_layout.items(), key=operator.itemgetter(1)))
 
