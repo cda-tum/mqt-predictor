@@ -101,7 +101,7 @@ filterwarnings = [
     'ignore:.*Treating CircuitInstruction as an iterable is deprecated legacy behavior since Qiskit 1.2, and will be removed in Qiskit 2.0.*:DeprecationWarning:',
     'ignore:.*is deprecated as of qiskit 1.2., and will be removed in Qiskit 2.0.*:DeprecationWarning:pytket.*',
     'ignore:.*qiskit.providers.models.* is deprecated as of qiskit 1.2*:DeprecationWarning:qiskit.*',
-    'ignore:.*qiskit.qobj.pulse_qobj.* is deprecated as of qiskit 1.2*:DeprecationWarning:qiskit.*',
+    'ignore:.*qiskit.qobj.pulse_qobj.* is deprecated as of qiskit 1.2*:DeprecationWarning:',
     'ignore:.*qiskit.providers.models is deprecated since Qiskit 1.2*:DeprecationWarning:',
 
 ]
