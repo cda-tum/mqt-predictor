@@ -24,7 +24,7 @@ dependencies = [
     "scikit-learn>=1.5.1",
     "tensorboard>=2.17.0",
     "bqskit>=1.1.2",
-    "numpy<2.0.0", # sb3/pytortch is currently not yet compatible https://github.com/DLR-RM/stable-baselines3/blob/9a3b28bb9f24a1646479500fb23be55ba652a30d/setup.py#L104
+    "numpy<3.0.0", # sb3/pytortch is currently not yet compatible https://github.com/DLR-RM/stable-baselines3/blob/9a3b28bb9f24a1646479500fb23be55ba652a30d/setup.py#L104
 ]
 
 classifiers = [
