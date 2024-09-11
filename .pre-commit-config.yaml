@@ -15,7 +15,7 @@ ci:
 repos:
   # Standard hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: "v4.4.0"
+    rev: v4.6.0
     hooks:
       - id: check-added-large-files
       - id: check-case-conflict
@@ -30,64 +30,61 @@ repos:
 
   # Clean jupyter notebooks
   - repo: https://github.com/srstevenson/nb-clean
-    rev: "3.0.0"
+    rev: 3.3.0
     hooks:
       - id: nb-clean
+        args:
+          - --remove-empty-cells
+          - --preserve-cell-metadata
+          - raw_mimetype
+          - --
 
   # Handling unwanted unicode characters
   - repo: https://github.com/sirosen/texthooks
-    rev: "0.5.0"
+    rev: 0.6.7
     hooks:
       - id: fix-ligatures
       - id: fix-smartquotes
 
-  # Run code formatting with Black
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: "23.7.0" # Keep in sync with blacken-docs
+  # Check for common mistakes
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
     hooks:
-      - id: black
+      - id: rst-backticks
+      - id: rst-directive-colons
+      - id: rst-inline-touching-normal
 
-  # Also run Black on examples in the documentation
-  - repo: https://github.com/asottile/blacken-docs
-    rev: "1.16.0"
-    hooks:
-      - id: blacken-docs
-        additional_dependencies:
-          - black==23.7.0 # keep in sync with black hook
-
-  # Check for spelling
-  - repo: https://github.com/codespell-project/codespell
-    rev: "v2.2.5"
-    hooks:
-      - id: codespell
-        args: ["-L", "wille,linz,fro"]
-        exclude: >
-          (?x)^(
-              .*calibration\.json|
-              .*\.ipynb
-          )$
-
-  # Format configuration files with prettier
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v3.0.2"
-    hooks:
-      - id: prettier
-        types_or: [yaml, markdown, html, css, javascript, json]
-
+  # Python linting and formatting using ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.286
+    rev: v0.6.4
     hooks:
       - id: ruff
-        args: ["--fix"]
+        args: ["--fix", "--show-fixes"]
+      - id: ruff-format
 
+  # Also run Black on examples in the documentation
+  - repo: https://github.com/adamchainz/blacken-docs
+    rev: 1.18.0
+    hooks:
+      - id: blacken-docs
+        additional_dependencies: [black==24.*]
+
+  # Format configuration files with prettier
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.3.3
+    hooks:
+      - id: prettier
+        types_or: [yaml, markdown, html, css, scss, javascript, json]
+
+  # Check static types with mypy
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.5.1
+    rev: v1.11.2
     hooks:
       - id: mypy
-        files: ^(src|tests|setup.py)
+        files: ^(src/mqt|test/python)
         args: []
         additional_dependencies:
-          - pytket-qiskit
+          - pytket_qiskit
           - qiskit_optimization
           - qiskit_nature
           - qiskit_finance
@@ -96,3 +93,40 @@ repos:
           - types-setuptools
           - types-requests
           - types-tqdm
+          - types-flask
+
+  # Check for spelling
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.24.5
+    hooks:
+      - id: typos
+
+  # Catch common capitalization mistakes
+  - repo: local
+    hooks:
+      - id: disallow-caps
+        name: Disallow improper capitalization
+        language: pygrep
+        entry: PyBind|Numpy|Cmake|CCache|Github|PyTest|Mqt|Tum
+        exclude: \.pre-commit-config\.yaml|\.joblib$
+
+  # Check best practices for scientific Python code
+  - repo: https://github.com/scientific-python/cookie
+    rev: 2024.08.19
+    hooks:
+      - id: sp-repo-review
+        additional_dependencies: ["repo-review[cli]"]
+
+  # Check JSON schemata
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.29.2
+    hooks:
+      - id: check-dependabot
+      - id: check-github-workflows
+      - id: check-readthedocs
+
+  # Check the pyproject.toml file
+  - repo: https://github.com/henryiii/validate-pyproject-schema-store
+    rev: 2024.08.26
+    hooks:
+      - id: validate-pyproject

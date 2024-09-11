@@ -1,24 +1,63 @@
-from pathlib import Path
+"""Tests for the evaluation module."""
 
-from mqt.bench import get_benchmark
-from mqt.predictor import rl
-from mqt.predictor.evaluation import evaluate_sample_circuit
+from __future__ import annotations
+
+from qiskit import QuantumCircuit
+
+from mqt.bench.devices import get_available_devices
+from mqt.predictor import Result
+from mqt.predictor.evaluation import create_qiskit_result, create_tket_result
 
 
-def test_evaluate_sample_circuit() -> None:
-    qc = get_benchmark("ghz", 1, 3)
-    filename = "test_3.qasm"
-    qc.qasm(filename=filename)
-    res = evaluate_sample_circuit(filename)
-    expected_keys = []
-    for compilation_setup in ["qiskit", "tket", "mqt-predictor_expected_fidelity", "mqt-predictor_critical_depth"]:
-        for key in ["time", "expected_fidelity", "critical_depth"]:
-            if "mqt-predictor" in compilation_setup:
-                expected_keys.append(compilation_setup + "_" + key)
-            else:
-                for device in rl.helper.get_devices():
-                    expected_keys.append(compilation_setup + "_" + device["name"] + "_" + key)
+def test_create_result() -> None:
+    """Test the creation of a result object."""
+    devices = get_available_devices()
+    assert devices[0].num_qubits > 10
+    res = create_tket_result(QuantumCircuit(10), devices[0])
+    assert isinstance(res, Result)
+    assert res.compilation_time >= 0.0
+    assert res.fidelity >= 0.0
+    assert res.critical_depth >= 0.0
 
-    assert all(key in res for key in expected_keys)
-    if Path(filename).exists():
-        Path(filename).unlink()
+    res = create_qiskit_result(QuantumCircuit(10), devices[0])
+    assert isinstance(res, Result)
+    assert res.compilation_time >= 0.0
+    assert res.fidelity >= 0.0
+    assert res.critical_depth >= 0.0
+
+
+def test_false_input() -> None:
+    """Test the creation of a result object with false input."""
+    devices = get_available_devices()
+    res = create_tket_result(QuantumCircuit(1000), devices[0])
+    assert isinstance(res, Result)
+    assert res.compilation_time == -1.0
+    assert res.fidelity == -1.0
+    assert res.critical_depth == -1.0
+
+    res = create_qiskit_result(QuantumCircuit(1000), devices[0])
+    assert isinstance(res, Result)
+    assert res.compilation_time == -1.0
+    assert res.fidelity == -1.0
+    assert res.critical_depth == -1.0
+
+    devices[0].coupling_map = ["wrong_coupling_map"]
+    res = create_qiskit_result(QuantumCircuit(10), devices[0])
+    assert isinstance(res, Result)
+    assert res.compilation_time == -1.0
+    assert res.fidelity == -1.0
+    assert res.critical_depth == -1.0
+
+    res = create_tket_result(QuantumCircuit(10), devices[0])
+    assert isinstance(res, Result)
+    assert res.compilation_time == -1.0
+    assert res.fidelity == -1.0
+    assert res.critical_depth == -1.0
+
+
+def test_result_none_input() -> None:
+    """Test the creation of a result object with None input."""
+    res = Result("test", 1.0, None, None)
+    assert res.compilation_time == 1.0
+    assert res.fidelity == -1.0
+    assert res.critical_depth == -1.0

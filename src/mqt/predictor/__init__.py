@@ -1,6 +1,15 @@
+"""MQT Predictor.
+
+This file is part of the MQT Predictor library released under the MIT license.
+See README.md or go to https://github.com/cda-tum/mqt-predictor for more information.
+"""
+
+from __future__ import annotations
+
 import logging
-from mqt.predictor.Result import Result
+
 from mqt.predictor.ml import qcompile
+from mqt.predictor.result import Result
 
 __all__ = [
     "Result",
