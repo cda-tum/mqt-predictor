@@ -597,6 +597,7 @@ def get_bqskit_native_gates(device: Device) -> list[gates.Gate] | None:
         "ionq": [gates.RXXGate(), gates.RZGate(), gates.RYGate(), gates.RXGate()],
         "quantinuum": [gates.RZZGate(), gates.RZGate(), gates.RYGate(), gates.RXGate()],
         "iqm": [gates.U3Gate(), gates.CZGate()],
+        "oqc": [gates.RZGate(), gates.XGate(), gates.SXGate(), gates.ECRGate()],
     }
 
     if provider not in native_gatesets:
