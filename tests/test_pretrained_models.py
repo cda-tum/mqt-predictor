@@ -46,7 +46,7 @@ def test_evaluate_sample_circuit() -> None:
     """Test the evaluation of a sample circuit with pre-generated models."""
     qc = get_benchmark("ghz", 1, 3)
     filename = "test_3.qasm"
-    with Path(filename).open("w", encoding="locale") as f:
+    with Path(filename).open("w", encoding="utf-8") as f:
         dump(qc, f)
     res = evaluate_sample_circuit(filename)
     expected_keys = []

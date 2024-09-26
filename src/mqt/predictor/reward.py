@@ -39,7 +39,8 @@ def expected_fidelity(qc: QuantumCircuit, device: Device, precision: int = 10) -
         The expected fidelity of the given quantum circuit on the given device.
     """
     res = 1.0
-    for instruction, qargs, _cargs in qc.data:
+    for qc_instruction in qc.data:
+        instruction, qargs = qc_instruction.operation, qc_instruction.qubits
         gate_type = instruction.name
 
         if gate_type != "barrier":

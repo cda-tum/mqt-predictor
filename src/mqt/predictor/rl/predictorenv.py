@@ -176,7 +176,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
         self.valid_actions = self.actions_opt_indices + self.actions_synthesis_indices
 
-        self.error_occured = False
+        self.error_occurred = False
 
         self.num_qubits_uncompiled_circuit = self.state.num_qubits
         self.has_parametrized_gates = len(self.state.parameters) > 0
@@ -240,7 +240,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                         )
                     )
 
-                    self.error_occured = True
+                    self.error_occurred = True
                     return None
                 if (
                     action_index
@@ -291,7 +291,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                             action=action["name"], i=self.num_steps, filename=self.filename
                         )
                     )
-                    self.error_occured = True
+                    self.error_occurred = True
                     return None
 
             elif action["origin"] == "bqskit":
@@ -313,7 +313,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
                             action=action["name"], i=self.num_steps, filename=self.filename
                         )
                     )
-                    self.error_occured = True
+                    self.error_occurred = True
                     return None
 
             else:

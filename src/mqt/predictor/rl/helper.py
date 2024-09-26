@@ -81,7 +81,7 @@ from bqskit.ir import gates
 from qiskit import QuantumRegister
 from qiskit.passmanager import ConditionalController
 from qiskit.transpiler.preset_passmanagers import common
-from qiskit_ibm_runtime.fake_provider import FakeGuadalupe, FakeMontreal, FakeQuito, FakeWashington
+from qiskit_ibm_runtime.fake_provider import FakeGuadalupeV2, FakeMontrealV2, FakeQuitoV2, FakeWashingtonV2
 
 logger = logging.getLogger("mqt-predictor")
 
@@ -213,8 +213,7 @@ def get_actions_final_optimization() -> list[dict[str, Any]]:
         {
             "name": "VF2PostLayout",
             "transpile_pass": lambda device: VF2PostLayout(
-                coupling_map=CouplingMap(device.coupling_map),
-                properties=get_ibm_backend_properties_by_device_name(device.name),
+                target=get_ibm_backend_properties_by_device_name(device.name),
             ),
             "origin": "qiskit",
         }
@@ -249,7 +248,7 @@ def get_actions_layout() -> list[dict[str, Any]]:
             "transpile_pass": lambda device: [
                 VF2Layout(
                     coupling_map=CouplingMap(device.coupling_map),
-                    properties=get_ibm_backend_properties_by_device_name(device.name),
+                    target=get_ibm_backend_properties_by_device_name(device.name),
                 ),
                 ConditionalController(
                     [
@@ -598,6 +597,7 @@ def get_bqskit_native_gates(device: Device) -> list[gates.Gate] | None:
         "ionq": [gates.RXXGate(), gates.RZGate(), gates.RYGate(), gates.RXGate()],
         "quantinuum": [gates.RZZGate(), gates.RZGate(), gates.RYGate(), gates.RXGate()],
         "iqm": [gates.U3Gate(), gates.CZGate()],
+        "oqc": [gates.RZGate(), gates.XGate(), gates.SXGate(), gates.ECRGate()],
     }
 
     if provider not in native_gatesets:
@@ -607,12 +607,12 @@ def get_bqskit_native_gates(device: Device) -> list[gates.Gate] | None:
     return native_gatesets[provider]
 
 
-def final_layout_pytket_to_qiskit(pytket_circuit: Circuit, qiskit_ciruit: QuantumCircuit) -> Layout:
+def final_layout_pytket_to_qiskit(pytket_circuit: Circuit, qiskit_circuit: QuantumCircuit) -> Layout:
     """Converts a final layout from pytket to qiskit."""
     pytket_layout = pytket_circuit.qubit_readout
     size_circuit = pytket_circuit.n_qubits
     qiskit_layout = {}
-    qiskit_qreg = qiskit_ciruit.qregs[0]
+    qiskit_qreg = qiskit_circuit.qregs[0]
 
     pytket_layout = dict(sorted(pytket_layout.items(), key=operator.itemgetter(1)))
 
@@ -679,13 +679,13 @@ def get_ibm_backend_properties_by_device_name(device_name: str) -> BackendProper
     if "ibm" not in device_name:
         return None
     if device_name == "ibm_washington":
-        return FakeWashington().properties()
+        return FakeWashingtonV2().target
     if device_name == "ibm_montreal":
-        return FakeMontreal().properties()
+        return FakeMontrealV2().target
     if device_name == "ibm_guadalupe":
-        return FakeGuadalupe().properties()
+        return FakeGuadalupeV2().target
     if device_name == "ibm_quito":
-        return FakeQuito().properties()
+        return FakeQuitoV2().target
     return None
 
 
