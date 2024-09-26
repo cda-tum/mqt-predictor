@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
+import pytest
 from qiskit import QuantumCircuit
 
 from mqt.bench.devices import get_device_by_name
 from mqt.predictor import Result, reward
 from mqt.predictor.evaluation import create_qiskit_result, create_tket_result
-
-if TYPE_CHECKING:
-    import pytest
 
 
 def test_create_result() -> None:
@@ -79,17 +75,15 @@ def test_result_none_input() -> None:
     assert res.expected_success_probability == -1.0
 
 
-def test_esp_wrong_device(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_esp_wrong_device() -> None:
     """Test esp for device with missing gate and readout durations."""
     device = get_device_by_name("quantinuum_h2")
     assert device.num_qubits >= 10
     qc = QuantumCircuit(10)
     qc.measure_all()
 
-    def mock_exception(msg: str) -> None:
-        assert msg == "Calculating ESP requires device with fully specified gate and readout durations."
-
-    monkeypatch.setattr(reward.logger, "exception", mock_exception)
-
-    esp = reward.expected_success_probability(qc, device)
-    assert esp == 0.0
+    with pytest.raises(
+        ValueError,
+        match=f"Calculating ESP requires device with fully specified gate and readout durations that is not provided for {device.name}.",
+    ):
+        reward.expected_success_probability(qc, device)

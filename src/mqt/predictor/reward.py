@@ -111,9 +111,9 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
                 active_qubits.add(second_qubit_idx)
                 duration = device.get_two_qubit_gate_duration(gate_type, first_qubit_idx, second_qubit_idx)
                 op_times.append((gate_type, [first_qubit_idx, second_qubit_idx], duration, "s"))
-    except ValueError:
-        logger.exception("Calculating ESP requires device with fully specified gate and readout durations.")
-        return 0.0
+    except ValueError as err:
+        msg = f"Calculating ESP requires device with fully specified gate and readout durations that is not provided for {device.name}."
+        raise ValueError(msg) from err
 
     # associate gate and idle (delay) times for each qubit through asap scheduling
     sched_pass = passes.ASAPScheduleAnalysis(InstructionDurations(op_times))
@@ -136,10 +136,10 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
                     # only consider active qubits
                     if first_qubit_idx in active_qubits:
                         idle_time = instruction.duration
-                        T_min = min(
+                        t_min = min(
                             device.calibration.get_t1(first_qubit_idx), device.calibration.get_t2(first_qubit_idx)
                         )
-                        specific_fidelity = np.exp(-idle_time / T_min)
+                        specific_fidelity = np.exp(-idle_time / t_min)
                     else:
                         specific_fidelity = 1.0
                 else:
