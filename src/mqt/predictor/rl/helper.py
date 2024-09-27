@@ -379,7 +379,7 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
     return qc, str(file_list[random_index])
 
 
-def create_feature_dict(qc: QuantumCircuit) -> dict[str, NDArray[np.float32 | np.int32]]:
+def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float64]]:
     """Creates a feature dictionary for a given quantum circuit.
 
     Arguments:
@@ -388,9 +388,9 @@ def create_feature_dict(qc: QuantumCircuit) -> dict[str, NDArray[np.float32 | np
     Returns:
         The feature dictionary for the given quantum circuit.
     """
-    feature_dict: dict[str, NDArray[np.float32 | np.int32]] = {
-        "num_qubits": np.array(qc.num_qubits, dtype=np.int32),
-        "depth": np.array(qc.depth(), dtype=np.int32),
+    feature_dict = {
+        "num_qubits": qc.num_qubits,
+        "depth": qc.depth(),
     }
 
     supermarq_features = calc_supermarq_features(qc)
