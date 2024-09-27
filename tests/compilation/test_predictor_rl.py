@@ -30,7 +30,7 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
     """Test the qcompile function with a newly trained model.
 
     Important: Those trained models are used in later tests and must not be deleted.
-    To test ESP as well, training must be done with a device that provides all relevant information (e.g. gate times).
+    To test ESP as well, training must be done with a device that provides all relevant information (i.e. T1, T2 and gate times).
     """
     device = "ionq_harmony"  # fully specified calibration data
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)

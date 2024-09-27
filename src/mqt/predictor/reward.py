@@ -6,7 +6,8 @@ import logging
 from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
-from qiskit.transpiler import InstructionDurations, PassManager, passes
+from qiskit.transpiler import InstructionDurations, Layout, PassManager, passes
+from qiskit.transpiler.passes import ApplyLayout, SetLayout
 
 from mqt.bench.utils import calc_supermarq_features
 
@@ -112,8 +113,21 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
                 duration = device.get_two_qubit_gate_duration(gate_type, first_qubit_idx, second_qubit_idx)
                 op_times.append((gate_type, [first_qubit_idx, second_qubit_idx], duration, "s"))
     except ValueError as err:
-        msg = f"Calculating ESP requires device with fully specified gate and readout durations that is not provided for {device.name}."
+        msg = f"Calculating ESP requires device with fully specified T1, T2, gate- and readout-durations, which is not provided for {device.name}."
         raise ValueError(msg) from err
+
+    # check whether the circuit was transformed by tket (i.e. changed register name)
+    # qiskit ASAPScheduleAnalysis expects all qubit registers to be named 'q'
+    if qc.qregs[0].name != "q":
+        # create a layout that maps the (tket) 'node' registers to the (qiskit) 'q' registers
+        layouts = [SetLayout(Layout({node_qubit: i for i, node_qubit in enumerate(node_reg)})) for node_reg in qc.qregs]
+        # create a pass manager with the SetLayout and ApplyLayout passes
+        pm = PassManager(list(layouts))
+        pm.append(ApplyLayout())
+
+        # replace the 'node' register with the 'q' register in the circuit
+        physical_qc_tket = pm.run(qc)
+        assert physical_qc_tket.qregs[0].name == "q"
 
     # associate gate and idle (delay) times for each qubit through asap scheduling
     sched_pass = passes.ASAPScheduleAnalysis(InstructionDurations(op_times))
