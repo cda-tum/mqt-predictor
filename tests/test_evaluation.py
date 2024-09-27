@@ -84,6 +84,6 @@ def test_esp_wrong_device() -> None:
 
     with pytest.raises(
         ValueError,
-        match=f"Calculating ESP requires device with fully specified gate and readout durations that is not provided for {device.name}.",
+        match=f"Calculating ESP requires device with fully specified T1, T2, gate- and readout-durations, which is not provided for {device.name}.",
     ):
         reward.expected_success_probability(qc, device)

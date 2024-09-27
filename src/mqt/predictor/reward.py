@@ -126,8 +126,8 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
         pm.append(ApplyLayout())
 
         # replace the 'node' register with the 'q' register in the circuit
-        physical_qc_tket = pm.run(qc)
-        assert physical_qc_tket.qregs[0].name == "q"
+        qc = pm.run(qc)
+        assert qc.qregs[0].name == "q"
 
     # associate gate and idle (delay) times for each qubit through asap scheduling
     sched_pass = passes.ASAPScheduleAnalysis(InstructionDurations(op_times))
