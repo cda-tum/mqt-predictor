@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Literal, cast, get_args
 
 import numpy as np
 from qiskit.transpiler import InstructionDurations, Layout, PassManager, passes
@@ -18,8 +18,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("mqt-predictor")
 
-FIGURES_OF_MERIT = ["expected_fidelity", "critical_depth", "expected_success_probability"]
 figure_of_merit = Literal["expected_fidelity", "critical_depth", "expected_success_probability"]
+FIGURES_OF_MERIT = list(get_args(figure_of_merit))
 
 
 def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
