@@ -379,7 +379,7 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
     return qc, str(file_list[random_index])
 
 
-def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float64]]:
+def create_feature_dict(qc: QuantumCircuit) -> dict[str, NDArray[np.float64 | np.int32]]:
     """Creates a feature dictionary for a given quantum circuit.
 
     Arguments:
@@ -388,18 +388,18 @@ def create_feature_dict(qc: QuantumCircuit) -> dict[str, int | NDArray[np.float6
     Returns:
         The feature dictionary for the given quantum circuit.
     """
-    feature_dict = {
-        "num_qubits": qc.num_qubits,
-        "depth": qc.depth(),
+    feature_dict: dict[str, NDArray[np.float64 | np.int32]] = {
+        "num_qubits": np.array([qc.num_qubits], dtype=np.int32),
+        "depth": np.array([qc.depth()], dtype=np.int32),
     }
 
     supermarq_features = calc_supermarq_features(qc)
     # for all dict values, put them in a list each
-    feature_dict["program_communication"] = np.array([supermarq_features.program_communication], dtype=np.float32)
-    feature_dict["critical_depth"] = np.array([supermarq_features.critical_depth], dtype=np.float32)
-    feature_dict["entanglement_ratio"] = np.array([supermarq_features.entanglement_ratio], dtype=np.float32)
-    feature_dict["parallelism"] = np.array([supermarq_features.parallelism], dtype=np.float32)
-    feature_dict["liveness"] = np.array([supermarq_features.liveness], dtype=np.float32)
+    feature_dict["program_communication"] = np.array([supermarq_features.program_communication], dtype=np.float64)
+    feature_dict["critical_depth"] = np.array([supermarq_features.critical_depth], dtype=np.float64)
+    feature_dict["entanglement_ratio"] = np.array([supermarq_features.entanglement_ratio], dtype=np.float64)
+    feature_dict["parallelism"] = np.array([supermarq_features.parallelism], dtype=np.float64)
+    feature_dict["liveness"] = np.array([supermarq_features.liveness], dtype=np.float64)
 
     return feature_dict
 

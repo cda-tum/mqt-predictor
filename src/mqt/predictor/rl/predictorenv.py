@@ -86,11 +86,11 @@ class PredictorEnv(Env):  # type: ignore[misc]
         spaces = {
             "num_qubits": Discrete(128),
             "depth": Discrete(1000000),
-            "program_communication": Box(low=0, high=1, shape=(1,), dtype=np.float32),
-            "critical_depth": Box(low=0, high=1, shape=(1,), dtype=np.float32),
-            "entanglement_ratio": Box(low=0, high=1, shape=(1,), dtype=np.float32),
-            "parallelism": Box(low=0, high=1, shape=(1,), dtype=np.float32),
-            "liveness": Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            "program_communication": Box(low=0, high=1, shape=(1,), dtype=np.float64),
+            "critical_depth": Box(low=0, high=1, shape=(1,), dtype=np.float64),
+            "entanglement_ratio": Box(low=0, high=1, shape=(1,), dtype=np.float64),
+            "parallelism": Box(low=0, high=1, shape=(1,), dtype=np.float64),
+            "liveness": Box(low=0, high=1, shape=(1,), dtype=np.float64),
         }
         self.observation_space = Dict(spaces)
         self.filename = ""
