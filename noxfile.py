@@ -19,6 +19,7 @@ nox.options.default_venv_backend = "uv|virtualenv"
 PYTHON_ALL_VERSIONS = ["3.10", "3.11", "3.12"]
 
 BUILD_REQUIREMENTS = [
+    "setuptools>=66.1",
     "setuptools_scm>=8.1",
 ]
 
