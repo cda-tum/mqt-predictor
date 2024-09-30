@@ -83,6 +83,8 @@ nbsphinx_kernel_name = "python3"
 
 autosectionlabel_prefix_document = True
 
+exclude_patterns = ["_build", "build", "**.ipynb_checkpoints", "Thumbs.db", ".DS_Store", ".env"]
+
 
 class CDAStyle(UnsrtStyle):
     """Custom style for including PDF links."""
