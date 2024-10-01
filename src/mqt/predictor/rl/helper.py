@@ -57,7 +57,6 @@ from qiskit.transpiler.passes.layout.vf2_layout import VF2LayoutStopReason
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
-from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import reward, rl
 
 if TYPE_CHECKING:
@@ -393,13 +392,13 @@ def create_feature_dict(qc: QuantumCircuit) -> dict[str, NDArray[np.float64] | i
         "depth": qc.depth(),
     }
 
-    supermarq_features = calc_supermarq_features(qc)
-    # for all dict values, put them in a list each
-    feature_dict["program_communication"] = np.array([supermarq_features.program_communication], dtype=np.float64)
-    feature_dict["critical_depth"] = np.array([supermarq_features.critical_depth], dtype=np.float64)
-    feature_dict["entanglement_ratio"] = np.array([supermarq_features.entanglement_ratio], dtype=np.float64)
-    feature_dict["parallelism"] = np.array([supermarq_features.parallelism], dtype=np.float64)
-    feature_dict["liveness"] = np.array([supermarq_features.liveness], dtype=np.float64)
+    # supermarq_features = calc_supermarq_features(qc)
+    # # for all dict values, put them in a list each
+    # feature_dict["program_communication"] = np.array([supermarq_features.program_communication], dtype=np.float64)
+    # feature_dict["critical_depth"] = np.array([supermarq_features.critical_depth], dtype=np.float64)
+    # feature_dict["entanglement_ratio"] = np.array([supermarq_features.entanglement_ratio], dtype=np.float64)
+    # feature_dict["parallelism"] = np.array([supermarq_features.parallelism], dtype=np.float64)
+    # feature_dict["liveness"] = np.array([supermarq_features.liveness], dtype=np.float64)
 
     logger.info(f"Feature dict: {feature_dict}")
 

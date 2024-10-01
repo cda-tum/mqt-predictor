@@ -8,10 +8,9 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from pathlib import Path
 
-import numpy as np
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from gymnasium import Env
-from gymnasium.spaces import Box, Dict, Discrete
+from gymnasium.spaces import Dict, Discrete
 from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
@@ -86,11 +85,11 @@ class PredictorEnv(Env):  # type: ignore[misc]
         spaces = {
             "num_qubits": Discrete(128),
             "depth": Discrete(1000000),
-            "program_communication": Box(low=0, high=1, shape=(1,), dtype=np.float64),
-            "critical_depth": Box(low=0, high=1, shape=(1,), dtype=np.float64),
-            "entanglement_ratio": Box(low=0, high=1, shape=(1,), dtype=np.float64),
-            "parallelism": Box(low=0, high=1, shape=(1,), dtype=np.float64),
-            "liveness": Box(low=0, high=1, shape=(1,), dtype=np.float64),
+            # "program_communication": Box(low=0, high=1, shape=(1,), dtype=np.float64),
+            # "critical_depth": Box(low=0, high=1, shape=(1,), dtype=np.float64),
+            # "entanglement_ratio": Box(low=0, high=1, shape=(1,), dtype=np.float64),
+            # "parallelism": Box(low=0, high=1, shape=(1,), dtype=np.float64),
+            # "liveness": Box(low=0, high=1, shape=(1,), dtype=np.float64),
         }
         self.observation_space = Dict(spaces)
         self.filename = ""
