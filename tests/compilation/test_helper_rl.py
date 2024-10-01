@@ -19,7 +19,7 @@ from mqt.predictor import rl
 
 def test_obs_as_tensor() -> None:
     """Test the conversion of an observation to a tensor."""
-    obs = OrderedDict([("depth", array([7])), ("num_qubits", array([7]))])
+    obs = OrderedDict([("a", array([7]))])
     obs_as_tensor(device="cpu", obs=obs)
 
 
