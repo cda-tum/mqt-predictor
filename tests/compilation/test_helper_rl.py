@@ -2,16 +2,24 @@
 
 from __future__ import annotations
 
+from collections import OrderedDict
 from pathlib import Path
 
 import numpy as np
 from qiskit import transpile
 from qiskit.transpiler import PassManager
 from qiskit.transpiler.passes.layout.vf2_post_layout import VF2PostLayoutStopReason
+from stable_baselines3.common.utils import obs_as_tensor
 
 from mqt.bench import get_benchmark
 from mqt.bench.devices import get_device_by_name
 from mqt.predictor import rl
+
+
+def test_obs_as_tensor() -> None:
+    """Test the conversion of an observation to a tensor."""
+    obs = OrderedDict([("depth", 7), ("num_qubits", 7)])
+    obs_as_tensor(device="cpu", obs=obs)
 
 
 def test_create_feature_dict() -> None:
