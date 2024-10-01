@@ -61,7 +61,6 @@ from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import reward, rl
 
 if TYPE_CHECKING:
-    from numpy.typing import NDArray
     from qiskit.providers.models import BackendProperties
 
     from mqt.bench.devices import Device
@@ -379,7 +378,7 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
     return qc, str(file_list[random_index])
 
 
-def create_feature_dict(qc: QuantumCircuit) -> dict[str, NDArray[np.float64 | np.int32]]:
+def create_feature_dict(qc: QuantumCircuit) -> dict[str, float | int]:
     """Creates a feature dictionary for a given quantum circuit.
 
     Arguments:
@@ -388,18 +387,18 @@ def create_feature_dict(qc: QuantumCircuit) -> dict[str, NDArray[np.float64 | np
     Returns:
         The feature dictionary for the given quantum circuit.
     """
-    feature_dict: dict[str, NDArray[np.float64 | np.int32]] = {
-        "num_qubits": np.array([qc.num_qubits], dtype=np.int32),
-        "depth": np.array([qc.depth()], dtype=np.int32),
+    feature_dict: dict[str, float | int] = {
+        "num_qubits": qc.num_qubits,
+        "depth": qc.depth(),
     }
 
     supermarq_features = calc_supermarq_features(qc)
     # for all dict values, put them in a list each
-    feature_dict["program_communication"] = np.array([supermarq_features.program_communication], dtype=np.float64)
-    feature_dict["critical_depth"] = np.array([supermarq_features.critical_depth], dtype=np.float64)
-    feature_dict["entanglement_ratio"] = np.array([supermarq_features.entanglement_ratio], dtype=np.float64)
-    feature_dict["parallelism"] = np.array([supermarq_features.parallelism], dtype=np.float64)
-    feature_dict["liveness"] = np.array([supermarq_features.liveness], dtype=np.float64)
+    feature_dict["program_communication"] = supermarq_features.program_communication
+    feature_dict["critical_depth"] = supermarq_features.critical_depth
+    feature_dict["entanglement_ratio"] = supermarq_features.entanglement_ratio
+    feature_dict["parallelism"] = supermarq_features.parallelism
+    feature_dict["liveness"] = supermarq_features.liveness
 
     return feature_dict
 
