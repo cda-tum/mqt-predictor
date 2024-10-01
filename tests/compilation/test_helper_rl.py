@@ -6,6 +6,7 @@ from collections import OrderedDict
 from pathlib import Path
 
 import numpy as np
+from numpy import array
 from qiskit import transpile
 from qiskit.transpiler import PassManager
 from qiskit.transpiler.passes.layout.vf2_post_layout import VF2PostLayoutStopReason
@@ -18,7 +19,7 @@ from mqt.predictor import rl
 
 def test_obs_as_tensor() -> None:
     """Test the conversion of an observation to a tensor."""
-    obs = OrderedDict([("depth", 7), ("num_qubits", 7)])
+    obs = OrderedDict([("depth", array([7])), ("num_qubits", array([7]))])
     obs_as_tensor(device="cpu", obs=obs)
 
 
