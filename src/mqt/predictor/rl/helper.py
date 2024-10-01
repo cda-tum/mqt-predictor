@@ -61,6 +61,7 @@ from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import reward, rl
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
     from qiskit.providers.models import BackendProperties
 
     from mqt.bench.devices import Device
@@ -378,7 +379,7 @@ def get_state_sample(max_qubits: int | None = None) -> tuple[QuantumCircuit, str
     return qc, str(file_list[random_index])
 
 
-def create_feature_dict(qc: QuantumCircuit) -> dict[str, float | int]:
+def create_feature_dict(qc: QuantumCircuit) -> dict[str, NDArray[np.float64] | int]:
     """Creates a feature dictionary for a given quantum circuit.
 
     Arguments:
@@ -387,18 +388,20 @@ def create_feature_dict(qc: QuantumCircuit) -> dict[str, float | int]:
     Returns:
         The feature dictionary for the given quantum circuit.
     """
-    feature_dict: dict[str, float | int] = {
+    feature_dict: dict[str, NDArray[np.float64] | int] = {
         "num_qubits": qc.num_qubits,
         "depth": qc.depth(),
     }
 
     supermarq_features = calc_supermarq_features(qc)
     # for all dict values, put them in a list each
-    feature_dict["program_communication"] = supermarq_features.program_communication
-    feature_dict["critical_depth"] = supermarq_features.critical_depth
-    feature_dict["entanglement_ratio"] = supermarq_features.entanglement_ratio
-    feature_dict["parallelism"] = supermarq_features.parallelism
-    feature_dict["liveness"] = supermarq_features.liveness
+    feature_dict["program_communication"] = np.array([supermarq_features.program_communication], dtype=np.float32)
+    feature_dict["critical_depth"] = np.array([supermarq_features.critical_depth], dtype=np.float32)
+    feature_dict["entanglement_ratio"] = np.array([supermarq_features.entanglement_ratio], dtype=np.float32)
+    feature_dict["parallelism"] = np.array([supermarq_features.parallelism], dtype=np.float32)
+    feature_dict["liveness"] = np.array([supermarq_features.liveness], dtype=np.float32)
+
+    logger.info(f"Feature dict: {feature_dict}")
 
     return feature_dict
 
