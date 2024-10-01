@@ -20,4 +20,3 @@ jobs:
         run: pip install .[coverage]
       - name: Generate Report
         run: pytest -v --cov --cov-config=pyproject.toml --cov-report=xml
-
