@@ -389,8 +389,8 @@ def create_feature_dict(qc: QuantumCircuit) -> dict[str, NDArray[np.float64 | np
         The feature dictionary for the given quantum circuit.
     """
     feature_dict: dict[str, NDArray[np.float64 | np.int32]] = {
-        "num_qubits": qc.num_qubits,
-        "depth": qc.depth(),
+        "num_qubits": np.array([[qc.num_qubits]], dtype=np.int32),
+        "depth": np.array([[qc.depth()]], dtype=np.int32),
     }
 
     supermarq_features = calc_supermarq_features(qc)
