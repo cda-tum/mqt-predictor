@@ -1392,7 +1392,7 @@ wheels = [
 
 [[package]]
 name = "mqt-predictor"
-version = "2.0.1.dev155+g59c1053"
+version = "2.0.1.dev157+g1b09346.d20241002"
 source = { editable = "." }
 dependencies = [
     { name = "bqskit" },
@@ -1401,7 +1401,6 @@ dependencies = [
     { name = "sb3-contrib" },
     { name = "scikit-learn" },
     { name = "tensorboard" },
-    { name = "torch" },
 ]
 
 [package.optional-dependencies]
@@ -1444,6 +1443,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.22" },
     { name = "numpy", marker = "python_full_version >= '3.11'", specifier = ">=1.24" },
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26" },
+    { name = "numpy", marker = "sys_platform == 'darwin' and 'x86_64' in platform_machine", specifier = "<2" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=7.2" },
     { name = "pytest-cov", marker = "extra == 'coverage'", specifier = ">=4" },
     { name = "sb3-contrib", specifier = ">=2.0.0" },
@@ -1457,7 +1457,6 @@ requires-dist = [
     { name = "sphinxcontrib-svg2pdfconverter", marker = "extra == 'docs'", specifier = ">=1.2" },
     { name = "sphinxext-opengraph", marker = "extra == 'docs'", specifier = ">=0.9" },
     { name = "tensorboard", specifier = ">=2.17.0" },
-    { name = "torch", specifier = ">=2.4.1" },
 ]
 
 [[package]]
