@@ -28,7 +28,7 @@ dependencies = [
     "numpy>=1.26; python_version >= '3.12'",
     "numpy>=1.24; python_version >= '3.11'",
     "numpy>=1.22",
-    "numpy<2; sys_platform == 'darwin' and platform_machine == 'x86_64'",  # Restrict numpy for macOS x86
+    "numpy<2; sys_platform == 'Darwin' and platform_machine == 'x86_64'",  # Restrict numpy for macOS x86
 ]
 
 classifiers = [
