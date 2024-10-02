@@ -1,7 +1,10 @@
-### Test runner.py
+"""Tests for the runner environment."""
+
+from __future__ import annotations
+
+import logging
 import platform
 import sys
-import logging
 
 logging.info(f"Platform: {sys.platform}")
 
