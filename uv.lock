@@ -1392,7 +1392,7 @@ wheels = [
 
 [[package]]
 name = "mqt-predictor"
-version = "2.0.1.dev152+ge0137a0"
+version = "2.0.1.dev155+g59c1053"
 source = { editable = "." }
 dependencies = [
     { name = "bqskit" },
@@ -1444,7 +1444,6 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.22" },
     { name = "numpy", marker = "python_full_version >= '3.11'", specifier = ">=1.24" },
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26" },
-    { name = "numpy", marker = "sys_platform == 'darwin' and 'x86_64' in platform_machine", specifier = "<2" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=7.2" },
     { name = "pytest-cov", marker = "extra == 'coverage'", specifier = ">=4" },
     { name = "sb3-contrib", specifier = ">=2.0.0" },
