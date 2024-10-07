@@ -1,7 +1,7 @@
 [build-system]
 requires = [
     "setuptools>=66.1",
-    "setuptools_scm>=7"
+    "setuptools_scm>=8.1"
 ]
 build-backend = "setuptools.build_meta"
 
@@ -27,7 +27,7 @@ dependencies = [
     "numpy>=1.26; python_version >= '3.12'",
     "numpy>=1.24; python_version >= '3.11'",
     "numpy>=1.22",
-    "numpy<2.0.0", # sb3/pytortch is currently not yet compatible https://github.com/DLR-RM/stable-baselines3/blob/9a3b28bb9f24a1646479500fb23be55ba652a30d/setup.py#L104
+    "numpy<2; sys_platform == 'darwin' and 'x86_64' in platform_machine",  # Restrict numpy v2 for macOS x86 since it is not supported anymore since torch v2.3.0
 ]
 
 classifiers = [
@@ -52,19 +52,18 @@ test = ["pytest>=7.2"]
 coverage = ["mqt.predictor[test]", "pytest-cov>=4"]
 dev = ["mqt.predictor[coverage]"]
 docs = [
-    "furo>=2023.08.17",
-    "sphinx>=7,<9",
-    "setuptools-scm>=7",
+    "furo>=2023.9.10",
+    "setuptools-scm>=8.1",
+    "sphinx_design>=0.6",
+    "sphinx-autoapi>=3",
+    "sphinx-copybutton>=0.5",
     "sphinxcontrib-bibtex>=2.4.2",
-    "sphinx-copybutton",
-    "sphinx-hoverxref",
-    "pybtex>=0.24",
+    "sphinxcontrib-svg2pdfconverter>=1.2",
+    "sphinxext-opengraph>=0.9",
     "ipython",
     "ipykernel",
     "nbsphinx",
-    "sphinxext-opengraph",
     "sphinx-autodoc-typehints",
-    "qiskit[visualization]",
 ]
 
 [project.urls]
