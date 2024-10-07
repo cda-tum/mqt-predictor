@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import copy
+import re
 from pathlib import Path
 
 import numpy as np
+import pytest
 from qiskit import transpile
 from qiskit.transpiler import PassManager
 from qiskit.transpiler.passes.layout.vf2_post_layout import VF2PostLayoutStopReason
@@ -12,6 +15,7 @@ from qiskit.transpiler.passes.layout.vf2_post_layout import VF2PostLayoutStopRea
 from mqt.bench import get_benchmark
 from mqt.bench.devices import get_device_by_name
 from mqt.predictor import rl
+from mqt.predictor.reward import is_esp_data_available
 
 
 def test_create_feature_dict() -> None:
@@ -74,3 +78,107 @@ def test_vf2_layout_and_postlayout() -> None:
     )
 
     assert initial_layout_before != postprocessed_vf2postlayout_qc.layout.initial_layout
+
+
+def test_is_esp_data_available() -> None:
+    """Test the availability of ESP data."""
+    device = get_device_by_name("ionq_harmony")
+
+    # Test missing T1 data
+    error_device = copy.deepcopy(device)
+    error_device.calibration.t1 = None
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "T1 data for idle operation on qubit(s) 0 is required to calculate ESP for device ionq_harmony."
+        ),
+    ):
+        is_esp_data_available(error_device)
+
+    # Test missing T2 data
+    error_device = copy.deepcopy(device)
+    error_device.calibration.t2 = None
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "T2 data for idle operation on qubit(s) 0 is required to calculate ESP for device ionq_harmony."
+        ),
+    ):
+        is_esp_data_available(error_device)
+
+    # Test missing readout fidelity
+    error_device = copy.deepcopy(device)
+    error_device.calibration.readout_fidelity = None
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Fidelity data for readout operation on qubit(s) 0 is required to calculate ESP for device ionq_harmony."
+        ),
+    ):
+        is_esp_data_available(error_device)
+
+    # Test missing readout duration
+    error_device = copy.deepcopy(device)
+    error_device.calibration.readout_duration = None
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Duration data for readout operation on qubit(s) 0 is required to calculate ESP for device ionq_harmony."
+        ),
+    ):
+        is_esp_data_available(error_device)
+
+    # Define erroneous gate and qubit
+    error_gate = device.get_single_qubit_gates().pop()
+    error_qubit = 0
+
+    # Test missing single qubit gate fidelity
+    error_device = copy.deepcopy(device)
+    error_device.calibration.single_qubit_gate_fidelity[error_qubit].pop(error_gate)
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            f"Fidelity data for {error_gate} operation on qubit(s) {error_qubit} is required to calculate ESP for device ionq_harmony."
+        ),
+    ):
+        is_esp_data_available(error_device)
+
+    # Test missing single qubit gate duration
+    error_device = copy.deepcopy(device)
+    error_device.calibration.single_qubit_gate_duration[error_qubit].pop(error_gate)
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            f"Duration data for {error_gate} operation on qubit(s) {error_qubit} is required to calculate ESP for device ionq_harmony."
+        ),
+    ):
+        is_esp_data_available(error_device)
+
+    # Define erroneous two-qubit gate and edge
+    error_gate = device.get_two_qubit_gates().pop()
+    error_edge = device.coupling_map[0]
+
+    # Test missing two qubit gate fidelity
+    error_device = copy.deepcopy(device)
+    error_device.calibration.two_qubit_gate_fidelity[tuple(error_edge)].pop(error_gate)
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            f"Fidelity data for {error_gate} operation on qubit(s) {error_edge} is required to calculate ESP for device ionq_harmony."
+        ),
+    ):
+        is_esp_data_available(error_device)
+
+    # Test missing two qubit gate duration
+    error_device = copy.deepcopy(device)
+    error_device.calibration.two_qubit_gate_duration[tuple(error_edge)].pop(error_gate)
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            f"Duration data for {error_gate} operation on qubit(s) {error_edge} is required to calculate ESP for device ionq_harmony."
+        ),
+    ):
+        is_esp_data_available(error_device)
+
+    # Finally, assert that all required data is available in the original device
+    assert is_esp_data_available(device)

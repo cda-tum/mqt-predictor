@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import pytest
 from qiskit import QuantumCircuit
 
 from mqt.bench.devices import get_device_by_name
-from mqt.predictor import Result, reward
+from mqt.predictor import Result
 from mqt.predictor.evaluation import create_qiskit_result, create_tket_result
 
 
@@ -73,17 +72,3 @@ def test_result_none_input() -> None:
     assert res.expected_fidelity == -1.0
     assert res.critical_depth == -1.0
     assert res.expected_success_probability == -1.0
-
-
-def test_esp_wrong_device() -> None:
-    """Test esp for device with missing gate and readout durations."""
-    device = get_device_by_name("quantinuum_h2")
-    assert device.num_qubits >= 10
-    qc = QuantumCircuit(10)
-    qc.measure_all()
-
-    with pytest.raises(
-        ValueError,
-        match=f"Calculating ESP requires device with fully specified T1, T2, gate- and readout-durations, which is not provided for {device.name}.",
-    ):
-        reward.expected_success_probability(qc, device)

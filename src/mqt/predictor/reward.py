@@ -91,30 +91,26 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
     """
     # collect gate and measurement durations for active qubits
     op_times, active_qubits = [], set()
-    try:
-        for instruction, qargs, _cargs in qc.data:
-            gate_type = instruction.name
+    for instruction, qargs, _cargs in qc.data:
+        gate_type = instruction.name
 
-            if gate_type == "barrier" or gate_type == "id":
-                continue
-            assert len(qargs) in [1, 2]
-            first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
-            active_qubits.add(first_qubit_idx)
+        if gate_type == "barrier" or gate_type == "id":
+            continue
+        assert len(qargs) in [1, 2]
+        first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
+        active_qubits.add(first_qubit_idx)
 
-            if len(qargs) == 1:  # single-qubit gate
-                if gate_type == "measure":
-                    duration = device.get_readout_duration(first_qubit_idx)
-                else:
-                    duration = device.get_single_qubit_gate_duration(gate_type, first_qubit_idx)
-                op_times.append((gate_type, [first_qubit_idx], duration, "s"))
-            else:  # multi-qubit gate
-                second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
-                active_qubits.add(second_qubit_idx)
-                duration = device.get_two_qubit_gate_duration(gate_type, first_qubit_idx, second_qubit_idx)
-                op_times.append((gate_type, [first_qubit_idx, second_qubit_idx], duration, "s"))
-    except ValueError as err:
-        msg = f"Calculating ESP requires device with fully specified T1, T2, gate- and readout-durations, which is not provided for {device.name}."
-        raise ValueError(msg) from err
+        if len(qargs) == 1:  # single-qubit gate
+            if gate_type == "measure":
+                duration = device.get_readout_duration(first_qubit_idx)
+            else:
+                duration = device.get_single_qubit_gate_duration(gate_type, first_qubit_idx)
+            op_times.append((gate_type, [first_qubit_idx], duration, "s"))
+        else:  # multi-qubit gate
+            second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
+            active_qubits.add(second_qubit_idx)
+            duration = device.get_two_qubit_gate_duration(gate_type, first_qubit_idx, second_qubit_idx)
+            op_times.append((gate_type, [first_qubit_idx, second_qubit_idx], duration, "s"))
 
     # check whether the circuit was transformed by tket (i.e. changed register name)
     # qiskit ASAPScheduleAnalysis expects all qubit registers to be named 'q'
@@ -165,3 +161,51 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
             res *= specific_fidelity
 
     return cast(float, np.round(res, precision))
+
+
+def is_esp_data_available(device: Device) -> bool:
+    """Check if calibration data to calculate ESP is available for the device."""
+
+    def message(calibration: str, operation: str, target: int | str) -> str:
+        return f"{calibration} data for {operation} operation on qubit(s) {target} is required to calculate ESP for device {device.name}."
+
+    for qubit in range(device.num_qubits):
+        try:
+            device.calibration.get_t1(qubit)
+        except ValueError as err:
+            raise ValueError(message("T1", "idle", qubit)) from err
+        try:
+            device.calibration.get_t2(qubit)
+        except ValueError as err:
+            raise ValueError(message("T2", "idle", qubit)) from err
+        try:
+            device.get_readout_fidelity(qubit)
+        except ValueError as err:
+            raise ValueError(message("Fidelity", "readout", qubit)) from err
+        try:
+            device.get_readout_duration(qubit)
+        except ValueError as err:
+            raise ValueError(message("Duration", "readout", qubit)) from err
+
+        for gate in device.get_single_qubit_gates():
+            try:
+                device.get_single_qubit_gate_fidelity(gate, qubit)
+            except ValueError as err:
+                raise ValueError(message("Fidelity", gate, qubit)) from err
+            try:
+                device.get_single_qubit_gate_duration(gate, qubit)
+            except ValueError as err:
+                raise ValueError(message("Duration", gate, qubit)) from err
+
+    for gate in device.get_two_qubit_gates():
+        for edge in device.coupling_map:
+            try:
+                device.get_two_qubit_gate_fidelity(gate, edge[0], edge[1])
+            except ValueError as err:
+                raise ValueError(message("Fidelity", gate, edge)) from err
+            try:
+                device.get_two_qubit_gate_duration(gate, edge[0], edge[1])
+            except ValueError as err:
+                raise ValueError(message("Duration", gate, edge)) from err
+
+    return True
