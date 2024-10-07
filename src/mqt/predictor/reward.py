@@ -163,7 +163,7 @@ def expected_success_probability(qc: QuantumCircuit, device: Device, precision: 
     return cast(float, np.round(res, precision))
 
 
-def is_esp_data_available(device: Device) -> bool:
+def esp_data_available(device: Device) -> bool:
     """Check if calibration data to calculate ESP is available for the device."""
 
     def message(calibration: str, operation: str, target: int | str) -> str:
@@ -172,40 +172,48 @@ def is_esp_data_available(device: Device) -> bool:
     for qubit in range(device.num_qubits):
         try:
             device.calibration.get_t1(qubit)
-        except ValueError as err:
-            raise ValueError(message("T1", "idle", qubit)) from err
+        except ValueError:
+            logging.exception(message("T1", "idle", qubit))
+            return False
         try:
             device.calibration.get_t2(qubit)
-        except ValueError as err:
-            raise ValueError(message("T2", "idle", qubit)) from err
+        except ValueError:
+            logging.exception(message("T2", "idle", qubit))
+            return False
         try:
             device.get_readout_fidelity(qubit)
-        except ValueError as err:
-            raise ValueError(message("Fidelity", "readout", qubit)) from err
+        except ValueError:
+            logging.exception(message("Fidelity", "readout", qubit))
+            return False
         try:
             device.get_readout_duration(qubit)
-        except ValueError as err:
-            raise ValueError(message("Duration", "readout", qubit)) from err
+        except ValueError:
+            logging.exception(message("Duration", "readout", qubit))
+            return False
 
         for gate in device.get_single_qubit_gates():
             try:
                 device.get_single_qubit_gate_fidelity(gate, qubit)
-            except ValueError as err:
-                raise ValueError(message("Fidelity", gate, qubit)) from err
+            except ValueError:
+                logging.exception(message("Fidelity", gate, qubit))
+                return False
             try:
                 device.get_single_qubit_gate_duration(gate, qubit)
-            except ValueError as err:
-                raise ValueError(message("Duration", gate, qubit)) from err
+            except ValueError:
+                logging.exception(message("Duration", gate, qubit))
+                return False
 
     for gate in device.get_two_qubit_gates():
         for edge in device.coupling_map:
             try:
                 device.get_two_qubit_gate_fidelity(gate, edge[0], edge[1])
-            except ValueError as err:
-                raise ValueError(message("Fidelity", gate, edge)) from err
+            except ValueError:
+                logging.exception(message("Fidelity", gate, edge))
+                return False
             try:
                 device.get_two_qubit_gate_duration(gate, edge[0], edge[1])
-            except ValueError as err:
-                raise ValueError(message("Duration", gate, edge)) from err
+            except ValueError:
+                logging.exception(message("Duration", gate, edge))
+                return False
 
     return True

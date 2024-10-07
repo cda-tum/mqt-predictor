@@ -75,9 +75,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.action_set[index] = rl.helper.get_action_terminate()
         self.action_terminate_index = index
 
-        if reward_function == "expected_success_probability":
-            # check if ESP data is available
-            reward.is_esp_data_available(self.device)
+        if reward_function == "expected_success_probability" and not reward.esp_data_available(self.device):
+            msg = f"Missing calibration data for ESP calculation on {device_name}."
+            raise ValueError(msg)
         self.reward_function = reward_function
 
         self.action_space = Discrete(len(self.action_set.keys()))

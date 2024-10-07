@@ -22,6 +22,12 @@ def test_predictor_env_reset_from_string() -> None:
     assert predictor.env.reset(qc=qasm_path)[0] == rl.helper.create_feature_dict(qc)
 
 
+def test_predictor_env_esp_error() -> None:
+    """Test the predictor environment with ESP as figure of merit and missing calibration data."""
+    with pytest.raises(ValueError, match="Missing calibration data for ESP calculation on ibm_montreal."):
+        rl.Predictor(figure_of_merit="expected_success_probability", device_name="ibm_montreal")
+
+
 @pytest.mark.parametrize(
     "figure_of_merit",
     reward.FIGURES_OF_MERIT,
