@@ -227,3 +227,6 @@ wille = "wille"
 anc = "anc"
 aer = "aer"
 fom = "fom"
+
+[tool.repo-review]
+ignore = ["GH200"]
