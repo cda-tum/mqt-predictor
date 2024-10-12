@@ -56,7 +56,7 @@ jobs:
           submodules: recursive
           fetch-depth: 0
       - uses: yezz123/setup-uv@v4
-      - uses: wntrblm/nox@2024.04.15
+      - uses: wntrblm/nox@2024.10.09
         with:
           python-versions: ${{ matrix.python-version }}
       - run: nox -s tests-${{ matrix.python-version }} --verbose -- tests/test_pretrained_models.py
