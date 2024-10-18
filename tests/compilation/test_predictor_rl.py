@@ -22,15 +22,23 @@ def test_predictor_env_reset_from_string() -> None:
     assert predictor.env.reset(qc=qasm_path)[0] == rl.helper.create_feature_dict(qc)
 
 
+def test_predictor_env_esp_error() -> None:
+    """Test the predictor environment with ESP as figure of merit and missing calibration data."""
+    with pytest.raises(ValueError, match="Missing calibration data for ESP calculation on ibm_montreal."):
+        rl.Predictor(figure_of_merit="expected_success_probability", device_name="ibm_montreal")
+
+
 @pytest.mark.parametrize(
     "figure_of_merit",
-    ["expected_fidelity", "critical_depth"],
+    reward.FIGURES_OF_MERIT,
 )
 def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
-    """Test the qcompile function with a newly trained model."""
-    """ Important: Those trained models are used in later tests and must not be deleted. """
+    """Test the qcompile function with a newly trained model.
 
-    device = "ibm_montreal"
+    Important: Those trained models are used in later tests and must not be deleted.
+    To test ESP as well, training must be done with a device that provides all relevant information (i.e. T1, T2 and gate times).
+    """
+    device = "ionq_harmony"  # fully specified calibration data
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
     predictor.train_model(
         timesteps=100,
