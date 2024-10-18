@@ -49,11 +49,7 @@ class Predictor:
             A tuple containing the compiled quantum circuit and the compilation information. If compilation fails, False is returned.
         """
         if not self.model:
-            try:
-                self.load_model()
-            except Exception as e:
-                msg = "Model cannot be loaded. Try to train a local model using 'Predictor.train_model(<...>)'"
-                raise RuntimeError(msg) from e
+            self.load_model()
 
         assert self.model
         obs, _ = self.env.reset(qc, seed=0)  # type: ignore[unreachable]
