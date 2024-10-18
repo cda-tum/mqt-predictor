@@ -47,13 +47,13 @@ Currently, all devices supported by `MQT Bench <https://github.com/cda-tum/mqt-b
 In case another device shall be considered, it can be added by using a similar format as in MQT Bench but it is not
 necessary to add it in the repository. It is also possible to modify the MQT Predictor framework accordingly:
 
-- Modify in ``mqt/predictor/rl/predictorenv`` the line where ``mqt.bench.devices.get_device_by_name`` is called
-- Modify in ``mqt/predictor/rl/predictor`` the line where ``mqt.bench.devices.get_available_devices()``
+- Modify in `mqt/predictor/rl/predictorenv.py <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/rl/predictorenv.py>`_. the line where ``mqt.bench.devices.get_device_by_name`` is called
+- Modify in `mqt/predictor/rl/predictor.py <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/rl/predictor.py>`_. the line where ``mqt.bench.devices.get_available_devices()``
 - Follow the same data format as defined in "mqt.bench.devices.device.py"
 
 Second, for each supported device, a respective reinforcement learning model must be trained. This is done by running
 the following command based on the training data in the form of quantum circuits provided as qasm files in
-``mqt/predictor/rl/training_data``:
+`mqt/predictor/rl/training_data/training_circuits <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/rl/training_data/training_circuits>`_:
 
 .. code-block:: python
 
@@ -71,7 +71,7 @@ Further figures of merit can be added in "mqt.predictor.reward.py".
 Thirdly, after the reinforcement learning models that are used for the respective compilations are trained, the
 supervised machine learning model to predict the device selection must be trained.
 This is done by first creating the necessary training data (which must be provided as qasm files that are stored in
-"mqt.predictor.ml.training_data" and then running the following command:
+`mqt/predictor/ml/training_data/training_circuits <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/ml/training_data/training_circuits>`_ and then running the following command:
 
 .. code-block:: python
 
