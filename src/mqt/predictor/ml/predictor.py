@@ -570,7 +570,8 @@ class Predictor:
                 self.clf = load(path)
 
             if self.clf is None:
-                error_msg = "Classifier is neither trained nor saved."
+                error_msg = "The ML model is not trained yet. Please train the model before using it."
+                logger.error(error_msg)
                 raise FileNotFoundError(error_msg)
 
         feature_dict = ml.helper.create_feature_dict(qc)  # type: ignore[unreachable]
