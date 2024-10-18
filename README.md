@@ -60,7 +60,7 @@ from mqt.predictor import qcompile
 from mqt.bench import get_benchmark
 
 # get a benchmark circuit on algorithmic level representing the GHZ state with 5 qubits from [MQT Bench](https://github.com/cda-tum/mqt-bench)
-qc_uncompiled = get_benchmark(benchmark_name="dj", level="alg", circuit_size=5)
+qc_uncompiled = get_benchmark(benchmark_name="ghz", level="alg", circuit_size=5)
 
 # compile it using the MQT Predictor
 qc_compiled, compilation_information, quantum_device = qcompile(qc_uncompiled)
@@ -72,7 +72,13 @@ print(quantum_device, compilation_information)
 print(qc_compiled.draw())
 ```
 
-**Detailed documentation and examples are available at [ReadTheDocs](https://mqt.readthedocs.io/projects/predictor).**
+> [!NOTE]
+> To execute the code, respective machine learning models must be trained before.
+> Up until mqt.predictor v2.0.0, pre-trained models were provided. However, this is not feasible anymore due to the
+> increasing number of devices and figures of merits. Instead, we now provide a detailed documentation on how to train
+> and setup the MQT Predictor framework.\*\*
+
+**Further documentation and examples are available at [ReadTheDocs](https://mqt.readthedocs.io/projects/predictor).**
 
 ## References
 

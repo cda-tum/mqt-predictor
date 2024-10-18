@@ -52,4 +52,4 @@ We trained one RL model for each currently :ref:`supported quantum device <suppo
 Training Data
 -------------
 To train the model, sufficient training data must be provided as qasm files in the `respective directory <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/rl/training_data/training_circuits>`_.
-We provide the training data used for the pre-trained models which are stored `here <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/rl/training_data/trained_model>`_.
+We provide the training data used for the initial performance evaluation of this framework which are stored `here <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/rl/training_data/trained_model>`_.

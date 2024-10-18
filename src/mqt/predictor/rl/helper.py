@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -11,7 +10,6 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import requests
 from bqskit import MachineModel
-from packaging import version
 from pytket.architecture import Architecture
 from pytket.circuit import Circuit, Node, Qubit
 from pytket.passes import (
@@ -68,9 +66,8 @@ if TYPE_CHECKING:
 
 
 if TYPE_CHECKING or sys.version_info >= (3, 10, 0):
-    from importlib import metadata, resources
+    from importlib import resources
 else:
-    import importlib_metadata as metadata
     import importlib_resources as resources
 
 import operator
@@ -432,60 +429,10 @@ def load_model(model_name: str) -> MaskablePPO:
 
     if Path(path / (model_name + ".zip")).exists():
         return MaskablePPO.load(path / (model_name + ".zip"))
-    logger.info("Model does not exist. Try to retrieve suitable Model from GitHub...")
-    try:
-        mqtpredictor_module_version = metadata.version("mqt.predictor")
-    except ModuleNotFoundError:
-        error_msg = (
-            "Could not retrieve version of mqt.predictor. Please run 'pip install . or pip install mqt.predictor'."
-        )
-        raise RuntimeError(error_msg) from None
 
-    headers = None
-    if "GITHUB_TOKEN" in os.environ:
-        headers = {"Authorization": f"token {os.environ['GITHUB_TOKEN']}"}
-
-    version_found = False
-    response = requests.get("https://api.github.com/repos/cda-tum/mqt-predictor/tags", headers=headers)
-
-    if not response:
-        error_msg = "Querying the GitHub API failed. One reasons could be that the limit of 60 API calls per hour and IP address is exceeded."
-        raise RuntimeError(error_msg)
-
-    available_versions = [elem["name"] for elem in response.json()]
-
-    for possible_version in available_versions:
-        if version.parse(mqtpredictor_module_version) >= version.parse(possible_version):
-            url = "https://api.github.com/repos/cda-tum/mqt-predictor/releases/tags/" + possible_version
-            response = requests.get(url, headers=headers)
-            if not response:
-                error_msg = "Suitable trained models cannot be downloaded since the GitHub API failed. One reasons could be that the limit of 60 API calls per hour and IP address is exceeded."
-                raise RuntimeError(error_msg)
-
-            response_json = response.json()
-            if "assets" in response_json:
-                assets = response_json["assets"]
-            elif "asset" in response_json:
-                assets = [response_json["asset"]]
-            else:
-                assets = []
-
-            for asset in assets:
-                if model_name in asset["name"]:
-                    version_found = True
-                    download_url = asset["browser_download_url"]
-                    logger.info("Downloading model from: " + download_url)
-                    handle_downloading_model(download_url, model_name)
-                    break
-
-        if version_found:
-            break
-
-    if not version_found:
-        error_msg = "No suitable model found on GitHub. Please update your mqt.predictor package using 'pip install -U mqt.predictor'."
-        raise RuntimeError(error_msg) from None
-
-    return MaskablePPO.load(path / model_name)
+    error_msg = "The RL model is not trained yet. Please train the model before using it."
+    logger.error(error_msg)
+    raise FileNotFoundError(error_msg)
 
 
 def handle_downloading_model(download_url: str, model_name: str) -> None:
