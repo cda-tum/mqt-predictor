@@ -426,8 +426,7 @@ def load_model(model_name: str) -> MaskablePPO:
         The loaded model.
     """
     path = get_path_trained_model()
-
-    if Path(path / (model_name + ".zip")).exists():
+    if Path(path / (model_name + ".zip")).is_file():
         return MaskablePPO.load(path / (model_name + ".zip"))
 
     error_msg = "The RL model is not trained yet. Please train the model before using it."
