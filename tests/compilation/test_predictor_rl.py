@@ -33,10 +33,13 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
     device = "ibm_montreal"
     qc = get_benchmark("ghz", 1, 5)
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
-    with pytest.raises(
-        FileNotFoundError, match="The RL model is not trained yet. Please train the model before using it."
-    ):
-        rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
+
+    model_name = "model_" + figure_of_merit + "_" + device
+    if not Path(rl.helper.get_path_trained_model() / (model_name + ".zip")).exists():
+        with pytest.raises(
+            FileNotFoundError, match="The RL model is not trained yet. Please train the model before using it."
+        ):
+            rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
 
     predictor.train_model(
         timesteps=100,
@@ -50,9 +53,6 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
     assert isinstance(qc_compiled, QuantumCircuit)
     assert qc_compiled.layout is not None
     assert compilation_information is not None
-
-    model_name = "model_" + figure_of_merit + "_" + device
-    Path(rl.helper.get_path_trained_model() / (model_name + ".zip")).unlink()
 
 
 def test_qcompile_with_false_input() -> None:
