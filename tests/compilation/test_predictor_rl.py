@@ -51,6 +51,9 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
     assert qc_compiled.layout is not None
     assert compilation_information is not None
 
+    model_name = "model_" + figure_of_merit + "_" + device
+    Path(rl.helper.get_path_trained_model() / (model_name + ".zip")).unlink()
+
 
 def test_qcompile_with_false_input() -> None:
     """Test the qcompile function with false input."""
