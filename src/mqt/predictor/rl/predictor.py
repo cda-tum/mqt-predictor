@@ -27,14 +27,9 @@ class Predictor:
         """Initializes the Predictor object."""
         logger.setLevel(logger_level)
 
-        self.model = None
         self.env = rl.PredictorEnv(reward_function=figure_of_merit, device_name=device_name)
         self.device_name = device_name
         self.figure_of_merit = figure_of_merit
-
-    def load_model(self) -> None:
-        """Loads the trained model for the given figure of merit and device."""
-        self.model = rl.helper.load_model("model_" + self.figure_of_merit + "_" + self.device_name)
 
     def compile_as_predicted(
         self,
@@ -48,22 +43,16 @@ class Predictor:
         Returns:
             A tuple containing the compiled quantum circuit and the compilation information. If compilation fails, False is returned.
         """
-        if not self.model:
-            try:
-                self.load_model()
-            except Exception as e:
-                msg = "Model cannot be loaded. Try to train a local model using 'Predictor.train_model(<...>)'"
-                raise RuntimeError(msg) from e
+        trained_rl_model = rl.helper.load_model("model_" + self.figure_of_merit + "_" + self.device_name)
 
-        assert self.model
-        obs, _ = self.env.reset(qc, seed=0)  # type: ignore[unreachable]
+        obs, _ = self.env.reset(qc, seed=0)
 
         used_compilation_passes = []
         terminated = False
         truncated = False
         while not (terminated or truncated):
             action_masks = get_action_masks(self.env)
-            action, _ = self.model.predict(obs, action_masks=action_masks)
+            action, _ = trained_rl_model.predict(obs, action_masks=action_masks)
             action = int(action)
             action_item = self.env.action_set[action]
             used_compilation_passes.append(action_item["name"])
