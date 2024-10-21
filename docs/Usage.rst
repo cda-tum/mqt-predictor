@@ -48,7 +48,7 @@ In case another device shall be considered, it can be added by using a similar f
 necessary to add it in the repository. It is also possible to modify the MQT Predictor framework accordingly:
 
 - Modify in `mqt/predictor/rl/predictorenv.py <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/rl/predictorenv.py>`_. the line where ``mqt.bench.devices.get_device_by_name`` is called
-- Modify in `mqt/predictor/rl/predictor.py <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/rl/predictor.py>`_. the line where ``mqt.bench.devices.get_available_devices()``
+- Modify in `mqt/predictor/ml/predictor.py <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/ml/predictor.py>`_. the line where ``mqt.bench.devices.get_available_devices()``
 - Follow the same data format as defined in "mqt.bench.devices.device.py"
 
 Second, for each supported device, a respective reinforcement learning model must be trained. This is done by running
