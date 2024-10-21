@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -65,13 +64,9 @@ if TYPE_CHECKING:
     from mqt.bench.devices import Device
 
 
-if TYPE_CHECKING or sys.version_info >= (3, 10, 0):
-    from importlib import resources
-else:
-    import importlib_resources as resources
-
 import operator
 import zipfile
+from importlib import resources
 
 from bqskit import compile as bqskit_compile
 from bqskit.ir import gates
