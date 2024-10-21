@@ -31,13 +31,21 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
     """ Important: Those trained models are used in later tests and must not be deleted. """
 
     device = "ibm_montreal"
+    qc = get_benchmark("ghz", 1, 5)
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
+
+    model_name = "model_" + figure_of_merit + "_" + device
+    if not Path(rl.helper.get_path_trained_model() / (model_name + ".zip")).exists():
+        with pytest.raises(
+            FileNotFoundError, match="The RL model is not trained yet. Please train the model before using it."
+        ):
+            rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
+
     predictor.train_model(
         timesteps=100,
         test=True,
     )
 
-    qc = get_benchmark("ghz", 1, 5)
     res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
     assert isinstance(res, tuple)
     qc_compiled, compilation_information = res

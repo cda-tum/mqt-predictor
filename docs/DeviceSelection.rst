@@ -63,7 +63,7 @@ Training Data
 -------------
 
 To train the model, sufficient training data must be provided as qasm files in the `respective directory <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/ml/training_data/training_circuits>`_.
-We provide the training data used for the pre-trained model.
+We provide the training data used in the initial performance evaluation of this framework.
 
 After the adjustment is finished, the following methods need to be called to generate the training data:
 
