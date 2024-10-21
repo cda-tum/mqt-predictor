@@ -38,9 +38,9 @@ For that, the repository must be cloned and installed:
 
 Afterwards, the package can be used as described :ref:`above <pip_usage>`.
 
-MQT Framework Setup
-===================
-To run ``qcompile``, the MQT framework must be set up. How this is properly done is described next.
+MQT Predictor Framework Setup
+=============================
+To run ``qcompile``, the MQT Predictor framework must be set up. How this is properly done is described next.
 
 First, the to-be-considered quantum devices must be included in the framework.
 Currently, all devices supported by `MQT Bench <https://github.com/cda-tum/mqt-bench>`_ are natively supported.
