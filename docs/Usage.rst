@@ -45,7 +45,7 @@ To run ``qcompile``, the MQT Predictor framework must be set up. How this is pro
 First, the to-be-considered quantum devices must be included in the framework.
 Currently, all devices supported by `MQT Bench <https://github.com/cda-tum/mqt-bench>`_ are natively supported.
 In case another device shall be considered, it can be added by using a similar format as in MQT Bench but it is not
-necessary to add it in the repository. It is also possible to modify the MQT Predictor framework accordingly:
+necessary to add it in the repository since it can be directly added to the MQT Predictor framework as follows:
 
 - Modify in `mqt/predictor/rl/predictorenv.py <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/rl/predictorenv.py>`_. the line where ``mqt.bench.devices.get_device_by_name`` is used.
 - Modify in `mqt/predictor/ml/predictor.py <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/ml/predictor.py>`_. the lines where ``mqt.bench.devices.*`` are used.
@@ -70,7 +70,7 @@ Further figures of merit can be added in `mqt.predictor.reward.py <https://githu
 
 Third, after the reinforcement learning models that are used for the respective compilations are trained, the
 supervised machine learning model to predict the device selection must be trained.
-This is done by first creating the necessary training data (which must be provided as qasm files that are stored in
+This is done by first creating the necessary training data (based on the training data in the form of quantum circuits provided as qasm files in
 `mqt/predictor/ml/training_data/training_circuits <https://github.com/cda-tum/mqt-predictor/tree/main/src/mqt/predictor/ml/training_data/training_circuits>`_) and then running the following command:
 
 .. code-block:: python
@@ -92,7 +92,7 @@ This training data can then be saved and used to train the supervised machine le
 
     ml_pred.train_random_forest_classifier(figure_of_merit="expected_fidelity")
 
-Finally, the MQT Predictor framework is fully setup and can be used to predict the most
+Finally, the MQT Predictor framework is fully set up and can be used to predict the most
 suitable device for a given quantum circuit using supervised machine learning and compile
 the circuit for the predicted device using reinforcement learning by running:
 
@@ -105,6 +105,6 @@ the circuit for the predicted device using reinforcement learning by running:
     compiled_qc, compilation_information, device = qcompile(
         uncompiled_qc, figure_of_merit="expected_fidelity"
     )
-)
+
 
 This returns the compiled quantum circuit for the predicted device together with additional information of the compilation procedure.
