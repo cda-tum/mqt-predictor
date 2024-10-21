@@ -64,7 +64,7 @@ the following command based on the training data in the form of quantum circuits
     )
     rl_pred.train_model(timesteps=100000, model_name="sample_model_rl")
 
-This will train a reinforcement learning model for the `ibm_washington` device with the expected fidelity as figure of merit.
+This will train a reinforcement learning model for the ``ibm_washington`` device with the expected fidelity as figure of merit.
 Additionally to the expected fidelity, also critical depth is provided as another figure of merit.
 Further figures of merit can be added in "mqt.predictor.reward.py".
 
