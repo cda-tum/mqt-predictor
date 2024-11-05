@@ -40,79 +40,6 @@ class Predictor:
         """Sets the classifier to the given classifier."""
         self.clf = clf
 
-    def compile_all_circuits_circuitwise(
-        self,
-        figure_of_merit: reward.figure_of_merit,
-        timeout: int,
-        source_path: Path | None = None,
-        target_path: Path | None = None,
-        logger_level: int = logging.INFO,
-    ) -> None:
-        """Compiles all circuits in the given directory with the given timeout and saves them in the given directory.
-
-        Arguments:
-            figure_of_merit: The figure of merit to be used for compilation.
-            timeout: The timeout in seconds for the compilation of a single circuit.
-            source_path: The path to the directory containing the circuits to be compiled. Defaults to None.
-            target_path: The path to the directory where the compiled circuits should be saved. Defaults to None.
-            logger_level: The level of the logger. Defaults to logging.INFO.
-
-        """
-        logger.setLevel(logger_level)
-
-        if source_path is None:
-            source_path = ml.helper.get_path_training_circuits()
-
-        if target_path is None:
-            target_path = ml.helper.get_path_training_circuits_compiled()
-
-        Parallel(n_jobs=-1, verbose=100)(
-            delayed(self.generate_compiled_circuits_for_single_training_circuit)(
-                filename, timeout, source_path, target_path, figure_of_merit
-            )
-            for filename in source_path.iterdir()
-        )
-
-    def generate_compiled_circuits_for_single_training_circuit(
-        self,
-        filename: Path,
-        timeout: int,
-        source_path: Path,
-        target_path: Path,
-        figure_of_merit: reward.figure_of_merit,
-    ) -> None:
-        """Compiles a single circuit with the given timeout and saves it in the given directory.
-
-        Arguments:
-            filename: The path to the circuit to be compiled.
-            timeout: The timeout in seconds for the compilation of the circuit.
-            source_path: The path to the directory containing the circuit to be compiled.
-            target_path: The path to the directory where the compiled circuit should be saved.
-            figure_of_merit: The figure of merit to be used for compilation.
-
-        """
-        try:
-            qc = QuantumCircuit.from_qasm_file(Path(source_path) / filename)
-            if filename.suffix != ".qasm":
-                return
-
-            for i, dev in enumerate(self.devices):
-                target_filename = str(filename).split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(i)
-                if (Path(target_path) / (target_filename + ".qasm")).exists() or qc.num_qubits > dev.num_qubits:
-                    continue
-                try:
-                    res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, dev.name], timeout)
-                    if isinstance(res, tuple):
-                        compiled_qc = res[0]
-                        with Path(target_path / (target_filename + ".qasm")).open("w", encoding="utf-8") as f:
-                            dump(compiled_qc, f)
-
-                except Exception as e:
-                    print(e, filename, "inner")
-
-        except Exception as e:
-            print(e, filename, "outer")
-
     def compile_all_circuits_devicewise(
         self,
         device_name: str,
@@ -572,7 +499,8 @@ class Predictor:
                 self.clf = load(path)
 
             if self.clf is None:
-                error_msg = "Classifier is neither trained nor saved."
+                error_msg = "The ML model is not trained yet. Please train the model before using it."
+                logger.error(error_msg)
                 raise FileNotFoundError(error_msg)
 
         feature_dict = ml.helper.create_feature_dict(qc)  # type: ignore[unreachable]

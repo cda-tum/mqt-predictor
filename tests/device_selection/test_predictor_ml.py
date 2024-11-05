@@ -38,7 +38,9 @@ def test_predict_device_for_figure_of_merit() -> None:
 
     assert ml.helper.predict_device_for_figure_of_merit(file, "expected_fidelity").name in get_available_device_names()
 
-    with pytest.raises(FileNotFoundError, match="Classifier is neither trained nor saved."):
+    with pytest.raises(
+        FileNotFoundError, match="The ML model is not trained yet. Please train the model before using it."
+    ):
         ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
 
 
