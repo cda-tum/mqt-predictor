@@ -16,11 +16,20 @@ class Result:
     """The Result class is used to store the results of a compilation.
 
     Attributes:
+        compiler: The setup used for compilation. Either 'mqt-predictor_<figure_of_merit>', 'qiskit' or 'tket'. For the two latter, also the device name is appended.
+        compilation_time: The time it took to compile the benchmark.
+        expected_fidelity: The expected fidelity of the compiled quantum circuit.
+        critical_depth: The critical depth of the compiled quantum circuit.
+        expected_success_probability: The expected success probability of the compiled quantum circuit.
+    """
+
+    """Constructor for the Result class.
+
+    Arguments:
         compilation_setup: The setup used for compilation. Either 'mqt-predictor_<figure_of_merit>', 'qiskit' or 'tket'. For the two latter, also the device name is appended.
         compilation_time: The time it took to compile the benchmark.
-        compiled_qc: The compiled quantum circuit. If compilation failed, None is returned.
+        compiled_qc: The compiled quantum circuit.
         device: The device used for compilation.
-
     """
 
     def __init__(
