@@ -6,8 +6,6 @@ import logging
 from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
-from qiskit.transpiler import InstructionDurations, Layout, PassManager, passes
-from qiskit.transpiler.passes import ApplyLayout, SetLayout
 
 from mqt.bench.utils import calc_supermarq_features
 
@@ -88,6 +86,10 @@ def estimated_success_probability(qc: QuantumCircuit, device: Device, precision:
     Returns:
         The expected success probability of the given quantum circuit on the given device.
     """
+    # lazy import of qiskit transpiler
+    from qiskit.transpiler import InstructionDurations, Layout, PassManager, passes  # noqa: PLC0415
+    from qiskit.transpiler.passes import ApplyLayout, SetLayout  # noqa: PLC0415
+
     # collect gate and measurement durations for active qubits
     op_times, active_qubits = [], set()
     for instruction, qargs, _cargs in qc.data:
