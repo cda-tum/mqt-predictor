@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 import logging
+import sys
 import zipfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, get_args
+
+if sys.version_info >= (3, 11) and TYPE_CHECKING:  # pragma: no cover
+    from typing import assert_never
+else:
+    from typing_extensions import assert_never
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -126,7 +132,7 @@ class Predictor:
             delayed(self.compile_all_circuits_devicewise)(
                 device_name, timeout, figure_of_merit, source_path, target_path, logger.level
             )
-            for figure_of_merit in reward.FIGURES_OF_MERIT
+            for figure_of_merit in get_args(reward.figure_of_merit)
             for device_name in [dev.name for dev in self.devices]
         )
 
@@ -222,6 +228,8 @@ class Predictor:
                 score = reward.expected_fidelity(qc, device)
             elif figure_of_merit == "expected_success_probability":
                 score = reward.expected_success_probability(qc, device)
+            else:
+                assert_never(figure_of_merit)
             scores[comp_path_index] = score
 
         num_not_empty_entries = 0
