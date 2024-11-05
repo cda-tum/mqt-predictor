@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("mqt-predictor")
 
-figure_of_merit = Literal["expected_fidelity", "critical_depth", "expected_success_probability"]
+figure_of_merit = Literal["expected_fidelity", "critical_depth", "estimated_success_probability"]
 
 
 def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
@@ -74,7 +74,7 @@ def calc_qubit_index(qargs: list[Qubit], qregs: list[QuantumRegister], index: in
     raise ValueError(error_msg)
 
 
-def expected_success_probability(qc: QuantumCircuit, device: Device, precision: int = 10) -> float:
+def estimated_success_probability(qc: QuantumCircuit, device: Device, precision: int = 10) -> float:
     """Calculates the expected success probability of a given quantum circuit on a given device.
 
     It is calculated by multiplying the expected fidelity with a min(T1,T2)-dependant

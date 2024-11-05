@@ -193,7 +193,7 @@ def evaluate_sample_circuit(filename: str) -> dict[str, Any]:
     qc = QuantumCircuit.from_qasm_file(filename)
     results.update(create_mqtpredictor_result(qc, "expected_fidelity", filename=filename).get_dict())
     results.update(create_mqtpredictor_result(qc, "critical_depth", filename=filename).get_dict())
-    results.update(create_mqtpredictor_result(qc, "expected_success_probability", filename=filename).get_dict())
+    results.update(create_mqtpredictor_result(qc, "estimated_success_probability", filename=filename).get_dict())
 
     for dev in get_available_devices():
         results.update(create_qiskit_result(qc, dev).get_dict())

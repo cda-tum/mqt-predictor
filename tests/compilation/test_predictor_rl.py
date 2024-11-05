@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import get_args
 
 import pytest
 from qiskit import QuantumCircuit
@@ -25,12 +26,12 @@ def test_predictor_env_reset_from_string() -> None:
 def test_predictor_env_esp_error() -> None:
     """Test the predictor environment with ESP as figure of merit and missing calibration data."""
     with pytest.raises(ValueError, match="Missing calibration data for ESP calculation on ibm_montreal."):
-        rl.Predictor(figure_of_merit="expected_success_probability", device_name="ibm_montreal")
+        rl.Predictor(figure_of_merit="estimated_success_probability", device_name="ibm_montreal")
 
 
 @pytest.mark.parametrize(
     "figure_of_merit",
-    reward.FIGURES_OF_MERIT,
+    get_args(reward.figure_of_merit),
 )
 def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
     """Test the qcompile function with a newly trained model.

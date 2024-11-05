@@ -26,14 +26,14 @@ def test_create_result() -> None:
     assert res.compilation_time >= 0.0
     assert res.expected_fidelity >= 0.0
     assert res.critical_depth >= 0.0
-    assert res.expected_success_probability >= 0.0
+    assert res.estimated_success_probability >= 0.0
 
     res = create_qiskit_result(qc, device)
     assert isinstance(res, Result)
     assert res.compilation_time >= 0.0
     assert res.expected_fidelity >= 0.0
     assert res.critical_depth >= 0.0
-    assert res.expected_success_probability >= 0.0
+    assert res.estimated_success_probability >= 0.0
 
 
 def test_false_input() -> None:
@@ -45,14 +45,14 @@ def test_false_input() -> None:
     assert res.compilation_time == -1.0
     assert res.expected_fidelity == -1.0
     assert res.critical_depth == -1.0
-    assert res.expected_success_probability == -1.0
+    assert res.estimated_success_probability == -1.0
 
     res = create_qiskit_result(QuantumCircuit(1000), device)
     assert isinstance(res, Result)
     assert res.compilation_time == -1.0
     assert res.expected_fidelity == -1.0
     assert res.critical_depth == -1.0
-    assert res.expected_success_probability == -1.0
+    assert res.estimated_success_probability == -1.0
 
     device.coupling_map = ["wrong_coupling_map"]
     res = create_qiskit_result(QuantumCircuit(10), device)
@@ -60,14 +60,14 @@ def test_false_input() -> None:
     assert res.compilation_time == -1.0
     assert res.expected_fidelity == -1.0
     assert res.critical_depth == -1.0
-    assert res.expected_success_probability == -1.0
+    assert res.estimated_success_probability == -1.0
 
     res = create_tket_result(QuantumCircuit(10), device)
     assert isinstance(res, Result)
     assert res.compilation_time == -1.0
     assert res.expected_fidelity == -1.0
     assert res.critical_depth == -1.0
-    assert res.expected_success_probability == -1.0
+    assert res.estimated_success_probability == -1.0
 
 
 def test_result_none_input() -> None:
@@ -76,7 +76,7 @@ def test_result_none_input() -> None:
     assert res.compilation_time == 1.0
     assert res.expected_fidelity == -1.0
     assert res.critical_depth == -1.0
-    assert res.expected_success_probability == -1.0
+    assert res.estimated_success_probability == -1.0
 
 
 def test_esp_data_available() -> None:

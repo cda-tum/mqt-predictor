@@ -226,8 +226,8 @@ class Predictor:
                 score = reward.crit_depth(qc)
             elif figure_of_merit == "expected_fidelity":
                 score = reward.expected_fidelity(qc, device)
-            elif figure_of_merit == "expected_success_probability":
-                score = reward.expected_success_probability(qc, device)
+            elif figure_of_merit == "estimated_success_probability":
+                score = reward.estimated_success_probability(qc, device)
             else:
                 assert_never(figure_of_merit)
             scores[comp_path_index] = score
@@ -243,7 +243,7 @@ class Predictor:
         feature_vec = ml.helper.create_feature_dict(path_uncompiled_circuit / file)
         training_sample = (list(feature_vec.values()), np.argmax(scores))
         circuit_name = str(file).split(".")[0]
-        return (training_sample, circuit_name, scores)
+        return training_sample, circuit_name, scores
 
     def train_random_forest_classifier(
         self, figure_of_merit: reward.figure_of_merit = "expected_fidelity", visualize_results: bool = False
