@@ -34,10 +34,9 @@ class Result:
         if compiled_qc is not None:
             rew_fid = reward.expected_fidelity(compiled_qc, device)
             rew_crit_depth = reward.crit_depth(compiled_qc)
-            if reward.esp_data_available(device):
-                rew_esp = reward.expected_success_probability(compiled_qc, device)
-            else:
-                rew_esp = -1.0
+            rew_esp = (
+                reward.expected_success_probability(compiled_qc, device) if reward.esp_data_available(device) else -1.0
+            )
         else:
             rew_fid = -1.0
             rew_crit_depth = -1.0
