@@ -85,7 +85,6 @@ class PredictorEnv(Env):  # type: ignore[misc]
             msg = f"Missing calibration data for ESP calculation on {device_name}."
             raise ValueError(msg)
         self.reward_function = reward_function
-
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
         self.layout: TranspileLayout | None = None

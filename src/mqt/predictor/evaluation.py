@@ -87,7 +87,6 @@ def create_tket_result(
         native_rebase.apply(tket_qc)
         duration = time.time() - start_time
         transpiled_qc_tket = tk_to_qiskit(tket_qc)
-
     except Exception as e:
         logger.warning("tket Transpile Error occurred for: " + device.name + " " + str(e))
         return Result("tket_" + device.name, -1, None, device)
