@@ -23,6 +23,7 @@ seed = 1
 np.random.Generator = np.random.default_rng(seed)
 random.seed(seed)
 
+
 def test_bqskit_o2_action() -> None:
     """Test the BQSKitO2 action."""
     action_bqskit_o2 = None
