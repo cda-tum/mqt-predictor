@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import random
 from typing import cast
 
+# Set seed for reproducibility
+import numpy as np
 import pytest
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from pytket.circuit import Qubit
@@ -16,6 +19,9 @@ from qiskit.transpiler.passes import CheckMap, GatesInBasis
 from mqt.bench.devices import Device, get_available_devices, get_device_by_name
 from mqt.predictor.rl import helper
 
+seed = 1
+np.random.Generator = np.random.default_rng(seed)
+random.seed(seed)
 
 def test_bqskit_o2_action() -> None:
     """Test the BQSKitO2 action."""
