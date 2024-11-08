@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import cast
 
-# Set seed for reproducibility
 import pytest
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from pytket.circuit import Qubit
