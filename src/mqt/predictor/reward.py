@@ -86,85 +86,84 @@ def estimated_success_probability(qc: QuantumCircuit, device: Device, precision:
     Returns:
         The expected success probability of the given quantum circuit on the given device.
     """
-    return 0.0
-    # # lazy import of qiskit transpiler
-    # from qiskit.transpiler import InstructionDurations, Layout, PassManager, passes
-    # from qiskit.transpiler.passes import ApplyLayout, SetLayout
-    #
-    # # collect gate and measurement durations for active qubits
-    # op_times, active_qubits = [], set()
-    # for instruction, qargs, _cargs in qc.data:
-    #     gate_type = instruction.name
-    #
-    #     if gate_type == "barrier" or gate_type == "id":
-    #         continue
-    #     assert len(qargs) in (1, 2)
-    #     first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
-    #     active_qubits.add(first_qubit_idx)
-    #
-    #     if len(qargs) == 1:  # single-qubit gate
-    #         if gate_type == "measure":
-    #             duration = device.get_readout_duration(first_qubit_idx)
-    #         else:
-    #             duration = device.get_single_qubit_gate_duration(gate_type, first_qubit_idx)
-    #         op_times.append((gate_type, [first_qubit_idx], duration, "s"))
-    #     else:  # multi-qubit gate
-    #         second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
-    #         active_qubits.add(second_qubit_idx)
-    #         duration = device.get_two_qubit_gate_duration(gate_type, first_qubit_idx, second_qubit_idx)
-    #         op_times.append((gate_type, [first_qubit_idx, second_qubit_idx], duration, "s"))
-    #
-    # # check whether the circuit was transformed by tket (i.e. changed register name)
-    # # qiskit ASAPScheduleAnalysis expects all qubit registers to be named 'q'
-    # if qc.qregs[0].name != "q":
-    #     # create a layout that maps the (tket) 'node' registers to the (qiskit) 'q' registers
-    #     layouts = [SetLayout(Layout({node_qubit: i for i, node_qubit in enumerate(node_reg)})) for node_reg in qc.qregs]
-    #     # create a pass manager with the SetLayout and ApplyLayout passes
-    #     pm = PassManager(list(layouts))
-    #     pm.append(ApplyLayout())
-    #
-    #     # replace the 'node' register with the 'q' register in the circuit
-    #     qc = pm.run(qc)
-    #     assert qc.qregs[0].name == "q"
-    #
-    # # associate gate and idle (delay) times for each qubit through asap scheduling
-    # sched_pass = passes.ASAPScheduleAnalysis(InstructionDurations(op_times))
-    # delay_pass = passes.PadDelay()
-    # pm = PassManager([sched_pass, delay_pass])
-    # scheduled_circ = pm.run(qc)
-    #
-    # res = 1.0
-    # for instruction, qargs, _cargs in scheduled_circ.data:
-    #     gate_type = instruction.name
-    #
-    #     if gate_type == "barrier" or gate_type == "id":
-    #         continue
-    #
-    #     assert len(qargs) in (1, 2)
-    #     first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
-    #
-    #     if len(qargs) == 1:
-    #         if gate_type == "measure":
-    #             res *= device.get_readout_fidelity(first_qubit_idx)
-    #             continue
-    #
-    #         if gate_type == "delay":
-    #             # only consider active qubits
-    #             if first_qubit_idx not in active_qubits:
-    #                 continue
-    #
-    #             res *= np.exp(
-    #                 -instruction.duration
-    #                 / min(device.calibration.get_t1(first_qubit_idx), device.calibration.get_t2(first_qubit_idx))
-    #             )
-    #             continue
-    #
-    #         res *= device.get_single_qubit_gate_fidelity(gate_type, first_qubit_idx)
-    #     else:
-    #         second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
-    #         res *= device.get_two_qubit_gate_fidelity(gate_type, first_qubit_idx, second_qubit_idx)
-    #
-    # return cast(float, np.round(res, precision))
+    # lazy import of qiskit transpiler
+    from qiskit.transpiler import InstructionDurations, Layout, PassManager, passes  # noqa: PLC0415
+    from qiskit.transpiler.passes import ApplyLayout, SetLayout  # noqa: PLC0415
+
+    # collect gate and measurement durations for active qubits
+    op_times, active_qubits = [], set()
+    for instruction, qargs, _cargs in qc.data:
+        gate_type = instruction.name
+
+        if gate_type == "barrier" or gate_type == "id":
+            continue
+        assert len(qargs) in (1, 2)
+        first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
+        active_qubits.add(first_qubit_idx)
+
+        if len(qargs) == 1:  # single-qubit gate
+            if gate_type == "measure":
+                duration = device.get_readout_duration(first_qubit_idx)
+            else:
+                duration = device.get_single_qubit_gate_duration(gate_type, first_qubit_idx)
+            op_times.append((gate_type, [first_qubit_idx], duration, "s"))
+        else:  # multi-qubit gate
+            second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
+            active_qubits.add(second_qubit_idx)
+            duration = device.get_two_qubit_gate_duration(gate_type, first_qubit_idx, second_qubit_idx)
+            op_times.append((gate_type, [first_qubit_idx, second_qubit_idx], duration, "s"))
+
+    # check whether the circuit was transformed by tket (i.e. changed register name)
+    # qiskit ASAPScheduleAnalysis expects all qubit registers to be named 'q'
+    if qc.qregs[0].name != "q":
+        # create a layout that maps the (tket) 'node' registers to the (qiskit) 'q' registers
+        layouts = [SetLayout(Layout({node_qubit: i for i, node_qubit in enumerate(node_reg)})) for node_reg in qc.qregs]
+        # create a pass manager with the SetLayout and ApplyLayout passes
+        pm = PassManager(list(layouts))
+        pm.append(ApplyLayout())
+
+        # replace the 'node' register with the 'q' register in the circuit
+        qc = pm.run(qc)
+        assert qc.qregs[0].name == "q"
+
+    # associate gate and idle (delay) times for each qubit through asap scheduling
+    sched_pass = passes.ASAPScheduleAnalysis(InstructionDurations(op_times))
+    delay_pass = passes.PadDelay()
+    pm = PassManager([sched_pass, delay_pass])
+    scheduled_circ = pm.run(qc)
+
+    res = 1.0
+    for instruction, qargs, _cargs in scheduled_circ.data:
+        gate_type = instruction.name
+
+        if gate_type == "barrier" or gate_type == "id":
+            continue
+
+        assert len(qargs) in (1, 2)
+        first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
+
+        if len(qargs) == 1:
+            if gate_type == "measure":
+                res *= device.get_readout_fidelity(first_qubit_idx)
+                continue
+
+            if gate_type == "delay":
+                # only consider active qubits
+                if first_qubit_idx not in active_qubits:
+                    continue
+
+                res *= np.exp(
+                    -instruction.duration
+                    / min(device.calibration.get_t1(first_qubit_idx), device.calibration.get_t2(first_qubit_idx))
+                )
+                continue
+
+            res *= device.get_single_qubit_gate_fidelity(gate_type, first_qubit_idx)
+        else:
+            second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
+            res *= device.get_two_qubit_gate_fidelity(gate_type, first_qubit_idx, second_qubit_idx)
+
+    return cast(float, np.round(res, precision))
 
 
 def esp_data_available(device: Device) -> bool:
