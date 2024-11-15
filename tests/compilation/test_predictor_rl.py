@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import get_args
 
 import pytest
+from qiskit import QuantumCircuit
 from qiskit.qasm2 import dump
 
 from mqt.bench import get_benchmark
-from mqt.predictor import rl
+from mqt.predictor import reward, rl
 
 
 def test_predictor_env_reset_from_string() -> None:
@@ -27,39 +29,39 @@ def test_predictor_env_esp_error() -> None:
         rl.Predictor(figure_of_merit="estimated_success_probability", device_name="ibm_montreal")
 
 
-# @pytest.mark.parametrize(
-#     "figure_of_merit",
-#     get_args(reward.figure_of_merit),
-# )
-# def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
-#     """Test the qcompile function with a newly trained model.
-#
-#     Important: Those trained models are used in later tests and must not be deleted.
-#     To test ESP as well, training must be done with a device that provides all relevant information (i.e. T1, T2 and gate times).
-#     """
-#     device = "ionq_harmony"  # fully specified calibration data
-#     qc = get_benchmark("ghz", 1, 5)
-#     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
-#
-#     model_name = "model_" + figure_of_merit + "_" + device
-#     if not Path(rl.helper.get_path_trained_model() / (model_name + ".zip")).exists():
-#         with pytest.raises(
-#             FileNotFoundError, match="The RL model is not trained yet. Please train the model before using it."
-#         ):
-#             rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
-#
-#     predictor.train_model(
-#         timesteps=10,
-#         test=True,
-#     )
-#
-#     res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
-#     assert isinstance(res, tuple)
-#     qc_compiled, compilation_information = res
-#
-#     assert isinstance(qc_compiled, QuantumCircuit)
-#     assert qc_compiled.layout is not None
-#     assert compilation_information is not None
+@pytest.mark.parametrize(
+    "figure_of_merit",
+    get_args(reward.figure_of_merit),
+)
+def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
+    """Test the qcompile function with a newly trained model.
+
+    Important: Those trained models are used in later tests and must not be deleted.
+    To test ESP as well, training must be done with a device that provides all relevant information (i.e. T1, T2 and gate times).
+    """
+    device = "ionq_harmony"  # fully specified calibration data
+    qc = get_benchmark("ghz", 1, 5)
+    predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
+
+    model_name = "model_" + figure_of_merit + "_" + device
+    if not Path(rl.helper.get_path_trained_model() / (model_name + ".zip")).exists():
+        with pytest.raises(
+            FileNotFoundError, match="The RL model is not trained yet. Please train the model before using it."
+        ):
+            rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
+
+    predictor.train_model(
+        timesteps=10,
+        test=True,
+    )
+
+    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
+    assert isinstance(res, tuple)
+    qc_compiled, compilation_information = res
+
+    assert isinstance(qc_compiled, QuantumCircuit)
+    assert qc_compiled.layout is not None
+    assert compilation_information is not None
 
 
 def test_qcompile_with_false_input() -> None:
