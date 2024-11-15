@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import get_args
 
 import pytest
 from qiskit import QuantumCircuit
@@ -30,7 +31,7 @@ def test_predictor_env_esp_error() -> None:
 
 @pytest.mark.parametrize(
     "figure_of_merit",
-    ["expected_fidelity", "critical_depth"],
+    get_args(reward.figure_of_merit),
 )
 def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
     """Test the qcompile function with a newly trained model.
