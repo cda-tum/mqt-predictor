@@ -110,8 +110,8 @@
 #         assert len(layout.final_layout) == device.num_qubits
 #
 #     # each qubit of the initial layout is part of the initial quantum circuit and the register name is correctly set
-#     for assigned_physical_qubit in layout.initial_layout._p2v.values():  # noqa: SLF001
-#         qreg = assigned_physical_qubit._register  # noqa: SLF001
+#     for assigned_physical_qubit in layout.initial_layout._p2v.values():
+#         qreg = assigned_physical_qubit._register
 #         assert qreg.name in {"q", "ancilla"}
 #
 #         # assigned_physical_qubit is part of the original quantum circuit
@@ -124,11 +124,11 @@
 #             assert qreg.size == device.num_qubits - initial_qc.num_qubits
 #     # each qubit of the final layout is part of the mapped quantum circuit and the register name is correctly set
 #     if layout.final_layout is not None:
-#         for assigned_physical_qubit in layout.final_layout._p2v.values():  # noqa: SLF001
+#         for assigned_physical_qubit in layout.final_layout._p2v.values():
 #             assert mapped_qc.find_bit(assigned_physical_qubit).registers[0][0].name == "q"
 #     # each virtual qubit of the original quantum circuit is part of the initial layout
 #     for virtual_qubit in initial_qc.qubits:
-#         assert virtual_qubit in layout.initial_layout._p2v.values()  # noqa: SLF001
+#         assert virtual_qubit in layout.initial_layout._p2v.values()
 #
 #
 # def test_bqskit_mapping_action_no_swaps_necessary() -> None:
