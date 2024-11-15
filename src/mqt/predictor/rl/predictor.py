@@ -92,7 +92,7 @@ class Predictor:
             self.env,
             verbose=verbose,
             tensorboard_log="./" + model_name + "_" + self.figure_of_merit + "_" + self.device_name,
-            gamma=0.98,
+            gamma=0.99,
             n_steps=n_steps,
         )
         # Training Loop: In each iteration, the agent collects n_steps steps (rollout),
