@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import requests
-from bqskit import MachineModel
 from pytket.architecture import Architecture
 from pytket.circuit import Circuit, Node, Qubit
 from pytket.passes import (
@@ -68,7 +67,6 @@ import operator
 import zipfile
 from importlib import resources
 
-from bqskit import compile as bqskit_compile
 from bqskit.ir import gates
 from qiskit import QuantumRegister
 from qiskit.passmanager import ConditionalController
@@ -191,11 +189,11 @@ def get_actions_opt() -> list[dict[str, Any]]:
             "origin": "qiskit",
             "do_while": lambda property_set: (not property_set["optimization_loop_minimum_point"]),
         },
-        {
-            "name": "BQSKitO2",
-            "transpile_pass": lambda circuit: bqskit_compile(circuit, optimization_level=2),
-            "origin": "bqskit",
-        },
+        # {
+        #     "name": "BQSKitO2",
+        #     "transpile_pass": lambda circuit: bqskit_compile(circuit, optimization_level=2),
+        #     "origin": "bqskit",
+        # },
     ]
 
 
@@ -318,15 +316,15 @@ def get_actions_synthesis() -> list[dict[str, Any]]:
             ],
             "origin": "qiskit",
         },
-        {
-            "name": "BQSKitSynthesis",
-            "transpile_pass": lambda device: lambda bqskit_circuit: bqskit_compile(
-                bqskit_circuit,
-                model=MachineModel(bqskit_circuit.num_qudits, gate_set=get_bqskit_native_gates(device)),
-                optimization_level=2,
-            ),
-            "origin": "bqskit",
-        },
+        # {
+        #     "name": "BQSKitSynthesis",
+        #     "transpile_pass": lambda device: lambda bqskit_circuit: bqskit_compile(
+        #         bqskit_circuit,
+        #         model=MachineModel(bqskit_circuit.num_qudits, gate_set=get_bqskit_native_gates(device)),
+        #         optimization_level=2,
+        #     ),
+        #     "origin": "bqskit",
+        # },
     ]
 
 
