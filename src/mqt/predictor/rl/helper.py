@@ -324,7 +324,7 @@ def get_actions_synthesis() -> list[dict[str, Any]]:
                 bqskit_circuit,
                 model=MachineModel(bqskit_circuit.num_qudits, gate_set=get_bqskit_native_gates(device)),
                 optimization_level=2,
-                max_synthesis_size=3,
+                synthesis_epsilon=1e-6,
             ),
             "origin": "bqskit",
         },
