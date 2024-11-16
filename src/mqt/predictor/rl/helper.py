@@ -291,20 +291,20 @@ def get_actions_mapping() -> list[dict[str, Any]]:
             ],
             "origin": "qiskit",
         },
-        {
-            "name": "BQSKitMapping",
-            "transpile_pass": lambda device: lambda bqskit_circuit: bqskit_compile(
-                bqskit_circuit,
-                model=MachineModel(
-                    num_qudits=device.num_qubits,
-                    gate_set=get_bqskit_native_gates(device),
-                    coupling_graph=[(elem[0], elem[1]) for elem in device.coupling_map],
-                ),
-                with_mapping=True,
-                optimization_level=2,
-            ),
-            "origin": "bqskit",
-        },
+        # {
+        #     "name": "BQSKitMapping",
+        #     "transpile_pass": lambda device: lambda bqskit_circuit: bqskit_compile(
+        #         bqskit_circuit,
+        #         model=MachineModel(
+        #             num_qudits=device.num_qubits,
+        #             gate_set=get_bqskit_native_gates(device),
+        #             coupling_graph=[(elem[0], elem[1]) for elem in device.coupling_map],
+        #         ),
+        #         with_mapping=True,
+        #         optimization_level=2,
+        #     ),
+        #     "origin": "bqskit",
+        # },
     ]
 
 
