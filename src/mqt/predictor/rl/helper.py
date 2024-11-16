@@ -65,6 +65,7 @@ if TYPE_CHECKING:
 
 
 import operator
+import os
 import zipfile
 from importlib import resources
 
@@ -193,7 +194,12 @@ def get_actions_opt() -> list[dict[str, Any]]:
         },
         {
             "name": "BQSKitO2",
-            "transpile_pass": lambda circuit: bqskit_compile(circuit, optimization_level=2),
+            "transpile_pass": lambda circuit: bqskit_compile(
+                circuit,
+                optimization_level=2,
+                synthesis_epsilon=1e-4 if os.getenv("GITHUB_ACTIONS") == "true" else 1e-8,
+                max_synthesis_size=2 if os.getenv("GITHUB_ACTIONS") == "true" else 3,
+            ),
             "origin": "bqskit",
         },
     ]
@@ -302,6 +308,8 @@ def get_actions_mapping() -> list[dict[str, Any]]:
                 ),
                 with_mapping=True,
                 optimization_level=2,
+                synthesis_epsilon=1e-4 if os.getenv("GITHUB_ACTIONS") == "true" else 1e-8,
+                max_synthesis_size=2 if os.getenv("GITHUB_ACTIONS") == "true" else 3,
             ),
             "origin": "bqskit",
         },
@@ -324,7 +332,8 @@ def get_actions_synthesis() -> list[dict[str, Any]]:
                 bqskit_circuit,
                 model=MachineModel(bqskit_circuit.num_qudits, gate_set=get_bqskit_native_gates(device)),
                 optimization_level=2,
-                synthesis_epsilon=1e-5,
+                synthesis_epsilon=1e-4 if os.getenv("GITHUB_ACTIONS") == "true" else 1e-8,
+                max_synthesis_size=2 if os.getenv("GITHUB_ACTIONS") == "true" else 3,
             ),
             "origin": "bqskit",
         },
