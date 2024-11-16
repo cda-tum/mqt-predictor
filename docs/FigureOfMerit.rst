@@ -10,7 +10,8 @@ information needs to be collected, such as, e.g., gate/readout fidelities, gate 
 decoherence times. While for some devices, this information may be publicly available, for other
 devices it may be estimated from comparable devices, previous records, or insider knowledge.
 
-So far, two figures of merit are implemented: ``expected_fidelity`` and ``critical_depth``.
+So far, two figures of merit are implemented for all devices: ``expected_fidelity`` and ``critical_depth``.
+On top of that, the ``estimated_success_probability`` is available for device where the necessary calibration data is available.
 
 Expected Fidelity
 -----------------
