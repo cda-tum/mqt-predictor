@@ -3,7 +3,13 @@
 from __future__ import annotations
 
 import logging
+import sys
 from typing import TYPE_CHECKING, Any
+
+if sys.version_info >= (3, 11) and TYPE_CHECKING:  # pragma: no cover
+    from typing import assert_never
+else:
+    from typing_extensions import assert_never
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -75,6 +81,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.action_set[index] = rl.helper.get_action_terminate()
         self.action_terminate_index = index
 
+        if reward_function == "estimated_success_probability" and not reward.esp_data_available(self.device):
+            msg = f"Missing calibration data for ESP calculation on {device_name}."
+            raise ValueError(msg)
         self.reward_function = reward_function
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
@@ -135,8 +144,11 @@ class PredictorEnv(Env):  # type: ignore[misc]
         """Calculates and returns the reward for the current state."""
         if self.reward_function == "expected_fidelity":
             return reward.expected_fidelity(self.state, self.device)
-        # else: can only be "critical_depth"
-        return reward.crit_depth(self.state)
+        if self.reward_function == "estimated_success_probability":
+            return reward.estimated_success_probability(self.state, self.device)
+        if self.reward_function == "critical_depth":
+            return reward.crit_depth(self.state)
+        assert_never(self.state)
 
     def render(self) -> None:
         """Renders the current state."""

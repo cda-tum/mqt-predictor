@@ -1404,7 +1404,7 @@ wheels = [
 
 [[package]]
 name = "mqt-predictor"
-version = "2.1.2.dev13+g6aacea4"
+version = "2.1.2.dev70+g5a2eee2.d20241105"
 source = { editable = "." }
 dependencies = [
     { name = "bqskit" },
@@ -1413,6 +1413,7 @@ dependencies = [
     { name = "sb3-contrib" },
     { name = "scikit-learn" },
     { name = "tensorboard" },
+    { name = "typing-extensions" },
 ]
 
 [package.optional-dependencies]
@@ -1469,6 +1470,7 @@ requires-dist = [
     { name = "sphinxcontrib-svg2pdfconverter", marker = "extra == 'docs'", specifier = ">=1.2" },
     { name = "sphinxext-opengraph", marker = "extra == 'docs'", specifier = ">=0.9" },
     { name = "tensorboard", specifier = ">=2.17.0" },
+    { name = "typing-extensions", specifier = ">=4.1" },
 ]
 
 [[package]]
@@ -3285,7 +3287,7 @@ name = "triton"
 version = "3.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "filelock" },
+    { name = "filelock", marker = "python_full_version < '3.13'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/45/27/14cc3101409b9b4b9241d2ba7deaa93535a217a211c86c4cc7151fb12181/triton-3.0.0-1-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:e1efef76935b2febc365bfadf74bcb65a6f959a9872e5bddf44cc9e0adce1e1a", size = 209376304 },

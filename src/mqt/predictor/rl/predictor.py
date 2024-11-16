@@ -80,7 +80,7 @@ class Predictor:
             test: Whether to train the model for testing purposes. Defaults to False.
         """
         if test:
-            n_steps = 100
+            n_steps = 10
             progress_bar = False
         else:
             n_steps = 2048
@@ -92,9 +92,11 @@ class Predictor:
             self.env,
             verbose=verbose,
             tensorboard_log="./" + model_name + "_" + self.figure_of_merit + "_" + self.device_name,
-            gamma=0.98,
+            gamma=0.99,
             n_steps=n_steps,
         )
+        # Training Loop: In each iteration, the agent collects n_steps steps (rollout),
+        # updates the policy for n_epochs, and then repeats the process until total_timesteps steps have been taken.
         model.learn(total_timesteps=timesteps, progress_bar=progress_bar)
         model.save(
             rl.helper.get_path_trained_model() / (model_name + "_" + self.figure_of_merit + "_" + self.device_name)
