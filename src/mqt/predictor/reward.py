@@ -176,34 +176,34 @@ def esp_data_available(device: Device) -> bool:
         try:
             device.calibration.get_t1(qubit)
         except ValueError:
-            logging.exception(message("T1", "idle", qubit))
+            logger.exception(message("T1", "idle", qubit))
             return False
         try:
             device.calibration.get_t2(qubit)
         except ValueError:
-            logging.exception(message("T2", "idle", qubit))
+            logger.exception(message("T2", "idle", qubit))
             return False
         try:
             device.get_readout_fidelity(qubit)
         except ValueError:
-            logging.exception(message("Fidelity", "readout", qubit))
+            logger.exception(message("Fidelity", "readout", qubit))
             return False
         try:
             device.get_readout_duration(qubit)
         except ValueError:
-            logging.exception(message("Duration", "readout", qubit))
+            logger.exception(message("Duration", "readout", qubit))
             return False
 
         for gate in device.get_single_qubit_gates():
             try:
                 device.get_single_qubit_gate_fidelity(gate, qubit)
             except ValueError:
-                logging.exception(message("Fidelity", gate, qubit))
+                logger.exception(message("Fidelity", gate, qubit))
                 return False
             try:
                 device.get_single_qubit_gate_duration(gate, qubit)
             except ValueError:
-                logging.exception(message("Duration", gate, qubit))
+                logger.exception(message("Duration", gate, qubit))
                 return False
 
     for gate in device.get_two_qubit_gates():
@@ -211,12 +211,12 @@ def esp_data_available(device: Device) -> bool:
             try:
                 device.get_two_qubit_gate_fidelity(gate, edge[0], edge[1])
             except ValueError:
-                logging.exception(message("Fidelity", gate, edge))
+                logger.exception(message("Fidelity", gate, edge))
                 return False
             try:
                 device.get_two_qubit_gate_duration(gate, edge[0], edge[1])
             except ValueError:
-                logging.exception(message("Duration", gate, edge))
+                logger.exception(message("Duration", gate, edge))
                 return False
 
     return True
