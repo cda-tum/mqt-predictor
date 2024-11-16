@@ -35,3 +35,15 @@ Critical Depth
 --------------
 A potential alternative could be the ``critical depth`` (taken from :cite:labelpar:`tomesh2022supermarq`)---a measure to describe the percentage of multi-qubit gates on the longest path through a compiled quantum circuit (determining the depth).
 A respective value close to 1 would indicate a very sequential circuit while a value of 0 would indicate a highly parallel one.
+
+
+Estimated Success Probability
+-----------------------------
+The ``estimated_success_probability`` (based on :cite:labelpar:`esp-lifetime-min` and :cite:labelpar:`esp-idle`) is a figure of merit that is based on the ``expected_fidelity`` but also multiplies it with a factor that considers the decoherence times of a device:
+
+.. math::
+   \prod_{q} \exp{(t_{q}^{\mathrm{idle}}/\min{(T_1, T_2)})}
+
+with :math:`t_{q}^{\mathrm{idle}}` being the sum of each qubit's idle times.
+Therefore, exactly the execution times of all gates and the decoherence times must be available.
+Note that some variants of this figure of merit do not take the minimum of both decoherence times but only one of them or create one factor for each decoherence time.
