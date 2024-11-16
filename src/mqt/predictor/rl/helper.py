@@ -323,7 +323,7 @@ def get_actions_synthesis() -> list[dict[str, Any]]:
             "transpile_pass": lambda device: lambda bqskit_circuit: bqskit_compile(
                 bqskit_circuit,
                 model=MachineModel(bqskit_circuit.num_qudits, gate_set=get_bqskit_native_gates(device)),
-                optimization_level=1,
+                optimization_level=0,
             ),
             "origin": "bqskit",
         },
