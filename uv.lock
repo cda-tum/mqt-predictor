@@ -1408,7 +1408,7 @@ wheels = [
 
 [[package]]
 name = "mqt-predictor"
-version = "2.1.2.dev17+g5b0a5df"
+version = "2.1.2.dev18+gef1f1d8"
 source = { editable = "." }
 dependencies = [
     { name = "bqskit" },
