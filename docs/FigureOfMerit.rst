@@ -39,7 +39,7 @@ A respective value close to 1 would indicate a very sequential circuit while a v
 
 Estimated Success Probability
 -----------------------------
-The ``estimated_success_probability`` (based on :cite:labelpar:`esp-lifetime-min` and :cite:labelpar:`esp-idle`) is a figure of merit that is based on the ``expected_fidelity`` but also multiplies it with a factor that considers the decoherence times of a device:
+The ``estimated_success_probability`` (based on :cite:labelpar:`esp-lifetime-min` and :cite:labelpar:`esp-idle`) is a figure of merit that is based on the ``expected_fidelity`` but also multiplies it with a factor that considers the decoherence times :math:`T_1, T_2` of a device:
 
 .. math::
    \prod_{q} \exp{(t_{q}^{\mathrm{idle}}/\min{(T_1, T_2)})}
