@@ -46,4 +46,4 @@ The ``estimated_success_probability`` (based on :cite:labelpar:`esp-lifetime-min
 
 with :math:`t_{q}^{\mathrm{idle}}` being the sum of each qubit's idle times.
 Therefore, exactly the execution times of all gates and the decoherence times must be available.
-Note that some variants of this figure of merit do not take the minimum of both decoherence times but only one of them or create one factor for each decoherence time.
+Note that some variants of this figure of merit do not take the minimum of both decoherence times but create one exponential factor for each decoherence time, others consider the entire qubit lifetime instead of idle times only.
