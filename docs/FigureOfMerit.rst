@@ -11,7 +11,7 @@ decoherence times. While for some devices, this information may be publicly avai
 devices it may be estimated from comparable devices, previous records, or insider knowledge.
 
 So far, two figures of merit are implemented for all devices: ``expected_fidelity`` and ``critical_depth``.
-On top of that, the ``estimated_success_probability`` is available for device where the necessary calibration data is available.
+On top of that, the ``estimated_success_probability`` is available for devices where the necessary calibration data is available.
 
 Expected Fidelity
 -----------------
