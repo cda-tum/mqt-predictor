@@ -90,7 +90,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.layout: TranspileLayout | None = None
         self.num_qubits_uncompiled_circuit = 0
 
-        self.has_parametrized_gates = False
+        self.has_parameterized_gates = False
 
         spaces = {
             "num_qubits": Discrete(128),
@@ -189,7 +189,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.error_occurred = False
 
         self.num_qubits_uncompiled_circuit = self.state.num_qubits
-        self.has_parametrized_gates = len(self.state.parameters) > 0
+        self.has_parameterized_gates = len(self.state.parameters) > 0
         return rl.helper.create_feature_dict(self.state), {}
 
     def action_masks(self) -> list[bool]:
@@ -202,8 +202,8 @@ class PredictorEnv(Env):  # type: ignore[misc]
                 action_mask[i] and self.action_set[i].get("origin") != "tket" for i in range(len(action_mask))
             ]
 
-        if self.has_parametrized_gates or self.layout is not None:
-            # remove all actions that are from "origin"=="bqskit" because they are not supported for parametrized gates
+        if self.has_parameterized_gates or self.layout is not None:
+            # remove all actions that are from "origin"=="bqskit" because they are not supported for parameterized gates
             # or after layout since using BQSKit after a layout is set may result in an error
             action_mask = [
                 action_mask[i] and self.action_set[i].get("origin") != "bqskit" for i in range(len(action_mask))
