@@ -36,7 +36,7 @@ def test_bqskit_o2_action() -> None:
     assert optimized_qc != qc
 
 
-@pytest.mark.parametrize("device", get_available_devices(), ids=lambda device: cast(str, device.name))
+@pytest.mark.parametrize("device", get_available_devices(), ids=lambda device: cast("str", device.name))
 def test_bqskit_synthesis_action(device: Device) -> None:
     """Test the BQSKitSynthesis action for all devices."""
     action_bqskit_synthesis_action = None
