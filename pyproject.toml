@@ -107,6 +107,7 @@ filterwarnings = [
     'ignore:.*qiskit.providers.models.* is deprecated as of qiskit 1.2*:DeprecationWarning:qiskit.*',
     'ignore:.*qiskit.qobj.pulse_qobj.* is deprecated as of qiskit 1.2*:DeprecationWarning:',
     'ignore:.*qiskit.providers.models is deprecated since Qiskit 1.2*:DeprecationWarning:',
+    'ignore:.*is pending deprecation as of qiskit 1.3..*:DeprecationWarning:',
 
 ]
 
