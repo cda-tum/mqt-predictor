@@ -90,10 +90,8 @@ class Predictor:
                 str(filename).split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(dev_index)
             )
             if (Path(target_path) / (target_filename + ".qasm")).exists():
-                logger.error("Skipping: " + str(filename))
                 continue
             try:
-                logger.error("Starting Compiling")
                 res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device_name, rl_pred], timeout)
                 if isinstance(res, tuple):
                     compiled_qc = res[0]
