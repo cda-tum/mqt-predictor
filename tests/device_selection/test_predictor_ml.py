@@ -110,7 +110,7 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
             source_path=source_path,
             target_path=target_path,
         )
-    # unlink trained model
+
     model_path = Path(rl.helper.get_path_trained_model() / ("model_" + figure_of_merit + "_ionq_harmony.zip"))
     model_path.unlink()
     assert any(file.suffix == ".qasm" for file in target_path.iterdir())

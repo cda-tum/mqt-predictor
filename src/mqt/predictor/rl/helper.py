@@ -44,7 +44,6 @@ from qiskit.transpiler.passes import (
     RemoveDiagonalGatesBeforeMeasure,
     SabreLayout,
     Size,
-    StochasticSwap,
     TrivialLayout,
     UnitarySynthesis,
     VF2Layout,
@@ -278,11 +277,6 @@ def get_actions_routing() -> list[dict[str, Any]]:
                 RoutingPass(Architecture(device.coupling_map)),
             ],
             "origin": "tket",
-        },
-        {
-            "name": "StochasticSwap",
-            "transpile_pass": lambda device: [StochasticSwap(coupling_map=CouplingMap(device.coupling_map))],
-            "origin": "qiskit",
         },
     ]
 
