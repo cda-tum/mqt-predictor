@@ -110,19 +110,18 @@ wheels = [
 
 [[package]]
 name = "bqskit"
-version = "1.2.0"
+version = "1.1.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bqskitrs" },
-    { name = "dill" },
-    { name = "lark" },
+    { name = "lark-parser" },
     { name = "numpy" },
     { name = "scipy" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f5/77/efa6200c3f175733e57551df39a045ee2d6bf654d171410077f54fc3dc31/bqskit-1.2.0.tar.gz", hash = "sha256:5772491f997474bacd1016fed4835b93e5d0901476fdac44518c731815cd0c88", size = 265328 }
+sdist = { url = "https://files.pythonhosted.org/packages/31/40/dc3ed025d35f0c97a2299298d00596f4eded90db99f2ff479ddb6615c4f2/bqskit-1.1.2.tar.gz", hash = "sha256:df17a7b7b0093d2901df029be84727e383d25197567385050864774f8052f9d1", size = 246509 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/07/0d/0e969c8812bb59abc28675e770257df52eb038477e4ca96662217f228cbf/bqskit-1.2.0-py3-none-any.whl", hash = "sha256:b3a5e820bc319c126c50f0750896801d340841d2b70758a769dd4d2efcd9bc74", size = 421833 },
+    { url = "https://files.pythonhosted.org/packages/38/eb/193e2c04d9f5ebc97fef45ae829dc42ac8399693d42e24db816ff076e992/bqskit-1.1.2-py3-none-any.whl", hash = "sha256:2db92835d39d2f84a3891b6b9a1ca225470d7212a9241b7b1165d06383f97138", size = 392167 },
 ]
 
 [[package]]
@@ -1093,6 +1092,15 @@ wheels = [
 ]
 
 [[package]]
+name = "lark-parser"
+version = "0.12.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5a/ee/fd1192d7724419ddfe15b6f17d1c8742800d4de917c0adac3b6aaf22e921/lark-parser-0.12.0.tar.gz", hash = "sha256:15967db1f1214013dca65b1180745047b9be457d73da224fcda3d9dd4e96a138", size = 235029 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/76/00/90f05db333fe1aa6b6ffea83a35425b7d53ea95c8bba0b1597f226cf1d5f/lark_parser-0.12.0-py2.py3-none-any.whl", hash = "sha256:0eaf30cb5ba787fe404d73a7d6e61df97b21d5a63ac26c5008c78a494373c675", size = 103498 },
+]
+
+[[package]]
 name = "latexcodec"
 version = "3.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1360,7 +1368,7 @@ wheels = [
 
 [[package]]
 name = "mqt-predictor"
-version = "2.1.2.dev65+gcccd95f.d20241203"
+version = "2.1.2.dev66+g06fd669.d20241203"
 source = { editable = "." }
 dependencies = [
     { name = "bqskit" },
@@ -1404,7 +1412,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bqskit", specifier = ">=1.1.2" },
+    { name = "bqskit", specifier = ">=1.1.2,!=1.2.0" },
     { name = "furo", marker = "extra == 'docs'", specifier = ">=2023.9.10" },
     { name = "ipykernel", marker = "extra == 'docs'" },
     { name = "ipython", marker = "extra == 'docs'" },
