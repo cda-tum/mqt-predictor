@@ -63,7 +63,7 @@ def test_bqskit_synthesis_action(device: Device) -> None:
     only_nat_gates = check_nat_gates.property_set["all_gates_in_basis"]
     # IQM devices have a native R gate that is approximated using the U3 gate, but this equivalence is not recognized
     # by the currently implemented check whether the synthesis was successful.
-    assert only_nat_gates or "iqm" in device.name or "oqc" in device.name
+    assert only_nat_gates or "iqm" in device.name
 
 
 def test_bqskit_mapping_action_swaps_necessary() -> None:
