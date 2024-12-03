@@ -322,18 +322,18 @@ def get_actions_synthesis() -> list[dict[str, Any]]:
             ],
             "origin": "qiskit",
         },
-        # {
-        #     "name": "BQSKitSynthesis",
-        #     "transpile_pass": lambda device: lambda bqskit_circuit: bqskit_compile(
-        #         bqskit_circuit,
-        #         model=MachineModel(bqskit_circuit.num_qudits, gate_set=get_bqskit_native_gates(device)),
-        #         optimization_level=1 if os.getenv("GITHUB_ACTIONS") == "true" else 2,
-        #         synthesis_epsilon=1e-1 if os.getenv("GITHUB_ACTIONS") == "true" else 1e-8,
-        #         max_synthesis_size=2 if os.getenv("GITHUB_ACTIONS") == "true" else 3,
-        #         seed=10,
-        #     ),
-        #     "origin": "bqskit",
-        # },
+        {
+            "name": "BQSKitSynthesis",
+            "transpile_pass": lambda device: lambda bqskit_circuit: bqskit_compile(
+                bqskit_circuit,
+                model=MachineModel(bqskit_circuit.num_qudits, gate_set=get_bqskit_native_gates(device)),
+                optimization_level=1 if os.getenv("GITHUB_ACTIONS") == "true" else 2,
+                synthesis_epsilon=1e-1 if os.getenv("GITHUB_ACTIONS") == "true" else 1e-8,
+                max_synthesis_size=2 if os.getenv("GITHUB_ACTIONS") == "true" else 3,
+                seed=10,
+            ),
+            "origin": "bqskit",
+        },
     ]
 
 

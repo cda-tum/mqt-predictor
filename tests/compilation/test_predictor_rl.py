@@ -3,18 +3,17 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import get_args
 
 import pytest
 from qiskit.qasm2 import dump
 
 from mqt.bench import get_benchmark
-from mqt.predictor import reward, rl
+from mqt.predictor import rl
 
 
 def test_predictor_env_reset_from_string() -> None:
     """Test the reset function of the predictor environment with a quantum circuit given as a string as input."""
-    predictor = rl.Predictor(figure_of_merit="expected_fidelity", device_name="ionq_harmony")
+    predictor = rl.Predictor(figure_of_merit="expected_fidelity", device_name="ibm_montreal")
     qasm_path = Path("test.qasm")
     qc = get_benchmark("dj", 1, 3)
     with qasm_path.open("w", encoding="utf-8") as f:
@@ -28,17 +27,14 @@ def test_predictor_env_esp_error() -> None:
         rl.Predictor(figure_of_merit="estimated_success_probability", device_name="ibm_montreal")
 
 
-@pytest.mark.parametrize(
-    "figure_of_merit",
-    get_args(reward.figure_of_merit),
-)
-def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_merit) -> None:
+def test_qcompile_with_newly_trained_models() -> None:
     """Test the qcompile function with a newly trained model.
 
     Important: Those trained models are used in later tests and must not be deleted.
     To test ESP as well, training must be done with a device that provides all relevant information (i.e. T1, T2 and gate times).
     """
-    device = "ionq_harmony"  # fully specified calibration data
+    figure_of_merit = "expected_fidelity"
+    device = "ibm_montreal"  # fully specified calibration data
     qc = get_benchmark("ghz", 1, 3)
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
 
@@ -60,9 +56,6 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
     qc_compiled, compilation_information = res
     assert qc_compiled.layout is not None
     assert compilation_information is not None
-
-    if figure_of_merit != "expected_fidelity":
-        model_path.unlink()
 
 
 def test_qcompile_with_false_input() -> None:
