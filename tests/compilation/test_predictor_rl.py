@@ -39,7 +39,7 @@ def test_qcompile_with_newly_trained_models(figure_of_merit: reward.figure_of_me
     To test ESP as well, training must be done with a device that provides all relevant information (i.e. T1, T2 and gate times).
     """
     device = "ionq_harmony"  # fully specified calibration data
-    qc = get_benchmark("ghz", 1, 5)
+    qc = get_benchmark("ghz", 1, 3)
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
 
     model_name = "model_" + figure_of_merit + "_" + device
