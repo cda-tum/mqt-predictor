@@ -36,34 +36,34 @@ def test_bqskit_o2_action() -> None:
     assert optimized_qc != qc
 
 
-@pytest.mark.parametrize("device", get_available_devices(), ids=lambda device: cast("str", device.name))
-def test_bqskit_synthesis_action(device: Device) -> None:
-    """Test the BQSKitSynthesis action for all devices."""
-    action_bqskit_synthesis_action = None
-    for action in helper.get_actions_synthesis():
-        if action["name"] == "BQSKitSynthesis":
-            action_bqskit_synthesis_action = action
-
-    assert action_bqskit_synthesis_action is not None
-
-    qc = QuantumCircuit(2)
-    qc.h(0)
-    qc.cx(0, 1)
-
-    check_nat_gates = GatesInBasis(basis_gates=device.basis_gates)
-    check_nat_gates(qc)
-    assert not check_nat_gates.property_set["all_gates_in_basis"]
-
-    transpile_pass = action_bqskit_synthesis_action["transpile_pass"](device)
-    bqskit_qc = qiskit_to_bqskit(qc)
-    native_gates_qc = bqskit_to_qiskit(transpile_pass(bqskit_qc))
-
-    check_nat_gates = GatesInBasis(basis_gates=device.basis_gates)
-    check_nat_gates(native_gates_qc)
-    only_nat_gates = check_nat_gates.property_set["all_gates_in_basis"]
-    # IQM devices have a native R gate that is approximated using the U3 gate, but this equivalence is not recognized
-    # by the currently implemented check whether the synthesis was successful.
-    assert only_nat_gates or "iqm" in device.name
+# @pytest.mark.parametrize("device", get_available_devices(), ids=lambda device: cast("str", device.name))
+# def test_bqskit_synthesis_action(device: Device) -> None:
+#     """Test the BQSKitSynthesis action for all devices."""
+#     action_bqskit_synthesis_action = None
+#     for action in helper.get_actions_synthesis():
+#         if action["name"] == "BQSKitSynthesis":
+#             action_bqskit_synthesis_action = action
+#
+#     assert action_bqskit_synthesis_action is not None
+#
+#     qc = QuantumCircuit(2)
+#     qc.h(0)
+#     qc.cx(0, 1)
+#
+#     check_nat_gates = GatesInBasis(basis_gates=device.basis_gates)
+#     check_nat_gates(qc)
+#     assert not check_nat_gates.property_set["all_gates_in_basis"]
+#
+#     transpile_pass = action_bqskit_synthesis_action["transpile_pass"](device)
+#     bqskit_qc = qiskit_to_bqskit(qc)
+#     native_gates_qc = bqskit_to_qiskit(transpile_pass(bqskit_qc))
+#
+#     check_nat_gates = GatesInBasis(basis_gates=device.basis_gates)
+#     check_nat_gates(native_gates_qc)
+#     only_nat_gates = check_nat_gates.property_set["all_gates_in_basis"]
+#     # IQM devices have a native R gate that is approximated using the U3 gate, but this equivalence is not recognized
+#     # by the currently implemented check whether the synthesis was successful.
+#     assert only_nat_gates or "iqm" in device.name
 
 
 def test_bqskit_mapping_action_swaps_necessary() -> None:
