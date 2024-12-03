@@ -1360,12 +1360,13 @@ wheels = [
 
 [[package]]
 name = "mqt-predictor"
-version = "2.1.2.dev61+g09dd1b3.d20241203"
+version = "2.1.2.dev65+gcccd95f.d20241203"
 source = { editable = "." }
 dependencies = [
     { name = "bqskit" },
     { name = "mqt-bench" },
     { name = "numpy" },
+    { name = "pytket" },
     { name = "sb3-contrib" },
     { name = "scikit-learn" },
     { name = "tensorboard" },
@@ -1403,7 +1404,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bqskit", specifier = ">=1.2.0" },
+    { name = "bqskit", specifier = ">=1.1.2" },
     { name = "furo", marker = "extra == 'docs'", specifier = ">=2023.9.10" },
     { name = "ipykernel", marker = "extra == 'docs'" },
     { name = "ipython", marker = "extra == 'docs'" },
@@ -1417,6 +1418,7 @@ requires-dist = [
     { name = "numpy", marker = "sys_platform == 'darwin' and 'x86_64' in platform_machine", specifier = "<2" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=7.2" },
     { name = "pytest-cov", marker = "extra == 'coverage'", specifier = ">=4" },
+    { name = "pytket", specifier = "<1.36.0" },
     { name = "sb3-contrib", specifier = ">=2.0.0" },
     { name = "scikit-learn", specifier = ">=1.5.1" },
     { name = "setuptools-scm", marker = "extra == 'docs'", specifier = ">=8.1" },
@@ -2177,7 +2179,7 @@ wheels = [
 
 [[package]]
 name = "pytket"
-version = "1.36.0"
+version = "1.35.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "graphviz" },
@@ -2191,26 +2193,26 @@ dependencies = [
     { name = "typing-extensions" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d8/67/1ef1fd1195157185893bad9f2cc41de8bb4329e5cfc2a720d6d1fda59771/pytket-1.36.0-cp310-cp310-macosx_13_0_arm64.whl", hash = "sha256:4b360ba2362cc9ae75929a9c3e9b5259fe82214ca21aaf9e892811d5cc205bc1", size = 6085586 },
-    { url = "https://files.pythonhosted.org/packages/67/5b/ac78651c112e8a2565ea457f9ed18fbb42cd4d3aa6796a7e4e9e3823ad6e/pytket-1.36.0-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:aacf6ca5565b0e8d73f06462600d4f66179b0a0ea7110ca3c496f5b1f27c2aa9", size = 6826928 },
-    { url = "https://files.pythonhosted.org/packages/8f/b7/96f4a58dfee9131948e6f673a98e9313038b089e85d756b91db1be593192/pytket-1.36.0-cp310-cp310-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:2dc9be3b03670343d2af5e171ef8a13450a39a48dc5ffb7098afa721256aea03", size = 7676453 },
-    { url = "https://files.pythonhosted.org/packages/85/a1/e3f15499218ede27220e749f984fe0d5cfc0e24411948eacf22271a2f825/pytket-1.36.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:8563d94c927cadac076eef6667721899a6f103e6b8cdc9d7b104624ab4b1cbc6", size = 8242695 },
-    { url = "https://files.pythonhosted.org/packages/26/e5/853b120ae712bd9b8c34bf16ad2082b695fd68f0efa72dbe26a7dfec9ee6/pytket-1.36.0-cp310-cp310-win_amd64.whl", hash = "sha256:ffd37116afe4fa48910b8011458a05bde4eb82bb528fd7b5b60ffb2f5ec84efa", size = 8593668 },
-    { url = "https://files.pythonhosted.org/packages/b6/86/56f6f3db522e5326f35ad172b17aa8c22d88cdf2a36fe3fe107907bb3e09/pytket-1.36.0-cp311-cp311-macosx_13_0_arm64.whl", hash = "sha256:a7eb6f1baf1f239726484e97a39568710ae7f82f7185fa65e4aba8c9555d915a", size = 6100677 },
-    { url = "https://files.pythonhosted.org/packages/05/21/eb2ed5aaa7ed385b5262016c00bbbb82c5e53d3aae24afe76ae430980864/pytket-1.36.0-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:2127df6cb5d1e72680eecba8e4535140214315b53d3d9fd98fef9158e7e4f320", size = 6843314 },
-    { url = "https://files.pythonhosted.org/packages/43/1e/43bdffae68fd4f4484b78fe9b0136083b8811dac7b30a8819b6deecf4237/pytket-1.36.0-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:dcfff1fde6c8018c8c58428cf33dbce10dccdfb19ef658ef77d930af0cf32ae0", size = 7687285 },
-    { url = "https://files.pythonhosted.org/packages/9e/32/f7e448222e1c5160d17c646e6622a64e5c3d2e7eded8b3be12c3e407a95f/pytket-1.36.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:37b00e8aefc57802619e33582405d88fb0b9f372263d57217fd35e94f4fd92c5", size = 8253931 },
-    { url = "https://files.pythonhosted.org/packages/a2/d1/0a4067470c2370192829a8bed33bdc9c75eab2c15e87ad6075bddfb269af/pytket-1.36.0-cp311-cp311-win_amd64.whl", hash = "sha256:419a95ce931d8f98abfb0339e8cdc7cce46d7453c1874d8e42df0e2617be5538", size = 8607414 },
-    { url = "https://files.pythonhosted.org/packages/65/fb/32659600031d389b9f26b549748a2353027b5ef2fe675a2b26d64bab5156/pytket-1.36.0-cp312-cp312-macosx_13_0_arm64.whl", hash = "sha256:f9176f7fa8a42d75a43caec2634e19f854f527947fe2b76c06b8ca4a61084028", size = 6310075 },
-    { url = "https://files.pythonhosted.org/packages/86/3f/a7703bff05514fd0248c06b46fba732bf2a5dcaba417a1c8ac6962d834e2/pytket-1.36.0-cp312-cp312-macosx_13_0_x86_64.whl", hash = "sha256:982fbf203bc04266825680404e697ff38e1c1743b6d0305fda4b5d289ac4921a", size = 7078678 },
-    { url = "https://files.pythonhosted.org/packages/13/5a/d202f5302246502da64a75c57dcb27553a71f0e5f56efe47055767fd1b60/pytket-1.36.0-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:f8b8497067a092c8d6a7e3af86a3a78e7881d0ae45ea0f2904e45fe58d66719e", size = 7686128 },
-    { url = "https://files.pythonhosted.org/packages/ae/16/34849e87fe850740dc41d7f270cbb34e997947a13f1a6f1ebe7bb05e4445/pytket-1.36.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:8a238300db1a27da8bb15aea1c334b7fe9bbc96c89f95a586bbe349d2771b652", size = 8252260 },
-    { url = "https://files.pythonhosted.org/packages/80/41/02f6f284ad6a4e596ad330016a13d8f75e9b7e36f5439bd0a013c66321c5/pytket-1.36.0-cp312-cp312-win_amd64.whl", hash = "sha256:90cdbc7cceefee213d38d839de497786a5e70c71dc3c4f93f9e09c18e8316557", size = 8618712 },
-    { url = "https://files.pythonhosted.org/packages/b9/e0/fea7f5cab10360063d2c1e091c497af62dd4746b5c690455729d27e47255/pytket-1.36.0-cp313-cp313-macosx_13_0_arm64.whl", hash = "sha256:2bd76470aa3c0249141f0a24492f04e5910c3b1fede2eb4a78c0e312ee5aa7d7", size = 6311392 },
-    { url = "https://files.pythonhosted.org/packages/08/5d/774cb5a3cf1b0e29de9fc772ef0670ee7814eb981ba4dd9be063f2f31266/pytket-1.36.0-cp313-cp313-macosx_13_0_x86_64.whl", hash = "sha256:551d736054357a64f9da405d89e62dd33cdbd679ecae94556de120063ea08d3c", size = 7078673 },
-    { url = "https://files.pythonhosted.org/packages/fc/ba/588396b555a0fed5e2386e99aed028c0440302b421ab00b1d3c50d300d31/pytket-1.36.0-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:f9404eecd9aa112d7ef5781bcc30167bf6e1760805877caf21380fed3c2f17cb", size = 7686470 },
-    { url = "https://files.pythonhosted.org/packages/fa/cb/9a11af0518aad69aefb4692311f1215d7ce903f7d07d024a7a7fe61d652a/pytket-1.36.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:f20619e577eb0ba6ac6b132dd070f7b9f29b71fb9dbc05ce4bc0bf1b2698372c", size = 8253048 },
-    { url = "https://files.pythonhosted.org/packages/88/ef/23d46c11d05e143b1f26b723839580d682358b471f840da546086fa88d8b/pytket-1.36.0-cp313-cp313-win_amd64.whl", hash = "sha256:1f477d408e6a5684aabd9cd0e3f80fedcbcfb30ceb2af6f66bff6fcac54d0294", size = 8618877 },
+    { url = "https://files.pythonhosted.org/packages/eb/cf/49b5ff20cd4b84348224884112802b85e5d4255fa8d085956fd4efd0ca2f/pytket-1.35.0-cp310-cp310-macosx_13_0_arm64.whl", hash = "sha256:c8a03070c5adc151995b6f38f87dc9c0b14ede2892d9349a1acca0a29c11e54b", size = 6079875 },
+    { url = "https://files.pythonhosted.org/packages/7a/4f/69ea585e7594ad23d537d7e62c24c2f91e1864928afa45cb6fed6be14d59/pytket-1.35.0-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:eab27bf6873cf436807d0739e86a9c9870ab224ba0b495ef681a576881e493b6", size = 6819845 },
+    { url = "https://files.pythonhosted.org/packages/82/0e/90d80ad95cce02041b5c51f7d24f0d8662537680b2f9477592449e277ee8/pytket-1.35.0-cp310-cp310-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:637607a958c8769041640ec14c62707bce58553fef6b2aa7684cbd864f844730", size = 7668146 },
+    { url = "https://files.pythonhosted.org/packages/88/46/c5b360275c09817398c28a9c9da90157c779e7a6d82739597b4b5a5be262/pytket-1.35.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1be4baf928e7a5ab022feb4f054609cc70f2a26bd8f8128cff5014dcfe39f7b5", size = 8235244 },
+    { url = "https://files.pythonhosted.org/packages/7c/2c/ccb3ec1b579ea3f35c111bad3867a5bb4d0b2fd8d127ec1635080dd39db4/pytket-1.35.0-cp310-cp310-win_amd64.whl", hash = "sha256:1ce99c0a7765a5072795796cf7e8fc6e411dfe720e10a86ec580de69ae8231b7", size = 8587005 },
+    { url = "https://files.pythonhosted.org/packages/da/e1/d34e532d7c90b0d07457c8b09186d501dbfdcadc0d5e547d7265db73f15c/pytket-1.35.0-cp311-cp311-macosx_13_0_arm64.whl", hash = "sha256:0b04631aa6d819452b297cd7bdc7dacde0874e252085b09d7a30ccd82f985186", size = 6095147 },
+    { url = "https://files.pythonhosted.org/packages/a7/6e/6a75d531667426f6e1bb52fd21705b24e81880bb472da789657921efa0d7/pytket-1.35.0-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:c36c51c9dd83243eac945b088ecfcab7dc7d6d8efc82f2d699bd6cf38ffa9206", size = 6836821 },
+    { url = "https://files.pythonhosted.org/packages/1a/38/3e05aacdf2410ba452ce2a561264c75cbe6b626c1dac20dbd7ce90c63ef5/pytket-1.35.0-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:4fbdbbf53dcf20adbb5c188bdbe36f85527f618f056bd8f3602d5cc5403c1b23", size = 7679502 },
+    { url = "https://files.pythonhosted.org/packages/ea/4a/189aabefe386817ef9a93faf8ca8416e19db572cc3b9a962b4b744339a1d/pytket-1.35.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b86eb9c0df6b96adcbe426a1da0785ff36a7e0546a27105f0a8f1156bd71bf1b", size = 8247274 },
+    { url = "https://files.pythonhosted.org/packages/ea/97/0e96465fe0d0a58e16d85a0a5e6d71cf50f8de4f32e808074a70550d9f9e/pytket-1.35.0-cp311-cp311-win_amd64.whl", hash = "sha256:e73751def3604458c2fb3e3c112d90adbc1df9aaaa9564ba21df6d7562ef5590", size = 8601264 },
+    { url = "https://files.pythonhosted.org/packages/2e/5f/a223ac622f0b6218029ebe9e2d3da50d56ea79a668db5b6311a452ba07ec/pytket-1.35.0-cp312-cp312-macosx_13_0_arm64.whl", hash = "sha256:1d6267ecab64c905d1c7e4bf9f8d9b446616f4fe69270fe546fe5ecd5ed9bab8", size = 6303701 },
+    { url = "https://files.pythonhosted.org/packages/d0/66/cc1e82d1e16a539905a76638b735c457d0fe2dc05f4191c1907ce570e904/pytket-1.35.0-cp312-cp312-macosx_13_0_x86_64.whl", hash = "sha256:9d3c4868fce5de63042c37867c1a795b345a528a20beae469dd540a4e89fc837", size = 7069041 },
+    { url = "https://files.pythonhosted.org/packages/a3/40/dd15c177b4f8220db89ed552eeefe7a0041dd232477cbaa96ece9fae02c3/pytket-1.35.0-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:5be1f597129bbe602076f12ba95f395afb881d1f7687b3db126ffcb8b8c71650", size = 7678086 },
+    { url = "https://files.pythonhosted.org/packages/41/92/e97972057e5bb036e00962f22ecb17836a352f5adfc4cb4e4ac612a0dabd/pytket-1.35.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:15f4bd39e9d0d0095c881721450b58805be36ba4f983e3edd5180217329bb157", size = 8245574 },
+    { url = "https://files.pythonhosted.org/packages/28/79/ad1d69818c67c4550d426575a73132a5f08c95258a7066b100e4399fb728/pytket-1.35.0-cp312-cp312-win_amd64.whl", hash = "sha256:3d2fc69153f80e9ab6ca8559647842a2b0b66a5ba6d3a1f25cff32b8381b9408", size = 8612071 },
+    { url = "https://files.pythonhosted.org/packages/52/c3/11373b299383eecc4805d5da4f34404a89cdd2c8ab25a3971460fa300c58/pytket-1.35.0-cp313-cp313-macosx_13_0_arm64.whl", hash = "sha256:cf20e4a33a8a2c3a0e1c3f0903446cfccf9796faace9fac9f1fbabcad936628e", size = 6304955 },
+    { url = "https://files.pythonhosted.org/packages/58/d0/dffef75cef1ba014cd89ce0a587f5b86b126867086100d7ee14a6f9e9a3c/pytket-1.35.0-cp313-cp313-macosx_13_0_x86_64.whl", hash = "sha256:9f6cd1606517801a12805386480fe42443324955402b1d848d88c8001d1bf8b4", size = 7069492 },
+    { url = "https://files.pythonhosted.org/packages/2a/6d/02d1cb6dbbcb0d119c9fec3d79d78d7a55196dae1e86c4f65431ede74689/pytket-1.35.0-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:a1bc6908779ea466fb4e244c60751ec47c59601ebc7abe463a4824502e22581e", size = 7678266 },
+    { url = "https://files.pythonhosted.org/packages/45/85/cdaee0f026dfeb4f56930cce64b6b286ba64a2d3d683cfa72a964ebd5dec/pytket-1.35.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:facc040cc184305266ba3c1459775f616ec4451ee65d74c9fde12b9fe7fe0ac6", size = 8246328 },
+    { url = "https://files.pythonhosted.org/packages/39/c1/46ea7670be2d55e2f67df175f0d019215e0bd79fd3460db37791a237ac6a/pytket-1.35.0-cp313-cp313-win_amd64.whl", hash = "sha256:777e50fbedad96734499d00216c1ef88fabb8302d0f3742434e27772a4ac5e87", size = 8612485 },
 ]
 
 [[package]]
