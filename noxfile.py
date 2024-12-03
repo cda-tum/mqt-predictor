@@ -70,7 +70,7 @@ def minimums(session: nox.Session) -> None:
     """Test the minimum versions of dependencies."""
     _run_tests(
         session,
-        # install_args=["--resolution=lowest-direct"],
+        install_args=["--resolution=lowest-direct"],
         run_args=["-Wdefault"],
     )
     session.run("uv", "pip", "list")
