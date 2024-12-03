@@ -137,18 +137,10 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
     assert len(name_list) > 0
     assert len(scores_list) > 0
 
-    delete_directory(target_path)
+    if target_path.exists():
+        for item in target_path.iterdir():
+            item.unlink()
+        target_path.rmdir()
 
     if qasm_path.exists():
         qasm_path.unlink()
-
-
-def delete_directory(target_path: Path) -> None:
-    """Delete a directory and its contents."""
-    if target_path.exists():
-        for item in target_path.iterdir():
-            if item.is_dir():
-                delete_directory(item)  # Recursively delete subdirectories
-            else:
-                item.unlink()  # Delete files
-        target_path.rmdir()  # Finally, remove the empty directory
