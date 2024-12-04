@@ -1360,7 +1360,7 @@ wheels = [
 
 [[package]]
 name = "mqt-predictor"
-version = "2.1.2.dev80+g018621e.d20241204"
+version = "2.1.2.dev81+g65d769f.d20241204"
 source = { editable = "." }
 dependencies = [
     { name = "bqskit" },
@@ -1419,7 +1419,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'test'", specifier = ">=7.2" },
     { name = "pytest-cov", marker = "extra == 'coverage'", specifier = ">=4" },
     { name = "pytket", specifier = "<1.36.0" },
-    { name = "sb3-contrib", specifier = ">=2.0.0" },
+    { name = "sb3-contrib", specifier = ">=2.0.0,<2.4.0" },
     { name = "scikit-learn", specifier = ">=1.5.1" },
     { name = "setuptools-scm", marker = "extra == 'docs'", specifier = ">=8.1" },
     { name = "sphinx-autoapi", marker = "extra == 'docs'", specifier = ">=3" },
@@ -2694,14 +2694,14 @@ wheels = [
 
 [[package]]
 name = "sb3-contrib"
-version = "2.4.0"
+version = "2.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "stable-baselines3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c7/4e/dd31aba603634a7b9473b502fe85b694e4392c448eae0d345640b87211c2/sb3_contrib-2.4.0.tar.gz", hash = "sha256:a3709d97ddd529c45e3d56a5ae7e61a380bb2e11bacb9a3e6951ac0c481350ca", size = 89358 }
+sdist = { url = "https://files.pythonhosted.org/packages/28/b9/3f5dd9edea1407a53edb9abf66467a400f68dd709bbdb580dee4eb4ace13/sb3_contrib-2.3.0.tar.gz", hash = "sha256:9755ef9efa08e43afb9c4e79564ed594eb8bc497256920403a7e269a72216221", size = 78790 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/50/de/33d3b00116488de9371a56009089ab408d949cda7057e2560c8efae810df/sb3_contrib-2.4.0-py3-none-any.whl", hash = "sha256:725d90157028a94c69804f2e7332128518fb7cbab39e7e141d2d0355547a72ab", size = 92752 },
+    { url = "https://files.pythonhosted.org/packages/40/60/58163d23588509c8c5415f5ad15164dee08e390f2e96802b8d8828f3904e/sb3_contrib-2.3.0-py3-none-any.whl", hash = "sha256:79dadda884f2242bbab11fdb06ccf00eeead2937f7ed09ba577f803f2e52c8e1", size = 80307 },
 ]
 
 [[package]]
