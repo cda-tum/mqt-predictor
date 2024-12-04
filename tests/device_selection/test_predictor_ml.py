@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from shutil import rmtree
 from typing import Literal
 
 import pytest
@@ -137,7 +138,8 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
     assert len(name_list) > 0
     assert len(scores_list) > 0
 
-    delete_path(target_path)
+    # delete_path(target_path)
+    rmtree(target_path)
 
     if qasm_path.exists():
         qasm_path.unlink()
