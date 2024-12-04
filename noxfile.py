@@ -53,11 +53,11 @@ def _run_tests(
         _extras.append("coverage")
         posargs.append("--cov-config=pyproject.toml")
 
-    _install_args = ["--exclude-newer", "2024-09-14", *install_args]
+    # install_args = ["--exclude-newer", "2024-09-14", *install_args]
 
-    session.install(*BUILD_REQUIREMENTS, *_install_args, env=env)
+    session.install(*BUILD_REQUIREMENTS, *install_args, env=env)
     install_arg = f"-ve.[{','.join(_extras)}]"
-    session.install("--no-build-isolation", install_arg, *_install_args, env=env)
+    session.install("--no-build-isolation", install_arg, *install_args, env=env)
     session.run("pytest", *run_args, *posargs, env=env)
 
 
