@@ -143,7 +143,7 @@ def test_bqskit_mapping_action_no_swaps_necessary() -> None:
     qc_no_swap_needed.h(0)
     qc_no_swap_needed.cx(0, 1)
 
-    device = get_device_by_name("ibm_montreal")
+    device = get_device_by_name("ionq_harmony")
 
     bqskit_qc = qiskit_to_bqskit(qc_no_swap_needed)
     bqskit_qc_mapped, input_mapping, output_mapping = bqskit_mapping_action["transpile_pass"](device)(bqskit_qc)

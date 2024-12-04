@@ -39,5 +39,5 @@ jobs:
       # set up nox for convenient testing
       - uses: wntrblm/nox@2024.10.09
       # run the nox minimums session (assumes a nox session named "minimums" exists) with coverage
-      - name: 🐍 Test with minimal versions
+      - name: 🐍 Test
         run: nox -s ${{matrix.session}} --verbose

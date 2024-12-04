@@ -13,7 +13,7 @@ from mqt.predictor import rl
 
 def test_predictor_env_reset_from_string() -> None:
     """Test the reset function of the predictor environment with a quantum circuit given as a string as input."""
-    predictor = rl.Predictor(figure_of_merit="expected_fidelity", device_name="ibm_montreal")
+    predictor = rl.Predictor(figure_of_merit="expected_fidelity", device_name="ionq_harmony")
     qasm_path = Path("test.qasm")
     qc = get_benchmark("dj", 1, 3)
     with qasm_path.open("w", encoding="utf-8") as f:
@@ -34,7 +34,7 @@ def test_qcompile_with_newly_trained_models() -> None:
     To test ESP as well, training must be done with a device that provides all relevant information (i.e. T1, T2 and gate times).
     """
     figure_of_merit = "expected_fidelity"
-    device = "ibm_montreal"  # fully specified calibration data
+    device = "ionq_harmony"  # fully specified calibration data
     qc = get_benchmark("ghz", 1, 3)
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
 
