@@ -1360,7 +1360,7 @@ wheels = [
 
 [[package]]
 name = "mqt-predictor"
-version = "2.1.2.dev79+g3e2c601.d20241203"
+version = "2.1.2.dev80+g018621e.d20241204"
 source = { editable = "." }
 dependencies = [
     { name = "bqskit" },
@@ -1430,7 +1430,7 @@ requires-dist = [
     { name = "sphinxcontrib-svg2pdfconverter", marker = "extra == 'docs'", specifier = ">=1.2" },
     { name = "sphinxext-opengraph", marker = "extra == 'docs'", specifier = ">=0.9" },
     { name = "tensorboard", specifier = ">=2.17.0" },
-    { name = "torch", specifier = ">=2.4.1,<2.5.0" },
+    { name = "torch", specifier = "<2.5.0" },
     { name = "tqdm", specifier = ">=4.67.0" },
     { name = "typing-extensions", specifier = ">=4.1" },
 ]
