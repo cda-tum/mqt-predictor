@@ -1,0 +1,42 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  python-tests:
+    name: 🐍 ${{ matrix.runs-on }}
+    runs-on: ${{ matrix.runs-on }}
+    matrix: # Define a matrix of different Python versions
+      runs-on: [ubuntu-latest, windows-latest]
+      session: [minimums, tests]
+    env:
+      FORCE_COLOR: 3
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      # check out the repository (including submodules and all history)
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      # set up MSVC development environment (Windows only)
+      - uses: ilammy/msvc-dev-cmd@v1
+      # set up uv for faster Python package management
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+          enable-cache: true
+      # set up nox for convenient testing
+      - uses: wntrblm/nox@2024.10.09
+      # run the nox minimums session (assumes a nox session named "minimums" exists) with coverage
+      - name: 🐍 Test with minimal versions
+        run: nox -s ${{matrix.session}} --verbose
