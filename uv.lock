@@ -1360,7 +1360,7 @@ wheels = [
 
 [[package]]
 name = "mqt-predictor"
-version = "2.1.2.dev83+g8a65006.d20241204"
+version = "2.1.2.dev84+g0506f17.d20241204"
 source = { editable = "." }
 dependencies = [
     { name = "bqskit" },
@@ -1405,11 +1405,11 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bqskit", specifier = ">=1.2.0" },
+    { name = "bqskit", specifier = ">=1.2.0,<1.3.0" },
     { name = "furo", marker = "extra == 'docs'", specifier = ">=2023.9.10" },
     { name = "ipykernel", marker = "extra == 'docs'" },
     { name = "ipython", marker = "extra == 'docs'" },
-    { name = "mqt-bench", specifier = ">=1.1.3" },
+    { name = "mqt-bench", specifier = ">=1.1.3,<1.2.0" },
     { name = "mqt-predictor", extras = ["coverage"], marker = "extra == 'dev'" },
     { name = "mqt-predictor", extras = ["test"], marker = "extra == 'coverage'" },
     { name = "nbsphinx", marker = "extra == 'docs'" },
@@ -1422,7 +1422,7 @@ requires-dist = [
     { name = "pytket", specifier = "<1.36.0" },
     { name = "qiskit", specifier = "<1.3.0" },
     { name = "sb3-contrib", specifier = ">=2.0.0,<2.4.0" },
-    { name = "scikit-learn", specifier = ">=1.5.1" },
+    { name = "scikit-learn", specifier = ">=1.5.1,<1.6.0" },
     { name = "setuptools-scm", marker = "extra == 'docs'", specifier = ">=8.1" },
     { name = "sphinx-autoapi", marker = "extra == 'docs'", specifier = ">=3" },
     { name = "sphinx-autodoc-typehints", marker = "extra == 'docs'" },
@@ -1431,9 +1431,9 @@ requires-dist = [
     { name = "sphinxcontrib-bibtex", marker = "extra == 'docs'", specifier = ">=2.4.2" },
     { name = "sphinxcontrib-svg2pdfconverter", marker = "extra == 'docs'", specifier = ">=1.2" },
     { name = "sphinxext-opengraph", marker = "extra == 'docs'", specifier = ">=0.9" },
-    { name = "tensorboard", specifier = ">=2.17.0" },
+    { name = "tensorboard", specifier = ">=2.17.0,<2.18.0" },
     { name = "torch", specifier = "<2.5.0" },
-    { name = "tqdm", specifier = ">=4.66.0" },
+    { name = "tqdm", specifier = ">=4.66.0,<5.0.0" },
     { name = "typing-extensions", specifier = ">=4.1" },
 ]
 
@@ -3133,7 +3133,7 @@ wheels = [
 
 [[package]]
 name = "tensorboard"
-version = "2.18.0"
+version = "2.17.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "absl-py" },
@@ -3148,7 +3148,7 @@ dependencies = [
     { name = "werkzeug" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b1/de/021c1d407befb505791764ad2cbd56ceaaa53a746baed01d2e2143f05f18/tensorboard-2.18.0-py3-none-any.whl", hash = "sha256:107ca4821745f73e2aefa02c50ff70a9b694f39f790b11e6f682f7d326745eab", size = 5503036 },
+    { url = "https://files.pythonhosted.org/packages/d4/41/dccba8c5f955bc35b6110ff78574e4e5c8226ad62f08e732096c3861309b/tensorboard-2.17.1-py3-none-any.whl", hash = "sha256:253701a224000eeca01eee6f7e978aea7b408f60b91eb0babdb04e78947b773e", size = 5502989 },
 ]
 
 [[package]]
