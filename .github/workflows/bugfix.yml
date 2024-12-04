@@ -15,9 +15,10 @@ jobs:
   python-tests:
     name: 🐍 ${{ matrix.runs-on }}
     runs-on: ${{ matrix.runs-on }}
-    matrix: # Define a matrix of different Python versions
-      runs-on: [ubuntu-latest, windows-latest]
-      session: [minimums, tests]
+    strategy:
+      matrix: # Define a matrix of different Python versions
+        runs-on: [ubuntu-latest, windows-latest]
+        session: [minimums, tests]
     env:
       FORCE_COLOR: 3
       GITHUB_TOKEN: ${{ github.token }}
