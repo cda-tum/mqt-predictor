@@ -261,7 +261,7 @@ class Predictor:
         Returns:
             True when the training was successful, False otherwise.
         """
-        training_data = self.get_prepared_training_data(figure_of_merit, save_non_zero_indices=True)
+        training_data = self.get_prepared_training_data(figure_of_merit, save_non_zero_indices=save_classifier)
 
         scores_filtered = [training_data.scores_list[i] for i in training_data.indices_test]
         names_filtered = [training_data.names_list[i] for i in training_data.indices_test]
@@ -504,7 +504,7 @@ class Predictor:
             figure_of_merit: The figure of merit to be used for prediction.
 
         Returns:
-            The index of the predicted compilation option.
+            The probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
         """
         if self.clf is None:
             path = ml.helper.get_path_trained_model(figure_of_merit)

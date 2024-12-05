@@ -17,7 +17,11 @@ def test_load_and_save_training_data() -> None:
     assert training_data is not None
     assert names_list is not None
     assert scores_list is not None
-    ml.helper.save_training_data(training_data, names_list, scores_list, "expected_fidelity")
+    ml.helper.save_training_data(training_data, names_list, scores_list, "test")
+    for file in ["training_data_test.npy", "names_list_test.npy", "scores_list_test.npy"]:
+        path = ml.helper.get_path_training_data() / "training_data_aggregated" / file
+        assert path.exists()
+        path.unlink()
 
 
 def test_create_feature_dict() -> None:
