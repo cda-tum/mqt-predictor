@@ -43,6 +43,11 @@ def test_train_and_predictor_random_forest_classifier() -> None:
     ):
         ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
 
+    non_zero_path = ml.helper.get_path_trained_model("expected_fidelity")
+    # go one level back in the path
+    non_zero_path = non_zero_path.parent / ("non_zero_indices_expected_fidelity.npy")
+    non_zero_path.unlink()
+
 
 def test_performance_measures() -> None:
     """Test the calculation of the performance measures for a given set of scores and labels."""

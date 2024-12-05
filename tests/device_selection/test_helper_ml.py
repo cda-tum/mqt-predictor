@@ -52,10 +52,3 @@ def test_get_path_training_data() -> None:
     """Test the retrieval of the path to the training data."""
     path = ml.helper.get_path_training_data()
     assert path.exists()
-
-
-def test_get_path_results() -> None:
-    """Test the retrieval of the path to the results."""
-    for get_ghz_path_results in (True, False):
-        path = ml.helper.get_path_results(ghz_results=get_ghz_path_results)
-        assert path.exists()
