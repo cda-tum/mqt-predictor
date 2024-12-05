@@ -21,7 +21,7 @@ def test_train_random_forest_classifier() -> None:
     """
     predictor = ml.Predictor()
     assert predictor.clf is None
-    predictor.train_random_forest_classifier(visualize_results=False)
+    predictor.train_random_forest_classifier(visualize_results=False, save_classifier=True)
 
     assert predictor.clf is not None
 
@@ -43,6 +43,8 @@ def test_predict_device_for_figure_of_merit() -> None:
     ):
         ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
 
+    trained_model_path = ml.helper.get_path_trained_model("expected_fidelity")
+    trained_model_path.unlink()
 
 def test_performance_measures() -> None:
     """Test the calculation of the performance measures for a given set of scores and labels."""

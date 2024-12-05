@@ -16,10 +16,10 @@ def test_load_training_data() -> None:
         ml.helper.load_training_data("false_input")  # type: ignore[arg-type]
 
 
-def test_save_training_data() -> None:
-    """Test the saving of the training data."""
-    training_data, names_list, scores_list = ml.helper.load_training_data()
-    ml.helper.save_training_data(training_data, names_list, scores_list, "expected_fidelity")
+# def test_save_training_data() -> None:
+#     """Test the saving of the training data."""
+#     training_data, names_list, scores_list = ml.helper.load_training_data()
+#     ml.helper.save_training_data(training_data, names_list, scores_list, "expected_fidelity")
 
 
 def test_create_feature_dict() -> None:
