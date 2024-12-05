@@ -30,7 +30,7 @@ def test_train_and_predictor_random_forest_classifier() -> None:
         assert 0 <= elem <= 1
 
     file = Path("test_qasm.qasm")
-    qc = benchmark_generator.get_benchmark("dj", 1, 8)
+    qc = benchmark_generator.get_benchmark("dj", 1, 3)
     with file.open("w", encoding="utf-8") as f:
         dump(qc, f)
 
