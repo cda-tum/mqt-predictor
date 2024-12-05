@@ -46,6 +46,7 @@ def test_predict_device_for_figure_of_merit() -> None:
     trained_model_path = ml.helper.get_path_trained_model("expected_fidelity")
     trained_model_path.unlink()
 
+
 def test_performance_measures() -> None:
     """Test the calculation of the performance measures for a given set of scores and labels."""
     predictor = ml.Predictor()

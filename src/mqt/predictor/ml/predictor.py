@@ -246,7 +246,10 @@ class Predictor:
         return training_sample, circuit_name, scores
 
     def train_random_forest_classifier(
-        self, figure_of_merit: reward.figure_of_merit = "expected_fidelity", visualize_results: bool = False, save_classifier: bool = True
+        self,
+        figure_of_merit: reward.figure_of_merit = "expected_fidelity",
+        visualize_results: bool = False,
+        save_classifier: bool = True,
     ) -> bool:
         """Trains a random forest classifier for the given figure of merit.
 
