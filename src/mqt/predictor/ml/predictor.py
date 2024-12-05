@@ -256,6 +256,7 @@ class Predictor:
         Arguments:
             figure_of_merit: The figure of merit to be used for training. Defaults to "expected_fidelity".
             visualize_results: Whether to visualize the results. Defaults to False.
+            save_classifier: Whether to save the classifier. Defaults to True.
 
         Returns:
             True when the training was successful, False otherwise.
