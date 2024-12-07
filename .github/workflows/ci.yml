@@ -1,51 +1,68 @@
-name: CI
+name: 🐍 • Tests
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-  merge_group:
-  workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+  workflow_call:
+    inputs:
+      runs-on:
+        description: "The platform to run the tests on"
+        required: true
+        type: string
+      setup-z3:
+        description: "Whether to set up Z3"
+        default: false
+        type: boolean
+      z3-version:
+        description: "The version of Z3 to set up"
+        default: "4.13.0"
+        type: string
 
 jobs:
-  change-detection:
-    name: 🔍 Change
-    uses: cda-tum/mqt-workflows/.github/workflows/reusable-change-detection.yml@v1.4
   python-tests:
-    name: 🐍 Test
-    needs: change-detection
-    if: fromJSON(needs.change-detection.outputs.run-python-tests)
-    uses: cda-tum/mqt-workflows/.github/workflows/reusable-python-ci.yml@v1.4
-
-  code-ql:
-    name: 📝 CodeQL
-    needs: change-detection
-    if: fromJSON(needs.change-detection.outputs.run-code-ql)
-    uses: cda-tum/mqt-workflows/.github/workflows/reusable-code-ql-python.yml@v1.4
-
-  required-checks-pass: # This job does nothing and is only used for branch protection
-    name: 🚦 Check
-    if: always()
-    needs:
-      - change-detection
-      - python-tests
-      - code-ql
-    runs-on: ubuntu-latest
+    name: 🐍 ${{ inputs.python-version }} ${{ inputs.runs-on }}
+    runs-on: ${{ inputs.runs-on }}
+    env:
+      FORCE_COLOR: 3
+      GITHUB_TOKEN: ${{ github.token }}
     steps:
-      - name: Decide whether the needed jobs succeeded or failed
-        uses: re-actors/alls-green@release/v1
+      # check out the repository (including submodules and all history)
+      - uses: actions/checkout@v4
         with:
-          allowed-skips: >-
-            ${{
-              fromJSON(needs.change-detection.outputs.run-python-tests)
-              && '' || 'python-tests,'
-            }}
-            ${{
-              fromJSON(needs.change-detection.outputs.run-code-ql)
-              && '' || 'code-ql,'
-            }}
-          jobs: ${{ toJSON(needs) }}
+          submodules: recursive
+          fetch-depth: 0
+      # set up MSVC development environment (Windows only)
+      - uses: ilammy/msvc-dev-cmd@v1
+      # optionally set up Z3
+      - if: ${{ inputs.setup-z3 }}
+        name: Setup Z3
+        uses: cda-tum/setup-z3@v1
+        with:
+          version: ${{ inputs.z3-version }}
+      # set up ccache for faster C++ builds
+      - name: Setup ccache
+        uses: Chocobo1/setup-ccache-action@v1
+        with:
+          prepend_symlinks_to_path: false
+          windows_compile_environment: msvc
+          override_cache_key: python-tests-${{ inputs.runs-on }}
+      # set up mold as linker for faster C++ builds (Linux only)
+      - name: Set up mold as linker (Linux only)
+        uses: rui314/setup-mold@v1
+      # set up uv for faster Python package management
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+          enable-cache: true
+      # set up nox for convenient testing
+      - uses: wntrblm/nox@2024.10.09
+      # run the nox minimums session (assumes a nox session named "minimums" exists) with coverage
+      - name: Test on 🐍 ${{ inputs.python-version }} with minimal versions
+        run: nox -s minimums-${{ inputs.python-version }} --verbose -- --cov --cov-report=xml
+      # run the nox tests session (assumes a nox session named "tests" exists) with coverage
+      - name: Test on 🐍 ${{ inputs.python-version }}
+        run: nox -s tests-${{ inputs.python-version }} --verbose -- --cov --cov-report=xml --cov-append
+      # upload the report as an artifact to GitHub so that it can later be uploaded to Codecov
+      - name: Upload 🐍 coverage report for ${{ inputs.runs-on }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ inputs.runs-on }}
+          path: coverage-*
