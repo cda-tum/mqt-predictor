@@ -48,13 +48,15 @@ def _run_tests(
     posargs = list(session.posargs)
     env = {"PIP_DISABLE_PIP_VERSION_CHECK": "1"}
 
-    _extras = ["test", *extras]
+    extras_ = ["test", *extras]
     if "--cov" in posargs:
-        _extras.append("coverage")
+        extras_.append("coverage")
         posargs.append("--cov-config=pyproject.toml")
 
+    # install_args = ["--exclude-newer", "2024-09-14", *install_args]
+
     session.install(*BUILD_REQUIREMENTS, *install_args, env=env)
-    install_arg = f"-ve.[{','.join(_extras)}]"
+    install_arg = f"-ve.[{','.join(extras_)}]"
     session.install("--no-build-isolation", install_arg, *install_args, env=env)
     session.run("pytest", *run_args, *posargs, env=env)
 
