@@ -42,7 +42,7 @@ repos:
 
   # Handling unwanted unicode characters
   - repo: https://github.com/sirosen/texthooks
-    rev: 0.6.7
+    rev: 0.6.8
     hooks:
       - id: fix-ligatures
       - id: fix-smartquotes
@@ -57,7 +57,7 @@ repos:
 
   # Python linting and formatting using ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.7.4
+    rev: v0.8.2
     hooks:
       - id: ruff
         args: ["--fix", "--show-fixes"]
@@ -98,7 +98,7 @@ repos:
 
   # Check for spelling
   - repo: https://github.com/crate-ci/typos
-    rev: v1.27.3
+    rev: typos-dict-v0.11.37
     hooks:
       - id: typos
 
@@ -120,7 +120,7 @@ repos:
 
   # Check JSON schemata
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.29.4
+    rev: 0.30.0
     hooks:
       - id: check-dependabot
       - id: check-github-workflows
@@ -128,6 +128,6 @@ repos:
 
   # Check the pyproject.toml file
   - repo: https://github.com/henryiii/validate-pyproject-schema-store
-    rev: 2024.11.11
+    rev: 2024.11.25
     hooks:
       - id: validate-pyproject

@@ -10,38 +10,40 @@ import pytest
 from qiskit.qasm2 import dump
 
 from mqt.bench import benchmark_generator
-from mqt.bench.devices import get_available_device_names
-from mqt.predictor import ml, reward
+from mqt.predictor import ml, reward, rl
 
 
-def test_train_random_forest_classifier() -> None:
+def test_train_and_predictor_random_forest_classifier() -> None:
     """Test the training of a random forest classifier.
 
     This test must be executed prior to any prediction to make sure the model is trained using the latest scikit-learn version.
     """
     predictor = ml.Predictor()
     assert predictor.clf is None
-    predictor.train_random_forest_classifier(visualize_results=False)
+    predictor.train_random_forest_classifier(visualize_results=False, save_classifier=False)
 
     assert predictor.clf is not None
 
-
-def test_predict_device_for_figure_of_merit() -> None:
-    """Test the prediction of the device with the highest expected fidelity for a given quantum circuit."""
-    qc = benchmark_generator.get_benchmark("ghz", 1, 5)
-    assert ml.helper.predict_device_for_figure_of_merit(qc, "expected_fidelity").name in get_available_device_names()
+    qc = benchmark_generator.get_benchmark("ghz", 1, 3)
+    prediction = predictor.predict_probs(qc, "expected_fidelity")
+    for elem in prediction:
+        assert 0 <= elem <= 1
 
     file = Path("test_qasm.qasm")
-    qc = benchmark_generator.get_benchmark("dj", 1, 8)
+    qc = benchmark_generator.get_benchmark("dj", 1, 3)
     with file.open("w", encoding="utf-8") as f:
         dump(qc, f)
 
-    assert ml.helper.predict_device_for_figure_of_merit(file, "expected_fidelity").name in get_available_device_names()
+    prediction = predictor.predict_probs(file, "expected_fidelity")
+    for elem in prediction:
+        assert 0 <= elem <= 1
 
     with pytest.raises(
         FileNotFoundError, match="The ML model is not trained yet. Please train the model before using it."
     ):
         ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
+
+    (ml.helper.get_path_trained_model("expected_fidelity").parent / "non_zero_indices_expected_fidelity.npy").unlink()
 
 
 def test_performance_measures() -> None:
@@ -49,7 +51,7 @@ def test_performance_measures() -> None:
     predictor = ml.Predictor()
     figure_of_merit: Literal["expected_fidelity"] = "expected_fidelity"
 
-    training_data = predictor.get_prepared_training_data(figure_of_merit=figure_of_merit, save_non_zero_indices=True)
+    training_data = predictor.get_prepared_training_data(figure_of_merit=figure_of_merit, save_non_zero_indices=False)
 
     y_test = training_data.y_test
     indices_test = training_data.indices_test
@@ -114,6 +116,8 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
             target_path=target_path,
         )
 
+    model_path = Path(rl.helper.get_path_trained_model() / ("model_" + figure_of_merit + "_ionq_harmony.zip"))
+    model_path.unlink()
     assert any(file.suffix == ".qasm" for file in target_path.iterdir())
 
     training_sample, circuit_name, scores = predictor.generate_training_sample(
@@ -135,10 +139,18 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
     assert len(name_list) > 0
     assert len(scores_list) > 0
 
-    if target_path.exists():
-        for file in target_path.iterdir():
-            file.unlink()
-        target_path.rmdir()
+    delete_path(target_path)
 
     if qasm_path.exists():
         qasm_path.unlink()
+
+
+def delete_path(path: Path) -> None:
+    """Delete a path recursively."""
+    if path.exists():
+        for item in path.iterdir():
+            if item.is_dir():
+                delete_path(item)  # Recursive deletion
+            else:
+                item.unlink()  # Delete file
+        path.rmdir()  # Remove empty directory

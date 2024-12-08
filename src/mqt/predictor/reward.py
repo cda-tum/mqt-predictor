@@ -22,7 +22,7 @@ figure_of_merit = Literal["expected_fidelity", "critical_depth", "estimated_succ
 def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
     """Calculates the critical depth of a given quantum circuit."""
     supermarq_features = calc_supermarq_features(qc)
-    return cast(float, np.round(1 - supermarq_features.critical_depth, precision))
+    return cast("float", np.round(1 - supermarq_features.critical_depth, precision))
 
 
 def expected_fidelity(qc: QuantumCircuit, device: Device, precision: int = 10) -> float:
@@ -56,7 +56,7 @@ def expected_fidelity(qc: QuantumCircuit, device: Device, precision: int = 10) -
 
             res *= specific_fidelity
 
-    return cast(float, np.round(res, precision))
+    return cast("float", np.round(res, precision))
 
 
 def calc_qubit_index(qargs: list[Qubit], qregs: list[QuantumRegister], index: int) -> int:
@@ -163,7 +163,7 @@ def estimated_success_probability(qc: QuantumCircuit, device: Device, precision:
             second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
             res *= device.get_two_qubit_gate_fidelity(gate_type, first_qubit_idx, second_qubit_idx)
 
-    return cast(float, np.round(res, precision))
+    return cast("float", np.round(res, precision))
 
 
 def esp_data_available(device: Device) -> bool:

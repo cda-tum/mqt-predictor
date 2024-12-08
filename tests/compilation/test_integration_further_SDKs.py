@@ -36,7 +36,7 @@ def test_bqskit_o2_action() -> None:
     assert optimized_qc != qc
 
 
-@pytest.mark.parametrize("device", get_available_devices(), ids=lambda device: cast(str, device.name))
+@pytest.mark.parametrize("device", get_available_devices(), ids=lambda device: cast("str", device.name))
 def test_bqskit_synthesis_action(device: Device) -> None:
     """Test the BQSKitSynthesis action for all devices."""
     action_bqskit_synthesis_action = None
@@ -61,10 +61,9 @@ def test_bqskit_synthesis_action(device: Device) -> None:
     check_nat_gates = GatesInBasis(basis_gates=device.basis_gates)
     check_nat_gates(native_gates_qc)
     only_nat_gates = check_nat_gates.property_set["all_gates_in_basis"]
-    # OQC devices cannot be synthesized using BQSKit because the ECR gate is not yet supported.
     # IQM devices have a native R gate that is approximated using the U3 gate, but this equivalence is not recognized
     # by the currently implemented check whether the synthesis was successful.
-    assert only_nat_gates or "oqc" in device.name or "iqm" in device.name
+    assert only_nat_gates or "iqm" in device.name
 
 
 def test_bqskit_mapping_action_swaps_necessary() -> None:
@@ -144,7 +143,7 @@ def test_bqskit_mapping_action_no_swaps_necessary() -> None:
     qc_no_swap_needed.h(0)
     qc_no_swap_needed.cx(0, 1)
 
-    device = get_device_by_name("ibm_montreal")
+    device = get_device_by_name("ionq_harmony")
 
     bqskit_qc = qiskit_to_bqskit(qc_no_swap_needed)
     bqskit_qc_mapped, input_mapping, output_mapping = bqskit_mapping_action["transpile_pass"](device)(bqskit_qc)
