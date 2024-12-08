@@ -23,7 +23,6 @@ dependencies = [
     # lowest version that supports the used pytket AutoRebase pass instead of auto_rebase
     "pytket>=1.29.0",
     "sb3_contrib>=2.0.0",
-    "torch<2.5.2",
     "tqdm>=4.66.0",
     "scikit-learn>=1.5.1",
     "tensorboard>=2.17.0",
