@@ -23,6 +23,7 @@ jobs:
     with:
       # Runs all Python tests in separate jobs to maximize parallelism
       run-tests-individually: true
+      skip-testing-latest-python: true
     permissions:
       contents: read # Required for the `actions/checkout` action
       id-token: write # Required for the `codecov/codecov-action` action
