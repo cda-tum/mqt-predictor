@@ -12,7 +12,7 @@
   },
   configMigration: true,
   labels: ["dependencies"],
-  schedule: ["every weekend"],
+  schedule: ["on the first day of the month"],
   packageRules: [
     {
       matchManagers: ["github-actions"],
