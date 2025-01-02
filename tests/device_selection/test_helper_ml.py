@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from mqt.bench import benchmark_generator
@@ -10,7 +12,9 @@ from mqt.predictor import ml
 
 def test_load_and_save_training_data() -> None:
     """Test the loading and saving of the training data."""
-    with pytest.raises(FileNotFoundError, match="Training data not found. Please run the training script first."):
+    with pytest.raises(
+        FileNotFoundError, match=re.escape("Training data not found. Please run the training script first.")
+    ):
         ml.helper.load_training_data("false_input")  # type: ignore[arg-type]
 
     training_data, names_list, scores_list = ml.helper.load_training_data()
