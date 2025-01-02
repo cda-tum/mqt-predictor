@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 from typing import Literal
@@ -39,7 +40,7 @@ def test_train_and_predictor_random_forest_classifier() -> None:
         assert 0 <= elem <= 1
 
     with pytest.raises(
-        FileNotFoundError, match="The ML model is not trained yet. Please train the model before using it."
+        FileNotFoundError, match=re.escape("The ML model is not trained yet. Please train the model before using it.")
     ):
         ml.helper.predict_device_for_figure_of_merit(qc, "false_input")  # type: ignore[arg-type]
 
@@ -99,7 +100,7 @@ def test_compile_all_circuits_for_dev_and_fom() -> None:
         dump(qc, f)
 
     if sys.platform == "win32":
-        with pytest.warns(RuntimeWarning, match="Timeout is not supported on Windows."):
+        with pytest.warns(RuntimeWarning, match=re.escape("Timeout is not supported on Windows.")):
             predictor.compile_all_circuits_devicewise(
                 device_name="ionq_harmony",
                 timeout=100,
