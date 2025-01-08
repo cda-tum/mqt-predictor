@@ -99,11 +99,10 @@ def get_path_training_circuits_compiled() -> Path:
 
 def hellinger_distance(p, q):
     """Calculates the Hellinger distance between two probability distributions."""
-    assert np.isclose(np.sum(p), 1, 0.1), "p is not a probability distribution"
-    assert np.isclose(np.sum(q), 1, 0.1), "q is not a probability distribution"
+    assert np.isclose(np.sum(p), 1, 0.05), "p is not a probability distribution"
+    assert np.isclose(np.sum(q), 1, 0.05), "q is not a probability distribution"
 
-    hellinger = (1 / np.sqrt(2)) * np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q)) ** 2))
-    return hellinger
+    return (1 / np.sqrt(2)) * np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q)) ** 2))
 
 
 def get_openqasm_gates() -> list[str]:
@@ -220,12 +219,9 @@ def calc_device_specific_features(
         - The active qubits vector (one-hot encoded)
         - The number of available qubits provided by the device
         - The depth of the quantum circuit
-
-
     """
     if ignore_gates is None:
-        ignore_gates = ["barrier", "id"]
-    feature_dict = {}
+        ignore_gates = ["barrier", "id", "measure"]
 
     # Prepare circuit
     if qc.num_qubits != device.num_qubits:
@@ -241,35 +237,42 @@ def calc_device_specific_features(
     for key, val in circ.count_ops().items():
         if key in native_gate_dict:
             native_gate_dict[key] = val
-    feature_dict.update(native_gate_dict)
+    feature_dict = native_gate_dict
 
     # Create a list of zeros for the one-hot vector
-    active_qubits_dict = dict.fromkeys(circ.qubits, False)
+    active_qubits_dict = dict.fromkeys(circ.qubits, 0)
     # Iterate over the operations in the quantum circuit
     for op in circ.data:
         if op.operation.name in ignore_gates:
             continue
         # Mark the qubits that are used in the operation as active
         for qubit in op.qubits:
-            active_qubits_dict[qubit] = True
+            active_qubits_dict[qubit] = 1
     feature_dict.update(active_qubits_dict)
-
-    # Add the number of active qubits to the feature dictionary
-    num_qubits = sum(active_qubits_dict.values())
-    feature_dict["num_qubits"] = num_qubits
 
     # Add the depth of the quantum circuit to the feature dictionary
     feature_dict["depth"] = circ.depth()
 
-    # Calculate supermarq features (which uses circ.num_qubits)
-    # NOTE: Different than thesis! (which uses `sum(active_qubits_dict.values())`
+    # Add the number of active qubits to the feature dictionary
+    num_active_qubits = sum(active_qubits_dict.values())
+    feature_dict["num_qubits"] = num_active_qubits  # NOTE: not used in feature vector
+
+    # Calculate supermarq features, which uses circ.num_qubits
     assert device.num_qubits == circ.num_qubits
     supermarq_features = calc_supermarq_features(circ)
-    feature_dict["program_communication"] = supermarq_features.program_communication
+    feature_dict["program_communication"] = supermarq_features.program_communication  # NOTE: not used in feature vector
     feature_dict["critical_depth"] = supermarq_features.critical_depth
     feature_dict["entanglement_ratio"] = supermarq_features.entanglement_ratio
     feature_dict["parallelism"] = supermarq_features.parallelism
     feature_dict["liveness"] = supermarq_features.liveness
+
+    # NOTE: Different than thesis, which uses `sum(active_qubits_dict.values())` -> renormalize with the number of active qubits
+    feature_dict["parallelism"] = (
+        feature_dict["parallelism"] * (device.num_qubits - 1) / (num_active_qubits - 1) if num_active_qubits >= 2 else 0
+    )
+    feature_dict["liveness"] = (
+        feature_dict["liveness"] * device.num_qubits / num_active_qubits if num_active_qubits >= 1 else 0
+    )
 
     # Calculate additional features based on DAG
     dag = circuit_to_dag(circ)
@@ -283,7 +286,7 @@ def calc_device_specific_features(
         di_graph.add_edge(circ.find_bit(q1).index, circ.find_bit(q2).index)
     degree_sum = sum(di_graph.degree(n) for n in di_graph.nodes)
     directed_program_communication = (
-        degree_sum / (2 * device.num_qubits * (device.num_qubits - 1)) if device.num_qubits >= 2 else 0
+        degree_sum / (2 * num_active_qubits * (num_active_qubits - 1)) if num_active_qubits >= 2 else 0
     )
 
     # Average number of 1q gates per layer = num of 1-qubit gates in the circuit / depth
@@ -294,10 +297,8 @@ def calc_device_specific_features(
     multi_qubit_gates_per_layer = len(dag.two_qubit_ops()) / dag.depth() if dag.depth() > 0 else 0
 
     # Normalize both values using the available number of qubits
-    single_qubit_gates_per_layer = single_qubit_gates_per_layer / device.num_qubits if device.num_qubits >= 1 else 0
-    multi_qubit_gates_per_layer = (
-        multi_qubit_gates_per_layer / (device.num_qubits // 2) if device.num_qubits >= 2 else 0
-    )
+    single_qubit_gates_per_layer = single_qubit_gates_per_layer / num_active_qubits if num_active_qubits > 1 else 0
+    multi_qubit_gates_per_layer = multi_qubit_gates_per_layer / (num_active_qubits // 2) if num_active_qubits > 2 else 0
 
     feature_dict["directed_program_communication"] = directed_program_communication
     feature_dict["single_qubit_gates_per_layer"] = single_qubit_gates_per_layer
