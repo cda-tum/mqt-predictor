@@ -97,12 +97,12 @@ def get_path_training_circuits_compiled() -> Path:
     return get_path_training_data() / "training_circuits_compiled"
 
 
-def hellinger_distance(p, q):
+def hellinger_distance(p: NDArray[np.float64], q: NDArray[np.float64]) -> float:
     """Calculates the Hellinger distance between two probability distributions."""
     assert np.isclose(np.sum(p), 1, 0.05), "p is not a probability distribution"
     assert np.isclose(np.sum(q), 1, 0.05), "q is not a probability distribution"
 
-    return (1 / np.sqrt(2)) * np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q)) ** 2))
+    return float((1 / np.sqrt(2)) * np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q)) ** 2)))
 
 
 def get_openqasm_gates() -> list[str]:
@@ -201,7 +201,7 @@ def create_feature_dict(qc: Path | QuantumCircuit) -> dict[str, Any]:
 
 def calc_device_specific_features(
     qc: QuantumCircuit, device: Device, ignore_gates: list[str] | None = None
-) -> dict[str, Any]:
+) -> dict[str, float]:
     """Creates and returns a qpu specific feature dictionary for a given quantum circuit and device.
 
     Arguments:
@@ -232,7 +232,7 @@ def calc_device_specific_features(
         circ = qc.copy()
 
     # Create a dictionary with all native gates
-    native_gate_dict = {gate: 0 for gate in device.basis_gates if gate not in ignore_gates}
+    native_gate_dict = {gate: 0.0 for gate in device.basis_gates if gate not in ignore_gates}
     # Add the number of operations for each native gate
     for key, val in circ.count_ops().items():
         if key in native_gate_dict:
