@@ -7,9 +7,11 @@ from importlib import resources
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import networkx as nx
 import numpy as np
 from joblib import dump
 from qiskit import QuantumCircuit
+from qiskit.converters import circuit_to_dag
 
 from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import ml, reward, rl
@@ -186,6 +188,95 @@ def create_feature_dict(qc: Path | QuantumCircuit) -> dict[str, Any]:
     feature_dict["entanglement_ratio"] = supermarq_features.entanglement_ratio
     feature_dict["parallelism"] = supermarq_features.parallelism
     feature_dict["liveness"] = supermarq_features.liveness
+    return feature_dict
+
+
+def calc_device_specific_features(qc: QuantumCircuit, device: Device) -> dict[str, Any]:
+    """Creates and returns a qpu specific feature dictionary for a given quantum circuit and device.
+
+    Arguments:
+        qc: The quantum circuit for which the features are calculated.
+        device: The device for which the features are calculated.
+
+    Returns:
+        The device-specific feature dictionary of the given quantum circuit consisting of:
+        - The supermarq features
+        - The directed program communication
+        - The single qubit gate ratio
+        - The two qubit gate ratio
+        - The number of operations for each native gate
+        - The active qubits vector (one-hot encoded)
+        - The number of active qubits
+        - The depth of the quantum circuit
+
+
+    """
+    feature_dict = {}
+
+    # Create the device agnostic supermarq features
+    supermarq_features = calc_supermarq_features(qc)
+    feature_dict["program_communication"] = supermarq_features.program_communication
+    feature_dict["critical_depth"] = supermarq_features.critical_depth
+    feature_dict["entanglement_ratio"] = supermarq_features.entanglement_ratio
+    feature_dict["parallelism"] = supermarq_features.parallelism
+    feature_dict["liveness"] = supermarq_features.liveness
+
+    # Create a dictionary with all native gates and their counts
+    native_gate_dict = dict.fromkeys(device.basis_gates, 0)
+    for key, val in qc.count_ops().items():
+        if key in native_gate_dict:
+            native_gate_dict[key] = val
+    feature_dict.update(native_gate_dict)
+
+    # Create a list of zeros for the one-hot vector
+    active_qubits_dict = dict.fromkeys(qc.qubits, False)
+
+    # Iterate over the operations in the quantum circuit
+    for op in qc.data:
+        if op.operation.name in ["barrier", "measure"]:
+            continue
+        # Mark the qubits that are used in the operation as active
+        for qubit in op.qubits:
+            active_qubits_dict[qubit] = True
+
+    # And add them to the feature dictionary
+    feature_dict.update(active_qubits_dict)
+
+    # Add the active qubits to the feature dictionary
+    num_qubits = sum(active_qubits_dict.values())
+    feature_dict["num_qubits"] = num_qubits
+
+    # Add the depth of the quantum circuit to the feature dictionary
+    feature_dict["depth"] = qc.depth()
+
+    # Calculate additional features based on DAG
+    dag = circuit_to_dag(qc)
+    dag.remove_all_ops_named("barrier")
+    dag.remove_all_ops_named("measure")
+
+    # Directed program communication = circuit's average directed qubit degree / degree of a complete directed graph.
+    di_graph = nx.DiGraph()
+    for op in dag.two_qubit_ops():
+        q1, q2 = op.qargs
+        di_graph.add_edge(qc.find_bit(q1).index, qc.find_bit(q2).index)
+    degree_sum = sum(di_graph.degree(n) for n in di_graph.nodes)
+    directed_program_communication = degree_sum / (2 * num_qubits * (num_qubits - 1)) if num_qubits > 1 else 0
+
+    # Average number of 1q gates per layer = num of 1-qubit gates in the circuit / depth
+    single_qubit_gates_per_layer = (
+        (len(dag.gate_nodes()) - len(dag.two_qubit_ops())) / dag.depth() if dag.depth() > 0 else 0
+    )
+    # Average number of 2q gates per layer = num of 2-qubit gates in the circuit / depth
+    multi_qubit_gates_per_layer = len(dag.two_qubit_ops()) / dag.depth() if dag.depth() > 0 else 0
+
+    # Normalize both values using the number of qubits
+    single_qubit_gates_per_layer = single_qubit_gates_per_layer / num_qubits if num_qubits > 0 else 0
+    multi_qubit_gates_per_layer = multi_qubit_gates_per_layer / (num_qubits // 2) if num_qubits > 1 else 0
+
+    feature_dict["directed_program_communication"] = directed_program_communication
+    feature_dict["single_qubit_gates_per_layer"] = single_qubit_gates_per_layer
+    feature_dict["multi_qubit_gates_per_layer"] = multi_qubit_gates_per_layer
+
     return feature_dict
 
 
