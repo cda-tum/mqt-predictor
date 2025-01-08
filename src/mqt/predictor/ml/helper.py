@@ -97,6 +97,15 @@ def get_path_training_circuits_compiled() -> Path:
     return get_path_training_data() / "training_circuits_compiled"
 
 
+def hellinger_distance(p, q):
+    """Calculates the Hellinger distance between two probability distributions."""
+    assert np.isclose(np.sum(p), 1, 0.1), "p is not a probability distribution"
+    assert np.isclose(np.sum(q), 1, 0.1), "q is not a probability distribution"
+
+    hellinger = (1 / np.sqrt(2)) * np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q)) ** 2))
+    return hellinger
+
+
 def get_openqasm_gates() -> list[str]:
     """Returns a list of all quantum gates within the openQASM 2.0 standard header."""
     # according to https://github.com/Qiskit/qiskit-terra/blob/main/qiskit/qasm/libs/qelib1.inc
