@@ -211,14 +211,18 @@ def calc_device_specific_features(
 
     Returns:
         The device-specific feature dictionary of the given quantum circuit consisting of:
-        - The supermarq features
+        - The number of operations for each native gate (excluding `ignore_gates`)
+        - The active qubits (one-hot encoded e.g. {Qubit1: 1, Qubit2: 0, Qubit3: 0})
+        - The depth of the quantum circuit
+        - The number of qubits active in the computations
+        - The supermarq features (wo program communication)
         - The directed program communication
         - The single qubit gate ratio
         - The two qubit gate ratio
-        - The number of operations for each native gate (excluding `ignore_gates`)
-        - The active qubits vector (one-hot encoded)
-        - The number of available qubits provided by the device
-        - The depth of the quantum circuit
+        -
+        
+        
+        
     """
     if ignore_gates is None:
         ignore_gates = ["barrier", "id", "measure"]
@@ -260,13 +264,12 @@ def calc_device_specific_features(
     # Calculate supermarq features, which uses circ.num_qubits
     assert device.num_qubits == circ.num_qubits
     supermarq_features = calc_supermarq_features(circ)
-    feature_dict["program_communication"] = supermarq_features.program_communication  # NOTE: not used in feature vector
     feature_dict["critical_depth"] = supermarq_features.critical_depth
     feature_dict["entanglement_ratio"] = supermarq_features.entanglement_ratio
     feature_dict["parallelism"] = supermarq_features.parallelism
     feature_dict["liveness"] = supermarq_features.liveness
 
-    # NOTE: Different than thesis, which uses `sum(active_qubits_dict.values())` -> renormalize with the number of active qubits
+    # NOTE: renormalize using the number of active qubits (not the device's num_qubits)
     feature_dict["parallelism"] = (
         feature_dict["parallelism"] * (device.num_qubits - 1) / (num_active_qubits - 1) if num_active_qubits >= 2 else 0
     )
@@ -274,7 +277,7 @@ def calc_device_specific_features(
         feature_dict["liveness"] * device.num_qubits / num_active_qubits if num_active_qubits >= 1 else 0
     )
 
-    # Calculate additional features based on DAG
+    # Calculate additional features based on DAG 
     dag = circuit_to_dag(circ)
     dag.remove_all_ops_named("barrier")
     dag.remove_all_ops_named("measure")
