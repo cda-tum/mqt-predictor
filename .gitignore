@@ -52,7 +52,4 @@ venv.bak/
 .ruff_cache/
 .mypy_cache/
 
-evaluations/figure_of_merit_analysis/figures/*
-evaluations/figure_of_merit_analysis/features/*
-evaluations/figure_of_merit_analysis/labels/*
-evaluations/figure_of_merit_analysis/foms/apollo/*
+evaluations/figure_of_merit_analysis/data
