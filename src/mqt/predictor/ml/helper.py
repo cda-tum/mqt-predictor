@@ -217,12 +217,9 @@ def calc_device_specific_features(
         - The number of qubits active in the computations
         - The supermarq features (wo program communication)
         - The directed program communication
-        - The single qubit gate ratio
-        - The two qubit gate ratio
-        -
-        
-        
-        
+        - The single and multi qubit gate ratio
+
+
     """
     if ignore_gates is None:
         ignore_gates = ["barrier", "id", "measure"]
@@ -277,7 +274,7 @@ def calc_device_specific_features(
         feature_dict["liveness"] * device.num_qubits / num_active_qubits if num_active_qubits >= 1 else 0
     )
 
-    # Calculate additional features based on DAG 
+    # Calculate additional features based on DAG
     dag = circuit_to_dag(circ)
     dag.remove_all_ops_named("barrier")
     dag.remove_all_ops_named("measure")
