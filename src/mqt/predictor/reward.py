@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("mqt-predictor")
 
-figure_of_merit = Literal["expected_fidelity", "critical_depth", "estimated_success_probability"]
+figure_of_merit = Literal["expected_fidelity", "critical_depth", "estimated_success_probability", "estimated_hellinger_distance"]
 
 
 def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
@@ -220,3 +220,22 @@ def esp_data_available(device: Device) -> bool:
                 return False
 
     return True
+
+
+def estimated_hellinger_distance(qc: QuantumCircuit, device: Device, precision: int = 10) -> float:
+    """Calculates the estimated Hellinger distance of a given quantum circuit on a given device.
+
+    Arguments:
+        qc: The quantum circuit to be compiled.
+        device: The device to be used for compilation.
+        precision: The precision of the returned value. Defaults to 10.
+
+    Returns:
+        The estimated Hellinger distance of the given quantum circuit on the given device.
+    """
+    return -1
+
+
+def hellinger_model_available(device: Device) -> bool:
+    """Check if a trained model to estimate the Hellinger distance is available for the device."""
+    return False

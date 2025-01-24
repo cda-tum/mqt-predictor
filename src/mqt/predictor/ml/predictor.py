@@ -228,6 +228,8 @@ class Predictor:
                 score = reward.expected_fidelity(qc, device)
             elif figure_of_merit == "estimated_success_probability":
                 score = reward.estimated_success_probability(qc, device)
+            elif figure_of_merit == "estimated_hellinger_distance":
+                score = reward.estimated_hellinger_distance(qc, device)
             else:
                 assert_never(figure_of_merit)
             scores[comp_path_index] = score
