@@ -52,4 +52,4 @@ venv.bak/
 .ruff_cache/
 .mypy_cache/
 
-evaluations/correlation_evaluation/data
+evaluations/hellinger_distance/data
