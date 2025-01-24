@@ -52,4 +52,4 @@ venv.bak/
 .ruff_cache/
 .mypy_cache/
 
-evaluations/figure_of_merit_analysis/data
+evaluations/correlation_evaluation/data
