@@ -16,7 +16,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("mqt-predictor")
 
-figure_of_merit = Literal["expected_fidelity", "critical_depth", "estimated_success_probability", "estimated_hellinger_distance"]
+figure_of_merit = Literal[
+    "expected_fidelity", "critical_depth", "estimated_success_probability", "estimated_hellinger_distance"
+]
 
 
 def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
