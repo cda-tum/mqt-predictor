@@ -84,7 +84,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         if reward_function == "estimated_success_probability" and not reward.esp_data_available(self.device):
             msg = f"Missing calibration data for ESP calculation on {device_name}."
             raise ValueError(msg)
-        elif reward_function == "estimated_hellinger_distance" and not reward.hellinger_model_available(self.device):
+        if reward_function == "estimated_hellinger_distance" and not reward.hellinger_model_available(self.device):
             msg = f"Missing trained model for Hellinger distance estimates on {device_name}."
             raise ValueError(msg)
         self.reward_function = reward_function

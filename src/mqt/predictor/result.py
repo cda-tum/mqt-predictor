@@ -47,9 +47,11 @@ class Result:
             rew_esp = (
                 reward.estimated_success_probability(compiled_qc, device) if reward.esp_data_available(device) else -1.0
             )
-            rew_hellinger = reward.estimated_hellinger_distance(compiled_qc, device) if reward.hellinger_model_available(
-                device
-            ) else -1.0
+            rew_hellinger = (
+                reward.estimated_hellinger_distance(compiled_qc, device)
+                if reward.hellinger_model_available(device)
+                else -1.0
+            )
         else:
             rew_fid = -1.0
             rew_crit_depth = -1.0

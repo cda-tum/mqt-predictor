@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
+from joblib import load
 
 from mqt.bench.utils import calc_supermarq_features
+from mqt.predictor.ml.helper import calc_device_specific_features
 
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit, QuantumRegister, Qubit
@@ -16,7 +19,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("mqt-predictor")
 
-figure_of_merit = Literal["expected_fidelity", "critical_depth", "estimated_success_probability", "estimated_hellinger_distance"]
+figure_of_merit = Literal[
+    "expected_fidelity", "critical_depth", "estimated_success_probability", "estimated_hellinger_distance"
+]
 
 
 def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
@@ -233,9 +238,24 @@ def estimated_hellinger_distance(qc: QuantumCircuit, device: Device, precision: 
     Returns:
         The estimated Hellinger distance of the given quantum circuit on the given device.
     """
-    return -1
+    path = Path.cwd().parent.parent / "evaluations" / "correlation_evaluation" / "trained_models"
+    non_zero_indices_path = path / f"{device.name}_non_zero_indices.npy"
+    model_path = path / f"{device.name}.npy"
+
+    model = load(model_path)
+    non_zero_indices = np.load(non_zero_indices_path, allow_pickle=True)
+
+    feature_dict = calc_device_specific_features(qc, device)
+    feature_vector = list(feature_dict.values())
+    # adjust the feature vector according to the non-zero indices
+    feature_vector = [feature_vector[i] for i in non_zero_indices]
+
+    res = model.predict_proba([feature_vector])[0]
+    return cast("float", np.round(res, precision))
 
 
 def hellinger_model_available(device: Device) -> bool:
     """Check if a trained model to estimate the Hellinger distance is available for the device."""
-    return False
+    path = Path.cwd().parent.parent / "evaluations" / "correlation_evaluation" / "trained_models"
+    path = path / f"{device.name}.npy"
+    return bool(path.is_file())
