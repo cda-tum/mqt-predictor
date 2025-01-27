@@ -55,9 +55,7 @@ def test_qcompile_with_newly_trained_models() -> None:
         test=True,
     )
 
-    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
-    assert isinstance(res, tuple)
-    qc_compiled, compilation_information = res
+    qc_compiled, compilation_information = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
     assert qc_compiled.layout is not None
     assert compilation_information is not None
 

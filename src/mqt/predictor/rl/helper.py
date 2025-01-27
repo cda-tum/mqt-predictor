@@ -55,6 +55,7 @@ from tqdm import tqdm
 
 from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import reward, rl
+from mqt.predictor.reward import calc_qubit_index
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -650,3 +651,23 @@ def postprocess_vf2postlayout(
 
     altered_qc = apply_layout(qc)
     return altered_qc, apply_layout
+
+
+def check_directionality(qc: QuantumCircuit, cmap: list[list[int]]) -> bool:
+    """Check if the directionality is considered in a mapped quantum circuit.
+
+    Args:
+        qc: The quantum circuit to check.
+        cmap: The coupling map of the device.
+
+    Returns:
+        bool: True if the directionality is considered, False otherwise.
+    """
+    for qc_instruction in qc.data:
+        _instruction, qargs = qc_instruction.operation, qc_instruction.qubits
+        if len(qargs) == 2:
+            first_qubit_idx = calc_qubit_index(qargs, qc.qregs, 0)
+            second_qubit_idx = calc_qubit_index(qargs, qc.qregs, 1)
+            if [first_qubit_idx, second_qubit_idx] not in cmap:
+                return False
+    return True

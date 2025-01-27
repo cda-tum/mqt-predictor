@@ -6,6 +6,8 @@ import logging
 import sys
 from typing import TYPE_CHECKING, Any
 
+from mqt.predictor.rl.helper import check_directionality
+
 if sys.version_info >= (3, 11) and TYPE_CHECKING:  # pragma: no cover
     from typing import assert_never
 else:
@@ -284,6 +286,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
             elif action["origin"] == "tket":
                 try:
+                    self.state = self.state.decompose(
+                        gates_to_decompose=["ecr", "rzx"], reps=2
+                    )  # TKET cannot handle ecr gates and two decompositions are necessary because one leads to rzx gates that cannot be handled as well
                     tket_qc = qiskit_to_tk(self.state, preserve_param_uuid=True)
                     for elem in transpile_pass:
                         elem.apply(tket_qc)
@@ -351,6 +356,9 @@ class PredictorEnv(Env):  # type: ignore[misc]
         check_mapping = CheckMap(coupling_map=CouplingMap(self.device.coupling_map))
         check_mapping(self.state)
         mapped = check_mapping.property_set["is_swap_mapped"]
+        directionality_mapped = check_directionality(self.state, self.device.coupling_map)
+        if mapped and not directionality_mapped:  # there is an error in the
+            self.layout = None
 
         if mapped and self.layout is not None:
             return [self.action_terminate_index, *self.actions_opt_indices]
