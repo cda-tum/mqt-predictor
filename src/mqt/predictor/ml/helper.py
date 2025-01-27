@@ -23,36 +23,41 @@ if TYPE_CHECKING:
 
 def qcompile(
     qc: QuantumCircuit,
+    devices: list[str] | str | None = None,
     figure_of_merit: reward.figure_of_merit = "expected_fidelity",
 ) -> tuple[QuantumCircuit, list[str], str]:
     """Compiles a given quantum circuit to a device with the highest predicted figure of merit.
 
     Arguments:
         qc: The quantum circuit to be compiled.
+        devices: The devices to be used.
         figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
         Returns a tuple containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, False is returned.
     """
-    device = predict_device_for_figure_of_merit(qc, figure_of_merit)
-    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device.name)
-    return *res, device.name
+    predicted_device = predict_device_for_figure_of_merit(qc, figure_of_merit=figure_of_merit, devices=devices)
+    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=predicted_device.name)
+    return *res, predicted_device.name
 
 
 def predict_device_for_figure_of_merit(
-    qc: Path | QuantumCircuit, figure_of_merit: reward.figure_of_merit = "expected_fidelity"
+    qc: Path | QuantumCircuit,
+    devices: list[str] | str | None = None,
+    figure_of_merit: reward.figure_of_merit = "expected_fidelity",
 ) -> Device:
     """Returns the name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
 
     Arguments:
         qc: The quantum circuit to be compiled.
+        devices: The devices to be used.
         figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
         The device with the highest predicted figure of merit that is suitable for the given quantum circuit.
     """
-    ml_predictor = ml.Predictor()
-    predicted_device_index_probs = ml_predictor.predict_probs(qc, figure_of_merit)
+    ml_predictor = ml.Predictor(figure_of_merit=figure_of_merit, devices=devices)
+    predicted_device_index_probs = ml_predictor.predict_probs(qc)
     assert ml_predictor.clf is not None
     classes = ml_predictor.clf.classes_  # type: ignore[unreachable]
     predicted_device_index = classes[np.argsort(predicted_device_index_probs)[::-1]]

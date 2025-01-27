@@ -21,7 +21,7 @@ from pytket.passes import (
 from pytket.placement import GraphPlacement
 from qiskit import QuantumCircuit, transpile
 
-from mqt.bench.devices import Device, get_available_device_names, get_available_devices
+from mqt.bench.devices import Device, get_available_devices
 from mqt.bench.tket_helper import get_rebase
 from mqt.predictor import Result, ml, reward
 
@@ -106,9 +106,8 @@ def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figur
     Returns:
         A Result object containing the compiled quantum circuit.
     """
-    device = ml.helper.predict_device_for_figure_of_merit(qc, figure_of_merit)
-    dev_index = get_available_device_names().index(device.name)
-    target_filename = filename.split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(dev_index)
+    device = ml.helper.predict_device_for_figure_of_merit(qc, devices="all", figure_of_merit=figure_of_merit)
+    target_filename = filename.split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "-" + device.name
     combined_path_filename = ml.helper.get_path_training_circuits_compiled() / (target_filename + ".qasm")
     if Path(combined_path_filename).exists():
         qc = QuantumCircuit.from_qasm_file(combined_path_filename)

@@ -6,7 +6,7 @@ import logging
 import sys
 import zipfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, get_args
+from typing import TYPE_CHECKING, Any
 
 if sys.version_info >= (3, 11) and TYPE_CHECKING:  # pragma: no cover
     from typing import assert_never
@@ -21,7 +21,7 @@ from qiskit.qasm2 import dump
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from mqt.bench.devices import get_available_device_names, get_available_devices
+from mqt.bench.devices import get_available_devices, get_device_by_name
 from mqt.predictor import ml, reward, rl, utils
 
 if TYPE_CHECKING:
@@ -35,12 +35,31 @@ logger = logging.getLogger("mqt-predictor")
 class Predictor:
     """The Predictor class is used to predict the most suitable quantum device for a given quantum circuit."""
 
-    def __init__(self, logger_level: int = logging.INFO) -> None:
-        """Initializes the Predictor class."""
+    def __init__(
+        self,
+        figure_of_merit: reward.figure_of_merit,
+        devices: list[str] | str | None = None,
+        logger_level: int = logging.INFO,
+    ) -> None:
+        """Initializes the Predictor class.
+
+        Arguments:
+            figure_of_merit: The figure of merit to be used for training.
+            devices: The devices to be used for training. Defaults to None. If None or "all", all available devices from MQT Bench are used.
+            logger_level: The level of the logger. Defaults to logging.INFO.
+
+        """
         logger.setLevel(logger_level)
 
         self.clf = None
-        self.devices = get_available_devices()
+        self.figure_of_merit = figure_of_merit
+        if devices is None or devices == "all":
+            self.devices = get_available_devices()
+        else:
+            self.devices = [get_device_by_name(device) for device in devices]
+        self.devices.sort(
+            key=lambda x: x.name
+        )  # sorting is necessary to determine the ground truth label later on when generating the training data
 
     def set_classifier(self, clf: RandomForestClassifier) -> None:
         """Sets the classifier to the given classifier."""
@@ -50,7 +69,6 @@ class Predictor:
         self,
         device_name: str,
         timeout: int,
-        figure_of_merit: reward.figure_of_merit,
         source_path: Path | None = None,
         target_path: Path | None = None,
         logger_level: int = logging.INFO,
@@ -60,18 +78,17 @@ class Predictor:
         Arguments:
             device_name: The name of the device to be used for compilation.
             timeout: The timeout in seconds for the compilation of a single circuit.
-            figure_of_merit: The figure of merit to be used for compilation.
             source_path: The path to the directory containing the circuits to be compiled. Defaults to None.
             target_path: The path to the directory where the compiled circuits should be saved. Defaults to None.
             logger_level: The level of the logger. Defaults to logging.INFO.
         """
         logger.setLevel(logger_level)
 
-        logger.info("Processing: " + device_name + " for " + figure_of_merit)
-        rl_pred = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device_name)
+        logger.info("Processing: " + device_name + " for " + self.figure_of_merit)
+        rl_pred = rl.Predictor(figure_of_merit=self.figure_of_merit, device_name=device_name)
 
-        dev_index = get_available_device_names().index(device_name)
-        dev_max_qubits = self.devices[dev_index].num_qubits
+        dev = get_device_by_name(device_name)
+        dev_max_qubits = dev.num_qubits
 
         if source_path is None:
             source_path = ml.helper.get_path_training_circuits()
@@ -87,12 +104,12 @@ class Predictor:
                 continue
 
             target_filename = (
-                str(filename).split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "_" + str(dev_index)
+                str(filename).split("/")[-1].split(".qasm")[0] + "_" + self.figure_of_merit + "-" + dev.name
             )
             if (Path(target_path) / (target_filename + ".qasm")).exists():
                 continue
             try:
-                res = utils.timeout_watcher(rl.qcompile, [qc, figure_of_merit, device_name, rl_pred], timeout)
+                res = utils.timeout_watcher(rl.qcompile, [qc, self.figure_of_merit, device_name, rl_pred], timeout)
                 if isinstance(res, tuple):
                     compiled_qc = res[0]
                     with Path(target_path / (target_filename + ".qasm")).open("w", encoding="utf-8") as f:
@@ -129,16 +146,12 @@ class Predictor:
         target_path.mkdir(exist_ok=True)
 
         Parallel(n_jobs=1, verbose=100)(
-            delayed(self.compile_all_circuits_devicewise)(
-                device_name, timeout, figure_of_merit, source_path, target_path, logger.level
-            )
-            for figure_of_merit in get_args(reward.figure_of_merit)
-            for device_name in [dev.name for dev in self.devices]
+            delayed(self.compile_all_circuits_devicewise)(device.name, timeout, source_path, target_path, logger.level)
+            for device in self.devices
         )
 
     def generate_trainingdata_from_qasm_files(
         self,
-        figure_of_merit: reward.figure_of_merit,
         path_uncompiled_circuits: Path | None = None,
         path_compiled_circuits: Path | None = None,
     ) -> tuple[list[NDArray[np.float64]], list[str], list[NDArray[np.float64]]]:
@@ -164,12 +177,11 @@ class Predictor:
         name_list = []
         scores_list = []
 
-        results = Parallel(n_jobs=-1, verbose=100)(
+        results = Parallel(n_jobs=1, verbose=100)(
             delayed(self.generate_training_sample)(
                 filename.name,
                 path_uncompiled_circuits,
                 path_compiled_circuits,
-                figure_of_merit,
                 logger.level,
             )
             for filename in path_uncompiled_circuits.glob("*.qasm")
@@ -189,14 +201,12 @@ class Predictor:
         file: Path,
         path_uncompiled_circuit: Path,
         path_compiled_circuits: Path,
-        figure_of_merit: reward.figure_of_merit = "expected_fidelity",
         logger_level: int = logging.INFO,
     ) -> tuple[tuple[list[Any], Any], str, list[float]]:
         """Handles to create a training sample from a given file.
 
         Arguments:
             file: The name of the file to be used for training.
-            figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
             path_uncompiled_circuit: The path to the directory containing the uncompiled circuits. Defaults to None.
             path_compiled_circuits: The path to the directory containing the compiled circuits. Defaults to None.
             logger_level: The level of the logger. Defaults to logging.INFO.
@@ -210,58 +220,60 @@ class Predictor:
             raise RuntimeError("File is not a qasm file: " + str(file))
 
         logger.debug("Checking " + str(file))
-        scores = [-1.0 for _ in range(len(self.devices))]
+        scores = {dev.name: -1.0 for dev in self.devices}
         all_relevant_files = path_compiled_circuits.glob(str(file).split(".")[0] + "*")
 
         for filename in all_relevant_files:
             filename_str = str(filename)
-            if (str(file).split(".")[0] + "_" + figure_of_merit + "_") not in filename_str and filename_str.endswith(
+            if (str(file).split(".")[0] + "_" + self.figure_of_merit) not in filename_str and filename_str.endswith(
                 ".qasm"
             ):
                 continue
-            comp_path_index = int(filename_str.split("_")[-1].split(".")[0])
-            device = self.devices[comp_path_index]
+            dev_name = filename_str.split("-")[-1].split(".")[0]
+            if dev_name not in [dev.name for dev in self.devices]:
+                continue
+            device = get_device_by_name(dev_name)
             qc = QuantumCircuit.from_qasm_file(filename_str)
-            if figure_of_merit == "critical_depth":
+            if self.figure_of_merit == "critical_depth":
                 score = reward.crit_depth(qc)
-            elif figure_of_merit == "expected_fidelity":
+            elif self.figure_of_merit == "expected_fidelity":
                 score = reward.expected_fidelity(qc, device)
-            elif figure_of_merit == "estimated_success_probability":
+            elif self.figure_of_merit == "estimated_success_probability":
                 score = reward.estimated_success_probability(qc, device)
             else:
-                assert_never(figure_of_merit)
-            scores[comp_path_index] = score
+                assert_never(self.figure_of_merit)
+            scores[dev_name] = score
 
         num_not_empty_entries = 0
-        for i in range(len(self.devices)):
-            if scores[i] != -1.0:
+        for dev in self.devices:
+            if scores[dev.name] != -1.0:
                 num_not_empty_entries += 1
 
         if num_not_empty_entries == 0:
             logger.warning("no compiled circuits found for:" + str(file))
 
         feature_vec = ml.helper.create_feature_dict(path_uncompiled_circuit / file)
-        training_sample = (list(feature_vec.values()), np.argmax(scores))
+        target_label = np.argmax(list(scores.values()))
+
+        training_sample = (list(feature_vec.values()), target_label)
         circuit_name = str(file).split(".")[0]
-        return training_sample, circuit_name, scores
+        return training_sample, circuit_name, list(scores.values())
 
     def train_random_forest_classifier(
         self,
-        figure_of_merit: reward.figure_of_merit = "expected_fidelity",
         visualize_results: bool = False,
         save_classifier: bool = True,
     ) -> bool:
         """Trains a random forest classifier for the given figure of merit.
 
         Arguments:
-            figure_of_merit: The figure of merit to be used for training. Defaults to "expected_fidelity".
             visualize_results: Whether to visualize the results. Defaults to False.
             save_classifier: Whether to save the classifier. Defaults to True.
 
         Returns:
             True when the training was successful, False otherwise.
         """
-        training_data = self.get_prepared_training_data(figure_of_merit, save_non_zero_indices=True)
+        training_data = self.get_prepared_training_data(save_non_zero_indices=True)
 
         scores_filtered = [training_data.scores_list[i] for i in training_data.indices_test]
         names_filtered = [training_data.names_list[i] for i in training_data.indices_test]
@@ -277,7 +289,7 @@ class Predictor:
         ]
 
         clf = RandomForestClassifier(random_state=0)
-        clf = GridSearchCV(clf, tree_param, cv=5, n_jobs=8).fit(training_data.X_train, training_data.y_train)
+        clf = GridSearchCV(clf, tree_param, cv=2, n_jobs=8).fit(training_data.X_train, training_data.y_train)
 
         if visualize_results:
             y_pred = np.array(list(clf.predict(training_data.X_test)))
@@ -292,24 +304,21 @@ class Predictor:
 
         self.set_classifier(clf.best_estimator_)
         if save_classifier:
-            ml.helper.save_classifier(clf.best_estimator_, figure_of_merit)
+            ml.helper.save_classifier(clf.best_estimator_, self.figure_of_merit)
         logger.info("Random Forest classifier is trained and saved.")
 
         return self.clf is not None
 
-    def get_prepared_training_data(
-        self, figure_of_merit: reward.figure_of_merit, save_non_zero_indices: bool = False
-    ) -> ml.helper.TrainingData:
+    def get_prepared_training_data(self, save_non_zero_indices: bool = False) -> ml.helper.TrainingData:
         """Prepares the training data for the given figure of merit.
 
         Arguments:
-            figure_of_merit: The figure of merit to be used for training.
             save_non_zero_indices: Whether to save the non zero indices. Defaults to False.
 
         Returns:
             The prepared training data.
         """
-        training_data, names_list, raw_scores_list = ml.helper.load_training_data(figure_of_merit)
+        training_data, names_list, raw_scores_list = ml.helper.load_training_data(self.figure_of_merit)
         unzipped_training_data_x, unzipped_training_data_y = zip(*training_data, strict=False)
         scores_list: list[list[float]] = [[] for _ in range(len(raw_scores_list))]
         x_raw = list(unzipped_training_data_x)
@@ -332,7 +341,7 @@ class Predictor:
         if save_non_zero_indices:
             data = np.asarray(non_zero_indices, dtype=np.uint64)
             np.save(
-                ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True),
+                ml.helper.get_path_trained_model(self.figure_of_merit, return_non_zero_indices=True),
                 data,
             )
 
@@ -496,18 +505,17 @@ class Predictor:
             result_path.mkdir()
         plt.savefig(result_path / "y_pred_eval_normed.pdf", bbox_inches="tight")
 
-    def predict_probs(self, qc: Path | QuantumCircuit, figure_of_merit: reward.figure_of_merit) -> NDArray[np.float64]:
+    def predict_probs(self, qc: Path | QuantumCircuit) -> NDArray[np.float64]:
         """Returns the probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
 
         Arguments:
             qc: The QuantumCircuit or Path to the respective qasm file.
-            figure_of_merit: The figure of merit to be used for prediction.
 
         Returns:
             The probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
         """
         if self.clf is None:
-            path = ml.helper.get_path_trained_model(figure_of_merit)
+            path = ml.helper.get_path_trained_model(self.figure_of_merit)
             if path.is_file():
                 self.clf = load(path)
 
@@ -519,7 +527,7 @@ class Predictor:
         feature_dict = ml.helper.create_feature_dict(qc)  # type: ignore[unreachable]
         feature_vector = list(feature_dict.values())
 
-        path = ml.helper.get_path_trained_model(figure_of_merit, return_non_zero_indices=True)
+        path = ml.helper.get_path_trained_model(self.figure_of_merit, return_non_zero_indices=True)
         non_zero_indices = np.load(path, allow_pickle=True)
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
