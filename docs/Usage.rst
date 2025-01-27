@@ -75,22 +75,34 @@ This is done by first creating the necessary training data (based on the trainin
 
 .. code-block:: python
 
-    ml_pred = mqt.predictor.ml.Predictor()
+    ml_pred = mqt.predictor.ml.Predictor(figure_of_merit="expected_fidelity", devices="all")
     ml_pred.generate_compiled_circuits(timeout=600)  # timeout in seconds
-    training_data, name_list, scores_list = ml_pred.generate_trainingdata_from_qasm_files(
-        figure_of_merit="expected_fidelity"
-    )
+    training_data, name_list, scores_list = ml_pred.generate_trainingdata_from_qasm_files()
     mqt.predictor.ml.helper.save_training_data(
         training_data, name_list, scores_list, figure_of_merit="expected_fidelity"
     )
 
 This will compile all provided uncompiled training circuits for all available devices and figures of merit.
+To this end, all the devices currently supported by [MQT Bench](https://github.com/cda-tum/mqt-bench) are considered.
+This currently is:
+
+- ibm_washington
+- ibm_montreal
+- ionq_harmony
+- ionq_aria1
+- oqc_lucy
+- rigetti_aspen_m3
+- quantinuum_h2
+- iqm_adonis
+- iqm_apollo
+
+Furthermore, a selection of the devices could be used, such as ``devices=["ibm_montreal", "ibm_washington", "ionq_aria1"]``.
 Afterwards, the training data is generated individually for a figure of merit.
 This training data can then be saved and used to train the supervised machine learning model:
 
 .. code-block:: python
 
-    ml_pred.train_random_forest_classifier(figure_of_merit="expected_fidelity")
+    ml_pred.train_random_forest_classifier()
 
 Finally, the MQT Predictor framework is fully set up and can be used to predict the most
 suitable device for a given quantum circuit using supervised machine learning and compile
