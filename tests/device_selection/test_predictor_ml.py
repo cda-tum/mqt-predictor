@@ -86,6 +86,14 @@ def test_entire_setup() -> None:
     if qasm_path2.exists():
         qasm_path2.unlink()
 
+    for file in [
+        "training_data_expected_fidelity.npy",
+        "names_list_expected_fidelity.npy",
+        "scores_list_expected_fidelity.npy",
+    ]:
+        path = ml.helper.get_path_training_data() / "training_data_aggregated" / file
+        path.unlink()
+
     # test the prediction for given Qiskit.QuantumCircuit and QASM file
     qc = get_benchmark("ghz", 1, 3)
     predicted_dev = ml.predict_device_for_figure_of_merit(qc)
