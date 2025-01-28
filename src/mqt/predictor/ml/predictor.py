@@ -38,14 +38,14 @@ class Predictor:
     def __init__(
         self,
         figure_of_merit: reward.figure_of_merit,
-        devices: list[str] | str | None = None,
+        devices: list[str] | None = None,
         logger_level: int = logging.INFO,
     ) -> None:
         """Initializes the Predictor class.
 
         Arguments:
             figure_of_merit: The figure of merit to be used for training.
-            devices: The devices to be used for training. Defaults to None. If None or "all", all available devices from MQT Bench are used.
+            devices: The devices to be used for training. Defaults to None. If None, all available devices from MQT Bench are used.
             logger_level: The level of the logger. Defaults to logging.INFO.
 
         """
@@ -53,7 +53,7 @@ class Predictor:
 
         self.clf = None
         self.figure_of_merit = figure_of_merit
-        if devices is None or devices == "all":
+        if devices is None:
             self.devices = get_available_devices()
         else:
             self.devices = [get_device_by_name(device) for device in devices]
