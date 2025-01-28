@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import sys
+import warnings
 from typing import TYPE_CHECKING, Any
 
 if sys.version_info >= (3, 11) and TYPE_CHECKING:  # pragma: no cover
@@ -50,11 +51,11 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.actions_final_optimization_indices = []
         self.used_actions: list[str] = []
         self.device = get_device_by_name(device_name)
-        # check whether bi-directional
+        # check for uni-directional coupling map
         for a, b in self.device.coupling_map:
             if [b, a] not in self.device.coupling_map:
-                msg = f"The connectivity of device '{device_name}' is not bi-directional which is not supported by the MQT Predictor."
-                raise ValueError(msg)
+                msg = f"The connectivity of the device '{device_name}' is uni-directional and MQT Predictor might return a compiled circuit that assumes bi-directionality."
+                warnings.warn(msg, UserWarning, stacklevel=2)
 
         index = 0
 
