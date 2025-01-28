@@ -420,5 +420,5 @@ def predict_device_for_figure_of_merit(
         dev = get_device_by_name(dev_name)
         if dev.num_qubits >= num_qubits:
             return dev
-    msg = "No suitable device found."
+    msg = f"No suitable device found for the given quantum circuit with {num_qubits} qubits."
     raise ValueError(msg)

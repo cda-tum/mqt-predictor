@@ -105,3 +105,13 @@ def delete_path(path: Path) -> None:
             else:
                 item.unlink()  # Delete file
         path.rmdir()  # Remove empty directory
+
+
+def test_predict_device_for_figure_of_merit_no_suitable_device() -> None:
+    """Test the prediction of the device for a given figure of merit with a wrong device name."""
+    num_qubits = 100
+    qc = get_benchmark("ghz", 1, num_qubits)
+    with pytest.raises(
+        ValueError, match=re.escape(f"No suitable device found for the given quantum circuit with {num_qubits} qubits.")
+    ):
+        ml.predict_device_for_figure_of_merit(qc)
