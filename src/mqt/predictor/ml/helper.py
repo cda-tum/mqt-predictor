@@ -24,7 +24,7 @@ def qcompile(
     """Compiles a given quantum circuit to a device with the highest predicted figure of merit.
 
     Arguments:
-        qc: The quantum circuit to be compiled
+        qc: The quantum circuit to be compiled.
         figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
