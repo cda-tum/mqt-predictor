@@ -11,7 +11,7 @@ from qiskit.qasm2 import dump
 
 import mqt.bench.devices
 from mqt.bench import get_benchmark
-from mqt.predictor import ml, rl
+from mqt.predictor import ml
 
 
 def test_predictor_with_all_devices() -> None:
