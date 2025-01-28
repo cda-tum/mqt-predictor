@@ -19,6 +19,7 @@ def test_predictor_with_all_devices() -> None:
     predictor = ml.Predictor(figure_of_merit="expected_fidelity", devices=None)
     assert len(predictor.devices) > 0
 
+
 def test_entire_setup() -> None:
     """Test the training of a random forest classifier."""
     # create the ML Predictor
