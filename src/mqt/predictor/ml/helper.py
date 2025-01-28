@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 def qcompile(
     qc: QuantumCircuit,
-    devices: list[str] | str | None = None,
+    devices: list[str] | None = None,
     figure_of_merit: reward.figure_of_merit = "expected_fidelity",
 ) -> tuple[QuantumCircuit, list[str], str]:
     """Compiles a given quantum circuit to a device with the highest predicted figure of merit.
