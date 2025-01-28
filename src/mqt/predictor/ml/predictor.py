@@ -261,7 +261,8 @@ class Predictor:
         # target label is the dict key.name with the highest value, dont use max(scores, key=scores.get).name
         target_label = max(scores, key=lambda k: scores[k])
 
-        feature_vec = ml.helper.create_feature_vector(path_uncompiled_circuit / file)
+        qc = QuantumCircuit.from_qasm_file(path_uncompiled_circuit / file)
+        feature_vec = ml.helper.create_feature_vector(qc)
         training_sample = (feature_vec, target_label)
         circuit_name = str(file).split(".")[0]
         return training_sample, circuit_name, scores_list
@@ -398,6 +399,10 @@ def predict_device_for_figure_of_merit(
     Returns:
         The probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
     """
+    if isinstance(qc, Path) and qc.exists():
+        qc = QuantumCircuit.from_qasm_file(qc)
+    assert isinstance(qc, QuantumCircuit)
+
     path = ml.helper.get_path_trained_model(figure_of_merit)
     if not path.exists():
         error_msg = "The ML model is not trained yet. Please train the model before using it."
@@ -414,11 +419,9 @@ def predict_device_for_figure_of_merit(
         label for _, label in sorted(zip(probabilities, class_labels, strict=False), reverse=True)
     ])
 
-    num_qubits = qc.num_qubits if isinstance(qc, QuantumCircuit) else QuantumCircuit.from_qasm_file(qc).num_qubits
-
     for dev_name in sorted_devices:
         dev = get_device_by_name(dev_name)
-        if dev.num_qubits >= num_qubits:
+        if dev.num_qubits >= qc.num_qubits:
             return dev
-    msg = f"No suitable device found for the given quantum circuit with {num_qubits} qubits."
+    msg = f"No suitable device found for the given quantum circuit with {qc.num_qubits} qubits."
     raise ValueError(msg)

@@ -7,14 +7,13 @@ from importlib import resources
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from qiskit import QuantumCircuit
-
 from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import ml, reward, rl
 
 if TYPE_CHECKING:
     import numpy as np
     from numpy._typing import NDArray
+    from qiskit import QuantumCircuit
 
 
 def qcompile(
@@ -124,7 +123,7 @@ def dict_to_featurevector(gate_dict: dict[str, int]) -> dict[str, int]:
 PATH_LENGTH = 260
 
 
-def create_feature_vector(qc: Path | QuantumCircuit) -> list[int | float]:
+def create_feature_vector(qc: QuantumCircuit) -> list[int | float]:
     """Creates and returns a feature dictionary for a given quantum circuit.
 
     Arguments:
@@ -133,10 +132,6 @@ def create_feature_vector(qc: Path | QuantumCircuit) -> list[int | float]:
     Returns:
         The feature dictionary of the given quantum circuit.
     """
-    if isinstance(qc, Path) and qc.exists():
-        qc = QuantumCircuit.from_qasm_file(qc)
-    assert isinstance(qc, QuantumCircuit)
-
     ops_list = qc.count_ops()
     ops_list_dict = dict_to_featurevector(ops_list)
 
