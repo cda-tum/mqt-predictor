@@ -359,13 +359,15 @@ class PredictorEnv(Env):  # type: ignore[misc]
         directionality_check(self.state)
         mapped_with_directionality = directionality_check.property_set["is_direction_mapped"]
 
-        if mapped and not mapped_with_directionality:  # the directionality is not correct
+        if (
+            mapped and not mapped_with_directionality
+        ):  # The directionality is not correct and there is a chance no valid directionality is found. Therefore, the layout is reset.
             self.layout = None
 
-        if mapped and self.layout is not None:
+        if mapped and self.layout is not None:  # The circuit is correctly mapped.
             return [self.action_terminate_index, *self.actions_opt_indices]
 
-        if self.layout is not None:
+        if self.layout is not None:  # The circuit is not yet mapped but a layout is set.
             return self.actions_routing_indices
 
         # No layout applied yet
