@@ -32,11 +32,17 @@ def test_entire_setup() -> None:
     # generate compiled circuits using trained RL model
     if sys.platform == "win32":
         with pytest.warns(RuntimeWarning, match=re.escape("Timeout is not supported on Windows.")):
-            predictor.generate_compiled_circuits(timeout=600, target_path=target_path, source_path=source_path)
+            predictor.generate_compiled_circuits(
+                timeout=600, target_path=target_path, source_path=source_path, num_workers=1
+            )
     else:
-        predictor.generate_compiled_circuits(timeout=600)
+        predictor.generate_compiled_circuits(
+            timeout=600, target_path=target_path, source_path=source_path, num_workers=1
+        )
 
-    training_data, names_list, scores_list = predictor.generate_trainingdata_from_qasm_files()
+    training_data, names_list, scores_list = predictor.generate_trainingdata_from_qasm_files(
+        path_uncompiled_circuits=source_path, path_compiled_circuits=target_path
+    )
     assert len(training_data) > 0
     assert len(names_list) > 0
     assert len(scores_list) > 0

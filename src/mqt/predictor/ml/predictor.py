@@ -127,6 +127,7 @@ class Predictor:
         source_path: Path | None = None,
         target_path: Path | None = None,
         timeout: int = 600,
+        num_workers: int = -1,
     ) -> None:
         """Compiles all circuits in the given directory with the given timeout and saves them in the given directory.
 
@@ -148,7 +149,7 @@ class Predictor:
 
         target_path.mkdir(exist_ok=True)
 
-        Parallel(n_jobs=-1, verbose=100)(
+        Parallel(n_jobs=num_workers, verbose=100)(
             delayed(self.compile_all_circuits_devicewise)(device.name, timeout, source_path, target_path, logger.level)
             for device in self.devices
         )
