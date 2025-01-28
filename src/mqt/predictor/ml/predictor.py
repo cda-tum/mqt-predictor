@@ -135,6 +135,7 @@ class Predictor:
             source_path: The path to the directory containing the circuits to be compiled. Defaults to None.
             target_path: The path to the directory where the compiled circuits should be saved. Defaults to None.
             timeout: The timeout in seconds for the compilation of a single circuit. Defaults to 600.
+            num_workers: The number of workers to be used for parallelization. Defaults to -1.
         """
         if source_path is None:
             source_path = ml.helper.get_path_training_circuits()
@@ -413,7 +414,6 @@ def predict_device_for_figure_of_merit(
     feature_dict = ml.helper.create_feature_dict(qc)
     feature_vector = list(feature_dict.values())
 
-    path = ml.helper.get_path_trained_model(figure_of_merit)
     probabilities = clf.predict_proba([feature_vector])[0]
     class_labels = clf.classes_
     # sort all devices with decreasing probabilities
