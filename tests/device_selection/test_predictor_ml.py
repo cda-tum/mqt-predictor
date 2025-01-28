@@ -76,8 +76,8 @@ def test_entire_setup() -> None:
     predictor.train_random_forest_classifier(save_classifier=True)
 
     # delete used RL model to save storage
-    model_path = Path(rl.helper.get_path_trained_model() / ("model_expected_fidelity_ionq_harmony.zip"))
-    model_path.unlink()
+    # model_path = Path(rl.helper.get_path_trained_model() / ("model_expected_fidelity_ionq_harmony.zip"))
+    # model_path.unlink()
 
     # delete the uncompiled and compiled circuits
     delete_path(target_path)
