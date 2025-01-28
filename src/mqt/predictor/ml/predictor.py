@@ -38,7 +38,7 @@ class Predictor:
 
     def __init__(
         self,
-        figure_of_merit: reward.figure_of_merit,
+        figure_of_merit: reward.figure_of_merit = "expected_fidelity",
         devices: list[str] | None = None,
         logger_level: int = logging.INFO,
     ) -> None:
@@ -254,11 +254,12 @@ class Predictor:
             logger.warning("no compiled circuits found for:" + str(file))
 
         feature_vec = ml.helper.create_feature_dict(path_uncompiled_circuit / file)
-        target_label = np.argmax(list(scores.values()))
+        scores_list = list(scores.values())
+        target_label = np.argmax(scores_list)
 
         training_sample = (list(feature_vec.values()), target_label)
         circuit_name = str(file).split(".")[0]
-        return training_sample, circuit_name, list(scores.values())
+        return training_sample, circuit_name, scores_list
 
     def train_random_forest_classifier(
         self,
