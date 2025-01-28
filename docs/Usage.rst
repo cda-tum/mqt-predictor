@@ -75,7 +75,7 @@ This is done by first creating the necessary training data (based on the trainin
 
 .. code-block:: python
 
-    ml_pred = mqt.predictor.ml.Predictor(figure_of_merit="expected_fidelity", devices="all")
+    ml_pred = mqt.predictor.ml.Predictor(figure_of_merit="expected_fidelity")
     ml_pred.generate_compiled_circuits(timeout=600)  # timeout in seconds
     training_data, name_list, scores_list = ml_pred.generate_trainingdata_from_qasm_files()
     mqt.predictor.ml.helper.save_training_data(
@@ -83,14 +83,13 @@ This is done by first creating the necessary training data (based on the trainin
     )
 
 This will compile all provided uncompiled training circuits for all available devices and figures of merit.
-To this end, all the devices currently supported by [MQT Bench](https://github.com/cda-tum/mqt-bench) are considered.
-This currently includes:
+However, only devices with a bidirectional connectivity are supported.
+To this end, the following the devices currently supported by [MQT Bench](https://github.com/cda-tum/mqt-bench) are supported:
 
 - ibm_washington
 - ibm_montreal
 - ionq_harmony
 - ionq_aria1
-- oqc_lucy
 - rigetti_aspen_m3
 - quantinuum_h2
 - iqm_adonis

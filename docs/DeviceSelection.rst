@@ -29,17 +29,20 @@ The trained model then acts as a predictor and can be used to predict the most s
 
 Supported Quantum Devices
 -------------------------
-Currently, seven devices based on two qubit technologies are supported:
+Currently, devices based on two qubit technologies are supported:
 
 - Superconducting-based:
+    - IQM Adonis with 5 qubits
+    - IQM Apollo with 20 qubits
     - IBM Montreal with 27 qubits
     - Quantinuum H2 with 32 qubits
-    - Rigetti Aspen-M2 with 80 qubits
+    - Rigetti Aspen-M3 with 80 qubits
     - IBM Washington with 127 qubits
 - Ion Trap-based:
-    - OQC Lucy with 8 qubits
     - IonQ Harmony with 11 qubits
     - IonQ Aria1 with 25
+    - Quantinuum H2 with 32 qubits
+
 
 Adding further devices is straight-forward and requires only to provide its native gate-set, connectivity, and calibration data.
 
