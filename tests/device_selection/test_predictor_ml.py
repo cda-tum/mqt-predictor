@@ -14,6 +14,11 @@ from mqt.bench import get_benchmark
 from mqt.predictor import ml, rl
 
 
+def test_predictor_with_all_devices() -> None:
+    """Test the prediction of the device for a given figure of merit with all available devices."""
+    predictor = ml.Predictor(figure_of_merit="expected_fidelity", devices=None)
+    assert len(predictor.devices) > 0
+
 def test_entire_setup() -> None:
     """Test the training of a random forest classifier."""
     # create the ML Predictor
