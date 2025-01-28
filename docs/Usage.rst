@@ -84,7 +84,7 @@ This is done by first creating the necessary training data (based on the trainin
 
 This will compile all provided uncompiled training circuits for all available devices and figures of merit.
 To this end, all the devices currently supported by [MQT Bench](https://github.com/cda-tum/mqt-bench) are considered.
-This currently is:
+This currently includes:
 
 - ibm_washington
 - ibm_montreal
