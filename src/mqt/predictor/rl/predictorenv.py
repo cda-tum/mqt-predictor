@@ -284,9 +284,6 @@ class PredictorEnv(Env):  # type: ignore[misc]
 
             elif action["origin"] == "tket":
                 try:
-                    self.state = self.state.decompose(
-                        gates_to_decompose=["ecr", "rzx"], reps=2
-                    )  # TKET cannot handle ecr gates and two decompositions are necessary because one leads to rzx gates that cannot be handled as well
                     tket_qc = qiskit_to_tk(self.state, preserve_param_uuid=True)
                     for elem in transpile_pass:
                         elem.apply(tket_qc)
