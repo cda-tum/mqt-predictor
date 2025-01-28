@@ -106,7 +106,7 @@ def create_mqtpredictor_result(qc: QuantumCircuit, figure_of_merit: reward.figur
     Returns:
         A Result object containing the compiled quantum circuit.
     """
-    device = ml.helper.predict_device_for_figure_of_merit(qc, devices="all", figure_of_merit=figure_of_merit)
+    device = ml.helper.predict_device_for_figure_of_merit(qc, devices=None, figure_of_merit=figure_of_merit)
     target_filename = filename.split("/")[-1].split(".qasm")[0] + "_" + figure_of_merit + "-" + device.name
     combined_path_filename = ml.helper.get_path_training_circuits_compiled() / (target_filename + ".qasm")
     if Path(combined_path_filename).exists():

@@ -43,7 +43,7 @@ def qcompile(
 
 def predict_device_for_figure_of_merit(
     qc: Path | QuantumCircuit,
-    devices: list[str] | str | None = None,
+    devices: list[str] | None = None,
     figure_of_merit: reward.figure_of_merit = "expected_fidelity",
 ) -> Device:
     """Returns the name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
