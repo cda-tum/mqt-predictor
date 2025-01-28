@@ -102,14 +102,14 @@ class Predictor:
         for filename in source_path.iterdir():
             if filename.suffix != ".qasm":
                 continue
-            qc = QuantumCircuit.from_qasm_file(Path(source_path) / filename)
+            qc = QuantumCircuit.from_qasm_file(filename)
             if qc.num_qubits > dev_max_qubits:
                 continue
 
             target_filename = (
                 str(filename).split("/")[-1].split(".qasm")[0] + "_" + self.figure_of_merit + "-" + dev.name
             )
-            if (Path(target_path) / (target_filename + ".qasm")).exists():
+            if (target_path / (target_filename + ".qasm")).exists():
                 continue
             try:
                 res = utils.timeout_watcher(rl.qcompile, [qc, self.figure_of_merit, device_name, rl_pred], timeout)
@@ -148,7 +148,7 @@ class Predictor:
             with zipfile.ZipFile(str(path_zip), "r") as zip_ref:
                 zip_ref.extractall(source_path)
 
-        target_path.mkdir(exist_ok=True)
+        # target_path.mkdir(parents=True, exist_ok=True)
 
         Parallel(n_jobs=num_workers, verbose=100)(
             delayed(self.compile_all_circuits_devicewise)(device.name, timeout, source_path, target_path, logger.level)
