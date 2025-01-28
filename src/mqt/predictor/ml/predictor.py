@@ -292,7 +292,6 @@ class Predictor:
 
         clf = RandomForestClassifier(random_state=0)
         num_cv = min(len(training_data.y_train), 5)
-        logger.warning(training_data)
         clf = GridSearchCV(clf, tree_param, cv=num_cv, n_jobs=8).fit(training_data.X_train, training_data.y_train)
 
         self.set_classifier(clf.best_estimator_)
@@ -405,8 +404,6 @@ def predict_device_for_figure_of_merit(
         logger.error(error_msg)
         raise FileNotFoundError(error_msg)
     clf = load(path)
-    logger.warning(load(path))
-    logger.warning(path)
 
     feature_dict = ml.helper.create_feature_dict(qc)
     feature_vector = list(feature_dict.values())
