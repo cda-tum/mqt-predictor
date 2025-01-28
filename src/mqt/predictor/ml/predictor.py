@@ -280,9 +280,6 @@ class Predictor:
         """
         training_data = self.get_prepared_training_data()
 
-        [training_data.scores_list[i] for i in training_data.indices_test]
-        [training_data.names_list[i] for i in training_data.indices_test]
-
         tree_param = [
             {
                 "n_estimators": [100, 200, 500],
