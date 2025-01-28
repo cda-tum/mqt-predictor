@@ -7,66 +7,32 @@ from importlib import resources
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import numpy as np
 from qiskit import QuantumCircuit
 
 from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import ml, reward, rl
 
 if TYPE_CHECKING:
+    import numpy as np
     from numpy._typing import NDArray
-
-    from mqt.bench.devices import Device
 
 
 def qcompile(
     qc: QuantumCircuit,
-    devices: list[str] | None = None,
     figure_of_merit: reward.figure_of_merit = "expected_fidelity",
 ) -> tuple[QuantumCircuit, list[str], str]:
     """Compiles a given quantum circuit to a device with the highest predicted figure of merit.
 
     Arguments:
-        qc: The quantum circuit to be compiled.
-        devices: The devices to be used.
+        qc: The quantum circuit to be compiled
         figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
 
     Returns:
         Returns a tuple containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, False is returned.
     """
-    predicted_device = predict_device_for_figure_of_merit(qc, figure_of_merit=figure_of_merit, devices=devices)
+    predicted_device = ml.predict_device_for_figure_of_merit(qc, figure_of_merit=figure_of_merit)
     res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=predicted_device.name)
-    return *res, predicted_device.name
-
-
-def predict_device_for_figure_of_merit(
-    qc: Path | QuantumCircuit,
-    devices: list[str] | None = None,
-    figure_of_merit: reward.figure_of_merit = "expected_fidelity",
-) -> Device:
-    """Returns the name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
-
-    Arguments:
-        qc: The quantum circuit to be compiled.
-        devices: The devices to be used.
-        figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
-
-    Returns:
-        The device with the highest predicted figure of merit that is suitable for the given quantum circuit.
-    """
-    ml_predictor = ml.Predictor(figure_of_merit=figure_of_merit, devices=devices)
-    predicted_device_index_probs = ml_predictor.predict_probs(qc)
-    assert ml_predictor.clf is not None
-    classes = ml_predictor.clf.classes_  # type: ignore[unreachable]
-    predicted_device_index = classes[np.argsort(predicted_device_index_probs)[::-1]]
-
-    num_qubits = qc.num_qubits if isinstance(qc, QuantumCircuit) else QuantumCircuit.from_qasm_file(qc).num_qubits
-
-    for index in predicted_device_index:
-        if ml_predictor.devices[index].num_qubits >= num_qubits:
-            return ml_predictor.devices[index]
-    msg = "No suitable device found."
-    raise ValueError(msg)
+    return *res, predicted_device
 
 
 def get_path_training_data() -> Path:
@@ -81,10 +47,8 @@ def get_path_results(ghz_results: bool = False) -> Path:
     return get_path_training_data() / "trained_model" / "res.csv"
 
 
-def get_path_trained_model(figure_of_merit: str, return_non_zero_indices: bool = False) -> Path:
+def get_path_trained_model(figure_of_merit: str) -> Path:
     """Returns the path to the trained model folder resulting from the machine learning training."""
-    if return_non_zero_indices:
-        return get_path_training_data() / "trained_model" / ("non_zero_indices_" + figure_of_merit + ".npy")
     return get_path_training_data() / "trained_model" / ("trained_clf_" + figure_of_merit + ".joblib")
 
 

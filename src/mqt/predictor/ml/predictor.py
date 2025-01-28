@@ -9,6 +9,8 @@ from importlib import resources
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from joblib import dump as joblib_dump
+
 if sys.version_info >= (3, 11) and TYPE_CHECKING:  # pragma: no cover
     from typing import assert_never
 else:
@@ -22,7 +24,7 @@ from qiskit.qasm2 import dump
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from mqt.bench.devices import get_available_devices, get_device_by_name
+from mqt.bench.devices import Device, get_available_devices, get_device_by_name
 from mqt.predictor import ml, reward, rl, utils
 
 if TYPE_CHECKING:
@@ -255,7 +257,8 @@ class Predictor:
 
         feature_vec = ml.helper.create_feature_dict(path_uncompiled_circuit / file)
         scores_list = list(scores.values())
-        target_label = np.argmax(scores_list)
+        # target label is the dict key.name with the highest value, dont use max(scores, key=scores.get).name
+        target_label = max(scores, key=lambda k: scores[k])
 
         training_sample = (list(feature_vec.values()), target_label)
         circuit_name = str(file).split(".")[0]
@@ -275,7 +278,7 @@ class Predictor:
         Returns:
             True when the training was successful, False otherwise.
         """
-        training_data = self.get_prepared_training_data(save_non_zero_indices=True)
+        training_data = self.get_prepared_training_data()
 
         scores_filtered = [training_data.scores_list[i] for i in training_data.indices_test]
         names_filtered = [training_data.names_list[i] for i in training_data.indices_test]
@@ -292,6 +295,7 @@ class Predictor:
 
         clf = RandomForestClassifier(random_state=0)
         clf = GridSearchCV(clf, tree_param, cv=2, n_jobs=8).fit(training_data.X_train, training_data.y_train)
+        print(training_data.y_train)
 
         if visualize_results:
             y_pred = np.array(list(clf.predict(training_data.X_test)))
@@ -306,20 +310,13 @@ class Predictor:
 
         self.set_classifier(clf.best_estimator_)
         if save_classifier:
-            dump(clf, str(ml.helper.get_path_trained_model(self.figure_of_merit)))
+            joblib_dump(clf, str(ml.helper.get_path_trained_model(self.figure_of_merit)))
         logger.info("Random Forest classifier is trained and saved.")
 
         return self.clf is not None
 
-    def get_prepared_training_data(self, save_non_zero_indices: bool = False) -> ml.helper.TrainingData:
-        """Prepares the training data for the given figure of merit.
-
-        Arguments:
-            save_non_zero_indices: Whether to save the non zero indices. Defaults to False.
-
-        Returns:
-            The prepared training data.
-        """
+    def get_prepared_training_data(self) -> ml.helper.TrainingData:
+        """Returns the training data for the given figure of merit."""
         training_data, names_list, raw_scores_list = self.load_training_data()
         unzipped_training_data_x, unzipped_training_data_y = zip(*training_data, strict=False)
         scores_list: list[list[float]] = [[] for _ in range(len(raw_scores_list))]
@@ -332,20 +329,9 @@ class Predictor:
 
         x, y, indices = (
             np.array(x_list, dtype=np.float64),
-            np.array(y_list, dtype=np.int64),
+            np.array(y_list, dtype=str),
             np.array(range(len(y_list)), dtype=np.int64),
         )
-
-        # Store all non zero feature indices
-        non_zero_indices = [i for i in range(len(x[0])) if sum(x[:, i]) > 0]
-        x = x[:, non_zero_indices]
-
-        if save_non_zero_indices:
-            data = np.asarray(non_zero_indices, dtype=np.uint64)
-            np.save(
-                ml.helper.get_path_trained_model(self.figure_of_merit, return_non_zero_indices=True),
-                data,
-            )
 
         (
             x_train,
@@ -507,34 +493,6 @@ class Predictor:
             result_path.mkdir()
         plt.savefig(result_path / "y_pred_eval_normed.pdf", bbox_inches="tight")
 
-    def predict_probs(self, qc: Path | QuantumCircuit) -> NDArray[np.float64]:
-        """Returns the probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
-
-        Arguments:
-            qc: The QuantumCircuit or Path to the respective qasm file.
-
-        Returns:
-            The probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
-        """
-        if self.clf is None:
-            path = ml.helper.get_path_trained_model(self.figure_of_merit)
-            if path.is_file():
-                self.clf = load(path)
-
-            if self.clf is None:
-                error_msg = "The ML model is not trained yet. Please train the model before using it."
-                logger.error(error_msg)
-                raise FileNotFoundError(error_msg)
-
-        feature_dict = ml.helper.create_feature_dict(qc)  # type: ignore[unreachable]
-        feature_vector = list(feature_dict.values())
-
-        path = ml.helper.get_path_trained_model(self.figure_of_merit, return_non_zero_indices=True)
-        non_zero_indices = np.load(path, allow_pickle=True)
-        feature_vector = [feature_vector[i] for i in non_zero_indices]
-
-        return self.clf.predict_proba([feature_vector])[0]
-
     def save_training_data(
         self,
         training_data: list[NDArray[np.float64]],
@@ -580,3 +538,44 @@ class Predictor:
                 raise FileNotFoundError(error_msg)
 
             return training_data, names_list, scores_list
+
+
+def predict_device_for_figure_of_merit(
+    qc: Path | QuantumCircuit, figure_of_merit: reward.figure_of_merit = "expected_fidelity"
+) -> Device:
+    """Returns the probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
+
+    Arguments:
+        qc: The QuantumCircuit or Path to the respective qasm file.
+        figure_of_merit: The figure of merit to be used for compilation.
+
+    Returns:
+        The probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
+    """
+    path = ml.helper.get_path_trained_model(figure_of_merit)
+    clf = load(path)
+
+    if clf is None:
+        error_msg = "The ML model is not trained yet. Please train the model before using it."
+        logger.error(error_msg)
+        raise FileNotFoundError(error_msg)
+
+    feature_dict = ml.helper.create_feature_dict(qc)
+    feature_vector = list(feature_dict.values())
+
+    path = ml.helper.get_path_trained_model(figure_of_merit)
+    probabilities = clf.predict_proba([feature_vector])[0]
+    class_labels = clf.classes_
+    # sort all devices with decreasing probabilities
+    sorted_devices = np.array([
+        label for _, label in sorted(zip(probabilities, class_labels, strict=False), reverse=True)
+    ])
+
+    num_qubits = qc.num_qubits if isinstance(qc, QuantumCircuit) else QuantumCircuit.from_qasm_file(qc).num_qubits
+
+    for dev_name in sorted_devices:
+        dev = get_device_by_name(dev_name)
+        if dev.num_qubits >= num_qubits:
+            return dev
+    msg = "No suitable device found."
+    raise ValueError(msg)

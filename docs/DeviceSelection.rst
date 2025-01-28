@@ -95,5 +95,5 @@ Additionally, the raw training data may be extracted and can be used for any mac
 .. code-block:: python
 
     training_data = predictor.get_prepared_training_data(
-        save_non_zero_indices=True, figure_of_merit="expected_fidelity"
+        figure_of_merit="expected_fidelity"
     )
