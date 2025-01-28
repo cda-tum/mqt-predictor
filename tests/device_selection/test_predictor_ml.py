@@ -19,7 +19,6 @@ def test_train_and_predictor_random_forest_classifier() -> None:
 
     This test must be executed prior to any prediction to make sure the model is trained using the latest scikit-learn version.
     """
-
     # create the ML Predictor
     predictor = ml.Predictor(devices=["ionq_harmony"], figure_of_merit="expected_fidelity")
     source_path = Path()
