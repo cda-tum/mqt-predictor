@@ -6,8 +6,6 @@ import logging
 import sys
 from typing import TYPE_CHECKING, Any
 
-from mqt.predictor.rl.helper import check_directionality
-
 if sys.version_info >= (3, 11) and TYPE_CHECKING:  # pragma: no cover
     from typing import assert_never
 else:
@@ -25,7 +23,7 @@ from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
 from qiskit.passmanager.flow_controllers import DoWhileController
 from qiskit.transpiler import CouplingMap, PassManager, TranspileLayout
-from qiskit.transpiler.passes import CheckMap, GatesInBasis
+from qiskit.transpiler.passes import CheckGateDirection, CheckMap, GatesInBasis
 from qiskit.transpiler.passes.layout.vf2_layout import VF2LayoutStopReason
 
 from mqt.bench.devices import get_device_by_name
@@ -356,8 +354,12 @@ class PredictorEnv(Env):  # type: ignore[misc]
         check_mapping = CheckMap(coupling_map=CouplingMap(self.device.coupling_map))
         check_mapping(self.state)
         mapped = check_mapping.property_set["is_swap_mapped"]
-        directionality_mapped = check_directionality(self.state, self.device.coupling_map)
-        if mapped and not directionality_mapped:  # there is an error in the
+
+        directionality_check = CheckGateDirection(coupling_map=CouplingMap(self.device.coupling_map))
+        directionality_check(self.state)
+        mapped_with_directionality = directionality_check.property_set["is_direction_mapped"]
+
+        if mapped and not mapped_with_directionality:  # the directionality is not correct
             self.layout = None
 
         if mapped and self.layout is not None:
