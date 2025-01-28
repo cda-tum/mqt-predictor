@@ -14,11 +14,8 @@ from mqt.bench import get_benchmark
 from mqt.predictor import ml, rl
 
 
-def test_train_and_predictor_random_forest_classifier() -> None:
-    """Test the training of a random forest classifier.
-
-    This test must be executed prior to any prediction to make sure the model is trained using the latest scikit-learn version.
-    """
+def test_entire_setup() -> None:
+    """Test the training of a random forest classifier."""
     # create the ML Predictor
     predictor = ml.Predictor(devices=["ionq_harmony"], figure_of_merit="expected_fidelity")
     source_path = Path()
@@ -44,15 +41,18 @@ def test_train_and_predictor_random_forest_classifier() -> None:
     assert len(names_list) > 0
     assert len(scores_list) > 0
 
-    # train the random forest classifier based on created training data
-    predictor.train_random_forest_classifier(save_classifier=True)
-
     # save the training data and delete it afterwards
-    ml.helper.save_training_data(training_data, names_list, scores_list, "test")
-    for file in ["training_data_test.npy", "names_list_test.npy", "scores_list_test.npy"]:
+    predictor.save_training_data(training_data, names_list, scores_list)
+    for file in [
+        "training_data_expected_fidelity.npy",
+        "names_list_expected_fidelity.npy",
+        "scores_list_expected_fidelity.npy",
+    ]:
         path = ml.helper.get_path_training_data() / "training_data_aggregated" / file
         assert path.exists()
-        path.unlink()
+
+    # train the random forest classifier based on created training data
+    predictor.train_random_forest_classifier(save_classifier=True)
 
     # delete used RL model to save storage
     model_path = Path(rl.helper.get_path_trained_model() / ("model_expected_fidelity_ionq_harmony.zip"))
@@ -81,44 +81,7 @@ def test_train_and_predictor_random_forest_classifier() -> None:
     with pytest.raises(
         FileNotFoundError, match=re.escape("The ML model is not trained yet. Please train the model before using it.")
     ):
-        ml.predict_device_for_figure_of_merit(qc, figure_of_merit="false_input")  # type: ignore[arg-type]
-
-
-def test_performance_measures() -> None:
-    """Test the calculation of the performance measures for a given set of scores and labels."""
-    predictor = ml.Predictor(figure_of_merit="expected_fidelity")
-
-    training_data = predictor.get_prepared_training_data()
-
-    y_test = training_data.y_test
-    indices_test = training_data.indices_test
-    names_list = training_data.names_list
-    scores_list = training_data.scores_list
-
-    assert len(y_test) > 0
-    assert len(indices_test) > 0
-    assert len(names_list) > 0
-    assert len(scores_list) > 0
-
-    scores_filtered = [scores_list[i] for i in indices_test]
-    names_filtered = [names_list[i] for i in indices_test]
-
-    # Test calc_performance_measures
-    res, relative_scores = predictor.calc_performance_measures(scores_filtered, y_test, y_test)
-    assert all(res)
-    assert not any(relative_scores)
-
-    # Test generate_eval_histogram
-    predictor.generate_eval_histogram(res, show_plot=False)
-    histogram_path = Path("results/histogram.pdf")
-    assert histogram_path.is_file(), "File does not exist"
-    histogram_path.unlink()
-
-    # Test generate_eval_all_datapoints
-    predictor.generate_eval_all_datapoints(names_filtered, scores_filtered, y_test, y_test)
-    result_path = Path("results/y_pred_eval_normed.pdf")
-    assert result_path.is_file(), "File does not exist"
-    result_path.unlink()
+        ml.predict_device_for_figure_of_merit(qc=qc, figure_of_merit="false_input")  # type: ignore[arg-type]
 
 
 def delete_path(path: Path) -> None:

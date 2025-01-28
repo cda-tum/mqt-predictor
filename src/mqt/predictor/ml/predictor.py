@@ -266,13 +266,11 @@ class Predictor:
 
     def train_random_forest_classifier(
         self,
-        visualize_results: bool = False,
         save_classifier: bool = True,
     ) -> bool:
         """Trains a random forest classifier for the given figure of merit.
 
         Arguments:
-            visualize_results: Whether to visualize the results. Defaults to False.
             save_classifier: Whether to save the classifier. Defaults to True.
 
         Returns:
@@ -280,8 +278,8 @@ class Predictor:
         """
         training_data = self.get_prepared_training_data()
 
-        scores_filtered = [training_data.scores_list[i] for i in training_data.indices_test]
-        names_filtered = [training_data.names_list[i] for i in training_data.indices_test]
+        [training_data.scores_list[i] for i in training_data.indices_test]
+        [training_data.names_list[i] for i in training_data.indices_test]
 
         tree_param = [
             {
@@ -294,19 +292,9 @@ class Predictor:
         ]
 
         clf = RandomForestClassifier(random_state=0)
-        clf = GridSearchCV(clf, tree_param, cv=2, n_jobs=8).fit(training_data.X_train, training_data.y_train)
-        print(training_data.y_train)
-
-        if visualize_results:
-            y_pred = np.array(list(clf.predict(training_data.X_test)))
-            res, _ = self.calc_performance_measures(scores_filtered, y_pred, training_data.y_test)
-            self.generate_eval_histogram(res, filename="RandomForestClassifier")
-
-            logger.info("Best Accuracy: " + str(clf.best_score_))
-            top3 = (res.count(1) + res.count(2) + res.count(3)) / len(res)
-            logger.info("Top 3: " + str(top3))
-            logger.info("Feature Importance: " + str(clf.best_estimator_.feature_importances_))
-            self.generate_eval_all_datapoints(names_filtered, scores_filtered, y_pred, training_data.y_test)
+        num_cv = min(len(training_data.y_train), 5)
+        logger.warning(training_data)
+        clf = GridSearchCV(clf, tree_param, cv=num_cv, n_jobs=8).fit(training_data.X_train, training_data.y_train)
 
         self.set_classifier(clf.best_estimator_)
         if save_classifier:
@@ -352,146 +340,6 @@ class Predictor:
             names_list,
             scores_list,
         )
-
-    def calc_performance_measures(
-        self,
-        scores_filtered: list[list[float]],
-        y_pred: np.ndarray[Any, np.dtype[np.float64]],
-        y_test: np.ndarray[Any, np.dtype[np.float64]],
-    ) -> tuple[list[int], list[float]]:
-        """Method to generate the performance measures for a trained classifier.
-
-        Arguments:
-            scores_filtered: The scores filtered for the respectively predicted indices of all training data.
-            y_pred: The predicted labels.
-            y_test: The actual labels.
-
-        Returns:
-            The ranks and the relative scores.
-        """
-        res = []
-        relative_scores = []
-        for i in range(len(y_pred)):
-            assert np.argmax(scores_filtered[i]) == y_test[i]
-            predicted_score = scores_filtered[i][y_pred[i]]
-            relative_scores.append(predicted_score - np.max(scores_filtered[i]))
-            score = list(np.sort(scores_filtered[i])[::-1]).index(predicted_score)
-            res.append(score + 1)
-
-        assert len(res) == len(y_pred)
-
-        return res, relative_scores
-
-    def generate_eval_histogram(
-        self, res: list[int], filename: str = "histogram", color: str = "#21918c", show_plot: bool = True
-    ) -> None:
-        """Method to generate the histogram for the evaluation scores.
-
-        Arguments:
-            res: The ranks of the predictions.
-            filename: The filename of the histogram. Defaults to "histogram".
-            color: The color of the histogram. Defaults to "#21918c".
-            show_plot: Whether to show the plot. Defaults to True. False for testing purposes.
-
-        """
-        plt.figure(figsize=(10, 5))
-
-        num_of_comp_paths = len(self.devices)
-        plt.bar(
-            list(range(0, num_of_comp_paths, 1)),
-            height=[res.count(i) / len(res) for i in range(1, num_of_comp_paths + 1, 1)],
-            width=0.90,
-            color=color,
-        )
-
-        plt.xticks(
-            list(range(0, num_of_comp_paths, 1)),
-            [i if i % 2 == 1 else "" for i in range(1, num_of_comp_paths + 1, 1)],
-            fontsize=16,
-        )
-
-        plt.yticks(fontsize=16)
-
-        plt.xlabel(
-            "Best prediction                                                        Worst prediction",
-            fontsize=18,
-        )
-        plt.ylabel("Relative frequency", fontsize=18)
-        result_path = Path("results")
-        if not result_path.is_dir():
-            result_path.mkdir()
-        plt.savefig(result_path / (filename + ".pdf"), bbox_inches="tight")
-        if show_plot:
-            plt.show()
-
-    def generate_eval_all_datapoints(
-        self,
-        names_list: list[Any],
-        scores_filtered: list[Any],
-        y_pred: np.ndarray[Any, np.dtype[np.float64]],
-        y_test: np.ndarray[Any, np.dtype[np.float64]],
-        color_all: str = "#21918c",
-        color_pred: str = "#440154",
-    ) -> None:
-        """Method to generate the plot for the evaluation scores of all training data.
-
-        Arguments:
-            names_list: The names of all training data.
-            scores_filtered: The scores filtered for the respectively predicted indices of all training data.
-            y_pred: The predicted labels.
-            y_test: The actual labels.
-            color_all: The color of the evaluation scores of all training data. Defaults to "#21918c".
-            color_pred: The color of the evaluation scores of the predicted training data. Defaults to "#440154".
-
-        """
-        # Create list of all qubit numbers and sort them
-        names_list_num_qubits = []
-        for i in range(len(names_list)):
-            assert np.argmax(scores_filtered[i]) == y_test[i]
-            names_list_num_qubits.append(int(names_list[i].split("_")[-1].split(".")[0]))
-
-        # Sort all other list (num_qubits, scores and y_pred) accordingly
-        (
-            qubit_list_sorted,
-            scores_filtered_sorted_accordingly,
-            y_pred_sorted_accordingly,
-        ) = zip(*sorted(zip(names_list_num_qubits, scores_filtered, y_pred, strict=False)), strict=False)
-        plt.figure(figsize=(17, 8))
-        for i in range(len(names_list_num_qubits)):
-            tmp_res = scores_filtered_sorted_accordingly[i]
-            max_score = max(tmp_res)
-            if max_score == 0:
-                continue
-            for j in range(len(tmp_res)):
-                plt.plot(i, tmp_res[j] / max_score, alpha=1.0, markersize=1.7, color=color_all)
-
-            plt.plot(
-                i,
-                tmp_res[y_pred_sorted_accordingly[i]] / max_score,
-                color=color_pred,
-                marker=".",
-                linestyle="None",
-            )
-
-        plt.xticks(
-            list(range(0, len(scores_filtered), 30)),
-            [qubit_list_sorted[i] for i in range(0, len(scores_filtered), 30)],
-            fontsize=18,
-        )
-        plt.yticks(fontsize=18)
-        plt.xlabel("Unseen test circuits (sorted along the number of qubits)", fontsize=18)
-        plt.ylabel(
-            "Evaluation scores of combinations of options \n (normalized per test circuit)",
-            fontsize=18,
-        )
-        plt.tight_layout()
-
-        plt.ylim(0, 1.05)
-        plt.xlim(0, len(scores_filtered))
-        result_path = Path("results")
-        if not result_path.is_dir():
-            result_path.mkdir()
-        plt.savefig(result_path / "y_pred_eval_normed.pdf", bbox_inches="tight")
 
     def save_training_data(
         self,
@@ -553,12 +401,15 @@ def predict_device_for_figure_of_merit(
         The probabilities for all supported quantum devices to be the most suitable one for the given quantum circuit.
     """
     path = ml.helper.get_path_trained_model(figure_of_merit)
-    clf = load(path)
-
-    if clf is None:
+    if not path.exists():
         error_msg = "The ML model is not trained yet. Please train the model before using it."
         logger.error(error_msg)
         raise FileNotFoundError(error_msg)
+    clf = load(path)
+    logger.warning(load(path))
+    logger.warning(path)
+
+
 
     feature_dict = ml.helper.create_feature_dict(qc)
     feature_vector = list(feature_dict.values())
