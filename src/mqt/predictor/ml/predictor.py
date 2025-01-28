@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import sys
 import zipfile
+from importlib import resources
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -145,7 +146,7 @@ class Predictor:
 
         target_path.mkdir(exist_ok=True)
 
-        Parallel(n_jobs=1, verbose=100)(
+        Parallel(n_jobs=-1, verbose=100)(
             delayed(self.compile_all_circuits_devicewise)(device.name, timeout, source_path, target_path, logger.level)
             for device in self.devices
         )
@@ -304,7 +305,7 @@ class Predictor:
 
         self.set_classifier(clf.best_estimator_)
         if save_classifier:
-            ml.helper.save_classifier(clf.best_estimator_, self.figure_of_merit)
+            dump(clf, str(ml.helper.get_path_trained_model(self.figure_of_merit)))
         logger.info("Random Forest classifier is trained and saved.")
 
         return self.clf is not None
@@ -318,7 +319,7 @@ class Predictor:
         Returns:
             The prepared training data.
         """
-        training_data, names_list, raw_scores_list = ml.helper.load_training_data(self.figure_of_merit)
+        training_data, names_list, raw_scores_list = self.load_training_data()
         unzipped_training_data_x, unzipped_training_data_y = zip(*training_data, strict=False)
         scores_list: list[list[float]] = [[] for _ in range(len(raw_scores_list))]
         x_raw = list(unzipped_training_data_x)
@@ -532,3 +533,49 @@ class Predictor:
         feature_vector = [feature_vector[i] for i in non_zero_indices]
 
         return self.clf.predict_proba([feature_vector])[0]
+
+    def save_training_data(
+        self,
+        training_data: list[NDArray[np.float64]],
+        names_list: list[str],
+        scores_list: list[NDArray[np.float64]],
+    ) -> None:
+        """Saves the given training data to the training data folder.
+
+        Arguments:
+            training_data: The training data, the names list and the scores list to be saved.
+            names_list: The names list of the training data.
+            scores_list: The scores list of the training data.
+            figure_of_merit: The figure of merit to be used for compilation.
+        """
+        with resources.as_file(ml.helper.get_path_training_data() / "training_data_aggregated") as path:
+            data = np.asarray(training_data, dtype=object)
+            np.save(str(path / ("training_data_" + self.figure_of_merit + ".npy")), data)
+            data = np.asarray(names_list, dtype=str)
+            np.save(str(path / ("names_list_" + self.figure_of_merit + ".npy")), data)
+            data = np.asarray(scores_list, dtype=object)
+            np.save(str(path / ("scores_list_" + self.figure_of_merit + ".npy")), data)
+
+    def load_training_data(self) -> tuple[list[NDArray[np.float64]], list[str], list[NDArray[np.float64]]]:
+        """Loads and returns the training data from the training data folder.
+
+        Arguments:
+            figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
+
+        Returns:
+           The training data, the names list and the scores list.
+        """
+        with resources.as_file(ml.helper.get_path_training_data() / "training_data_aggregated") as path:
+            if (
+                path.joinpath("training_data_" + self.figure_of_merit + ".npy").is_file()
+                and path.joinpath("names_list_" + self.figure_of_merit + ".npy").is_file()
+                and path.joinpath("scores_list_" + self.figure_of_merit + ".npy").is_file()
+            ):
+                training_data = np.load(path / ("training_data_" + self.figure_of_merit + ".npy"), allow_pickle=True)
+                names_list = list(np.load(path / ("names_list_" + self.figure_of_merit + ".npy"), allow_pickle=True))
+                scores_list = list(np.load(path / ("scores_list_" + self.figure_of_merit + ".npy"), allow_pickle=True))
+            else:
+                error_msg = "Training data not found. Please run the training script first."
+                raise FileNotFoundError(error_msg)
+
+            return training_data, names_list, scores_list
