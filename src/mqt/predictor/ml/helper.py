@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from qiskit import QuantumCircuit
 
@@ -124,7 +124,7 @@ def dict_to_featurevector(gate_dict: dict[str, int]) -> dict[str, int]:
 PATH_LENGTH = 260
 
 
-def create_feature_dict(qc: Path | QuantumCircuit) -> dict[str, Any]:
+def create_feature_vector(qc: Path | QuantumCircuit) -> list[int | float]:
     """Creates and returns a feature dictionary for a given quantum circuit.
 
     Arguments:
@@ -153,7 +153,7 @@ def create_feature_dict(qc: Path | QuantumCircuit) -> dict[str, Any]:
     feature_dict["entanglement_ratio"] = supermarq_features.entanglement_ratio
     feature_dict["parallelism"] = supermarq_features.parallelism
     feature_dict["liveness"] = supermarq_features.liveness
-    return feature_dict
+    return list(feature_dict.values())
 
 
 @dataclass

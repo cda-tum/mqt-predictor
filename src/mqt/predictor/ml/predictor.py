@@ -257,12 +257,12 @@ class Predictor:
         if num_not_empty_entries == 0:
             logger.warning("no compiled circuits found for:" + str(file))
 
-        feature_vec = ml.helper.create_feature_dict(path_uncompiled_circuit / file)
         scores_list = list(scores.values())
         # target label is the dict key.name with the highest value, dont use max(scores, key=scores.get).name
         target_label = max(scores, key=lambda k: scores[k])
 
-        training_sample = (list(feature_vec.values()), target_label)
+        feature_vec = ml.helper.create_feature_vector(path_uncompiled_circuit / file)
+        training_sample = (feature_vec, target_label)
         circuit_name = str(file).split(".")[0]
         return training_sample, circuit_name, scores_list
 
@@ -405,8 +405,7 @@ def predict_device_for_figure_of_merit(
         raise FileNotFoundError(error_msg)
     clf = load(path)
 
-    feature_dict = ml.helper.create_feature_dict(qc)
-    feature_vector = list(feature_dict.values())
+    feature_vector = ml.helper.create_feature_vector(qc)
 
     probabilities = clf.predict_proba([feature_vector])[0]
     class_labels = clf.classes_
