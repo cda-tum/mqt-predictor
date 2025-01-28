@@ -24,6 +24,11 @@ def test_entire_setup() -> None:
     """Test the training of a random forest classifier."""
     # create the ML Predictor
     predictor = ml.Predictor(devices=["ionq_harmony"], figure_of_merit="expected_fidelity")
+
+    msg = "Training data not found. Please run the training script first as described in the documentation that can be found at https://mqt.readthedocs.io/projects/predictor/en/latest/Usage.html."
+    with pytest.raises(FileNotFoundError, match=re.escape(msg)):
+        predictor.load_training_data()
+
     source_path = Path()
     target_path = Path("test_compiled_circuits")
     if not target_path.exists():

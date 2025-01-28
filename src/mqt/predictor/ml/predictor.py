@@ -363,14 +363,7 @@ class Predictor:
             np.save(str(path / ("scores_list_" + self.figure_of_merit + ".npy")), data)
 
     def load_training_data(self) -> tuple[list[NDArray[np.float64]], list[str], list[NDArray[np.float64]]]:
-        """Loads and returns the training data from the training data folder.
-
-        Arguments:
-            figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
-
-        Returns:
-           The training data, the names list and the scores list.
-        """
+        """Loads and returns the training data from the training data folder."""
         with resources.as_file(ml.helper.get_path_training_data() / "training_data_aggregated") as path:
             if (
                 path.joinpath("training_data_" + self.figure_of_merit + ".npy").is_file()
@@ -381,7 +374,7 @@ class Predictor:
                 names_list = list(np.load(path / ("names_list_" + self.figure_of_merit + ".npy"), allow_pickle=True))
                 scores_list = list(np.load(path / ("scores_list_" + self.figure_of_merit + ".npy"), allow_pickle=True))
             else:
-                error_msg = "Training data not found. Please run the training script first."
+                error_msg = "Training data not found. Please run the training script first as described in the documentation that can be found at https://mqt.readthedocs.io/projects/predictor/en/latest/Usage.html."
                 raise FileNotFoundError(error_msg)
 
             return training_data, names_list, scores_list
