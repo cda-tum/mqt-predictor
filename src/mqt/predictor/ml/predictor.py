@@ -409,8 +409,6 @@ def predict_device_for_figure_of_merit(
     logger.warning(load(path))
     logger.warning(path)
 
-
-
     feature_dict = ml.helper.create_feature_dict(qc)
     feature_vector = list(feature_dict.values())
 
