@@ -182,7 +182,7 @@ class Predictor:
         name_list = []
         scores_list = []
 
-        results = Parallel(n_jobs=1, verbose=100)(
+        results = Parallel(n_jobs=-1, verbose=100)(
             delayed(self.generate_training_sample)(
                 filename.name,
                 path_uncompiled_circuits,
