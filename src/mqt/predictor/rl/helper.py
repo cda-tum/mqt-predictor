@@ -588,11 +588,13 @@ def final_layout_bqskit_to_qiskit(
     """
     ancilla = QuantumRegister(compiled_qc.num_qubits - initial_qc.num_qubits, "ancilla")
     qiskit_initial_layout = {}
+    counter_ancilla_qubit = 0
     for i in range(compiled_qc.num_qubits):
         if i in bqskit_initial_layout:
             qiskit_initial_layout[i] = initial_qc.qubits[bqskit_initial_layout.index(i)]
         else:
-            qiskit_initial_layout[i] = ancilla[i - initial_qc.num_qubits]
+            qiskit_initial_layout[i] = ancilla[counter_ancilla_qubit]
+            counter_ancilla_qubit += 1
 
     initial_qubit_mapping = {bit: index for index, bit in enumerate(compiled_qc.qubits)}
 
