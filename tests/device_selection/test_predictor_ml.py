@@ -25,8 +25,12 @@ def test_entire_setup() -> None:
 
     # create uncompiled training data
     qc = get_benchmark("dj", 1, 3)
-    qasm_path = Path("test.qasm")
-    with Path(qasm_path).open("w", encoding="utf-8") as f:
+    qasm_path1 = Path("test1.qasm")
+    with Path(qasm_path1).open("w", encoding="utf-8") as f:
+        dump(qc, f)
+    qc = get_benchmark("ghz", 1, 3)
+    qasm_path2 = Path("test2.qasm")
+    with Path(qasm_path2).open("w", encoding="utf-8") as f:
         dump(qc, f)
 
     # generate compiled circuits using trained RL model
@@ -66,8 +70,10 @@ def test_entire_setup() -> None:
 
     # delete the uncompiled and compiled circuits
     delete_path(target_path)
-    if qasm_path.exists():
-        qasm_path.unlink()
+    if qasm_path1.exists():
+        qasm_path1.unlink()
+    if qasm_path2.exists():
+        qasm_path2.unlink()
 
     # test the prediction for given Qiskit.QuantumCircuit and QASM file
     qc = get_benchmark("ghz", 1, 3)
