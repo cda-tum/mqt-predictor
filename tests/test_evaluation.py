@@ -16,7 +16,7 @@ from mqt.predictor.reward import esp_data_available
 
 def test_create_result() -> None:
     """Test the creation of a result object."""
-    device = get_device_by_name("ionq_harmony")
+    device = get_device_by_name("iqm_apollo")
     assert device.num_qubits >= 10
     qc = QuantumCircuit(10)
     qc.measure_all()
@@ -27,6 +27,7 @@ def test_create_result() -> None:
     assert res.expected_fidelity >= 0.0
     assert res.critical_depth >= 0.0
     assert res.estimated_success_probability >= 0.0
+    assert res.estimated_hellinger_distance >= 0.0
 
     res = create_qiskit_result(qc, device)
     assert isinstance(res, Result)
@@ -34,6 +35,7 @@ def test_create_result() -> None:
     assert res.expected_fidelity >= 0.0
     assert res.critical_depth >= 0.0
     assert res.estimated_success_probability >= 0.0
+    assert res.estimated_hellinger_distance >= 0.0
 
 
 def test_false_input() -> None:
@@ -46,6 +48,7 @@ def test_false_input() -> None:
     assert res.expected_fidelity == -1.0
     assert res.critical_depth == -1.0
     assert res.estimated_success_probability == -1.0
+    assert res.estimated_hellinger_distance == -1.0
 
     res = create_qiskit_result(QuantumCircuit(1000), device)
     assert isinstance(res, Result)
@@ -53,6 +56,7 @@ def test_false_input() -> None:
     assert res.expected_fidelity == -1.0
     assert res.critical_depth == -1.0
     assert res.estimated_success_probability == -1.0
+    assert res.estimated_hellinger_distance == -1.0
 
     device.coupling_map = ["wrong_coupling_map"]
     res = create_qiskit_result(QuantumCircuit(10), device)
@@ -61,6 +65,7 @@ def test_false_input() -> None:
     assert res.expected_fidelity == -1.0
     assert res.critical_depth == -1.0
     assert res.estimated_success_probability == -1.0
+    assert res.estimated_hellinger_distance == -1.0
 
     res = create_tket_result(QuantumCircuit(10), device)
     assert isinstance(res, Result)
@@ -68,6 +73,7 @@ def test_false_input() -> None:
     assert res.expected_fidelity == -1.0
     assert res.critical_depth == -1.0
     assert res.estimated_success_probability == -1.0
+    assert res.estimated_hellinger_distance == -1.0
 
 
 def test_result_none_input() -> None:
@@ -77,6 +83,7 @@ def test_result_none_input() -> None:
     assert res.expected_fidelity == -1.0
     assert res.critical_depth == -1.0
     assert res.estimated_success_probability == -1.0
+    assert res.estimated_hellinger_distance == -1.0
 
 
 def test_esp_data_available() -> None:
