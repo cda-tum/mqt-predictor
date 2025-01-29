@@ -146,8 +146,6 @@ class Predictor:
             with zipfile.ZipFile(str(path_zip), "r") as zip_ref:
                 zip_ref.extractall(source_path)
 
-        # target_path.mkdir(parents=True, exist_ok=True)
-
         Parallel(n_jobs=num_workers, verbose=100)(
             delayed(self.compile_all_circuits_devicewise)(device.name, timeout, source_path, target_path, logger.level)
             for device in self.devices
