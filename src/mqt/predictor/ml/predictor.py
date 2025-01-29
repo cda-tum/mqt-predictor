@@ -106,9 +106,7 @@ class Predictor:
             if qc.num_qubits > dev_max_qubits:
                 continue
 
-            target_filename = (
-                str(filename).split("/")[-1].split(".qasm")[0] + "_" + self.figure_of_merit + "-" + dev.name
-            )
+            target_filename = Path(filename).stem + "_" + self.figure_of_merit + "-" + dev.name
             if (target_path / (target_filename + ".qasm")).exists():
                 continue
             try:
