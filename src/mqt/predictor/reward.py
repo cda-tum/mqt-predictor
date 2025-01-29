@@ -358,7 +358,7 @@ def estimated_hellinger_distance(qc: QuantumCircuit, device: Device, precision: 
     Returns:
         The estimated Hellinger distance of the given quantum circuit on the given device.
     """
-    path = Path.cwd().parent.parent / "evaluations" / "hellinger_distance" / "trained_models"
+    path = Path.cwd().parent.parent / "evaluations" / "zenodo" / "trained_models"
     non_zero_indices_path = path / f"{device.name}_non_zero_indices.pkl"
     model_path = path / f"{device.name}_rf_regressor.pkl"
 
@@ -379,6 +379,6 @@ def estimated_hellinger_distance(qc: QuantumCircuit, device: Device, precision: 
 
 def hellinger_model_available(device: Device) -> bool:
     """Check if a trained model to estimate the Hellinger distance is available for the device."""
-    path = Path.cwd().parent.parent / "evaluations" / "hellinger_distance" / "trained_models"
+    path = Path.cwd().parent.parent / "evaluations" / "zenodo" / "trained_models"
     path = path / f"{device.name}_rf_regressor.pkl"
     return bool(path.is_file())
