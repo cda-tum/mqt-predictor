@@ -11,7 +11,7 @@ decoherence times. While for some devices, this information may be publicly avai
 devices it may be estimated from comparable devices, previous records, or insider knowledge.
 
 So far, two figures of merit are implemented for all devices: ``expected_fidelity`` and ``critical_depth``.
-On top of that, the ``estimated_success_probability`` is available for devices where the necessary calibration data is available.
+On top of that, the ``estimated_success_probability`` is available for devices where the necessary calibration data is available, as well as the ``estimated_hellinger_distance`` when a suitable (trained) model is provided.
 
 Expected Fidelity
 -----------------
@@ -47,3 +47,8 @@ The ``estimated_success_probability`` (based on :cite:labelpar:`esp-lifetime-min
 with :math:`t_{q}^{\mathrm{idle}}` being the sum of each qubit's idle times.
 Therefore, exactly the execution times of all gates and the decoherence times must be available.
 Note that some variants of this figure of merit do not take the minimum of both decoherence times but create one exponential factor for each decoherence time, others consider the entire qubit lifetime instead of idle times only.
+
+
+Estimated Hellinger Distance
+----------------------------
+The ``estimated_hellinger_distance`` is a figure of merit that is based on a ML model that has been trained on a dataset of quantum circuits labeled with their respective Hellinger distance (observed during its execution on the corresponding quantum device).

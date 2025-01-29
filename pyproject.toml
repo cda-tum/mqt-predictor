@@ -118,7 +118,7 @@ filterwarnings = [
     'ignore:.*The property ``qiskit.dagcircuit.dagcircuit.DAGCircuit.*`` is deprecated as of qiskit 1.3.0.*:DeprecationWarning:',
     'ignore:.*Providing non-standard gates.*is deprecated for both ``transpile`` and ``generate_preset_pass_manager`` as of Qiskit 1.3.0.*:DeprecationWarning:qiskit.*',
     'ignore:.*is pending deprecation as of qiskit 1.3..*:PendingDeprecationWarning:',
-
+    'ignore:.*matplotlib.*:DeprecationWarning',
 ]
 
 [tool.check-wheel-contents]
@@ -157,7 +157,7 @@ implicit_reexport = true
 # recent versions of `gym` are typed, but stable-baselines3 pins a very old version of gym.
 # qiskit is not yet marked as typed, but is typed mostly.
 # the other libraries do not have type stubs.
-module = ["qiskit.*", "joblib.*", "sklearn.*", "matplotlib.*", "gymnasium.*", "mqt.bench.*", "sb3_contrib.*", "bqskit.*", "qiskit_ibm_runtime.*"]
+module = ["qiskit.*", "joblib.*", "sklearn.*", "matplotlib.*", "gymnasium.*", "mqt.bench.*", "sb3_contrib.*", "bqskit.*", "qiskit_ibm_runtime.*", "networkx.*"]
 ignore_missing_imports = true
 
 
