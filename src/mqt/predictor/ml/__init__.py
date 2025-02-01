@@ -7,9 +7,6 @@ See README.md or go to https://github.com/cda-tum/mqt-predictor for more informa
 from __future__ import annotations
 
 from mqt.predictor.ml.helper import qcompile
-from mqt.predictor.ml.predictor import Predictor
+from mqt.predictor.ml.predictor import Predictor, predict_device_for_figure_of_merit
 
-__all__ = [
-    "Predictor",
-    "qcompile",
-]
+__all__ = ["Predictor", "predict_device_for_figure_of_merit", "qcompile"]

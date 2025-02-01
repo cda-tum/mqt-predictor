@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import sys
+import warnings
 from typing import TYPE_CHECKING, Any
 
 if sys.version_info >= (3, 11) and TYPE_CHECKING:  # pragma: no cover
@@ -50,6 +51,11 @@ class PredictorEnv(Env):  # type: ignore[misc]
         self.actions_final_optimization_indices = []
         self.used_actions: list[str] = []
         self.device = get_device_by_name(device_name)
+        # check for uni-directional coupling map
+        for a, b in self.device.coupling_map:
+            if [b, a] not in self.device.coupling_map:
+                msg = f"The connectivity of the device '{device_name}' is uni-directional and MQT Predictor might return a compiled circuit that assumes bi-directionality."
+                warnings.warn(msg, UserWarning, stacklevel=2)
 
         index = 0
 
@@ -352,10 +358,10 @@ class PredictorEnv(Env):  # type: ignore[misc]
         check_mapping(self.state)
         mapped = check_mapping.property_set["is_swap_mapped"]
 
-        if mapped and self.layout is not None:
+        if mapped and self.layout is not None:  # The circuit is correctly mapped.
             return [self.action_terminate_index, *self.actions_opt_indices]
 
-        if self.layout is not None:
+        if self.layout is not None:  # The circuit is not yet mapped but a layout is set.
             return self.actions_routing_indices
 
         # No layout applied yet
