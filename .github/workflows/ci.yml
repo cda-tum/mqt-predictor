@@ -14,25 +14,31 @@ concurrency:
 jobs:
   change-detection:
     name: 🔍 Change
-    uses: cda-tum/mqt-workflows/.github/workflows/reusable-change-detection.yml@v1.5
+    uses: cda-tum/mqt-workflows/.github/workflows/reusable-change-detection.yml@v1.7
+
+  python-linter:
+    name: 🐍 Lint
+    needs: change-detection
+    if: fromJSON(needs.change-detection.outputs.run-python-tests)
+    uses: cda-tum/mqt-workflows/.github/workflows/reusable-python-linter.yml@v1.7
+
   python-tests:
     name: 🐍 Test
     needs: change-detection
     if: fromJSON(needs.change-detection.outputs.run-python-tests)
-    uses: cda-tum/mqt-workflows/.github/workflows/reusable-python-ci.yml@v1.5
+    uses: cda-tum/mqt-workflows/.github/workflows/reusable-python-ci.yml@v1.7
     with:
-      # Runs all Python tests in separate jobs to maximize parallelism
-      run-tests-individually: true
-      skip-testing-latest-python: true
-    permissions:
-      contents: read # Required for the `actions/checkout` action
-      id-token: write # Required for the `codecov/codecov-action` action
+      enable-ubuntu2404: true
+      enable-ubuntu2404-arm: false # not supported by BQSKit
+      enable-macos13: true
+      enable-macos14: true
+      enable-windows2022: true
 
   code-ql:
     name: 📝 CodeQL
     needs: change-detection
     if: fromJSON(needs.change-detection.outputs.run-code-ql)
-    uses: cda-tum/mqt-workflows/.github/workflows/reusable-code-ql-python.yml@v1.5
+    uses: cda-tum/mqt-workflows/.github/workflows/reusable-code-ql-python.yml@v1.7
 
   required-checks-pass: # This job does nothing and is only used for branch protection
     name: 🚦 Check
