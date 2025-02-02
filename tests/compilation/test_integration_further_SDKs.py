@@ -75,14 +75,17 @@ def test_bqskit_mapping_action_swaps_necessary() -> None:
 
     assert bqskit_mapping_action is not None
 
-    qc = QuantumCircuit(5)
+    qc = QuantumCircuit(8)
     qc.h(0)
     qc.cx(0, 1)
     qc.cx(0, 2)
     qc.cx(0, 3)
     qc.cx(0, 4)
+    qc.cx(0, 5)
+    qc.cx(0, 6)
+    qc.cx(0, 7)
 
-    device = get_device_by_name("ibm_montreal")
+    device = get_device_by_name("oqc_lucy")
     bqskit_qc = qiskit_to_bqskit(qc)
     bqskit_qc_mapped, input_mapping, output_mapping = bqskit_mapping_action["transpile_pass"](device)(bqskit_qc)
     mapped_qc = bqskit_to_qiskit(bqskit_qc_mapped)
