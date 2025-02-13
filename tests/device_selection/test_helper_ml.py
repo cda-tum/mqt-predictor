@@ -5,6 +5,7 @@ from __future__ import annotations
 from mqt.bench import benchmark_generator
 from mqt.bench.devices import get_device_by_name
 from mqt.predictor import ml
+import pytest
 
 
 def test_create_feature_vector() -> None:
@@ -43,3 +44,22 @@ def test_get_path_training_data() -> None:
     """Test the retrieval of the path to the training data."""
     path = ml.helper.get_path_training_data()
     assert path.exists()
+
+
+def test_hellinger_distance() -> None:
+    """Test the calculation of the Hellinger distance."""
+    p = [0.5, 0.5]
+    q = [0.6, 0.4]
+    hellinger_distance = ml.helper.hellinger_distance(p, q)
+    assert hellinger_distance 
+
+
+def test_hellinger_distance_error() -> None:
+    """Test error during Hellinger distance calculation."""
+    valid = [0.5, 0.5]
+    invalid = [0.5, 0.4]
+
+    with pytest.raises(AssertionError, match="q is not a probability distribution"):
+        ml.helper.hellinger_distance(p=valid, q=invalid)
+    with pytest.raises(AssertionError, match="p is not a probability distribution"):
+        ml.helper.hellinger_distance(p=invalid, q=valid)
