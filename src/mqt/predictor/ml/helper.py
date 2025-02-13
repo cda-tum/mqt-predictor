@@ -10,16 +10,18 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from mqt.bench.utils import calc_supermarq_features
-from mqt.predictor import ml, reward, rl
+from mqt.predictor import ml, rl
 
 if TYPE_CHECKING:
     from numpy._typing import NDArray
     from qiskit import QuantumCircuit
 
+    from mqt.predictor.reward import figure_of_merit
+
 
 def qcompile(
     qc: QuantumCircuit,
-    figure_of_merit: reward.figure_of_merit = "expected_fidelity",
+    figure_of_merit: figure_of_merit = "expected_fidelity",
 ) -> tuple[QuantumCircuit, list[str], str]:
     """Compiles a given quantum circuit to a device with the highest predicted figure of merit.
 

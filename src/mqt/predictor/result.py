@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from mqt.predictor import reward
+from mqt.predictor.reg import hellinger_model_available
 
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit
@@ -48,9 +49,7 @@ class Result:
                 reward.estimated_success_probability(compiled_qc, device) if reward.esp_data_available(device) else -1.0
             )
             rew_hellinger = (
-                reward.estimated_hellinger_distance(compiled_qc, device)
-                if reward.hellinger_model_available(device)
-                else -1.0
+                reward.estimated_hellinger_distance(compiled_qc, device) if hellinger_model_available(device) else -1.0
             )
         else:
             rew_fid = -1.0

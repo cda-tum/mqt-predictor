@@ -3,19 +3,18 @@
 from __future__ import annotations
 
 import logging
-import pickle
-from pathlib import Path
 from typing import TYPE_CHECKING, Literal, cast
 
 import networkx as nx
 import numpy as np
+from joblib import load
 from qiskit import QuantumCircuit
 from qiskit.converters import circuit_to_dag
 
 from mqt.bench.utils import calc_supermarq_features
+from mqt.predictor.reg import get_hellinger_model_path
 
 if TYPE_CHECKING:
-    from numpy.typing import NDArray
     from qiskit import QuantumRegister, Qubit
 
     from mqt.bench.devices import Device
@@ -23,7 +22,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger("mqt-predictor")
 
 figure_of_merit = Literal[
-    "expected_fidelity", "critical_depth", "estimated_success_probability", "estimated_hellinger_distance"
+    "expected_fidelity",
+    "critical_depth",
+    "estimated_success_probability",
+    "estimated_hellinger_distance",
 ]
 
 
@@ -336,14 +338,6 @@ def calc_device_specific_features(
     return feature_dict
 
 
-def hellinger_distance(p: NDArray[np.float64], q: NDArray[np.float64]) -> float:
-    """Calculates the Hellinger distance between two probability distributions."""
-    assert np.isclose(np.sum(p), 1, 0.05), "p is not a probability distribution"
-    assert np.isclose(np.sum(q), 1, 0.05), "q is not a probability distribution"
-
-    return float((1 / np.sqrt(2)) * np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q)) ** 2)))
-
-
 def estimated_hellinger_distance(qc: QuantumCircuit, device: Device, precision: int = 10) -> float:
     """Calculates the estimated Hellinger distance of a given quantum circuit on a given device.
 
@@ -355,27 +349,12 @@ def estimated_hellinger_distance(qc: QuantumCircuit, device: Device, precision: 
     Returns:
         The estimated Hellinger distance of the given quantum circuit on the given device.
     """
-    path = Path.cwd() / "evaluations" / "zenodo" / "trained_models"
-    non_zero_indices_path = path / f"{device.name}_non_zero_indices.pkl"
-    model_path = path / f"{device.name}_rf_regressor.pkl"
-
-    # load model and vector of non-zero indices from files
-    with Path.open(non_zero_indices_path, "rb") as f:
-        non_zero_indices = pickle.load(f)
-    with Path.open(model_path, "rb") as f:
-        model = pickle.load(f)
+    # Load pre-trained model from files
+    path = get_hellinger_model_path(device)
+    model = load(path)
 
     feature_dict = calc_device_specific_features(qc, device)
-    feature_vector = list(feature_dict.values())
-    # adjust the feature vector according to the non-zero indices
-    feature_vector = [feature_vector[i] for i in non_zero_indices.values() if i]
+    feature_vector = np.array(list(feature_dict.values()))
 
     res = model.predict([feature_vector])[0]
     return cast("float", np.round(res, precision))
-
-
-def hellinger_model_available(device: Device) -> bool:
-    """Check if a trained model to estimate the Hellinger distance is available for the device."""
-    path = Path.cwd() / "evaluations" / "zenodo" / "trained_models"
-    path = path / f"{device.name}_rf_regressor.pkl"
-    return bool(path.is_file())
