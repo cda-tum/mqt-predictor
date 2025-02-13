@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import pytest
+
 from mqt.bench import benchmark_generator
 from mqt.bench.devices import get_device_by_name
 from mqt.predictor import ml
-import pytest
 
 
 def test_create_feature_vector() -> None:
@@ -51,7 +52,7 @@ def test_hellinger_distance() -> None:
     p = [0.5, 0.5]
     q = [0.6, 0.4]
     hellinger_distance = ml.helper.hellinger_distance(p, q)
-    assert hellinger_distance 
+    assert hellinger_distance
 
 
 def test_hellinger_distance_error() -> None:
