@@ -6,6 +6,10 @@ See README.md or go to https://github.com/cda-tum/mqt-predictor for more informa
 
 from __future__ import annotations
 
-from mqt.predictor.reg.hellinger_distance_regressor import hellinger_distance, get_hellinger_model_path, hellinger_model_available
+from mqt.predictor.reg.hellinger_distance_regressor import (
+    get_hellinger_model_path,
+    hellinger_distance,
+    hellinger_model_available,
+)
 
-__all__ = ["hellinger_distance", "get_hellinger_model_path", "hellinger_model_available"]
+__all__ = ["get_hellinger_model_path", "hellinger_distance", "hellinger_model_available"]
