@@ -23,11 +23,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("mqt-predictor")
 
 figure_of_merit = Literal[
-    "expected_fidelity",
-    "critical_depth",
-    "estimated_success_probability",
-    "estimated_hellinger_distance",
-    "hellinger_distance",
+    "expected_fidelity", "critical_depth", "estimated_success_probability", "estimated_hellinger_distance"
 ]
 
 

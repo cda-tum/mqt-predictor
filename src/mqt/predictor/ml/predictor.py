@@ -241,7 +241,7 @@ class Predictor:
                 score = reward.expected_fidelity(qc, device)
             elif self.figure_of_merit == "estimated_success_probability":
                 score = reward.estimated_success_probability(qc, device)
-            elif figure_of_merit == "estimated_hellinger_distance":
+            elif self.figure_of_merit == "estimated_hellinger_distance":
                 score = reward.estimated_hellinger_distance(qc, device)
             else:
                 assert_never(self.figure_of_merit)
@@ -364,18 +364,24 @@ class Predictor:
 
     def load_training_data(self) -> tuple[list[NDArray[np.float64]], list[str], list[NDArray[np.float64]]]:
         """Loads and returns the training data from the training data folder."""
+        training_data, names_list, scores_list = [], [], []
         with resources.as_file(ml.helper.get_path_training_data() / "training_data_aggregated") as path:
-            if (
-                path.joinpath("training_data_" + self.figure_of_merit + ".npy").is_file()
-                and path.joinpath("names_list_" + self.figure_of_merit + ".npy").is_file()
-                and path.joinpath("scores_list_" + self.figure_of_merit + ".npy").is_file()
-            ):
-                training_data = np.load(path / ("training_data_" + self.figure_of_merit + ".npy"), allow_pickle=True)
-                names_list = list(np.load(path / ("names_list_" + self.figure_of_merit + ".npy"), allow_pickle=True))
-                scores_list = list(np.load(path / ("scores_list_" + self.figure_of_merit + ".npy"), allow_pickle=True))
+            training_data_path = path / f"training_data_{self.figure_of_merit}.npy"
+            names_list_path = path / f"names_list_{self.figure_of_merit}.npy"
+            scores_list_path = path / f"scores_list_{self.figure_of_merit}.npy"
+
+            if training_data_path.is_file():
+                training_data = np.load(training_data_path, allow_pickle=True)
             else:
                 error_msg = "Training data not found. Please run the training script first as described in the documentation that can be found at https://mqt.readthedocs.io/projects/predictor/en/latest/Usage.html."
                 raise FileNotFoundError(error_msg)
+
+            # Names and scores are not mandatory: only used for evaluation
+            if names_list_path.is_file():
+                names_list = list(np.load(names_list_path, allow_pickle=True))
+
+            if scores_list_path.is_file():
+                scores_list = list(np.load(scores_list_path, allow_pickle=True))
 
             return training_data, names_list, scores_list
 

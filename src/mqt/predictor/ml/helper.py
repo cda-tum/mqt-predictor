@@ -7,11 +7,12 @@ from importlib import resources
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import ml, reward, rl
 
 if TYPE_CHECKING:
-    import numpy as np
     from numpy._typing import NDArray
     from qiskit import QuantumCircuit
 
