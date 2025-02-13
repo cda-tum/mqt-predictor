@@ -59,7 +59,7 @@ To use this figure of merit, three steps are required:
 
    .. code-block:: python
 
-      from mqt.predictor.reward import calc_device_specific_features
+      from mqt.predictor.reg import calc_device_specific_features
 
       feature_vector_list = []
       for qc in quantum_circuits:
@@ -71,7 +71,7 @@ To use this figure of merit, three steps are required:
 
    .. code-block:: python
 
-      from mqt.predictor.ml import hellinger_distance
+      from mqt.predictor.reg import hellinger_distance
 
       labels_list = []
       for noisy, noiseless in zip(noisy_distributions, noiseless_distributions):
@@ -84,10 +84,11 @@ To use this figure of merit, three steps are required:
 
       from mqt.predictor.ml import Predictor
 
-      training_data = [(feat, label) for feat, label in zip(features_list, labels_list)]
-
       pred = Predictor(figure_of_merit="hellinger_distance")
+
+      training_data = [(feat, label) for feat, label in zip(feature_vector_list, labels_list)]
       pred.save_training_data(training_data)
+
       pred.train_random_forest_model(device=device)
 
 Once the model has been successfully trained, the ``estimated_hellinger_distance`` figure of merit can be used to evaluate the quality of a compiled quantum circuit, just like any other of the above figures of merit.

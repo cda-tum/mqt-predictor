@@ -7,12 +7,11 @@ from importlib import resources
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import numpy as np
-
 from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import ml, reward, rl
 
 if TYPE_CHECKING:
+    import numpy as np
     from numpy._typing import NDArray
     from qiskit import QuantumCircuit
 
@@ -60,14 +59,6 @@ def get_path_training_circuits() -> Path:
 def get_path_training_circuits_compiled() -> Path:
     """Returns the path to the compiled training circuits folder."""
     return get_path_training_data() / "training_circuits_compiled"
-
-
-def hellinger_distance(p: NDArray[np.float64], q: NDArray[np.float64]) -> float:
-    """Calculates the Hellinger distance between two probability distributions."""
-    assert np.isclose(np.sum(p), 1, 0.05), "p is not a probability distribution"
-    assert np.isclose(np.sum(q), 1, 0.05), "q is not a probability distribution"
-
-    return float((1 / np.sqrt(2)) * np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q)) ** 2)))
 
 
 def get_openqasm_gates() -> list[str]:
