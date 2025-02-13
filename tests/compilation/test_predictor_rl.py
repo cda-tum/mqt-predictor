@@ -22,6 +22,13 @@ def test_predictor_env_reset_from_string() -> None:
     assert predictor.env.reset(qc=qasm_path)[0] == rl.helper.create_feature_dict(qc)
 
 
+def test_warning_for_unidirectional_device() -> None:
+    """Test the warning for a unidirectional device."""
+    msg = "The connectivity of the device 'oqc_lucy' is uni-directional and MQT Predictor might return a compiled circuit that assumes bi-directionality."
+    with pytest.warns(UserWarning, match=re.escape(msg)):
+        rl.Predictor(figure_of_merit="expected_fidelity", device_name="oqc_lucy")
+
+
 def test_predictor_env_esp_error() -> None:
     """Test the predictor environment with ESP as figure of merit and missing calibration data."""
     with pytest.raises(ValueError, match=re.escape("Missing calibration data for ESP calculation on ibm_montreal.")):
@@ -52,7 +59,9 @@ def test_qcompile_with_newly_trained_models() -> None:
     if not model_path.exists():
         with pytest.raises(
             FileNotFoundError,
-            match=re.escape("The RL model is not trained yet. Please train the model before using it."),
+            match=re.escape(
+                "The RL model 'model_expected_fidelity_ionq_harmony' is not trained yet. Please train the model before using it."
+            ),
         ):
             rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
 
@@ -61,9 +70,7 @@ def test_qcompile_with_newly_trained_models() -> None:
         test=True,
     )
 
-    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
-    assert isinstance(res, tuple)
-    qc_compiled, compilation_information = res
+    qc_compiled, compilation_information = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
     assert qc_compiled.layout is not None
     assert compilation_information is not None
 

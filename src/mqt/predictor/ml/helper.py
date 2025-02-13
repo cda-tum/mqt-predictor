@@ -5,20 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
-
-import numpy as np
-from joblib import dump
-from qiskit import QuantumCircuit
+from typing import TYPE_CHECKING
 
 from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import ml, reward, rl
 
 if TYPE_CHECKING:
+    import numpy as np
     from numpy._typing import NDArray
-    from sklearn.ensemble import RandomForestClassifier
-
-    from mqt.bench.devices import Device
+    from qiskit import QuantumCircuit
 
 
 def qcompile(
@@ -34,36 +29,9 @@ def qcompile(
     Returns:
         Returns a tuple containing the compiled quantum circuit, the compilation information and the name of the device used for compilation. If compilation fails, False is returned.
     """
-    device = predict_device_for_figure_of_merit(qc, figure_of_merit)
-    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device.name)
-    return *res, device.name
-
-
-def predict_device_for_figure_of_merit(
-    qc: Path | QuantumCircuit, figure_of_merit: reward.figure_of_merit = "expected_fidelity"
-) -> Device:
-    """Returns the name of the device with the highest predicted figure of merit that is suitable for the given quantum circuit.
-
-    Arguments:
-        qc: The quantum circuit to be compiled.
-        figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
-
-    Returns:
-        The device with the highest predicted figure of merit that is suitable for the given quantum circuit.
-    """
-    ml_predictor = ml.Predictor()
-    predicted_device_index_probs = ml_predictor.predict_probs(qc, figure_of_merit)
-    assert ml_predictor.clf is not None
-    classes = ml_predictor.clf.classes_  # type: ignore[unreachable]
-    predicted_device_index = classes[np.argsort(predicted_device_index_probs)[::-1]]
-
-    num_qubits = qc.num_qubits if isinstance(qc, QuantumCircuit) else QuantumCircuit.from_qasm_file(qc).num_qubits
-
-    for index in predicted_device_index:
-        if ml_predictor.devices[index].num_qubits >= num_qubits:
-            return ml_predictor.devices[index]
-    msg = "No suitable device found."
-    raise ValueError(msg)
+    predicted_device = ml.predict_device_for_figure_of_merit(qc, figure_of_merit=figure_of_merit)
+    res = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=predicted_device.name)
+    return *res, predicted_device
 
 
 def get_path_training_data() -> Path:
@@ -78,10 +46,8 @@ def get_path_results(ghz_results: bool = False) -> Path:
     return get_path_training_data() / "trained_model" / "res.csv"
 
 
-def get_path_trained_model(figure_of_merit: str, return_non_zero_indices: bool = False) -> Path:
+def get_path_trained_model(figure_of_merit: str) -> Path:
     """Returns the path to the trained model folder resulting from the machine learning training."""
-    if return_non_zero_indices:
-        return get_path_training_data() / "trained_model" / ("non_zero_indices_" + figure_of_merit + ".npy")
     return get_path_training_data() / "trained_model" / ("trained_clf_" + figure_of_merit + ".joblib")
 
 
@@ -165,7 +131,7 @@ def dict_to_featurevector(gate_dict: dict[str, int]) -> dict[str, int]:
 PATH_LENGTH = 260
 
 
-def create_feature_dict(qc: Path | QuantumCircuit) -> dict[str, Any]:
+def create_feature_vector(qc: QuantumCircuit) -> list[int | float]:
     """Creates and returns a feature dictionary for a given quantum circuit.
 
     Arguments:
@@ -174,10 +140,6 @@ def create_feature_dict(qc: Path | QuantumCircuit) -> dict[str, Any]:
     Returns:
         The feature dictionary of the given quantum circuit.
     """
-    if isinstance(qc, Path) and qc.exists():
-        qc = QuantumCircuit.from_qasm_file(qc)
-    assert isinstance(qc, QuantumCircuit)
-
     ops_list = qc.count_ops()
     ops_list_dict = dict_to_featurevector(ops_list)
 
@@ -194,72 +156,7 @@ def create_feature_dict(qc: Path | QuantumCircuit) -> dict[str, Any]:
     feature_dict["entanglement_ratio"] = supermarq_features.entanglement_ratio
     feature_dict["parallelism"] = supermarq_features.parallelism
     feature_dict["liveness"] = supermarq_features.liveness
-    return feature_dict
-
-
-def save_classifier(clf: RandomForestClassifier, figure_of_merit: reward.figure_of_merit = "expected_fidelity") -> None:
-    """Saves the given classifier to the trained model folder.
-
-    Arguments:
-        clf: The classifier to be saved.
-        figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
-    """
-    dump(clf, str(get_path_trained_model(figure_of_merit)))
-
-
-def save_training_data(
-    training_data: list[NDArray[np.float64]],
-    names_list: list[str],
-    scores_list: list[NDArray[np.float64]],
-    figure_of_merit: reward.figure_of_merit,
-) -> None:
-    """Saves the given training data to the training data folder.
-
-    Arguments:
-        training_data: The training data, the names list and the scores list to be saved.
-        names_list: The names list of the training data.
-        scores_list: The scores list of the training data.
-        figure_of_merit: The figure of merit to be used for compilation.
-    """
-    with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
-        data = np.asarray(training_data, dtype=object)
-        np.save(str(path / ("training_data_" + figure_of_merit + ".npy")), data)
-        data = np.asarray(names_list, dtype=str)
-        np.save(str(path / ("names_list_" + figure_of_merit + ".npy")), data)
-        data = np.asarray(scores_list, dtype=object)
-        np.save(str(path / ("scores_list_" + figure_of_merit + ".npy")), data)
-
-
-def load_training_data(
-    figure_of_merit: reward.figure_of_merit = "expected_fidelity",
-) -> tuple[list[NDArray[np.float64]], list[str], list[NDArray[np.float64]]]:
-    """Loads and returns the training data from the training data folder.
-
-    Arguments:
-        figure_of_merit: The figure of merit to be used for compilation. Defaults to "expected_fidelity".
-
-    Returns:
-       The training data, the names list and the scores list.
-    """
-    training_data, names_list, scores_list = [], [], []
-    with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
-        training_data_path = path / f"training_data_{figure_of_merit}.npy"
-        names_list_path = path / f"names_list_{figure_of_merit}.npy"
-        scores_list_path = path / f"scores_list_{figure_of_merit}.npy"
-
-        if training_data_path.is_file():
-            training_data = np.load(training_data_path, allow_pickle=True)
-        else:
-            msg = "Training data not found. Please run the training script first."
-            raise FileNotFoundError(msg)
-
-        if names_list_path.is_file():
-            names_list = list(np.load(names_list_path, allow_pickle=True))
-
-        if scores_list_path.is_file():
-            scores_list = list(np.load(scores_list_path, allow_pickle=True))
-
-    return training_data, names_list, scores_list
+    return list(feature_dict.values())
 
 
 @dataclass
