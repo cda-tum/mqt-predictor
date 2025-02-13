@@ -52,4 +52,5 @@ venv.bak/
 .ruff_cache/
 .mypy_cache/
 
-evaluations/zenodo/data
+zenodo/data
+zenodo/trained_models
