@@ -21,11 +21,12 @@ import numpy as np
 from joblib import Parallel, delayed, load
 from qiskit import QuantumCircuit
 from qiskit.qasm2 import dump
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import GridSearchCV, train_test_split
 
 from mqt.bench.devices import Device, get_available_devices, get_device_by_name
 from mqt.predictor import ml, reward, rl, utils
+from mqt.predictor.reg import get_hellinger_model_path
 
 if TYPE_CHECKING:
     from numpy._typing import NDArray
@@ -241,6 +242,8 @@ class Predictor:
                 score = reward.expected_fidelity(qc, device)
             elif self.figure_of_merit == "estimated_success_probability":
                 score = reward.estimated_success_probability(qc, device)
+            elif self.figure_of_merit == "estimated_hellinger_distance":
+                score = reward.estimated_hellinger_distance(qc, device)
             else:
                 assert_never(self.figure_of_merit)
             scores[dev_name] = score
@@ -263,14 +266,16 @@ class Predictor:
         circuit_name = str(file).split(".")[0]
         return training_sample, circuit_name, scores_list
 
-    def train_random_forest_classifier(
+    def train_random_forest_model(
         self,
-        save_classifier: bool = True,
+        save_model: bool = True,
+        device: Device = None,
     ) -> bool:
-        """Trains a random forest classifier for the given figure of merit.
+        """Trains a random forest model for the given figure of merit.
 
         Arguments:
-            save_classifier: Whether to save the classifier. Defaults to True.
+            save_model: Whether to save the model. Defaults to True.
+            device: If provided, a device specific regression model is trained. Defaults to None.
 
         Returns:
             True when the training was successful, False otherwise.
@@ -287,14 +292,21 @@ class Predictor:
             },
         ]
 
-        clf = RandomForestClassifier(random_state=0)
-        num_cv = min(len(training_data.y_train), 5)
-        clf = GridSearchCV(clf, tree_param, cv=num_cv, n_jobs=8).fit(training_data.X_train, training_data.y_train)
+        if device is None:  # Default classification model
+            mdl = RandomForestClassifier(random_state=0)
+            save_mdl_path = str(ml.helper.get_path_trained_model(self.figure_of_merit))
+        else:  # Device specific regression model
+            mdl = RandomForestRegressor(random_state=0)
+            save_mdl_path = str(get_hellinger_model_path(device))
 
-        self.set_classifier(clf.best_estimator_)
-        if save_classifier:
-            joblib_dump(clf, str(ml.helper.get_path_trained_model(self.figure_of_merit)))
-        logger.info("Random Forest classifier is trained and saved.")
+        num_cv = min(len(training_data.y_train), 5)
+        mdl = GridSearchCV(mdl, tree_param, cv=num_cv, n_jobs=8).fit(training_data.X_train, training_data.y_train)
+
+        if isinstance(mdl, RandomForestClassifier):
+            self.set_classifier(mdl.best_estimator_)
+        if save_model:
+            joblib_dump(mdl, save_mdl_path)
+        logger.info("Random Forest model is trained and saved.")
 
         return self.clf is not None
 
@@ -308,7 +320,9 @@ class Predictor:
         y_list = list(unzipped_training_data_y)
         for i in range(len(x_raw)):
             x_list[i] = list(x_raw[i])
-            scores_list[i] = list(raw_scores_list[i])
+            # scores are optional
+            if raw_scores_list:
+                scores_list[i] = list(raw_scores_list[i])
 
         x, y, indices = (
             np.array(x_list, dtype=np.float64),
@@ -339,39 +353,50 @@ class Predictor:
     def save_training_data(
         self,
         training_data: list[NDArray[np.float64]],
-        names_list: list[str],
-        scores_list: list[NDArray[np.float64]],
+        names_list: list[str] | None = None,
+        scores_list: list[NDArray[np.float64]] | None = None,
     ) -> None:
         """Saves the given training data to the training data folder.
 
         Arguments:
             training_data: The training data, the names list and the scores list to be saved.
-            names_list: The names list of the training data.
-            scores_list: The scores list of the training data.
-            figure_of_merit: The figure of merit to be used for compilation.
+            names_list: The names list of the training data (optional).
+            scores_list: The scores list of the training data (optional).
         """
+        if scores_list is None:
+            scores_list = []
+        if names_list is None:
+            names_list = []
         with resources.as_file(ml.helper.get_path_training_data() / "training_data_aggregated") as path:
             data = np.asarray(training_data, dtype=object)
             np.save(str(path / ("training_data_" + self.figure_of_merit + ".npy")), data)
-            data = np.asarray(names_list, dtype=str)
-            np.save(str(path / ("names_list_" + self.figure_of_merit + ".npy")), data)
-            data = np.asarray(scores_list, dtype=object)
-            np.save(str(path / ("scores_list_" + self.figure_of_merit + ".npy")), data)
+            if names_list:
+                data = np.asarray(names_list, dtype=str)
+                np.save(str(path / ("names_list_" + self.figure_of_merit + ".npy")), data)
+            if scores_list:
+                data = np.asarray(scores_list, dtype=object)
+                np.save(str(path / ("scores_list_" + self.figure_of_merit + ".npy")), data)
 
     def load_training_data(self) -> tuple[list[NDArray[np.float64]], list[str], list[NDArray[np.float64]]]:
         """Loads and returns the training data from the training data folder."""
+        training_data, names_list, scores_list = [], [], []
         with resources.as_file(ml.helper.get_path_training_data() / "training_data_aggregated") as path:
-            if (
-                path.joinpath("training_data_" + self.figure_of_merit + ".npy").is_file()
-                and path.joinpath("names_list_" + self.figure_of_merit + ".npy").is_file()
-                and path.joinpath("scores_list_" + self.figure_of_merit + ".npy").is_file()
-            ):
-                training_data = np.load(path / ("training_data_" + self.figure_of_merit + ".npy"), allow_pickle=True)
-                names_list = list(np.load(path / ("names_list_" + self.figure_of_merit + ".npy"), allow_pickle=True))
-                scores_list = list(np.load(path / ("scores_list_" + self.figure_of_merit + ".npy"), allow_pickle=True))
+            training_data_path = path / f"training_data_{self.figure_of_merit}.npy"
+            names_list_path = path / f"names_list_{self.figure_of_merit}.npy"
+            scores_list_path = path / f"scores_list_{self.figure_of_merit}.npy"
+
+            if training_data_path.is_file():
+                training_data = np.load(training_data_path, allow_pickle=True)
             else:
                 error_msg = "Training data not found. Please run the training script first as described in the documentation that can be found at https://mqt.readthedocs.io/projects/predictor/en/latest/Usage.html."
                 raise FileNotFoundError(error_msg)
+
+            # Names and scores are not mandatory: only used for evaluation
+            if names_list_path.is_file():
+                names_list = list(np.load(names_list_path, allow_pickle=True))
+
+            if scores_list_path.is_file():
+                scores_list = list(np.load(scores_list_path, allow_pickle=True))
 
             return training_data, names_list, scores_list
 
