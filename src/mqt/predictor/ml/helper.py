@@ -241,20 +241,25 @@ def load_training_data(
     Returns:
        The training data, the names list and the scores list.
     """
+    training_data, names_list, scores_list = [], [], []
     with resources.as_file(get_path_training_data() / "training_data_aggregated") as path:
-        if (
-            path.joinpath("training_data_" + figure_of_merit + ".npy").is_file()
-            and path.joinpath("names_list_" + figure_of_merit + ".npy").is_file()
-            and path.joinpath("scores_list_" + figure_of_merit + ".npy").is_file()
-        ):
-            training_data = np.load(path / ("training_data_" + figure_of_merit + ".npy"), allow_pickle=True)
-            names_list = list(np.load(path / ("names_list_" + figure_of_merit + ".npy"), allow_pickle=True))
-            scores_list = list(np.load(path / ("scores_list_" + figure_of_merit + ".npy"), allow_pickle=True))
-        else:
-            error_msg = "Training data not found. Please run the training script first."
-            raise FileNotFoundError(error_msg)
+        training_data_path = path / f"training_data_{figure_of_merit}.npy"
+        names_list_path = path / f"names_list_{figure_of_merit}.npy"
+        scores_list_path = path / f"scores_list_{figure_of_merit}.npy"
 
-        return training_data, names_list, scores_list
+        if training_data_path.is_file():
+            training_data = np.load(training_data_path, allow_pickle=True)
+        else:
+            msg = "Training data not found. Please run the training script first."
+            raise FileNotFoundError(msg)
+
+        if names_list_path.is_file():
+            names_list = list(np.load(names_list_path, allow_pickle=True))
+
+        if scores_list_path.is_file():
+            scores_list = list(np.load(scores_list_path, allow_pickle=True))
+
+    return training_data, names_list, scores_list
 
 
 @dataclass

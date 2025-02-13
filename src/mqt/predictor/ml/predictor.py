@@ -265,8 +265,12 @@ class Predictor:
         """
         training_data = self.get_prepared_training_data(figure_of_merit, save_non_zero_indices=True)
 
-        scores_filtered = [training_data.scores_list[i] for i in training_data.indices_test]
-        names_filtered = [training_data.names_list[i] for i in training_data.indices_test]
+        scores_filtered = (
+            [training_data.scores_list[i] for i in training_data.indices_test] if training_data.scores_list else []
+        )
+        names_filtered = (
+            [training_data.names_list[i] for i in training_data.indices_test] if training_data.names_list else []
+        )
 
         tree_param = [
             {
@@ -319,7 +323,9 @@ class Predictor:
         y_list = list(unzipped_training_data_y)
         for i in range(len(x_raw)):
             x_list[i] = list(x_raw[i])
-            scores_list[i] = list(raw_scores_list[i])
+            # scores are optional
+            if raw_scores_list:
+                scores_list[i] = list(raw_scores_list[i])
 
         x, y, indices = (
             np.array(x_list, dtype=np.float64),
