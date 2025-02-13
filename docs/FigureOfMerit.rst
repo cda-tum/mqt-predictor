@@ -88,6 +88,6 @@ To use this figure of merit, three steps are required:
 
       pred = Predictor(figure_of_merit="hellinger_distance")
       pred.save_training_data(training_data)
-      pred.train_random_forest_classifier()
+      pred.train_random_forest_model(device=device)
 
 Once the model has been successfully trained, the ``estimated_hellinger_distance`` figure of merit can be used to evaluate the quality of a compiled quantum circuit, just like any other of the above figures of merit.

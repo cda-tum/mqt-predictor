@@ -91,7 +91,7 @@ def test_save_training_data(predictor: ml.Predictor, source_path: Path, target_p
         assert path.exists()
 
 
-def test_train_random_forest_classifier_and_predict(predictor: ml.Predictor, source_path: Path) -> None:
+def test_train_random_forest_model_and_predict(predictor: ml.Predictor, source_path: Path) -> None:
     """Test the training of the random forest classifier."""
     predictor.train_random_forest_model(save_classifier=True)
     qc = get_benchmark("ghz", 1, 3)
