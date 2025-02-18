@@ -36,7 +36,7 @@ def test_predictor_env_esp_error() -> None:
 
 
 def test_predictor_env_hellinger_error() -> None:
-    """Test the predictor environment with ESP as figure of merit and a missing model."""
+    """Test the predictor environment with the Estimated Hellinger Distance as figure of merit and a missing model."""
     with pytest.raises(
         ValueError, match=re.escape("Missing trained model for Hellinger distance estimates on ibm_montreal.")
     ):
