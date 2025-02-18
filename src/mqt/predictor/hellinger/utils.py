@@ -130,7 +130,7 @@ def calc_device_specific_features(
     feature_dict["single_qubit_gates_per_layer"] = single_qubit_gates_per_layer
     feature_dict["multi_qubit_gates_per_layer"] = multi_qubit_gates_per_layer
 
-    return np.array(feature_dict.values())
+    return np.array(list(feature_dict.values()))
 
 
 def get_hellinger_model_path(device: Device = None) -> Path:
