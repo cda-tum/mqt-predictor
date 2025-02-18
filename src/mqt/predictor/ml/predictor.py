@@ -269,7 +269,7 @@ class Predictor:
     def train_random_forest_model(
         self,
         save_model: bool = True,
-        device: Device = None,
+        device: Device | None = None,
     ) -> bool:
         """Trains a random forest model for the given figure of merit.
 
