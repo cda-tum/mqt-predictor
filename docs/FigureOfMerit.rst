@@ -90,4 +90,5 @@ To use this figure of merit, three steps are required:
 
       pred.train_random_forest_model(device=device)
 
-Once the model has been successfully trained, the ``estimated_hellinger_distance`` figure of merit can be used to evaluate the quality of a compiled quantum circuit, just like any other of the above figures of merit.
+Once the model has been successfully trained, the ``estimated_hellinger_distance`` figure of merit can serve as a device-specific figure of merit to assess the quality of a compiled quantum circuit.
+In the context of the MQT Predictor, it can be used as a reward function in the RL module and subsequently utilized in the ML module to score and compare quantum devices, just like any other figure of merit mentioned above.
