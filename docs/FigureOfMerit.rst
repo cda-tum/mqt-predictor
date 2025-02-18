@@ -63,8 +63,7 @@ To use this figure of merit, three steps are required:
 
       feature_vector_list = []
       for qc in quantum_circuits:
-          feature_dict = calc_device_specific_features(qc, device)
-          feature_vector = np.array(list(feature_dict.values()))
+          feature_vector = calc_device_specific_features(qc, device)
           feature_vector_list.append(feature_vector)
 
 2. **Label Generation:** Compute the Hellinger distance between the noisy probability distribution (obtained from executing on a quantum device) and the noiseless distribution (from simulation, e.g., using ``DDSim``).

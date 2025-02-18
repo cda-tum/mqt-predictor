@@ -244,8 +244,7 @@ def estimated_hellinger_distance(qc: QuantumCircuit, device: Device, precision: 
     path = get_hellinger_model_path(device)
     model = load(path)
 
-    feature_dict = calc_device_specific_features(qc, device)
-    feature_vector = np.array(list(feature_dict.values()))
+    feature_vector = calc_device_specific_features(qc, device)
 
     res = model.predict([feature_vector])[0]
     return cast("float", np.round(res, precision))
