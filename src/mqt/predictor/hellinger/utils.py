@@ -8,13 +8,13 @@ from typing import TYPE_CHECKING
 
 import networkx as nx
 import numpy as np
-from qiskit import QuantumCircuit
 from qiskit.converters import circuit_to_dag
 
 from mqt.bench.utils import calc_supermarq_features
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
+    from qiskit import QuantumCircuit
 
     from mqt.bench.devices import Device
 
@@ -50,26 +50,18 @@ def calc_device_specific_features(
     if ignore_gates is None:
         ignore_gates = ["barrier", "id", "measure"]
 
-    # Prepare circuit
-    if qc.num_qubits != device.num_qubits:
-        # Must have same number of qubits as the device
-        circ = QuantumCircuit(device.num_qubits)
-        circ.compose(qc, inplace=True)
-    else:
-        circ = qc.copy()
-
     # Create a dictionary with all native gates
     native_gate_dict = {gate: 0.0 for gate in device.basis_gates if gate not in ignore_gates}
     # Add the number of operations for each native gate
-    for key, val in circ.count_ops().items():
+    for key, val in qc.count_ops().items():
         if key in native_gate_dict:
             native_gate_dict[key] = val
     feature_dict = native_gate_dict
 
     # Create a list of zeros for the one-hot vector
-    active_qubits_dict = dict.fromkeys(circ.qubits, 0)
+    active_qubits_dict = dict.fromkeys(qc.qubits, 0)
     # Iterate over the operations in the quantum circuit
-    for op in circ.data:
+    for op in qc.data:
         if op.operation.name in ignore_gates:
             continue
         # Mark the qubits that are used in the operation as active
@@ -78,15 +70,15 @@ def calc_device_specific_features(
     feature_dict.update(active_qubits_dict)
 
     # Add the depth of the quantum circuit to the feature dictionary
-    feature_dict["depth"] = circ.depth()
+    feature_dict["depth"] = qc.depth()
 
     # Add the number of active qubits to the feature dictionary
     num_active_qubits = sum(active_qubits_dict.values())
     feature_dict["num_qubits"] = num_active_qubits  # NOTE: not used in feature vector
 
     # Calculate supermarq features, which uses circ.num_qubits
-    assert device.num_qubits == circ.num_qubits
-    supermarq_features = calc_supermarq_features(circ)
+    assert device.num_qubits == qc.num_qubits
+    supermarq_features = calc_supermarq_features(qc)
     feature_dict["critical_depth"] = supermarq_features.critical_depth
     feature_dict["entanglement_ratio"] = supermarq_features.entanglement_ratio
     feature_dict["parallelism"] = supermarq_features.parallelism
@@ -101,7 +93,7 @@ def calc_device_specific_features(
     )
 
     # Calculate additional features based on DAG
-    dag = circuit_to_dag(circ)
+    dag = circuit_to_dag(qc)
     dag.remove_all_ops_named("barrier")
     dag.remove_all_ops_named("measure")
 
@@ -109,7 +101,7 @@ def calc_device_specific_features(
     di_graph = nx.DiGraph()
     for op in dag.two_qubit_ops():
         q1, q2 = op.qargs
-        di_graph.add_edge(circ.find_bit(q1).index, circ.find_bit(q2).index)
+        di_graph.add_edge(qc.find_bit(q1).index, qc.find_bit(q2).index)
     degree_sum = sum(di_graph.degree(n) for n in di_graph.nodes)
     directed_program_communication = (
         degree_sum / (2 * num_active_qubits * (num_active_qubits - 1)) if num_active_qubits >= 2 else 0
@@ -136,7 +128,10 @@ def calc_device_specific_features(
 def get_hellinger_model_path(device: Device = None) -> Path:
     """Returns the path to the trained model folder resulting from the machine learning training."""
     training_data_path = Path(str(resources.files("mqt.predictor"))) / "ml" / "training_data"
-    return training_data_path / "trained_model" / ("trained_hellinger_distance_regressor_" + device.name + ".joblib")
+    model_path = (
+        training_data_path / "trained_model" / ("trained_hellinger_distance_regressor_" + device.name + ".joblib")
+    )
+    return Path(model_path)
 
 
 def hellinger_model_available(device: Device) -> bool:
