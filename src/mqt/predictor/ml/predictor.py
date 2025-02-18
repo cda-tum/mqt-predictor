@@ -275,7 +275,7 @@ class Predictor:
 
         Arguments:
             save_model: Whether to save the model. Defaults to True.
-            device: If provided, a device specific regression model is trained. Defaults to None.
+            device: If provided, a device-specific regression model is trained. Defaults to None.
 
         Returns:
             True when the training was successful, False otherwise.
@@ -292,12 +292,16 @@ class Predictor:
             },
         ]
 
-        if device is None:  # Default classification model
-            mdl = RandomForestClassifier(random_state=0)
-            save_mdl_path = str(ml.helper.get_path_trained_model(self.figure_of_merit))
-        else:  # Device specific regression model
+        if self.figure_of_merit == "hellinger_distance":
+            if device is None:
+                msg = "A device must be provided for Hellinger distance model training."
+                raise ValueError(msg)
+            # Device-specific regression model
             mdl = RandomForestRegressor(random_state=0)
             save_mdl_path = str(get_hellinger_model_path(device))
+        else:  # Default classification model
+            mdl = RandomForestClassifier(random_state=0)
+            save_mdl_path = str(ml.helper.get_path_trained_model(self.figure_of_merit))
 
         num_cv = min(len(training_data.y_train), 5)
         mdl = GridSearchCV(mdl, tree_param, cv=num_cv, n_jobs=8).fit(training_data.X_train, training_data.y_train)

@@ -20,7 +20,7 @@ def test_create_feature_vector() -> None:
 
 
 def test_create_device_specific_feature_dict() -> None:
-    """Test the creation of a device specific feature vector."""
+    """Test the creation of a device-specific feature vector."""
     device = get_device_by_name("iqm_adonis")
     qc = QuantumCircuit(device.num_qubits)
     qc.cz(0, 1)
