@@ -30,7 +30,7 @@ def hellinger_distance(p: NDArray[np.float64], q: NDArray[np.float64]) -> float:
 def calc_device_specific_features(
     qc: QuantumCircuit, device: Device, ignore_gates: list[str] | None = None
 ) -> NDArray[np.float64]:
-    """Creates and returns a qpu specific feature dictionary for a given quantum circuit and device.
+    """Creates and returns a device-specific feature dictionary for a given quantum circuit and device.
 
     Arguments:
         qc: The quantum circuit for which the features are calculated.
