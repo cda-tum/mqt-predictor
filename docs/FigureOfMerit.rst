@@ -59,7 +59,7 @@ To use this figure of merit, three steps are required:
 
    .. code-block:: python
 
-      from mqt.predictor.reg import calc_device_specific_features
+      from mqt.predictor.hellinger import calc_device_specific_features
 
       feature_vector_list = []
       for qc in quantum_circuits:
@@ -71,7 +71,7 @@ To use this figure of merit, three steps are required:
 
    .. code-block:: python
 
-      from mqt.predictor.reg import hellinger_distance
+      from mqt.predictor.hellinger import hellinger_distance
 
       labels_list = []
       for noisy, noiseless in zip(noisy_distributions, noiseless_distributions):

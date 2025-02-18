@@ -26,7 +26,7 @@ from sklearn.model_selection import GridSearchCV, train_test_split
 
 from mqt.bench.devices import Device, get_available_devices, get_device_by_name
 from mqt.predictor import ml, reward, rl, utils
-from mqt.predictor.reg import get_hellinger_model_path
+from mqt.predictor.hellinger import get_hellinger_model_path
 
 if TYPE_CHECKING:
     from numpy._typing import NDArray

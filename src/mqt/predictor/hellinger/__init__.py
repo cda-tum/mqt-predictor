@@ -6,7 +6,7 @@ See README.md or go to https://github.com/cda-tum/mqt-predictor for more informa
 
 from __future__ import annotations
 
-from mqt.predictor.reg.hellinger_distance_regressor import (
+from mqt.predictor.hellinger.utils import (
     calc_device_specific_features,
     get_hellinger_model_path,
     hellinger_distance,

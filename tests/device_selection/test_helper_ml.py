@@ -7,7 +7,7 @@ import pytest
 from mqt.bench import benchmark_generator
 from mqt.bench.devices import get_device_by_name
 from mqt.predictor import ml
-from mqt.predictor.reg import calc_device_specific_features, hellinger_distance
+from mqt.predictor.hellinger import calc_device_specific_features, hellinger_distance
 
 
 def test_create_feature_vector() -> None:

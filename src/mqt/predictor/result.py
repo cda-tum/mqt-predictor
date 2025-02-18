@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from mqt.predictor import reward
-from mqt.predictor.reg import hellinger_model_available
+from mqt.predictor.hellinger import hellinger_model_available
 
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit

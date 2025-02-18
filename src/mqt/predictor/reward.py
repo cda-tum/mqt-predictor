@@ -9,7 +9,7 @@ import numpy as np
 from joblib import load
 
 from mqt.bench.utils import calc_supermarq_features
-from mqt.predictor.reg import calc_device_specific_features, get_hellinger_model_path
+from mqt.predictor.hellinger import calc_device_specific_features, get_hellinger_model_path
 
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit, QuantumRegister, Qubit
