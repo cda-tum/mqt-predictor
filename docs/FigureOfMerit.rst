@@ -67,7 +67,7 @@ To use this figure of merit, three steps are required:
           feature_vector = np.array(list(feature_dict.values()))
           feature_vector_list.append(feature_vector)
 
-2. **Label Generation:** Compute the Hellinger distance between the noisy probability distribution (obtained from executing on a quantum device, e.g., via ``MQTHub``) and the noiseless distribution (from simulation, e.g., using ``DDSim``).
+2. **Label Generation:** Compute the Hellinger distance between the noisy probability distribution (obtained from executing on a quantum device) and the noiseless distribution (from simulation, e.g., using ``DDSim``).
 
    .. code-block:: python
 
