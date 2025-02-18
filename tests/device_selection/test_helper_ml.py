@@ -20,16 +20,17 @@ def test_create_feature_vector() -> None:
 
 
 def test_create_device_specific_feature_dict() -> None:
-    """Test the creation of a device specific feature dictionary."""
+    """Test the creation of a device specific feature vector."""
     device = get_device_by_name("iqm_adonis")
-    qc = QuantumCircuit(3)
+    qc = QuantumCircuit(device.num_qubits)
     qc.cz(0, 1)
     qc.cz(1, 2)
     qc.cz(2, 0)
-    feature_vector = calc_device_specific_features(qc, device)
 
-    expected_result = np.array([0.0, 3.0, 1.0, 1.0, 1.0, 0.0, 0.0, 3.0, 3.0, 1.0, 1.0, 0.0, 2 / 3, 1 / 2, 0.0, 1.0])
-    assert np.allclose(feature_vector, expected_result)
+    feature_vector = calc_device_specific_features(qc, device)
+    expected_feat_vec = np.array([0.0, 3.0, 1.0, 1.0, 1.0, 0.0, 0.0, 3.0, 3.0, 1.0, 1.0, 0.0, 2 / 3, 1 / 2, 0.0, 1.0])
+
+    assert np.allclose(feature_vector, expected_feat_vec)
 
 
 def test_get_openqasm_gates() -> None:

@@ -119,7 +119,6 @@ filterwarnings = [
     'ignore:.*The property ``qiskit.dagcircuit.dagcircuit.DAGCircuit.*`` is deprecated as of qiskit 1.3.0.*:DeprecationWarning:',
     'ignore:.*Providing non-standard gates.*is deprecated for both ``transpile`` and ``generate_preset_pass_manager`` as of Qiskit 1.3.0.*:DeprecationWarning:qiskit.*',
     'ignore:.*is pending deprecation as of qiskit 1.3..*:PendingDeprecationWarning:',
-    'ignore:.*matplotlib.*:DeprecationWarning',
 ]
 
 [tool.check-wheel-contents]
