@@ -160,7 +160,6 @@ class Predictor:
         """Handles to create training data from all generated training samples.
 
         Arguments:
-            figure_of_merit: The figure of merit to be used for training.
             path_uncompiled_circuits: The path to the directory containing the uncompiled circuits. Defaults to None.
             path_compiled_circuits: The path to the directory containing the compiled circuits. Defaults to None.
 
@@ -266,22 +265,65 @@ class Predictor:
         circuit_name = str(file).split(".")[0]
         return training_sample, circuit_name, scores_list
 
-    def train_random_forest_model(
+    def train_random_forest_classifier(
         self,
-        save_model: bool = True,
-        device: Device | None = None,
+        save_classifier: bool = True,
     ) -> bool:
-        """Trains a random forest model for the given figure of merit.
+        """Trains a random forest classifier for the given figure of merit.
 
         Arguments:
-            save_model: Whether to save the model. Defaults to True.
-            device: If provided, a device-specific regression model is trained. Defaults to None.
+            save_classifier: Whether to save the classifier. Defaults to True.
 
         Returns:
             True when the training was successful, False otherwise.
         """
-        training_data = self.get_prepared_training_data()
+        training_data = Predictor.get_prepared_training_data(self.figure_of_merit)
+        clf = self._train_random_forest_model(training_data, None, self.figure_of_merit, save_classifier)
+        self.set_classifier(clf)
+        return clf is not None
 
+    @staticmethod
+    def train_random_forest_regressor(
+        training_data: list[NDArray[np.float64]],
+        device: Device | None,
+        save_model: bool = True,
+    ) -> RandomForestRegressor:
+        """Trains a random forest regressor on a Hellinger distance dataset.
+
+        Arguments:
+            training_data: The training data, the names list and the scores list to be saved.
+            device: The device to be used for training.
+            save_model: Whether to save the trained model. Defaults to True.
+
+        Returns:
+            Either a trained RandomForestRegressor to estimate the Hellinger distance for a single device,
+            or a trained RandomForestClassifier to score multiple devices according to a specific figure of merit.
+        """
+        Predictor.save_training_data(training_data, figure_of_merit="estimated_hellinger_distance")
+        train_data = Predictor.get_prepared_training_data(figure_of_merit="estimated_hellinger_distance")
+        return Predictor._train_random_forest_model(
+            train_data, device, figure_of_merit="estimated_hellinger_distance", save_model=save_model
+        )
+
+    @staticmethod
+    def _train_random_forest_model(
+        training_data: ml.helper.TrainingData,
+        device: Device | None,
+        figure_of_merit: str | reward.figure_of_merit,
+        save_model: bool = True,
+    ) -> RandomForestRegressor | RandomForestClassifier:
+        """Trains a random forest model for the given figure of merit.
+
+        Arguments:
+            training_data: The training data, the names list and the scores list to be saved.
+            device: The device to be used for training.
+            figure_of_merit: The figure of merit to be used for training.
+            save_model: Whether to save the classifier. Defaults to True.
+
+        Returns:
+            Either a trained RandomForestRegressor to estimate the Hellinger distance for a single device,
+            or a trained RandomForestClassifier to score multiple devices according to a specific figure of merit.
+        """
         tree_param = [
             {
                 "n_estimators": [100, 200, 500],
@@ -292,7 +334,7 @@ class Predictor:
             },
         ]
 
-        if self.figure_of_merit == "hellinger_distance":
+        if figure_of_merit == "hellinger_distance":
             if device is None:
                 msg = "A device must be provided for Hellinger distance model training."
                 raise ValueError(msg)
@@ -301,22 +343,21 @@ class Predictor:
             save_mdl_path = str(get_hellinger_model_path(device))
         else:  # Default classification model
             mdl = RandomForestClassifier(random_state=0)
-            save_mdl_path = str(ml.helper.get_path_trained_model(self.figure_of_merit))
+            save_mdl_path = str(ml.helper.get_path_trained_model(figure_of_merit))
 
         num_cv = min(len(training_data.y_train), 5)
         mdl = GridSearchCV(mdl, tree_param, cv=num_cv, n_jobs=8).fit(training_data.X_train, training_data.y_train)
 
-        if isinstance(mdl, RandomForestClassifier):
-            self.set_classifier(mdl.best_estimator_)
         if save_model:
             joblib_dump(mdl, save_mdl_path)
         logger.info("Random Forest model is trained and saved.")
 
-        return self.clf is not None
+        return mdl.best_estimator_
 
-    def get_prepared_training_data(self) -> ml.helper.TrainingData:
+    @staticmethod
+    def get_prepared_training_data(figure_of_merit: reward.figure_of_merit) -> ml.helper.TrainingData:
         """Returns the training data for the given figure of merit."""
-        training_data, names_list, raw_scores_list = self.load_training_data()
+        training_data, names_list, raw_scores_list = Predictor.load_training_data(figure_of_merit)
         unzipped_training_data_x, unzipped_training_data_y = zip(*training_data, strict=False)
         scores_list: list[list[float]] = [[] for _ in range(len(raw_scores_list))]
         x_raw = list(unzipped_training_data_x)
@@ -354,9 +395,10 @@ class Predictor:
             scores_list,
         )
 
+    @staticmethod
     def save_training_data(
-        self,
         training_data: list[NDArray[np.float64]],
+        figure_of_merit: reward.figure_of_merit,
         names_list: list[str] | None = None,
         scores_list: list[NDArray[np.float64]] | None = None,
     ) -> None:
@@ -364,6 +406,7 @@ class Predictor:
 
         Arguments:
             training_data: The training data, the names list and the scores list to be saved.
+            figure_of_merit: The figure of merit to be used for training.
             names_list: The names list of the training data (optional).
             scores_list: The scores list of the training data (optional).
         """
@@ -373,21 +416,24 @@ class Predictor:
             names_list = []
         with resources.as_file(ml.helper.get_path_training_data() / "training_data_aggregated") as path:
             data = np.asarray(training_data, dtype=object)
-            np.save(str(path / ("training_data_" + self.figure_of_merit + ".npy")), data)
+            np.save(str(path / ("training_data_" + figure_of_merit + ".npy")), data)
             if names_list:
                 data = np.asarray(names_list, dtype=str)
-                np.save(str(path / ("names_list_" + self.figure_of_merit + ".npy")), data)
+                np.save(str(path / ("names_list_" + figure_of_merit + ".npy")), data)
             if scores_list:
                 data = np.asarray(scores_list, dtype=object)
-                np.save(str(path / ("scores_list_" + self.figure_of_merit + ".npy")), data)
+                np.save(str(path / ("scores_list_" + figure_of_merit + ".npy")), data)
 
-    def load_training_data(self) -> tuple[list[NDArray[np.float64]], list[str], list[NDArray[np.float64]]]:
+    @staticmethod
+    def load_training_data(
+        figure_of_merit: reward.figure_of_merit,
+    ) -> tuple[list[NDArray[np.float64]], list[str], list[NDArray[np.float64]]]:
         """Loads and returns the training data from the training data folder."""
         training_data, names_list, scores_list = [], [], []
         with resources.as_file(ml.helper.get_path_training_data() / "training_data_aggregated") as path:
-            training_data_path = path / f"training_data_{self.figure_of_merit}.npy"
-            names_list_path = path / f"names_list_{self.figure_of_merit}.npy"
-            scores_list_path = path / f"scores_list_{self.figure_of_merit}.npy"
+            training_data_path = path / f"training_data_{figure_of_merit}.npy"
+            names_list_path = path / f"names_list_{figure_of_merit}.npy"
+            scores_list_path = path / f"scores_list_{figure_of_merit}.npy"
 
             if training_data_path.is_file():
                 training_data = np.load(training_data_path, allow_pickle=True)
