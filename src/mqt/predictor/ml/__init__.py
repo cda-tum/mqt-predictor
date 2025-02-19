@@ -9,4 +9,6 @@ from __future__ import annotations
 from mqt.predictor.ml.helper import qcompile
 from mqt.predictor.ml.predictor import Predictor, predict_device_for_figure_of_merit
 
-__all__ = ["Predictor", "predict_device_for_figure_of_merit", "qcompile"]
+train_random_forest_regressor = Predictor.train_random_forest_regressor  # Expose static method
+
+__all__ = ["Predictor", "predict_device_for_figure_of_merit", "qcompile", "train_random_forest_regressor"]

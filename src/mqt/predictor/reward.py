@@ -9,10 +9,11 @@ import numpy as np
 from joblib import load
 
 from mqt.bench.utils import calc_supermarq_features
-from mqt.predictor.hellinger import calc_device_specific_features, get_hellinger_model_path
+from mqt.predictor.hellinger import calc_device_specific_features, get_hellinger_model_path, hellinger_model_available
 
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit, QuantumRegister, Qubit
+    from sklearn.ensemble import RandomForestRegressor
 
     from mqt.bench.devices import Device
 
@@ -229,22 +230,30 @@ def esp_data_available(device: Device) -> bool:
     return True
 
 
-def estimated_hellinger_distance(qc: QuantumCircuit, device: Device, precision: int = 10) -> float:
+def estimated_hellinger_distance(
+    qc: QuantumCircuit, device: Device, model: RandomForestRegressor | None = None, precision: int = 10
+) -> float:
     """Calculates the estimated Hellinger distance of a given quantum circuit on a given device.
 
     Arguments:
         qc: The quantum circuit to be compiled.
         device: The device to be used for compilation.
+        model: The pre-trained model to use for prediction (optional). If not provided, the model will try to be loaded from files.
         precision: The precision of the returned value. Defaults to 10.
 
     Returns:
         The estimated Hellinger distance of the given quantum circuit on the given device.
     """
-    # Load pre-trained model from files
-    path = get_hellinger_model_path(device)
-    model = load(path)
+    if model is None:
+        if hellinger_model_available(device):
+            # Load pre-trained model from files
+            path = get_hellinger_model_path(device)
+            model = load(path)
+        else:
+            msg = f"Missing trained model for Hellinger distance estimates on {device.name}."
+            raise ValueError(msg)
 
     feature_vector = calc_device_specific_features(qc, device)
 
-    res = model.predict([feature_vector])[0]
+    res = model.predict([feature_vector])
     return cast("float", np.round(res, precision))

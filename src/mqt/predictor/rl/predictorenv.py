@@ -19,6 +19,7 @@ import numpy as np
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete
+from joblib import load
 from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
@@ -29,7 +30,7 @@ from qiskit.transpiler.passes.layout.vf2_layout import VF2LayoutStopReason
 
 from mqt.bench.devices import get_device_by_name
 from mqt.predictor import reward, rl
-from mqt.predictor.hellinger import hellinger_model_available
+from mqt.predictor.hellinger import get_hellinger_model_path, hellinger_model_available
 
 logger = logging.getLogger("mqt-predictor")
 
@@ -91,9 +92,11 @@ class PredictorEnv(Env):  # type: ignore[misc]
         if reward_function == "estimated_success_probability" and not reward.esp_data_available(self.device):
             msg = f"Missing calibration data for ESP calculation on {device_name}."
             raise ValueError(msg)
-        if reward_function == "estimated_hellinger_distance" and not hellinger_model_available(self.device):
-            msg = f"Missing trained model for Hellinger distance estimates on {device_name}."
-            raise ValueError(msg)
+        if reward_function == "estimated_hellinger_distance":
+            if not hellinger_model_available(self.device):
+                msg = f"Missing trained model for Hellinger distance estimates on {device_name}."
+                raise ValueError(msg)
+            self.hellinger_model = load(get_hellinger_model_path(self.device))
         self.reward_function = reward_function
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0
@@ -157,7 +160,7 @@ class PredictorEnv(Env):  # type: ignore[misc]
         if self.reward_function == "estimated_success_probability":
             return reward.estimated_success_probability(self.state, self.device)
         if self.reward_function == "estimated_hellinger_distance":
-            return reward.estimated_hellinger_distance(self.state, self.device)
+            return reward.estimated_hellinger_distance(self.state, self.device, self.hellinger_model)
         if self.reward_function == "critical_depth":
             return reward.crit_depth(self.state)
         assert_never(self.state)

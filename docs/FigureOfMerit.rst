@@ -81,12 +81,12 @@ To use this figure of merit, three steps are required:
 
    .. code-block:: python
 
-      from mqt.predictor.ml import Predictor
+      from mqt.predictor.ml import train_random_forest_regressor
 
       training_data = [
           (feat, label) for feat, label in zip(feature_vector_list, labels_list, strict=False)
       ]
-      Predictor.train_random_forest_regressor(training_data, device, save_model=True)
+      trained_model = train_random_forest_regressor(training_data, device, save_model=True)
 
 Once the model has been successfully trained, the ``estimated_hellinger_distance`` figure of merit can serve as a device-specific figure of merit to assess the quality of a compiled quantum circuit (i.e. calculate a Hellinger distance value :math:`\in [0, 1])`).
 
@@ -94,6 +94,6 @@ Once the model has been successfully trained, the ``estimated_hellinger_distance
 
       from mqt.predictor.reward import estimated_hellinger_distance
 
-      print(estimated_hellinger_distance(quantum_circuits[0], device))
+      print(estimated_hellinger_distance(quantum_circuits[0], device, trained_model))
 
 In the context of the MQT Predictor, it can be used as a reward function in the RL module and subsequently utilized in the ML module to score and compare quantum devices, just like any other figure of merit mentioned above.

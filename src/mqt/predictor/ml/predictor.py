@@ -333,15 +333,16 @@ class Predictor:
                 "bootstrap": [True, False],
             },
         ]
-
-        if figure_of_merit == "hellinger_distance":
+        # Device-specific regression model for Hellinger distance
+        if figure_of_merit == "estimated_hellinger_distance":
             if device is None:
                 msg = "A device must be provided for Hellinger distance model training."
                 raise ValueError(msg)
-            # Device-specific regression model
+
             mdl = RandomForestRegressor(random_state=0)
             save_mdl_path = str(get_hellinger_model_path(device))
-        else:  # Default classification model
+
+        else:  # Default classification model to score all devices
             mdl = RandomForestClassifier(random_state=0)
             save_mdl_path = str(ml.helper.get_path_trained_model(figure_of_merit))
 
