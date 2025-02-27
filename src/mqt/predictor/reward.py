@@ -231,17 +231,6 @@ def esp_data_available(device: Device) -> bool:
     return True
 
 
-def hellinger_model_available(device: Device) -> bool:
-    """Check if a pre-trained model for Hellinger distance estimates is available for the device."""
-    # TODO: can be removed once the `Result` class is no longer used
-    try:
-        # Raises a ValueError if the model is not available
-        get_hellinger_model_path(device)
-    except ValueError:
-        return False
-    return True
-
-
 def estimated_hellinger_distance(
     qc: QuantumCircuit, device: Device, model: RandomForestRegressor | None = None, precision: int = 10
 ) -> float:

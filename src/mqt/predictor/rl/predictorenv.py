@@ -93,7 +93,11 @@ class PredictorEnv(Env):  # type: ignore[misc]
             msg = f"Missing calibration data for ESP calculation on {device_name}."
             raise ValueError(msg)
         if reward_function == "estimated_hellinger_distance":
-            self.hellinger_model = load(get_hellinger_model_path(self.device))
+            hellinger_model_path = get_hellinger_model_path(self.device)
+            if not hellinger_model_path.is_file():
+                msg = f"Missing trained model for Hellinger distance estimates on {self.device.name}."
+                raise ValueError(msg)
+            self.hellinger_model = load(hellinger_model_path)
         self.reward_function = reward_function
         self.action_space = Discrete(len(self.action_set.keys()))
         self.num_steps = 0

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from mqt.predictor import reward
+from mqt.predictor.hellinger.utils import get_hellinger_model_path
 
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit
@@ -49,7 +50,7 @@ class Result:
             )
             rew_hellinger = (
                 reward.estimated_hellinger_distance(compiled_qc, device)
-                if reward.hellinger_model_available(device)
+                if get_hellinger_model_path(device).is_file()
                 else -1.0
             )
         else:
