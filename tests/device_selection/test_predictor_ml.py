@@ -93,7 +93,7 @@ def test_save_training_data(predictor: ml.Predictor, source_path: Path, target_p
 
 def test_train_random_forest_model_and_predict(predictor: ml.Predictor, source_path: Path) -> None:
     """Test the training of the random forest classifier."""
-    predictor.train_random_forest_model(save_classifier=True)
+    predictor.train_random_forest_classifier(save_classifier=True)
     qc = get_benchmark("ghz", 1, 3)
     predicted_dev = ml.predict_device_for_figure_of_merit(qc)
     assert predicted_dev in mqt.bench.devices.get_available_devices()
