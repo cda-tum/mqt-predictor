@@ -7,8 +7,6 @@ See README.md or go to https://github.com/cda-tum/mqt-predictor for more informa
 from __future__ import annotations
 
 from mqt.predictor.ml.helper import qcompile
-from mqt.predictor.ml.predictor import Predictor, predict_device_for_figure_of_merit
-
-train_random_forest_regressor = Predictor.train_random_forest_regressor  # Expose static method
+from mqt.predictor.ml.predictor import Predictor, predict_device_for_figure_of_merit, train_random_forest_regressor
 
 __all__ = ["Predictor", "predict_device_for_figure_of_merit", "qcompile", "train_random_forest_regressor"]

@@ -278,35 +278,12 @@ class Predictor:
             True when the training was successful, False otherwise.
         """
         training_data = Predictor.get_prepared_training_data(self.figure_of_merit)
-        clf = self._train_random_forest_model(training_data, None, self.figure_of_merit, save_classifier)
+        clf = self.train_random_forest_model(training_data, None, self.figure_of_merit, save_classifier)
         self.set_classifier(clf)
         return clf is not None
 
     @staticmethod
-    def train_random_forest_regressor(
-        training_data: list[NDArray[np.float64]],
-        device: Device | None,
-        save_model: bool = True,
-    ) -> RandomForestRegressor:
-        """Trains a random forest regressor on a Hellinger distance dataset.
-
-        Arguments:
-            training_data: The training data, the names list and the scores list to be saved.
-            device: The device to be used for training.
-            save_model: Whether to save the trained model. Defaults to True.
-
-        Returns:
-            Either a trained RandomForestRegressor to estimate the Hellinger distance for a single device,
-            or a trained RandomForestClassifier to score multiple devices according to a specific figure of merit.
-        """
-        Predictor.save_training_data(training_data, figure_of_merit="estimated_hellinger_distance")
-        train_data = Predictor.get_prepared_training_data(figure_of_merit="estimated_hellinger_distance")
-        return Predictor._train_random_forest_model(
-            train_data, device, figure_of_merit="estimated_hellinger_distance", save_model=save_model
-        )
-
-    @staticmethod
-    def _train_random_forest_model(
+    def train_random_forest_model(
         training_data: ml.helper.TrainingData,
         device: Device | None,
         figure_of_merit: str | reward.figure_of_merit,
@@ -490,3 +467,26 @@ def predict_device_for_figure_of_merit(
             return dev
     msg = f"No suitable device found for the given quantum circuit with {qc.num_qubits} qubits."
     raise ValueError(msg)
+
+
+def train_random_forest_regressor(
+    training_data: list[NDArray[np.float64]],
+    device: Device | None,
+    save_model: bool = True,
+) -> RandomForestRegressor:
+    """Trains a random forest regressor on a Hellinger distance dataset.
+
+    Arguments:
+        training_data: The training data, the names list and the scores list to be saved.
+        device: The device to be used for training.
+        save_model: Whether to save the trained model. Defaults to True.
+
+    Returns:
+        Either a trained RandomForestRegressor to estimate the Hellinger distance for a single device,
+        or a trained RandomForestClassifier to score multiple devices according to a specific figure of merit.
+    """
+    Predictor.save_training_data(training_data, figure_of_merit="estimated_hellinger_distance")
+    train_data = Predictor.get_prepared_training_data(figure_of_merit="estimated_hellinger_distance")
+    return Predictor.train_random_forest_model(
+        train_data, device, figure_of_merit="estimated_hellinger_distance", save_model=save_model
+    )
