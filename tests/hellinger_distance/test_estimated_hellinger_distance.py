@@ -88,7 +88,6 @@ def test_train_random_forest_regressor_and_predict() -> None:
     labels_list = [distance_label] * n_circuits
 
     # 3. Model Training
-    training_data = [(feat, label) for feat, label in zip(feature_vector_list, labels_list, strict=False)]
-    trained_model = ml.train_random_forest_regressor(training_data, device, save_model=True)
+    trained_model = ml.train_random_forest_regressor(feature_vector_list, labels_list, device, save_model=True)
 
     assert np.isclose(trained_model.predict([feature_vector]), distance_label)

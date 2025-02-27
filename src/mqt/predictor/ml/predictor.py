@@ -355,8 +355,8 @@ class Predictor:
 
         (
             x_train,
-            x_test,
             y_train,
+            x_test,
             y_test,
             indices_train,
             indices_test,
@@ -364,8 +364,8 @@ class Predictor:
 
         return ml.helper.TrainingData(
             x_train,
-            x_test,
             y_train,
+            x_test,
             y_test,
             indices_train,
             indices_test,
@@ -470,14 +470,16 @@ def predict_device_for_figure_of_merit(
 
 
 def train_random_forest_regressor(
-    training_data: list[NDArray[np.float64]],
+    x_train: NDArray[np.float64],
+    y_train: NDArray[np.float64],
     device: Device | None,
     save_model: bool = True,
 ) -> RandomForestRegressor:
     """Trains a random forest regressor on a Hellinger distance dataset.
 
     Arguments:
-        training_data: The training data, the names list and the scores list to be saved.
+        x_train: The training data (circuit feature vectors).
+        y_train: The training labels (Hellinger distance values).
         device: The device to be used for training.
         save_model: Whether to save the trained model. Defaults to True.
 
@@ -485,8 +487,9 @@ def train_random_forest_regressor(
         Either a trained RandomForestRegressor to estimate the Hellinger distance for a single device,
         or a trained RandomForestClassifier to score multiple devices according to a specific figure of merit.
     """
-    Predictor.save_training_data(training_data, figure_of_merit="estimated_hellinger_distance")
-    train_data = Predictor.get_prepared_training_data(figure_of_merit="estimated_hellinger_distance")
+    # type cast the data to the expected format
+    train_data = ml.helper.TrainingData(X_train=x_train, y_train=y_train)
+
     return Predictor.train_random_forest_model(
         train_data, device, figure_of_merit="estimated_hellinger_distance", save_model=save_model
     )
