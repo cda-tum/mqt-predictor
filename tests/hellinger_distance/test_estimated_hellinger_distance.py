@@ -64,7 +64,7 @@ def test_hellinger_distance_error() -> None:
         hellinger_distance(p=invalid, q=valid)
 
 
-def test_train_random_forest_regressor_and_predict(predictor: ml.Predictor, source_path: Path) -> None:
+def test_train_random_forest_regressor_and_predict() -> None:
     """Test the training of the random forest regressor."""
     # Setup the training environment
     device = get_device_by_name("iqm_adonis")
@@ -79,7 +79,8 @@ def test_train_random_forest_regressor_and_predict(predictor: ml.Predictor, sour
     feature_vector_list = [feature_vector] * n_circuits
 
     # 2. Label Generation
-    noisy = np.random.rand(device.num_qubits)
+    rng = np.random.default_rng()
+    noisy = rng.random(device.num_qubits)
     noisy /= np.sum(noisy)
     noiseless = np.zeros_like(noisy)
     noiseless[0] = 1.0

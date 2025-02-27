@@ -9,7 +9,7 @@ import numpy as np
 from joblib import load
 
 from mqt.bench.utils import calc_supermarq_features
-from mqt.predictor.hellinger import calc_device_specific_features, get_hellinger_model_path, hellinger_model_available
+from mqt.predictor.hellinger import calc_device_specific_features, get_hellinger_model_path
 
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit, QuantumRegister, Qubit
@@ -176,6 +176,7 @@ def estimated_success_probability(qc: QuantumCircuit, device: Device, precision:
 
 def esp_data_available(device: Device) -> bool:
     """Check if calibration data to calculate ESP is available for the device."""
+    # TODO: consider removal once the `Result` class is no longer used
 
     def message(calibration: str, operation: str, target: int | str) -> str:
         return f"{calibration} data for {operation} operation on qubit(s) {target} is required to calculate ESP for device {device.name}."
@@ -230,6 +231,17 @@ def esp_data_available(device: Device) -> bool:
     return True
 
 
+def hellinger_model_available(device: Device) -> bool:
+    """Check if a pre-trained model for Hellinger distance estimates is available for the device."""
+    # TODO: can be removed once the `Result` class is no longer used
+    try:
+        # Raises a ValueError if the model is not available
+        get_hellinger_model_path(device)
+    except ValueError:
+        return False
+    return True
+
+
 def estimated_hellinger_distance(
     qc: QuantumCircuit, device: Device, model: RandomForestRegressor | None = None, precision: int = 10
 ) -> float:
@@ -245,13 +257,9 @@ def estimated_hellinger_distance(
         The estimated Hellinger distance of the given quantum circuit on the given device.
     """
     if model is None:
-        if hellinger_model_available(device):
-            # Load pre-trained model from files
-            path = get_hellinger_model_path(device)
-            model = load(path)
-        else:
-            msg = f"Missing trained model for Hellinger distance estimates on {device.name}."
-            raise ValueError(msg)
+        # Load pre-trained model from files
+        path = get_hellinger_model_path(device)
+        model = load(path)
 
     feature_vector = calc_device_specific_features(qc, device)
 

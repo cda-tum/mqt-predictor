@@ -30,7 +30,7 @@ from qiskit.transpiler.passes.layout.vf2_layout import VF2LayoutStopReason
 
 from mqt.bench.devices import get_device_by_name
 from mqt.predictor import reward, rl
-from mqt.predictor.hellinger import get_hellinger_model_path, hellinger_model_available
+from mqt.predictor.hellinger import get_hellinger_model_path
 
 logger = logging.getLogger("mqt-predictor")
 
@@ -93,9 +93,6 @@ class PredictorEnv(Env):  # type: ignore[misc]
             msg = f"Missing calibration data for ESP calculation on {device_name}."
             raise ValueError(msg)
         if reward_function == "estimated_hellinger_distance":
-            if not hellinger_model_available(self.device):
-                msg = f"Missing trained model for Hellinger distance estimates on {device_name}."
-                raise ValueError(msg)
             self.hellinger_model = load(get_hellinger_model_path(self.device))
         self.reward_function = reward_function
         self.action_space = Discrete(len(self.action_set.keys()))

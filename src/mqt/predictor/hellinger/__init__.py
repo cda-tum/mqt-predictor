@@ -10,12 +10,10 @@ from mqt.predictor.hellinger.utils import (
     calc_device_specific_features,
     get_hellinger_model_path,
     hellinger_distance,
-    hellinger_model_available,
 )
 
 __all__ = [
     "calc_device_specific_features",
     "get_hellinger_model_path",
     "hellinger_distance",
-    "hellinger_model_available",
 ]

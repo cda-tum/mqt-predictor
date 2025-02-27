@@ -131,10 +131,9 @@ def get_hellinger_model_path(device: Device = None) -> Path:
     model_path = (
         training_data_path / "trained_model" / ("trained_hellinger_distance_regressor_" + device.name + ".joblib")
     )
+
+    if not model_path.is_file():
+        msg = f"Missing trained model for Hellinger distance estimates on {device.name}."
+        raise ValueError(msg)
+
     return Path(model_path)
-
-
-def hellinger_model_available(device: Device) -> bool:
-    """Check if a trained model to estimate the Hellinger distance is available for the device."""
-    path = get_hellinger_model_path(device)
-    return bool(path.is_file())
