@@ -183,3 +183,20 @@ def test_remove_files(source_path: Path, target_path: Path) -> None:
     for file in (ml.helper.get_path_training_data() / "trained_model").iterdir():
         if file.suffix == ".joblib":
             file.unlink()
+
+
+def test_predict_device_for_estimated_hellinger_distance_no_device_provided() -> None:
+    """Test the error handling of the device selection predictor when no device is provided for the Hellinger distance model."""
+    rng = np.random.default_rng()
+    random_int = rng.integers(0, 10)
+
+    # 1. Random features and labels
+    feature_vector = rng.random(random_int)
+    feature_vector_list = [feature_vector]
+
+    distance_label = rng.random(random_int)
+    labels_list = [distance_label]
+
+    # 3. Model Training
+    with pytest.raises(ValueError, match=re.escape("A device must be provided for Hellinger distance model training.")):
+        ml.train_random_forest_regressor(feature_vector_list, labels_list, device=None, save_model=True)

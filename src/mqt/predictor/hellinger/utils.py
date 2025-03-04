@@ -125,7 +125,7 @@ def calc_device_specific_features(
     return np.array(list(feature_dict.values()))
 
 
-def get_hellinger_model_path(device: Device = None) -> Path:
+def get_hellinger_model_path(device: Device) -> Path:
     """Returns the path to the trained model folder resulting from the machine learning training."""
     training_data_path = Path(str(resources.files("mqt.predictor"))) / "ml" / "training_data"
     model_path = (
