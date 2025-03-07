@@ -21,11 +21,12 @@ import numpy as np
 from joblib import Parallel, delayed, load
 from qiskit import QuantumCircuit
 from qiskit.qasm2 import dump
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import GridSearchCV, train_test_split
 
 from mqt.bench.devices import Device, get_available_devices, get_device_by_name
 from mqt.predictor import ml, reward, rl, utils
+from mqt.predictor.hellinger import get_hellinger_model_path
 
 if TYPE_CHECKING:
     from numpy._typing import NDArray
@@ -159,7 +160,6 @@ class Predictor:
         """Handles to create training data from all generated training samples.
 
         Arguments:
-            figure_of_merit: The figure of merit to be used for training.
             path_uncompiled_circuits: The path to the directory containing the uncompiled circuits. Defaults to None.
             path_compiled_circuits: The path to the directory containing the compiled circuits. Defaults to None.
 
@@ -241,6 +241,8 @@ class Predictor:
                 score = reward.expected_fidelity(qc, device)
             elif self.figure_of_merit == "estimated_success_probability":
                 score = reward.estimated_success_probability(qc, device)
+            elif self.figure_of_merit == "estimated_hellinger_distance":
+                score = reward.estimated_hellinger_distance(qc, device)
             else:
                 assert_never(self.figure_of_merit)
             scores[dev_name] = score
@@ -276,7 +278,29 @@ class Predictor:
             True when the training was successful, False otherwise.
         """
         training_data = self.get_prepared_training_data()
+        clf = self.train_random_forest_model(training_data, None, self.figure_of_merit, save_classifier)
+        self.set_classifier(clf)
+        return clf is not None
 
+    @staticmethod
+    def train_random_forest_model(
+        training_data: ml.helper.TrainingData,
+        device: Device | None,
+        figure_of_merit: str | reward.figure_of_merit,
+        save_model: bool = True,
+    ) -> RandomForestRegressor | RandomForestClassifier:
+        """Trains a random forest model for the given figure of merit.
+
+        Arguments:
+            training_data: The training data, the names list and the scores list to be saved.
+            device: The device to be used for training.
+            figure_of_merit: The figure of merit to be used for training.
+            save_model: Whether to save the classifier. Defaults to True.
+
+        Returns:
+            Either a trained RandomForestRegressor to estimate the Hellinger distance for a single device,
+            or a trained RandomForestClassifier to score multiple devices according to a specific figure of merit.
+        """
         tree_param = [
             {
                 "n_estimators": [100, 200, 500],
@@ -286,17 +310,27 @@ class Predictor:
                 "bootstrap": [True, False],
             },
         ]
+        # Device-specific regression model for Hellinger distance
+        if figure_of_merit == "hellinger_distance":
+            if device is None:
+                msg = "A device must be provided for Hellinger distance model training."
+                raise ValueError(msg)
 
-        clf = RandomForestClassifier(random_state=0)
+            mdl = RandomForestRegressor(random_state=0)
+            save_mdl_path = str(get_hellinger_model_path(device))
+
+        else:  # Default classification model to score all devices
+            mdl = RandomForestClassifier(random_state=0)
+            save_mdl_path = str(ml.helper.get_path_trained_model(figure_of_merit))
+
         num_cv = min(len(training_data.y_train), 5)
-        clf = GridSearchCV(clf, tree_param, cv=num_cv, n_jobs=8).fit(training_data.X_train, training_data.y_train)
+        mdl = GridSearchCV(mdl, tree_param, cv=num_cv, n_jobs=8).fit(training_data.X_train, training_data.y_train)
 
-        self.set_classifier(clf.best_estimator_)
-        if save_classifier:
-            joblib_dump(clf, str(ml.helper.get_path_trained_model(self.figure_of_merit)))
-        logger.info("Random Forest classifier is trained and saved.")
+        if save_model:
+            joblib_dump(mdl, save_mdl_path)
+        logger.info("Random Forest model is trained and saved.")
 
-        return self.clf is not None
+        return mdl.best_estimator_
 
     def get_prepared_training_data(self) -> ml.helper.TrainingData:
         """Returns the training data for the given figure of merit."""
@@ -327,8 +361,8 @@ class Predictor:
 
         return ml.helper.TrainingData(
             x_train,
-            x_test,
             y_train,
+            x_test,
             y_test,
             indices_train,
             indices_test,
@@ -414,3 +448,29 @@ def predict_device_for_figure_of_merit(
             return dev
     msg = f"No suitable device found for the given quantum circuit with {qc.num_qubits} qubits."
     raise ValueError(msg)
+
+
+def train_random_forest_regressor(
+    x_train: NDArray[np.float64],
+    y_train: NDArray[np.float64],
+    device: Device | None,
+    save_model: bool = True,
+) -> RandomForestRegressor:
+    """Trains a random forest regressor on a Hellinger distance dataset.
+
+    Arguments:
+        x_train: The training data (circuit feature vectors).
+        y_train: The training labels (Hellinger distance values).
+        device: The device to be used for training.
+        save_model: Whether to save the trained model. Defaults to True.
+
+    Returns:
+        Either a trained RandomForestRegressor to estimate the Hellinger distance for a single device,
+        or a trained RandomForestClassifier to score multiple devices according to a specific figure of merit.
+    """
+    # type cast the data to the expected format
+    train_data = ml.helper.TrainingData(X_train=x_train, y_train=y_train)
+
+    return Predictor.train_random_forest_model(
+        train_data, device, figure_of_merit="hellinger_distance", save_model=save_model
+    )

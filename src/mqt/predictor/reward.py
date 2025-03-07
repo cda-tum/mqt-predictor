@@ -6,17 +6,25 @@ import logging
 from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
+from joblib import load
 
 from mqt.bench.utils import calc_supermarq_features
+from mqt.predictor.hellinger import calc_device_specific_features, get_hellinger_model_path
 
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit, QuantumRegister, Qubit
+    from sklearn.ensemble import RandomForestRegressor
 
     from mqt.bench.devices import Device
 
 logger = logging.getLogger("mqt-predictor")
 
-figure_of_merit = Literal["expected_fidelity", "critical_depth", "estimated_success_probability"]
+figure_of_merit = Literal[
+    "expected_fidelity",
+    "critical_depth",
+    "estimated_success_probability",
+    "estimated_hellinger_distance",
+]
 
 
 def crit_depth(qc: QuantumCircuit, precision: int = 10) -> float:
@@ -168,6 +176,7 @@ def estimated_success_probability(qc: QuantumCircuit, device: Device, precision:
 
 def esp_data_available(device: Device) -> bool:
     """Check if calibration data to calculate ESP is available for the device."""
+    # TODO: consider removal once the `Result` class is no longer used
 
     def message(calibration: str, operation: str, target: int | str) -> str:
         return f"{calibration} data for {operation} operation on qubit(s) {target} is required to calculate ESP for device {device.name}."
@@ -220,3 +229,28 @@ def esp_data_available(device: Device) -> bool:
                 return False
 
     return True
+
+
+def estimated_hellinger_distance(
+    qc: QuantumCircuit, device: Device, model: RandomForestRegressor | None = None, precision: int = 10
+) -> float:
+    """Calculates the estimated Hellinger distance of a given quantum circuit on a given device.
+
+    Arguments:
+        qc: The quantum circuit to be compiled.
+        device: The device to be used for compilation.
+        model: The pre-trained model to use for prediction (optional). If not provided, the model will try to be loaded from files.
+        precision: The precision of the returned value. Defaults to 10.
+
+    Returns:
+        The estimated Hellinger distance of the given quantum circuit on the given device.
+    """
+    if model is None:
+        # Load pre-trained model from files
+        path = get_hellinger_model_path(device)
+        model = load(path)
+
+    feature_vector = calc_device_specific_features(qc, device)
+
+    res = model.predict([feature_vector])
+    return cast("float", np.round(res, precision))
