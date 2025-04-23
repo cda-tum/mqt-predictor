@@ -40,6 +40,14 @@ jobs:
     if: fromJSON(needs.change-detection.outputs.run-code-ql)
     uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-code-ql-python.yml@v1.8
 
+  cd:
+    name: 🚀 CD
+    needs: change-detection
+    if: fromJSON(needs.change-detection.outputs.run-cd)
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-packaging.yml@v1.8
+    with:
+      pure-python: true
+
   required-checks-pass: # This job does nothing and is only used for branch protection
     name: 🚦 Check
     if: always()
@@ -47,6 +55,7 @@ jobs:
       - change-detection
       - python-linter
       - python-tests
+      - cd
       - code-ql
     runs-on: ubuntu-latest
     steps:
@@ -65,5 +74,9 @@ jobs:
             ${{
               fromJSON(needs.change-detection.outputs.run-code-ql)
               && '' || 'code-ql,'
+            }}
+            ${{
+              fromJSON(needs.change-detection.outputs.run-cd)
+              && '' || 'cd,'
             }}
           jobs: ${{ toJSON(needs) }}
