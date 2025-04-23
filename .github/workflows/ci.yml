@@ -33,6 +33,9 @@ jobs:
       enable-macos13: true
       enable-macos14: true
       enable-windows2022: true
+    permissions:
+      contents: read
+      id-token: write
 
   code-ql:
     name: 📝 CodeQL
