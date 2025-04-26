@@ -14,19 +14,19 @@ concurrency:
 jobs:
   change-detection:
     name: 🔍 Change
-    uses: cda-tum/mqt-workflows/.github/workflows/reusable-change-detection.yml@v1.7
+    uses: cda-tum/mqt-workflows/.github/workflows/reusable-change-detection.yml@v1.9
 
   python-linter:
     name: 🐍 Lint
     needs: change-detection
     if: fromJSON(needs.change-detection.outputs.run-python-tests)
-    uses: cda-tum/mqt-workflows/.github/workflows/reusable-python-linter.yml@v1.7
+    uses: cda-tum/mqt-workflows/.github/workflows/reusable-python-linter.yml@v1.9
 
   python-tests:
     name: 🐍 Test
     needs: change-detection
     if: fromJSON(needs.change-detection.outputs.run-python-tests)
-    uses: cda-tum/mqt-workflows/.github/workflows/reusable-python-ci.yml@v1.7
+    uses: cda-tum/mqt-workflows/.github/workflows/reusable-python-ci.yml@v1.9
     with:
       enable-ubuntu2404: true
       enable-ubuntu2404-arm: false # not supported by BQSKit
@@ -38,7 +38,7 @@ jobs:
     name: 📝 CodeQL
     needs: change-detection
     if: fromJSON(needs.change-detection.outputs.run-code-ql)
-    uses: cda-tum/mqt-workflows/.github/workflows/reusable-code-ql-python.yml@v1.7
+    uses: cda-tum/mqt-workflows/.github/workflows/reusable-code-ql-python.yml@v1.9
 
   required-checks-pass: # This job does nothing and is only used for branch protection
     name: 🚦 Check
