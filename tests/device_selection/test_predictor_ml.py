@@ -6,11 +6,11 @@ import re
 import sys
 from pathlib import Path
 
+import mqt.bench.devices
 import pytest
+from mqt.bench import get_benchmark
 from qiskit.qasm2 import dump
 
-import mqt.bench.devices
-from mqt.bench import get_benchmark
 from mqt.predictor import ml
 
 
