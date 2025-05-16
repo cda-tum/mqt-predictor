@@ -35,6 +35,14 @@ def test_predictor_env_esp_error() -> None:
         rl.Predictor(figure_of_merit="estimated_success_probability", device_name="ibm_montreal")
 
 
+def test_predictor_env_hellinger_error() -> None:
+    """Test the predictor environment with the Estimated Hellinger Distance as figure of merit and a missing model."""
+    with pytest.raises(
+        ValueError, match=re.escape("Missing trained model for Hellinger distance estimates on ibm_montreal.")
+    ):
+        rl.Predictor(figure_of_merit="estimated_hellinger_distance", device_name="ibm_montreal")
+
+
 def test_qcompile_with_newly_trained_models() -> None:
     """Test the qcompile function with a newly trained model.
 
