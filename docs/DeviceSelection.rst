@@ -87,7 +87,7 @@ Now, the Random Forest classifier can be trained:
 
 .. code-block:: python
 
-    predictor.train_random_forest_classifier(figure_of_merit="expected_fidelity")
+    predictor.train_random_forest_model(figure_of_merit="expected_fidelity")
 
 
 Additionally, the raw training data may be extracted and can be used for any machine learning model:

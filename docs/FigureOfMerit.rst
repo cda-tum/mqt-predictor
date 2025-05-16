@@ -11,7 +11,7 @@ decoherence times. While for some devices, this information may be publicly avai
 devices it may be estimated from comparable devices, previous records, or insider knowledge.
 
 So far, two figures of merit are implemented for all devices: ``expected_fidelity`` and ``critical_depth``.
-On top of that, the ``estimated_success_probability`` is available for devices where the necessary calibration data is available.
+On top of that, the ``estimated_success_probability`` is available for devices where the necessary calibration data is available, as well as the ``estimated_hellinger_distance`` when a suitable (trained) model is provided.
 
 Expected Fidelity
 -----------------
@@ -47,3 +47,50 @@ The ``estimated_success_probability`` (based on :cite:labelpar:`esp-lifetime-min
 with :math:`t_{q}^{\mathrm{idle}}` being the sum of each qubit's idle times.
 Therefore, exactly the execution times of all gates and the decoherence times must be available.
 Note that some variants of this figure of merit do not take the minimum of both decoherence times but create one exponential factor for each decoherence time, others consider the entire qubit lifetime instead of idle times only.
+
+
+Estimated Hellinger Distance
+----------------------------
+The ``estimated_hellinger_distance`` is a figure of merit based on a machine learning (ML) model that has been trained on a dataset of quantum circuits labeled with their respective Hellinger distance.
+
+To use this figure of merit, three steps are required:
+
+1. **Feature Extraction:** Prepare a set of compiled quantum circuits (e.g., from ``MQT Bench``) for execution on a target device and extract corresponding feature vectors.
+
+   .. code-block:: python
+
+      from mqt.predictor.hellinger import calc_device_specific_features
+
+      feature_vector_list = []
+      for qc in quantum_circuits:
+          feature_vector = calc_device_specific_features(qc, device)
+          feature_vector_list.append(feature_vector)
+
+2. **Label Generation:** Compute the Hellinger distance between the noisy probability distribution (obtained from executing on a quantum device) and the noiseless distribution (from simulation, e.g., using ``MQT DDSIM``).
+
+   .. code-block:: python
+
+      from mqt.predictor.hellinger import hellinger_distance
+
+      labels_list = []
+      for noisy, noiseless in zip(noisy_distributions, noiseless_distributions):
+          distance_label = hellinger_distance(noisy, noiseless)
+          labels_list.append(distance_label)
+
+3. **Model Training:** Train an ML model using the compiled quantum circuit features and the Hellinger distance labels.
+
+   .. code-block:: python
+
+      from mqt.predictor.ml import train_random_forest_regressor
+
+      train_random_forest_regressor(feature_vector_list, labels_list, device, save_model=True)
+
+Once the model has been successfully trained, the ``estimated_hellinger_distance`` figure of merit can serve as a device-specific figure of merit to assess the quality of a compiled quantum circuit (i.e. calculate a Hellinger distance value :math:`\in [0, 1])`).
+
+   .. code-block:: python
+
+      from mqt.predictor.reward import estimated_hellinger_distance
+
+      print(estimated_hellinger_distance(quantum_circuits[0], device, trained_model))
+
+In the context of the MQT Predictor, it can be used as a reward function in the RL module and subsequently utilized in the ML module to score and compare quantum devices, just like any other figure of merit mentioned above.
