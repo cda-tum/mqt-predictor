@@ -156,10 +156,10 @@ class TrainingData:
     """Dataclass for the training data."""
 
     X_train: NDArray[np.float64]
-    X_test: NDArray[np.float64]
     y_train: NDArray[np.float64]
-    y_test: NDArray[np.float64]
-    indices_train: list[int]
-    indices_test: list[int]
-    names_list: list[str]
-    scores_list: list[list[float]]
+    X_test: NDArray[np.float64] | None = None
+    y_test: NDArray[np.float64] | None = None
+    indices_train: list[int] | None = None
+    indices_test: list[int] | None = None
+    names_list: list[str] | None = None
+    scores_list: list[list[float]] | None = None
