@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import requests
 from bqskit import MachineModel
+from mqt.bench.utils import calc_supermarq_features
 from pytket.architecture import Architecture
 from pytket.circuit import Circuit, Node, Qubit
 from pytket.passes import (
@@ -53,14 +54,12 @@ from qiskit.transpiler.passes.layout.vf2_layout import VF2LayoutStopReason
 from sb3_contrib import MaskablePPO
 from tqdm import tqdm
 
-from mqt.bench.utils import calc_supermarq_features
 from mqt.predictor import reward, rl
 
 if TYPE_CHECKING:
+    from mqt.bench.devices import Device
     from numpy.typing import NDArray
     from qiskit.providers.models import BackendProperties
-
-    from mqt.bench.devices import Device
 
 
 import operator

@@ -6,9 +6,9 @@ import re
 from pathlib import Path
 
 import pytest
+from mqt.bench import get_benchmark
 from qiskit.qasm2 import dump
 
-from mqt.bench import get_benchmark
 from mqt.predictor import rl
 
 

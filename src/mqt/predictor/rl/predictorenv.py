@@ -20,6 +20,7 @@ from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete
 from joblib import load
+from mqt.bench.devices import get_device_by_name
 from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
@@ -28,7 +29,6 @@ from qiskit.transpiler import CouplingMap, PassManager, TranspileLayout
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
 from qiskit.transpiler.passes.layout.vf2_layout import VF2LayoutStopReason
 
-from mqt.bench.devices import get_device_by_name
 from mqt.predictor import reward, rl
 from mqt.predictor.hellinger import get_hellinger_model_path
 

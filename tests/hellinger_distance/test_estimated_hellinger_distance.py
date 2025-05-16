@@ -7,14 +7,14 @@ import sys
 import warnings
 from pathlib import Path
 
+import mqt.bench.devices
 import numpy as np
 import pytest
+from mqt.bench import get_benchmark
+from mqt.bench.devices import get_device_by_name
 from qiskit import QuantumCircuit
 from qiskit.qasm2 import dump
 
-import mqt.bench.devices
-from mqt.bench import get_benchmark
-from mqt.bench.devices import get_device_by_name
 from mqt.predictor import ml, rl
 from mqt.predictor.hellinger import calc_device_specific_features, hellinger_distance
 
