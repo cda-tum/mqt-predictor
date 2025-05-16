@@ -103,7 +103,7 @@ This training data can then be saved and used to train the supervised machine le
 
 .. code-block:: python
 
-    ml_pred.train_random_forest_model()
+    ml_pred.train_random_forest_classifier()
 
 Finally, the MQT Predictor framework is fully set up and can be used to predict the most
 suitable device for a given quantum circuit using supervised machine learning and compile
