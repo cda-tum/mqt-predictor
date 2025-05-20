@@ -60,15 +60,14 @@ def test_qcompile_with_newly_trained_models() -> None:
     model_path = Path(rl.helper.get_path_trained_model() / (model_name + ".zip"))
 
     print("Model path:", model_path)  # debugging
+    print("Model does not exist.")  # debugging
     if not model_path.exists():
-        print("Model does not exist.")
         with pytest.raises(
             FileNotFoundError,
             match=re.escape(
                 "The RL model 'model_expected_fidelity_ionq_harmony' is not trained yet. Please train the model before using it."
             ),
         ):
-            print("Model does not exist.")  # debugging
             rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
 
     print("Training the model...")  # debugging
