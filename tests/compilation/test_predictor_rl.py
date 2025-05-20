@@ -53,13 +53,13 @@ def test_qcompile_with_newly_trained_models() -> None:
     device = "ionq_harmony"  # fully specified calibration data
     qc = get_benchmark("ghz", 1, 3)
 
-    print("Preparing the model...") # debugging
+    print("Preparing the model...")  # debugging
     predictor = rl.Predictor(figure_of_merit=figure_of_merit, device_name=device)
 
     model_name = "model_" + figure_of_merit + "_" + device
     model_path = Path(rl.helper.get_path_trained_model() / (model_name + ".zip"))
 
-    print("Model path:", model_path) # debugging
+    print("Model path:", model_path)  # debugging
     if not model_path.exists():
         print("Model does not exist.")
         with pytest.raises(
@@ -71,17 +71,17 @@ def test_qcompile_with_newly_trained_models() -> None:
             print("Model does not exist.")  # debugging
             rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
 
-    print("Training the model...") # debugging
+    print("Training the model...")  # debugging
     predictor.train_model(
         timesteps=100,
         test=True,
     )
 
-    print("Model trained.") # debugging
-    print("Compiling the circuit...") # debugging
+    print("Model trained.")  # debugging
+    print("Compiling the circuit...")  # debugging
     qc_compiled, compilation_information = rl.qcompile(qc, figure_of_merit=figure_of_merit, device_name=device)
 
-    print("Circuit compiled.") # debugging
+    print("Circuit compiled.")  # debugging
     assert qc_compiled.layout is not None
     assert compilation_information is not None
 
