@@ -30,9 +30,9 @@ jobs:
     with:
       enable-ubuntu2404: true
       enable-ubuntu2404-arm: false # not supported by BQSKit
-      enable-macos13: true
-      enable-macos14: true
-      enable-windows2022: true
+      enable-macos13: false # only for debugging of failing ubuntu tests
+      enable-macos14: false # only for debugging of failing ubuntu tests
+      enable-windows2022: false # only for debugging of failing ubuntu testsse
 
   code-ql:
     name: 📝 CodeQL
