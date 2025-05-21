@@ -30,8 +30,8 @@ jobs:
     with:
       enable-ubuntu2404: true
       enable-ubuntu2404-arm: false # not supported by BQSKit
-      enable-macos13: false # only false for debugging the failing ubuntu test
-      enable-macos14: false # only false for debugging the failing ubuntu test
+      enable-macos13: true
+      enable-macos14: true
       enable-windows2022: false # only false for debugging the failing ubuntu test
     permissions:
       contents: read
