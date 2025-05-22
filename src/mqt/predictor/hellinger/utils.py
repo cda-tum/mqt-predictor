@@ -8,15 +8,13 @@ from typing import TYPE_CHECKING
 
 import networkx as nx
 import numpy as np
+from mqt.bench.utils import calc_supermarq_features
 from qiskit.converters import circuit_to_dag
 
-from mqt.bench.utils import calc_supermarq_features
-
 if TYPE_CHECKING:
+    from mqt.bench.devices import Device
     from numpy.typing import NDArray
     from qiskit import QuantumCircuit
-
-    from mqt.bench.devices import Device
 
 
 def hellinger_distance(p: NDArray[np.float64], q: NDArray[np.float64]) -> float:
