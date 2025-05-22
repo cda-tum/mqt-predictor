@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import pytest
-from qiskit import QuantumCircuit, transpile
-
 from mqt.bench import get_benchmark
 from mqt.bench.devices import Device, get_device_by_name
+from qiskit import QuantumCircuit, transpile
+
 from mqt.predictor import reward
 
 

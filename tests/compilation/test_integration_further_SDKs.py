@@ -6,6 +6,7 @@ from typing import cast
 
 import pytest
 from bqskit.ext import bqskit_to_qiskit, qiskit_to_bqskit
+from mqt.bench.devices import Device, get_available_devices, get_device_by_name
 from pytket.circuit import Qubit
 from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit
 from qiskit import QuantumCircuit
@@ -13,7 +14,6 @@ from qiskit.transpiler import CouplingMap, PassManager
 from qiskit.transpiler.layout import TranspileLayout
 from qiskit.transpiler.passes import CheckMap, GatesInBasis
 
-from mqt.bench.devices import Device, get_available_devices, get_device_by_name
 from mqt.predictor.rl import helper
 
 
