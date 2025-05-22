@@ -32,7 +32,7 @@ jobs:
       enable-ubuntu2404-arm: false # not supported by BQSKit
       enable-macos13: true
       enable-macos14: true
-      enable-windows2022: false # only false for debugging the failing ubuntu test
+      enable-windows2022: true
     permissions:
       contents: read
       id-token: write
