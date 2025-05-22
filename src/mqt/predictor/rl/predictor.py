@@ -84,11 +84,13 @@ class Predictor:
             set_random_seed(0)  # for reproducibility
             n_steps = 10
             n_epochs = 1
-            timesteps = 10
             batch_size = 10
             progress_bar = False
         else:
+            # default PPO values
             n_steps = 2048
+            n_epochs = 10
+            batch_size = 64
             progress_bar = True
 
         logger.debug("Start training for: " + self.figure_of_merit + " on " + self.device_name)
