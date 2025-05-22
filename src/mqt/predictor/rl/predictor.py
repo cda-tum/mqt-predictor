@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 from sb3_contrib.common.maskable.utils import get_action_masks
+from stable_baselines3.common.utils import set_random_seed
 
 from mqt.predictor import reward, rl
 
@@ -80,7 +81,11 @@ class Predictor:
             test: Whether to train the model for testing purposes. Defaults to False.
         """
         if test:
+            set_random_seed(0)  # for reproducibility
             n_steps = 10
+            n_epochs = 1
+            timesteps = 10
+            batch_size = 10
             progress_bar = False
         else:
             n_steps = 2048
@@ -94,6 +99,8 @@ class Predictor:
             tensorboard_log="./" + model_name + "_" + self.figure_of_merit + "_" + self.device_name,
             gamma=0.98,
             n_steps=n_steps,
+            batch_size=batch_size,
+            n_epochs=n_epochs,
         )
         # Training Loop: In each iteration, the agent collects n_steps steps (rollout),
         # updates the policy for n_epochs, and then repeats the process until total_timesteps steps have been taken.
