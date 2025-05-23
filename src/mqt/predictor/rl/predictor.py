@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 from sb3_contrib.common.maskable.utils import get_action_masks
-from stable_baselines3.common.utils import set_random_seed
 
 from mqt.predictor import reward, rl
 
@@ -81,7 +80,6 @@ class Predictor:
             test: Whether to train the model for testing purposes. Defaults to False.
         """
         if test:
-            set_random_seed(0)  # for reproducibility
             n_steps = 10
             n_epochs = 1
             batch_size = 10
