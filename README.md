@@ -1,10 +1,10 @@
 [![PyPI](https://img.shields.io/pypi/v/mqt.predictor?logo=pypi&style=flat-square)](https://pypi.org/project/mqt.predictor/)
 ![OS](https://img.shields.io/badge/os-linux%20%7C%20macos%20%7C%20windows-blue?style=flat-square)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![CI](https://img.shields.io/github/actions/workflow/status/cda-tum/mqt-predictor/ci.yml?branch=main&style=flat-square&logo=github&label=ci)](https://github.com/cda-tum/mqt-predictor/actions/workflows/ci.yml)
-[![CD](https://img.shields.io/github/actions/workflow/status/cda-tum/mqt-predictor/cd.yml?style=flat-square&logo=github&label=cd)](https://github.com/cda-tum/mqt-predictor/actions/workflows/cd.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/munich-quantum-toolkit/predictor/ci.yml?branch=main&style=flat-square&logo=github&label=ci)](https://github.com/munich-quantum-toolkit/predictor/actions/workflows/ci.yml)
+[![CD](https://img.shields.io/github/actions/workflow/status/munich-quantum-toolkit/predictor/cd.yml?style=flat-square&logo=github&label=cd)](https://github.com/munich-quantum-toolkit/predictor/actions/workflows/cd.yml)
 [![Documentation](https://img.shields.io/readthedocs/mqt-predictor?logo=readthedocs&style=flat-square)](https://mqt.readthedocs.io/projects/predictor)
-[![codecov](https://img.shields.io/codecov/c/github/cda-tum/mqt-predictor?style=flat-square&logo=codecov)](https://codecov.io/gh/cda-tum/mqt-predictor)
+[![codecov](https://img.shields.io/codecov/c/github/munich-quantum-toolkit/predictor?style=flat-square&logo=codecov)](https://codecov.io/gh/munich-quantum-toolkit/predictor)
 
 <p align="center">
   <a href="https://mqt.readthedocs.io">
@@ -75,7 +75,7 @@ The following code gives an example on the usage:
 from mqt.predictor import qcompile
 from mqt.bench import get_benchmark
 
-# get a benchmark circuit on algorithmic level representing the GHZ state with 5 qubits from [MQT Bench](https://github.com/cda-tum/mqt-bench)
+# get a benchmark circuit on algorithmic level representing the GHZ state with 5 qubits from [MQT Bench](https://github.com/munich-quantum-toolkit/bench)
 qc_uncompiled = get_benchmark(benchmark_name="ghz", level="alg", circuit_size=5)
 
 # compile it using the MQT Predictor
