@@ -5,12 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+from mqt.bench import get_benchmark
+from mqt.bench.devices import get_device_by_name
 from qiskit import transpile
 from qiskit.transpiler import PassManager
 from qiskit.transpiler.passes.layout.vf2_post_layout import VF2PostLayoutStopReason
 
-from mqt.bench import get_benchmark
-from mqt.bench.devices import get_device_by_name
 from mqt.predictor import rl
 
 
