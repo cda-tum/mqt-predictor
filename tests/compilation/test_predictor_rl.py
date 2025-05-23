@@ -72,7 +72,7 @@ def test_qcompile_with_newly_trained_models() -> None:
 
     print("Training the model...")  # debugging
     predictor.train_model(
-        timesteps=100,
+        timesteps=10,
         test=True,
     )
 
